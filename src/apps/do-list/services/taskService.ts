@@ -25,6 +25,7 @@ const TASK_STATUSES: TaskStatus[] = ['todo', 'doing', 'blocked', 'done']
 type StoredTask = {
   content?: unknown
   description?: unknown
+  dueDate?: unknown
   status?: unknown
   title?: unknown
   createdAt?: unknown
@@ -47,6 +48,10 @@ function toTaskStatus(value: unknown): TaskStatus {
   return TASK_STATUSES.includes(value as TaskStatus) ? (value as TaskStatus) : 'todo'
 }
 
+function toDueDate(value: unknown) {
+  return typeof value === 'string' && value ? value : null
+}
+
 function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
   const title = String(data.title ?? data.content ?? '')
 
@@ -55,6 +60,7 @@ function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
     title,
     description: String(data.description ?? ''),
     content: title,
+    dueDate: toDueDate(data.dueDate),
     status: toTaskStatus(data.status),
     createdAt: toTimestamp(data.createdAt),
     updatedAt: toTimestamp(data.updatedAt),
@@ -75,12 +81,18 @@ function mapTasks(snapshot: DataSnapshot) {
     })
 }
 
-export async function createTask({ description, status, title }: CreateTaskInput) {
+export async function createTask({
+  description,
+  dueDate,
+  status,
+  title,
+}: CreateTaskInput) {
   const taskRef = push(getTasksRef())
 
   return set(taskRef, {
     content: title,
     description,
+    dueDate,
     status,
     title,
     createdAt: serverTimestamp(),

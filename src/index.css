@@ -628,6 +628,19 @@ select {
   white-space: pre-wrap;
 }
 
+.due-date {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #5e6c84;
+  background: #f4f5f7;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .task-controls {
   display: flex;
   align-items: center;
@@ -817,6 +830,31 @@ select {
 .status-modal-list {
   display: grid;
   gap: 8px;
+}
+
+.status-sheet {
+  align-self: end;
+  width: min(100%, 440px);
+  border-radius: 24px 24px 0 0;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+}
+
+.status-option {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.status-option::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .edit-form {

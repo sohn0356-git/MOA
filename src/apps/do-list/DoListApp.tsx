@@ -4,25 +4,24 @@ import { TaskList } from './components/TaskList'
 import { useTasks } from './hooks/useTasks'
 import type { TaskStatus } from './types/task'
 
-type TaskFilter = 'all' | TaskStatus
+type TaskFilter = 'active' | TaskStatus
 
 const filterItems: Array<{ label: string; value: TaskFilter }> = [
-  { label: 'All', value: 'all' },
-  { label: 'To Do', value: 'todo' },
-  { label: 'Doing', value: 'doing' },
-  { label: 'Blocked', value: 'blocked' },
-  { label: 'Done', value: 'done' },
+  { label: '미완료', value: 'active' },
+  { label: '할 일', value: 'todo' },
+  { label: '진행 중', value: 'doing' },
+  { label: '막힘', value: 'blocked' },
+  { label: '완료', value: 'done' },
 ]
 
 export function DoListApp() {
-  const [activeFilter, setActiveFilter] = useState<TaskFilter>('all')
+  const [activeFilter, setActiveFilter] = useState<TaskFilter>('active')
   const [isAddingTask, setIsAddingTask] = useState(false)
   const {
     tasks,
     isLoading,
     isMutating,
     error,
-    syncMessage,
     addTask,
     editTask,
     removeTask,
@@ -31,16 +30,18 @@ export function DoListApp() {
   const taskCounts = useMemo(() => {
     return tasks.reduce(
       (counts, task) => {
-        counts.all += 1
+        if (task.status !== 'done') {
+          counts.active += 1
+        }
         counts[task.status] += 1
         return counts
       },
-      { all: 0, blocked: 0, doing: 0, done: 0, todo: 0 },
+      { active: 0, blocked: 0, doing: 0, done: 0, todo: 0 },
     )
   }, [tasks])
   const visibleTasks = useMemo(() => {
-    if (activeFilter === 'all') {
-      return tasks
+    if (activeFilter === 'active') {
+      return tasks.filter((task) => task.status !== 'done')
     }
 
     return tasks.filter((task) => task.status === activeFilter)
@@ -76,10 +77,9 @@ export function DoListApp() {
         <div>
           <h2>Do List</h2>
           <p>
-            {activeCount} active · {taskCounts.done} completed
+            활성 {activeCount} · 완료 {taskCounts.done}
           </p>
         </div>
-        <span className="sync-pill">{syncMessage}</span>
       </div>
 
       <nav className="task-filter-bar" aria-label="Task filters">
@@ -98,7 +98,7 @@ export function DoListApp() {
 
       {error ? <p className="app-error">{error}</p> : null}
       {isLoading ? (
-        <div className="task-skeleton-list" aria-label="Loading tasks">
+        <div className="task-skeleton-list" aria-label="할 일 불러오는 중">
           <div />
           <div />
           <div />

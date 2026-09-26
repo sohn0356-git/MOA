@@ -40,7 +40,12 @@ export function useTasks() {
     return unsubscribe
   }, [configError])
 
-  async function addTask(title: string, description: string, status: TaskStatus) {
+  async function addTask(
+    title: string,
+    description: string,
+    status: TaskStatus,
+    dueDate: string | null,
+  ) {
     const trimmedTitle = title.trim()
     const trimmedDescription = description.trim()
 
@@ -54,6 +59,7 @@ export function useTasks() {
     try {
       await createTask({
         description: trimmedDescription,
+        dueDate,
         status,
         title: trimmedTitle,
       })
@@ -85,7 +91,12 @@ export function useTasks() {
     }
   }
 
-  async function editTask(taskId: string, title: string, description: string) {
+  async function editTask(
+    taskId: string,
+    title: string,
+    description: string,
+    dueDate: string | null,
+  ) {
     const trimmedTitle = title.trim()
     const trimmedDescription = description.trim()
 
@@ -99,6 +110,7 @@ export function useTasks() {
     try {
       await updateTask(taskId, {
         description: trimmedDescription,
+        dueDate,
         title: trimmedTitle,
       })
       setSyncMessage('Updated. Waiting for realtime update...')

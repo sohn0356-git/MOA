@@ -8,20 +8,22 @@ type TaskComposerProps = {
     title: string,
     description: string,
     status: TaskStatus,
+    dueDate: string | null,
   ) => Promise<void>
 }
 
 const statusOptions: Array<{ label: string; value: TaskStatus }> = [
-  { label: 'TO DO', value: 'todo' },
-  { label: 'IN PROGRESS', value: 'doing' },
-  { label: 'BLOCKED', value: 'blocked' },
-  { label: 'DONE', value: 'done' },
+  { label: '할 일', value: 'todo' },
+  { label: '진행 중', value: 'doing' },
+  { label: '막힘', value: 'blocked' },
+  { label: '완료', value: 'done' },
 ]
 
 export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<TaskStatus>('todo')
+  const [dueDate, setDueDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
 
@@ -38,10 +40,11 @@ export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps)
 
     setIsSubmitting(true)
     try {
-      await onAddTask(title, description, status)
+      await onAddTask(title, description, status, dueDate || null)
       setTitle('')
       setDescription('')
       setStatus('todo')
+      setDueDate('')
       onCancel()
     } finally {
       setIsSubmitting(false)
@@ -52,37 +55,37 @@ export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps)
     <form className="task-composer sheet-form" onSubmit={handleSubmit}>
       <div className="sheet-handle" aria-hidden="true" />
       <header className="sheet-header">
-        <h3>Add task</h3>
+        <h3>할 일 추가</h3>
       </header>
       <div className="task-fields">
         <label className="field-label">
-          <span>Title</span>
+          <span>제목</span>
           <input
-            aria-label="Task title"
+            aria-label="할 일 제목"
             disabled={isSubmitting || isBusy}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Write a task title"
+            placeholder="무엇을 해야 하나요?"
             ref={titleInputRef}
             type="text"
             value={title}
           />
         </label>
         <label className="field-label">
-          <span>Details</span>
+          <span>메모</span>
           <textarea
-            aria-label="Task details"
+            aria-label="할 일 메모"
             disabled={isSubmitting || isBusy}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Add task details"
+            placeholder="필요한 내용을 적어두세요"
             rows={3}
             value={description}
           />
         </label>
       </div>
       <label className="field-label">
-        <span>Status</span>
+        <span>상태</span>
         <select
-          aria-label="Initial status"
+          aria-label="초기 상태"
           className={`status-select status-text-${status}`}
           disabled={isSubmitting || isBusy}
           onChange={(event) => setStatus(event.target.value as TaskStatus)}
@@ -95,12 +98,22 @@ export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps)
           ))}
         </select>
       </label>
+      <label className="field-label">
+        <span>기한</span>
+        <input
+          aria-label="기한"
+          disabled={isSubmitting || isBusy}
+          onChange={(event) => setDueDate(event.target.value)}
+          type="date"
+          value={dueDate}
+        />
+      </label>
       <div className="sheet-actions">
         <button type="button" onClick={onCancel}>
-          Cancel
+          취소
         </button>
         <button disabled={isSubmitting || isBusy || !title.trim()} type="submit">
-          {isSubmitting ? 'Saving' : 'Add'}
+          {isSubmitting ? '저장 중' : '추가'}
         </button>
       </div>
     </form>

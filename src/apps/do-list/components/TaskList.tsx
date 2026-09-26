@@ -4,10 +4,10 @@ import type { Task, TaskStatus } from '../types/task'
 const taskStatuses: TaskStatus[] = ['todo', 'doing', 'blocked', 'done']
 
 const statusLabels: Record<TaskStatus, string> = {
-  todo: 'TO DO',
-  doing: 'IN PROGRESS',
-  blocked: 'BLOCKED',
-  done: 'DONE',
+  todo: '할 일',
+  doing: '진행 중',
+  blocked: '막힘',
+  done: '완료',
 }
 
 type TaskListProps = {
@@ -18,6 +18,7 @@ type TaskListProps = {
     taskId: string,
     title: string,
     description: string,
+    dueDate: string | null,
   ) => Promise<void>
   onUpdateStatus: (taskId: string, status: TaskStatus) => Promise<void>
 }
@@ -33,13 +34,14 @@ export function TaskList({
   const [statusTask, setStatusTask] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
+  const [editDueDate, setEditDueDate] = useState('')
 
   if (tasks.length === 0) {
     return (
       <div className="empty-state note-empty-state">
         <span aria-hidden="true">✓</span>
-        <strong>Nothing here yet</strong>
-        <p>Tap + to add your first task.</p>
+        <strong>아직 할 일이 없어요</strong>
+        <p>+ 버튼을 눌러 첫 할 일을 추가하세요.</p>
       </div>
     )
   }
@@ -48,12 +50,14 @@ export function TaskList({
     setEditingTask(task)
     setEditTitle(task.title)
     setEditDescription(task.description)
+    setEditDueDate(task.dueDate ?? '')
   }
 
   function closeEditModal() {
     setEditingTask(null)
     setEditTitle('')
     setEditDescription('')
+    setEditDueDate('')
   }
 
   async function handleEditSubmit(event: FormEvent<HTMLFormElement>) {
@@ -63,7 +67,7 @@ export function TaskList({
       return
     }
 
-    await onEditTask(editingTask.id, editTitle, editDescription)
+    await onEditTask(editingTask.id, editTitle, editDescription, editDueDate || null)
     closeEditModal()
   }
 
@@ -90,6 +94,7 @@ export function TaskList({
               {task.description ? (
                 <p className="task-description">{task.description}</p>
               ) : null}
+              {task.dueDate ? <span className="due-date">기한 {task.dueDate}</span> : null}
             </button>
             <div className="task-controls">
               <button
@@ -132,15 +137,15 @@ export function TaskList({
       {statusTask ? (
         <div className="modal-backdrop" role="presentation">
           <section
-            aria-label={`Change status for ${statusTask.title}`}
+            aria-label={`${statusTask.title} 상태 변경`}
             aria-modal="true"
-            className="task-modal"
+            className="task-modal status-sheet"
             role="dialog"
           >
             <header className="modal-header">
-              <h3>Change status</h3>
+              <h3>상태 변경</h3>
               <button
-                aria-label="Close status dialog"
+                aria-label="상태 변경 닫기"
                 className="icon-button"
                 type="button"
                 onClick={() => setStatusTask(null)}
@@ -170,15 +175,15 @@ export function TaskList({
       {editingTask ? (
         <div className="modal-backdrop" role="presentation">
           <section
-            aria-label={`Edit ${editingTask.title}`}
+            aria-label={`${editingTask.title} 수정`}
             aria-modal="true"
             className="task-modal"
             role="dialog"
           >
             <header className="modal-header">
-              <h3>Edit task</h3>
+              <h3>할 일 수정</h3>
               <button
-                aria-label="Close edit dialog"
+                aria-label="수정 닫기"
                 className="icon-button"
                 type="button"
                 onClick={closeEditModal}
@@ -190,7 +195,7 @@ export function TaskList({
             </header>
             <form className="edit-form" onSubmit={(event) => void handleEditSubmit(event)}>
               <label className="field-label">
-                <span>Title</span>
+                <span>제목</span>
                 <input
                   disabled={isBusy}
                   onChange={(event) => setEditTitle(event.target.value)}
@@ -198,7 +203,7 @@ export function TaskList({
                 />
               </label>
               <label className="field-label">
-                <span>Details</span>
+                <span>메모</span>
                 <textarea
                   disabled={isBusy}
                   onChange={(event) => setEditDescription(event.target.value)}
@@ -206,12 +211,21 @@ export function TaskList({
                   value={editDescription}
                 />
               </label>
+              <label className="field-label">
+                <span>기한</span>
+                <input
+                  disabled={isBusy}
+                  onChange={(event) => setEditDueDate(event.target.value)}
+                  type="date"
+                  value={editDueDate}
+                />
+              </label>
               <div className="modal-actions">
                 <button type="button" onClick={closeEditModal}>
-                  Cancel
+                  취소
                 </button>
                 <button disabled={isBusy || !editTitle.trim()} type="submit">
-                  Save
+                  저장
                 </button>
               </div>
             </form>
