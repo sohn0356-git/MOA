@@ -89,8 +89,13 @@ export async function createTask({ description, status, title }: CreateTaskInput
 }
 
 export async function updateTask(taskId: string, input: UpdateTaskInput) {
-  return update(getTaskRef(taskId), {
+  const nextInput = {
     ...input,
+    ...(input.title ? { content: input.title } : {}),
+  }
+
+  return update(getTaskRef(taskId), {
+    ...nextInput,
     updatedAt: serverTimestamp(),
   })
 }

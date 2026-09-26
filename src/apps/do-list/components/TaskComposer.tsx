@@ -44,36 +44,45 @@ export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
   return (
     <form className="task-composer" onSubmit={handleSubmit}>
       <div className="task-fields">
-        <input
-          aria-label="Task title"
-          disabled={isSubmitting || isBusy}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="Title"
-          type="text"
-          value={title}
-        />
-        <textarea
-          aria-label="Task details"
-          disabled={isSubmitting || isBusy}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="Details"
-          rows={3}
-          value={description}
-        />
+        <label className="field-label">
+          <span>Title</span>
+          <input
+            aria-label="Task title"
+            disabled={isSubmitting || isBusy}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Write a task title"
+            type="text"
+            value={title}
+          />
+        </label>
+        <label className="field-label">
+          <span>Details</span>
+          <textarea
+            aria-label="Task details"
+            disabled={isSubmitting || isBusy}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Add task details"
+            rows={3}
+            value={description}
+          />
+        </label>
       </div>
-      <select
-        aria-label="Initial status"
-        className={`status-select status-text-${status}`}
-        disabled={isSubmitting || isBusy}
-        onChange={(event) => setStatus(event.target.value as TaskStatus)}
-        value={status}
-      >
-        {statusOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <label className="field-label">
+        <span>Status</span>
+        <select
+          aria-label="Initial status"
+          className={`status-select status-text-${status}`}
+          disabled={isSubmitting || isBusy}
+          onChange={(event) => setStatus(event.target.value as TaskStatus)}
+          value={status}
+        >
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <button disabled={isSubmitting || isBusy || !title.trim()} type="submit">
         {isSubmitting ? 'Saving' : 'Add'}
       </button>

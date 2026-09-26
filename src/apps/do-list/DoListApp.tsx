@@ -10,6 +10,7 @@ export function DoListApp() {
     error,
     syncMessage,
     addTask,
+    editTask,
     removeTask,
     setTaskStatus,
   } = useTasks()
@@ -33,6 +34,7 @@ export function DoListApp() {
           <TaskList
             isBusy={isMutating}
             onDeleteTask={removeTask}
+            onEditTask={editTask}
             onUpdateStatus={setTaskStatus}
             tasks={tasks}
           />

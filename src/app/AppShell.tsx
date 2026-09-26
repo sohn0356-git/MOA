@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { appRegistry } from '../apps/registry'
 import { AppGrid } from '../components/AppGrid'
 import { AppUpdateBanner } from '../components/AppUpdateBanner'
-import { PwaInstallBanner } from '../components/PwaInstallBanner'
 import { useAppUpdate } from '../hooks/useAppUpdate'
-import { usePwaInstallPrompt } from '../hooks/usePwaInstallPrompt'
 
 function getRouteFromHash() {
   return window.location.hash || ''
@@ -13,8 +11,6 @@ function getRouteFromHash() {
 export function AppShell() {
   const [activeRoute, setActiveRoute] = useState(getRouteFromHash)
   const { applyUpdate, hasUpdate, isUpdating } = useAppUpdate()
-  const { canInstall, dismissInstallPrompt, promptInstall, status } =
-    usePwaInstallPrompt()
   const activeApp = useMemo(
     () => appRegistry.find((app) => app.route === activeRoute),
     [activeRoute],
@@ -55,15 +51,6 @@ export function AppShell() {
         <AppUpdateBanner
           isUpdating={isUpdating}
           onUpdate={() => void applyUpdate()}
-        />
-      ) : null}
-
-      {status !== 'installed' && status !== 'dismissed' ? (
-        <PwaInstallBanner
-          canInstall={canInstall}
-          onDismiss={dismissInstallPrompt}
-          onInstall={() => void promptInstall()}
-          status={status}
         />
       ) : null}
 

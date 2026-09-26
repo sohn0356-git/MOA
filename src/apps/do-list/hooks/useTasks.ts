@@ -85,6 +85,32 @@ export function useTasks() {
     }
   }
 
+  async function editTask(taskId: string, title: string, description: string) {
+    const trimmedTitle = title.trim()
+    const trimmedDescription = description.trim()
+
+    if (!trimmedTitle) {
+      return
+    }
+
+    setIsMutating(true)
+    setSyncMessage('Updating Realtime DB...')
+
+    try {
+      await updateTask(taskId, {
+        description: trimmedDescription,
+        title: trimmedTitle,
+      })
+      setSyncMessage('Updated. Waiting for realtime update...')
+    } catch (taskError) {
+      setError(taskError instanceof Error ? taskError.message : 'Failed to update task.')
+      setSyncMessage('Update failed.')
+      throw taskError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
   async function removeTask(taskId: string) {
     setIsMutating(true)
     setSyncMessage('Deleting from Realtime DB...')
@@ -110,6 +136,7 @@ export function useTasks() {
     error,
     syncMessage,
     addTask,
+    editTask,
     setTaskStatus,
     removeTask,
   }
