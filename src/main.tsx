@@ -6,14 +6,19 @@ import App from './App.tsx'
 
 const updateServiceWorker = registerSW({
   immediate: true,
+  onRegisteredSW(_swUrl, registration) {
+    if (!registration) {
+      return
+    }
+
+    void registration.update()
+
+    window.setInterval(() => {
+      void registration.update()
+    }, 60 * 1000)
+  },
   onNeedRefresh() {
-    window.dispatchEvent(
-      new CustomEvent('moa-update-available', {
-        detail: {
-          updateServiceWorker,
-        },
-      }),
-    )
+    void updateServiceWorker(true)
   },
 })
 
