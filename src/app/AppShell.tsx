@@ -10,7 +10,8 @@ function getRouteFromHash() {
 
 export function AppShell() {
   const [activeRoute, setActiveRoute] = useState(getRouteFromHash)
-  const { canInstall, dismissInstallPrompt, promptInstall } = usePwaInstallPrompt()
+  const { canInstall, dismissInstallPrompt, promptInstall, status } =
+    usePwaInstallPrompt()
   const activeApp = useMemo(
     () => appRegistry.find((app) => app.route === activeRoute),
     [activeRoute],
@@ -47,10 +48,12 @@ export function AppShell() {
         </div>
       </header>
 
-      {canInstall ? (
+      {status !== 'installed' && status !== 'dismissed' ? (
         <PwaInstallBanner
+          canInstall={canInstall}
           onDismiss={dismissInstallPrompt}
           onInstall={() => void promptInstall()}
+          status={status}
         />
       ) : null}
 

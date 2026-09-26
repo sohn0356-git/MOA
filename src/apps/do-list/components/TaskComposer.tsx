@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
 
 type TaskComposerProps = {
+  isBusy: boolean
   onAddTask: (content: string) => Promise<void>
 }
 
-export function TaskComposer({ onAddTask }: TaskComposerProps) {
+export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -29,12 +30,13 @@ export function TaskComposer({ onAddTask }: TaskComposerProps) {
       <input
         aria-label="Task content"
         onChange={(event) => setContent(event.target.value)}
+        disabled={isSubmitting || isBusy}
         placeholder="Add a task"
         type="text"
         value={content}
       />
-      <button disabled={isSubmitting || !content.trim()} type="submit">
-        Add
+      <button disabled={isSubmitting || isBusy || !content.trim()} type="submit">
+        {isSubmitting ? 'Saving' : 'Add'}
       </button>
     </form>
   )

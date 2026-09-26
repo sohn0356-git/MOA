@@ -227,6 +227,11 @@ select {
   cursor: pointer;
 }
 
+.install-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .install-primary {
   border: 1px solid #146c43;
   color: #ffffff;
@@ -291,6 +296,17 @@ select {
   font-size: 14px;
 }
 
+.sync-pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: #ffffff;
+  background: #42526e;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .task-composer {
   display: flex;
   gap: 8px;
@@ -305,6 +321,11 @@ select {
   padding: 12px;
   color: #111713;
   background: #ffffff;
+}
+
+.task-composer input:disabled {
+  color: #647069;
+  background: #f1f4f2;
 }
 
 .task-composer button,
@@ -365,18 +386,64 @@ select {
 }
 
 .task-controls {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 8px;
+  align-items: center;
 }
 
-.task-controls select {
-  min-width: 0;
-  flex: 1;
-  border: 1px solid #cfd8d1;
-  border-radius: 8px;
-  padding: 10px;
-  color: #111713;
-  background: #ffffff;
+.status-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-pill {
+  border: 0;
+  border-radius: 3px;
+  padding: 5px 8px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.status-pill:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.status-todo {
+  background: #42526e;
+}
+
+.status-doing {
+  background: #0052cc;
+}
+
+.status-blocked {
+  background: #de350b;
+}
+
+.status-done {
+  background: #00875a;
+}
+
+.status-pill:not(:disabled) {
+  opacity: 0.5;
+}
+
+.status-pill:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.task-controls > button:disabled {
+  border-color: #b8c2bb;
+  color: #5f6b64;
+  background: #dce3de;
+  cursor: not-allowed;
 }
 
 @media (min-width: 720px) {
@@ -417,5 +484,17 @@ select {
 
   .install-actions button {
     flex: 1;
+  }
+
+  .sub-app-header {
+    flex-direction: column;
+  }
+
+  .sync-pill {
+    align-self: flex-start;
+  }
+
+  .task-controls {
+    grid-template-columns: 1fr;
   }
 }

@@ -13,6 +13,10 @@ export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(!configError)
   const [error, setError] = useState<string | null>(configError)
+  const [isMutating, setIsMutating] = useState(false)
+  const [syncMessage, setSyncMessage] = useState(
+    configError ? 'Firebase is not configured.' : 'Connecting to Firestore...',
+  )
 
   useEffect(() => {
     if (configError) {
@@ -24,10 +28,12 @@ export function useTasks() {
         setTasks(nextTasks)
         setIsLoading(false)
         setError(null)
+        setSyncMessage('Synced with Firestore.')
       },
       (snapshotError) => {
         setError(snapshotError.message)
         setIsLoading(false)
+        setSyncMessage('Firestore sync failed.')
       },
     )
 
@@ -41,21 +47,63 @@ export function useTasks() {
       return
     }
 
-    await createTask({ content: trimmedContent })
+    setIsMutating(true)
+    setSyncMessage('Saving to Firestore...')
+
+    try {
+      await createTask({ content: trimmedContent })
+      setSyncMessage('Saved. Waiting for realtime update...')
+    } catch (taskError) {
+      setError(taskError instanceof Error ? taskError.message : 'Failed to save task.')
+      setSyncMessage('Save failed.')
+      throw taskError
+    } finally {
+      setIsMutating(false)
+    }
   }
 
   async function setTaskStatus(taskId: string, status: TaskStatus) {
-    await updateTask(taskId, { status })
+    setIsMutating(true)
+    setSyncMessage('Updating Firestore...')
+
+    try {
+      await updateTask(taskId, { status })
+      setSyncMessage('Updated. Waiting for realtime update...')
+    } catch (taskError) {
+      setError(
+        taskError instanceof Error ? taskError.message : 'Failed to update task.',
+      )
+      setSyncMessage('Update failed.')
+      throw taskError
+    } finally {
+      setIsMutating(false)
+    }
   }
 
   async function removeTask(taskId: string) {
-    await deleteTask(taskId)
+    setIsMutating(true)
+    setSyncMessage('Deleting from Firestore...')
+
+    try {
+      await deleteTask(taskId)
+      setSyncMessage('Deleted. Waiting for realtime update...')
+    } catch (taskError) {
+      setError(
+        taskError instanceof Error ? taskError.message : 'Failed to delete task.',
+      )
+      setSyncMessage('Delete failed.')
+      throw taskError
+    } finally {
+      setIsMutating(false)
+    }
   }
 
   return {
     tasks,
     isLoading,
+    isMutating,
     error,
+    syncMessage,
     addTask,
     setTaskStatus,
     removeTask,

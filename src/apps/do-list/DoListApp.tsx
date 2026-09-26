@@ -3,15 +3,25 @@ import { TaskList } from './components/TaskList'
 import { useTasks } from './hooks/useTasks'
 
 export function DoListApp() {
-  const { tasks, isLoading, error, addTask, removeTask, setTaskStatus } = useTasks()
+  const {
+    tasks,
+    isLoading,
+    isMutating,
+    error,
+    syncMessage,
+    addTask,
+    removeTask,
+    setTaskStatus,
+  } = useTasks()
 
   return (
     <section className="sub-app">
       <header className="sub-app-header">
         <div>
           <h2>Do List</h2>
-          <p>Realtime tasks synced with Cloud Firestore.</p>
+          <p>Tasks are saved to Cloud Firestore and read back on launch.</p>
         </div>
+        <span className="sync-pill">{syncMessage}</span>
       </header>
 
       {error ? <p className="app-error">{error}</p> : null}
@@ -19,8 +29,9 @@ export function DoListApp() {
 
       {!isLoading && !error ? (
         <>
-          <TaskComposer onAddTask={addTask} />
+          <TaskComposer isBusy={isMutating} onAddTask={addTask} />
           <TaskList
+            isBusy={isMutating}
             onDeleteTask={removeTask}
             onUpdateStatus={setTaskStatus}
             tasks={tasks}
