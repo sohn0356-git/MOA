@@ -30,6 +30,7 @@ button {
 }
 
 input,
+textarea,
 select {
   font: inherit;
 }
@@ -354,14 +355,22 @@ select {
 }
 
 .task-composer {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  align-items: start;
+  gap: 10px;
   margin-bottom: 16px;
 }
 
-.task-composer input {
+.task-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.task-composer input,
+.task-composer textarea {
   min-width: 0;
-  flex: 1;
+  width: 100%;
   border: 1px solid #cfd8d1;
   border-radius: 8px;
   padding: 12px;
@@ -369,13 +378,17 @@ select {
   background: #ffffff;
 }
 
-.task-composer input:disabled {
+.task-composer textarea {
+  resize: vertical;
+}
+
+.task-composer input:disabled,
+.task-composer textarea:disabled {
   color: #647069;
   background: #f1f4f2;
 }
 
-.task-composer button,
-.task-controls button {
+.task-composer button {
   border: 1px solid #146c43;
   border-radius: 8px;
   padding: 10px 13px;
@@ -425,70 +438,97 @@ select {
   background: #ffffff;
 }
 
-.task-content {
+.task-copy {
+  min-width: 0;
+}
+
+.task-title {
+  display: block;
   color: #111713;
   font-weight: 650;
   line-height: 1.4;
 }
 
+.task-description {
+  margin: 4px 0 0;
+  color: #627069;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .task-controls {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 150px 36px;
   gap: 8px;
   align-items: center;
 }
 
-.status-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.status-pill {
-  border: 0;
+.status-select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid transparent;
   border-radius: 3px;
-  padding: 5px 8px;
-  color: #ffffff;
-  font-size: 11px;
+  padding: 7px 28px 7px 8px;
+  background: #ffffff;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.2;
   cursor: pointer;
 }
 
-.status-pill:disabled {
-  cursor: default;
-  opacity: 1;
+.status-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
-.status-todo {
-  background: #42526e;
+.status-text-todo {
+  color: #42526e;
+  background: #f4f5f7;
 }
 
-.status-doing {
-  background: #0052cc;
+.status-text-doing {
+  color: #0052cc;
+  background: #deebff;
 }
 
-.status-blocked {
-  background: #de350b;
+.status-text-blocked {
+  color: #de350b;
+  background: #ffebe6;
 }
 
-.status-done {
-  background: #00875a;
+.status-text-done {
+  color: #00875a;
+  background: #e3fcef;
 }
 
-.status-pill:not(:disabled) {
-  opacity: 0.5;
+.icon-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #6b778c;
+  background: transparent;
+  cursor: pointer;
 }
 
-.status-pill:not(:disabled):hover {
-  opacity: 0.85;
+.icon-button svg {
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
 }
 
-.task-controls > button:disabled {
-  border-color: #b8c2bb;
-  color: #5f6b64;
-  background: #dce3de;
+.icon-button:hover {
+  color: #de350b;
+  background: #ffebe6;
+}
+
+.icon-button:disabled {
+  color: #a5adba;
+  background: transparent;
   cursor: not-allowed;
 }
 
@@ -548,5 +588,13 @@ select {
 
   .task-controls {
     grid-template-columns: 1fr;
+  }
+
+  .task-composer {
+    grid-template-columns: 1fr;
+  }
+
+  .icon-button {
+    justify-self: end;
   }
 }

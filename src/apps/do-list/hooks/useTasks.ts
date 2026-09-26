@@ -40,10 +40,11 @@ export function useTasks() {
     return unsubscribe
   }, [configError])
 
-  async function addTask(content: string) {
-    const trimmedContent = content.trim()
+  async function addTask(title: string, description: string, status: TaskStatus) {
+    const trimmedTitle = title.trim()
+    const trimmedDescription = description.trim()
 
-    if (!trimmedContent) {
+    if (!trimmedTitle) {
       return
     }
 
@@ -51,7 +52,11 @@ export function useTasks() {
     setSyncMessage('Saving to Realtime DB...')
 
     try {
-      await createTask({ content: trimmedContent })
+      await createTask({
+        description: trimmedDescription,
+        status,
+        title: trimmedTitle,
+      })
       setSyncMessage('Saved. Waiting for realtime update...')
     } catch (taskError) {
       setError(taskError instanceof Error ? taskError.message : 'Failed to save task.')

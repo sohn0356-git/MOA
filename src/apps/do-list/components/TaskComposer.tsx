@@ -1,25 +1,41 @@
 import { useState, type FormEvent } from 'react'
+import type { TaskStatus } from '../types/task'
 
 type TaskComposerProps = {
   isBusy: boolean
-  onAddTask: (content: string) => Promise<void>
+  onAddTask: (
+    title: string,
+    description: string,
+    status: TaskStatus,
+  ) => Promise<void>
 }
 
+const statusOptions: Array<{ label: string; value: TaskStatus }> = [
+  { label: 'TO DO', value: 'todo' },
+  { label: 'IN PROGRESS', value: 'doing' },
+  { label: 'BLOCKED', value: 'blocked' },
+  { label: 'DONE', value: 'done' },
+]
+
 export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
-  const [content, setContent] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [status, setStatus] = useState<TaskStatus>('todo')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!content.trim()) {
+    if (!title.trim()) {
       return
     }
 
     setIsSubmitting(true)
     try {
-      await onAddTask(content)
-      setContent('')
+      await onAddTask(title, description, status)
+      setTitle('')
+      setDescription('')
+      setStatus('todo')
     } finally {
       setIsSubmitting(false)
     }
@@ -27,15 +43,38 @@ export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
 
   return (
     <form className="task-composer" onSubmit={handleSubmit}>
-      <input
-        aria-label="Task content"
-        onChange={(event) => setContent(event.target.value)}
+      <div className="task-fields">
+        <input
+          aria-label="Task title"
+          disabled={isSubmitting || isBusy}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Title"
+          type="text"
+          value={title}
+        />
+        <textarea
+          aria-label="Task details"
+          disabled={isSubmitting || isBusy}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="Details"
+          rows={3}
+          value={description}
+        />
+      </div>
+      <select
+        aria-label="Initial status"
+        className={`status-select status-text-${status}`}
         disabled={isSubmitting || isBusy}
-        placeholder="Add a task"
-        type="text"
-        value={content}
-      />
-      <button disabled={isSubmitting || isBusy || !content.trim()} type="submit">
+        onChange={(event) => setStatus(event.target.value as TaskStatus)}
+        value={status}
+      >
+        {statusOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <button disabled={isSubmitting || isBusy || !title.trim()} type="submit">
         {isSubmitting ? 'Saving' : 'Add'}
       </button>
     </form>
