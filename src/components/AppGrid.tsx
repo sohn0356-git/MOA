@@ -2,9 +2,10 @@ import type { AppMeta } from '../types/app'
 
 type AppGridProps = {
   apps: AppMeta[]
+  onOpenApp: (route: string) => void
 }
 
-export function AppGrid({ apps }: AppGridProps) {
+export function AppGrid({ apps, onOpenApp }: AppGridProps) {
   if (apps.length === 0) {
     return <p className="empty-state">Your apps will appear here.</p>
   }
@@ -18,6 +19,7 @@ export function AppGrid({ apps }: AppGridProps) {
           <button
             className="app-tile"
             key={app.id}
+            onClick={() => onOpenApp(app.route)}
             type="button"
             aria-label={`Open ${app.name}`}
           >

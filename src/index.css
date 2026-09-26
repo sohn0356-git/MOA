@@ -29,6 +29,11 @@ button {
   font: inherit;
 }
 
+input,
+select {
+  font: inherit;
+}
+
 #root {
   min-height: 100svh;
 }
@@ -179,6 +184,145 @@ button {
   text-align: center;
 }
 
+.back-button {
+  border: 1px solid #cfd8d1;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: #1c2a22;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  border-color: #aeb9b1;
+}
+
+.back-button:focus-visible,
+.task-composer input:focus,
+.task-composer button:focus-visible,
+.task-controls select:focus,
+.task-controls button:focus-visible {
+  outline: 3px solid rgb(20 108 67 / 32%);
+  outline-offset: 2px;
+}
+
+.sub-app {
+  padding-top: 24px;
+}
+
+.sub-app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.sub-app-header h2,
+.sub-app-header p {
+  margin: 0;
+}
+
+.sub-app-header h2 {
+  color: #101612;
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+.sub-app-header p {
+  margin-top: 6px;
+  color: #627069;
+  font-size: 14px;
+}
+
+.task-composer {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.task-composer input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #cfd8d1;
+  border-radius: 8px;
+  padding: 12px;
+  color: #111713;
+  background: #ffffff;
+}
+
+.task-composer button,
+.task-controls button {
+  border: 1px solid #146c43;
+  border-radius: 8px;
+  padding: 10px 13px;
+  color: #ffffff;
+  background: #146c43;
+  cursor: pointer;
+}
+
+.task-composer button:disabled {
+  border-color: #b8c2bb;
+  color: #5f6b64;
+  background: #dce3de;
+  cursor: not-allowed;
+}
+
+.app-error,
+.app-muted {
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+}
+
+.app-error {
+  color: #7f1d1d;
+  background: #fee2e2;
+}
+
+.app-muted {
+  color: #516058;
+  background: #e9eeeb;
+}
+
+.task-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-item {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #dde2dc;
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.task-content {
+  color: #111713;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.task-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.task-controls select {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #cfd8d1;
+  border-radius: 8px;
+  padding: 10px;
+  color: #111713;
+  background: #ffffff;
+}
+
 @media (min-width: 720px) {
   .app-shell {
     padding-top: calc(48px + env(safe-area-inset-top));
@@ -201,5 +345,10 @@ button {
 
   .app-grid {
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+
+  .task-item {
+    grid-template-columns: 1fr minmax(240px, auto);
+    align-items: center;
   }
 }

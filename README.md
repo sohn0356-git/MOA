@@ -10,6 +10,8 @@ This initial setup focuses on the platform foundation: React, TypeScript, Vite, 
 - TypeScript
 - Vite
 - vite-plugin-pwa
+- Firebase
+- Cloud Firestore
 - GitHub Pages
 - GitHub Actions
 - npm
@@ -22,6 +24,14 @@ npm run dev
 ```
 
 The development server will print a local URL, usually `http://localhost:5173/MOA/`.
+
+For Firebase-backed apps, create a local `.env` file from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Then fill in the six Vite Firebase variables. Do not commit `.env`.
 
 ## Build
 
@@ -131,10 +141,67 @@ Each registry item supports:
 
 The home screen renders the app grid from this registry.
 
+## Firebase Configuration
+
+Firebase initialization lives in `src/services/firebase.ts`.
+
+The project uses exactly these six environment variables:
+
+```text
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+Local values belong in `.env`, which is ignored by Git. The committed template is `.env.example`.
+
+For GitHub Pages production builds, `.github/workflows/deploy.yml` maps the same six GitHub Actions Secrets into the `npm run build` step so Vite exposes them through `import.meta.env.VITE_FIREBASE_*`.
+
+## Do List Firestore Structure
+
+The Do List app stores tasks in Cloud Firestore:
+
+```text
+tasks/{taskId}
+  content
+  status
+  createdAt
+  updatedAt
+```
+
+Allowed task statuses:
+
+```ts
+type TaskStatus = 'todo' | 'doing' | 'blocked' | 'done'
+```
+
+Firestore access is separated from UI code:
+
+```text
+src/apps/do-list/
+  components/
+  hooks/useTasks.ts
+  services/taskService.ts
+  types/task.ts
+  DoListApp.tsx
+```
+
+`taskService.ts` uses `addDoc()`, `updateDoc()`, `deleteDoc()`, `serverTimestamp()`, and `onSnapshot()` for realtime synchronization.
+
 ## GitHub Repository Settings
 
 In GitHub, open **Settings > Pages** and set:
 
 - Source: **GitHub Actions**
 
-No API keys or repository secrets are required for the current setup.
+For Firebase-backed production builds, add these **Actions Secrets**:
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
