@@ -8,7 +8,7 @@ export const appRegistry: AppMeta[] = [
   {
     id: 'do-list',
     name: 'Do List',
-    description: 'Realtime tasks stored in Cloud Firestore.',
+    description: 'Realtime tasks stored in Firebase Realtime Database.',
     icon: DoListIcon,
     route: '#/do-list',
     component: DoListApp,

@@ -15,7 +15,7 @@ export function useTasks() {
   const [error, setError] = useState<string | null>(configError)
   const [isMutating, setIsMutating] = useState(false)
   const [syncMessage, setSyncMessage] = useState(
-    configError ? 'Firebase is not configured.' : 'Connecting to Firestore...',
+    configError ? 'Firebase is not configured.' : 'Connecting to Realtime DB...',
   )
 
   useEffect(() => {
@@ -28,12 +28,12 @@ export function useTasks() {
         setTasks(nextTasks)
         setIsLoading(false)
         setError(null)
-        setSyncMessage('Synced with Firestore.')
+        setSyncMessage('Synced with Realtime DB.')
       },
       (snapshotError) => {
         setError(snapshotError.message)
         setIsLoading(false)
-        setSyncMessage('Firestore sync failed.')
+        setSyncMessage('Realtime DB sync failed.')
       },
     )
 
@@ -48,7 +48,7 @@ export function useTasks() {
     }
 
     setIsMutating(true)
-    setSyncMessage('Saving to Firestore...')
+    setSyncMessage('Saving to Realtime DB...')
 
     try {
       await createTask({ content: trimmedContent })
@@ -64,7 +64,7 @@ export function useTasks() {
 
   async function setTaskStatus(taskId: string, status: TaskStatus) {
     setIsMutating(true)
-    setSyncMessage('Updating Firestore...')
+    setSyncMessage('Updating Realtime DB...')
 
     try {
       await updateTask(taskId, { status })
@@ -82,7 +82,7 @@ export function useTasks() {
 
   async function removeTask(taskId: string) {
     setIsMutating(true)
-    setSyncMessage('Deleting from Firestore...')
+    setSyncMessage('Deleting from Realtime DB...')
 
     try {
       await deleteTask(taskId)

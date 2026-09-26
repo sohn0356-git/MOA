@@ -11,7 +11,7 @@ This initial setup focuses on the platform foundation: React, TypeScript, Vite, 
 - Vite
 - vite-plugin-pwa
 - Firebase
-- Cloud Firestore
+- Firebase Realtime Database
 - GitHub Pages
 - GitHub Actions
 - npm
@@ -160,16 +160,17 @@ Local values belong in `.env`, which is ignored by Git. The committed template i
 
 For GitHub Pages production builds, `.github/workflows/deploy.yml` maps the same six GitHub Actions Secrets into the `npm run build` step so Vite exposes them through `import.meta.env.VITE_FIREBASE_*`.
 
-## Do List Firestore Structure
+## Do List Realtime Database Structure
 
-The Do List app stores tasks in Cloud Firestore:
+The Do List app stores tasks in Firebase Realtime Database:
 
 ```text
-tasks/{taskId}
-  content
-  status
-  createdAt
-  updatedAt
+tasks
+  {taskId}
+    content
+    status
+    createdAt
+    updatedAt
 ```
 
 Allowed task statuses:
@@ -178,7 +179,7 @@ Allowed task statuses:
 type TaskStatus = 'todo' | 'doing' | 'blocked' | 'done'
 ```
 
-Firestore access is separated from UI code:
+Realtime Database access is separated from UI code:
 
 ```text
 src/apps/do-list/
@@ -189,7 +190,15 @@ src/apps/do-list/
   DoListApp.tsx
 ```
 
-`taskService.ts` uses `addDoc()`, `updateDoc()`, `deleteDoc()`, `serverTimestamp()`, and `onSnapshot()` for realtime synchronization.
+`taskService.ts` uses `push()`, `set()`, `update()`, `remove()`, `serverTimestamp()`, and `onValue()` for realtime synchronization.
+
+The project intentionally keeps the Firebase environment contract to the six existing Vite variables. Realtime Database is initialized from `VITE_FIREBASE_PROJECT_ID` using the default instance URL pattern:
+
+```text
+https://{projectId}-default-rtdb.firebaseio.com
+```
+
+Create the default Realtime Database instance in Firebase Console before using the Do List app.
 
 ## GitHub Repository Settings
 

@@ -19,7 +19,7 @@ export function DoListApp() {
       <header className="sub-app-header">
         <div>
           <h2>Do List</h2>
-          <p>Tasks are saved to Cloud Firestore and read back on launch.</p>
+          <p>Tasks are saved to Realtime Database and read back on launch.</p>
         </div>
         <span className="sync-pill">{syncMessage}</span>
       </header>

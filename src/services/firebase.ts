@@ -1,5 +1,5 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
-import { getFirestore, type Firestore } from 'firebase/firestore'
+import { getDatabase, type Database } from 'firebase/database'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -20,7 +20,7 @@ const requiredConfigEntries = [
 ] as const
 
 let firebaseApp: FirebaseApp | null = null
-let firestoreDb: Firestore | null = null
+let realtimeDb: Database | null = null
 
 export function getMissingFirebaseConfigKeys() {
   return requiredConfigEntries
@@ -53,7 +53,11 @@ export function getFirebaseApp() {
   return firebaseApp
 }
 
-export function getFirestoreDb() {
-  firestoreDb ??= getFirestore(getFirebaseApp())
-  return firestoreDb
+function getRealtimeDatabaseUrl() {
+  return `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`
+}
+
+export function getRealtimeDb() {
+  realtimeDb ??= getDatabase(getFirebaseApp(), getRealtimeDatabaseUrl())
+  return realtimeDb
 }

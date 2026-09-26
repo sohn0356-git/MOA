@@ -1,17 +1,17 @@
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  orderBy,
+  off,
+  onValue,
+  orderByChild,
+  push,
   query,
+  ref,
+  remove,
   serverTimestamp,
-  updateDoc,
-  type FirestoreError,
-  type Unsubscribe,
-} from 'firebase/firestore'
-import { getFirestoreDb } from '../../../services/firebase'
+  set,
+  update,
+  type DataSnapshot,
+} from 'firebase/database'
+import { getRealtimeDb } from '../../../services/firebase'
 import type {
   CreateTaskInput,
   Task,
@@ -19,15 +19,60 @@ import type {
   UpdateTaskInput,
 } from '../types/task'
 
-const TASKS_COLLECTION = 'tasks'
+const TASKS_PATH = 'tasks'
 const TASK_STATUSES: TaskStatus[] = ['todo', 'doing', 'blocked', 'done']
 
-function getTasksCollection() {
-  return collection(getFirestoreDb(), TASKS_COLLECTION)
+type StoredTask = {
+  content?: unknown
+  status?: unknown
+  createdAt?: unknown
+  updatedAt?: unknown
+}
+
+function getTasksRef() {
+  return ref(getRealtimeDb(), TASKS_PATH)
+}
+
+function getTaskRef(taskId: string) {
+  return ref(getRealtimeDb(), `${TASKS_PATH}/${taskId}`)
+}
+
+function toTimestamp(value: unknown) {
+  return typeof value === 'number' ? value : null
+}
+
+function toTaskStatus(value: unknown): TaskStatus {
+  return TASK_STATUSES.includes(value as TaskStatus) ? (value as TaskStatus) : 'todo'
+}
+
+function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
+  return {
+    id: taskId,
+    content: String(data.content ?? ''),
+    status: toTaskStatus(data.status),
+    createdAt: toTimestamp(data.createdAt),
+    updatedAt: toTimestamp(data.updatedAt),
+  }
+}
+
+function mapTasks(snapshot: DataSnapshot) {
+  const value = snapshot.val() as Record<string, StoredTask> | null
+
+  if (!value) {
+    return []
+  }
+
+  return Object.entries(value)
+    .map(([taskId, data]) => mapTaskSnapshot(taskId, data))
+    .sort((firstTask, secondTask) => {
+      return (secondTask.createdAt ?? 0) - (firstTask.createdAt ?? 0)
+    })
 }
 
 export async function createTask({ content }: CreateTaskInput) {
-  return addDoc(getTasksCollection(), {
+  const taskRef = push(getTasksRef())
+
+  return set(taskRef, {
     content,
     status: 'todo',
     createdAt: serverTimestamp(),
@@ -36,39 +81,23 @@ export async function createTask({ content }: CreateTaskInput) {
 }
 
 export async function updateTask(taskId: string, input: UpdateTaskInput) {
-  return updateDoc(doc(getFirestoreDb(), TASKS_COLLECTION, taskId), {
+  return update(getTaskRef(taskId), {
     ...input,
     updatedAt: serverTimestamp(),
   })
 }
 
 export async function deleteTask(taskId: string) {
-  return deleteDoc(doc(getFirestoreDb(), TASKS_COLLECTION, taskId))
+  return remove(getTaskRef(taskId))
 }
 
 export function subscribeToTasks(
   onNext: (tasks: Task[]) => void,
-  onError: (error: FirestoreError) => void,
-): Unsubscribe {
-  const tasksQuery = query(getTasksCollection(), orderBy('createdAt', 'desc'))
+  onError: (error: Error) => void,
+) {
+  const tasksQuery = query(getTasksRef(), orderByChild('createdAt'))
 
-  return onSnapshot(
-    tasksQuery,
-    (snapshot) => {
-      onNext(
-        snapshot.docs.map((taskDoc) => {
-          const data = taskDoc.data()
+  onValue(tasksQuery, (snapshot) => onNext(mapTasks(snapshot)), onError)
 
-          return {
-            id: taskDoc.id,
-            content: String(data.content ?? ''),
-            status: TASK_STATUSES.includes(data.status) ? data.status : 'todo',
-            createdAt: data.createdAt ?? null,
-            updatedAt: data.updatedAt ?? null,
-          } satisfies Task
-        }),
-      )
-    },
-    onError,
-  )
+  return () => off(tasksQuery)
 }
