@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { appRegistry } from '../apps/registry'
 import { AppGrid } from '../components/AppGrid'
+import { PwaInstallBanner } from '../components/PwaInstallBanner'
+import { usePwaInstallPrompt } from '../hooks/usePwaInstallPrompt'
 
 function getRouteFromHash() {
   return window.location.hash || ''
@@ -8,6 +10,7 @@ function getRouteFromHash() {
 
 export function AppShell() {
   const [activeRoute, setActiveRoute] = useState(getRouteFromHash)
+  const { canInstall, dismissInstallPrompt, promptInstall } = usePwaInstallPrompt()
   const activeApp = useMemo(
     () => appRegistry.find((app) => app.route === activeRoute),
     [activeRoute],
@@ -43,6 +46,13 @@ export function AppShell() {
           <p>My Own Apps</p>
         </div>
       </header>
+
+      {canInstall ? (
+        <PwaInstallBanner
+          onDismiss={dismissInstallPrompt}
+          onInstall={() => void promptInstall()}
+        />
+      ) : null}
 
       {ActiveAppComponent ? (
         <>
