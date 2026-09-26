@@ -35,7 +35,13 @@ export function TaskList({
   const [editDescription, setEditDescription] = useState('')
 
   if (tasks.length === 0) {
-    return <p className="empty-state">Your tasks will appear here.</p>
+    return (
+      <div className="empty-state note-empty-state">
+        <span aria-hidden="true">✓</span>
+        <strong>Nothing here yet</strong>
+        <p>Tap + to add your first task.</p>
+      </div>
+    )
   }
 
   function openEditModal(task: Task) {
@@ -74,13 +80,17 @@ export function TaskList({
     <>
       <ul className="task-list">
         {tasks.map((task) => (
-          <li className="task-item" key={task.id}>
-            <div className="task-copy">
+          <li className={`task-item task-${task.status}`} key={task.id}>
+            <button
+              className="task-copy"
+              type="button"
+              onClick={() => openEditModal(task)}
+            >
               <span className="task-title">{task.title}</span>
               {task.description ? (
                 <p className="task-description">{task.description}</p>
               ) : null}
-            </div>
+            </button>
             <div className="task-controls">
               <button
                 className={`status-chip status-text-${task.status}`}

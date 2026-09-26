@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { TaskStatus } from '../types/task'
 
 type TaskComposerProps = {
   isBusy: boolean
+  onCancel: () => void
   onAddTask: (
     title: string,
     description: string,
@@ -17,11 +18,16 @@ const statusOptions: Array<{ label: string; value: TaskStatus }> = [
   { label: 'DONE', value: 'done' },
 ]
 
-export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
+export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<TaskStatus>('todo')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    titleInputRef.current?.focus()
+  }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -36,13 +42,18 @@ export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
       setTitle('')
       setDescription('')
       setStatus('todo')
+      onCancel()
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <form className="task-composer" onSubmit={handleSubmit}>
+    <form className="task-composer sheet-form" onSubmit={handleSubmit}>
+      <div className="sheet-handle" aria-hidden="true" />
+      <header className="sheet-header">
+        <h3>Add task</h3>
+      </header>
       <div className="task-fields">
         <label className="field-label">
           <span>Title</span>
@@ -51,6 +62,7 @@ export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
             disabled={isSubmitting || isBusy}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Write a task title"
+            ref={titleInputRef}
             type="text"
             value={title}
           />
@@ -83,9 +95,14 @@ export function TaskComposer({ isBusy, onAddTask }: TaskComposerProps) {
           ))}
         </select>
       </label>
-      <button disabled={isSubmitting || isBusy || !title.trim()} type="submit">
-        {isSubmitting ? 'Saving' : 'Add'}
-      </button>
+      <div className="sheet-actions">
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
+        <button disabled={isSubmitting || isBusy || !title.trim()} type="submit">
+          {isSubmitting ? 'Saving' : 'Add'}
+        </button>
+      </div>
     </form>
   )
 }

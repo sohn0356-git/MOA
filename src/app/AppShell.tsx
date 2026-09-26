@@ -30,9 +30,18 @@ export function AppShell() {
     window.location.hash = route.replace(/^#/, '')
   }
 
-  function handleBackHome() {
-    history.pushState('', document.title, window.location.pathname + window.location.search)
-    setActiveRoute('')
+  if (ActiveAppComponent) {
+    return (
+      <main className="app-shell app-shell-subapp">
+        {hasUpdate ? (
+          <AppUpdateBanner
+            isUpdating={isUpdating}
+            onUpdate={() => void applyUpdate()}
+          />
+        ) : null}
+        <ActiveAppComponent />
+      </main>
+    )
   }
 
   return (
@@ -54,22 +63,13 @@ export function AppShell() {
         />
       ) : null}
 
-      {ActiveAppComponent ? (
-        <>
-          <button className="back-button" type="button" onClick={handleBackHome}>
-            Back to apps
-          </button>
-          <ActiveAppComponent />
-        </>
-      ) : (
-        <section className="apps-section" aria-labelledby="apps-heading">
-          <div className="section-heading">
-            <h2 id="apps-heading">Apps</h2>
-            <span>{appRegistry.length} installed</span>
-          </div>
-          <AppGrid apps={appRegistry} onOpenApp={handleOpenApp} />
-        </section>
-      )}
+      <section className="apps-section" aria-labelledby="apps-heading">
+        <div className="section-heading">
+          <h2 id="apps-heading">Apps</h2>
+          <span>{appRegistry.length} installed</span>
+        </div>
+        <AppGrid apps={appRegistry} onOpenApp={handleOpenApp} />
+      </section>
     </main>
   )
 }
