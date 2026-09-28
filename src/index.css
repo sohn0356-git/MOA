@@ -388,6 +388,12 @@ select {
 .category-input-row button:focus-visible,
 .category-edit-form input:focus,
 .category-edit-form button:focus-visible,
+.category-admin-add input:focus,
+.category-admin-add button:focus-visible,
+.category-admin-edit input:focus,
+.category-admin-edit button:focus-visible,
+.category-admin-subadd input:focus,
+.category-admin-subadd button:focus-visible,
 .task-composer button:focus-visible,
 .task-controls select:focus,
 .task-controls button:focus-visible {
@@ -556,6 +562,37 @@ select {
   color: #6b778c;
   font-size: 12px;
   font-weight: 750;
+}
+
+.category-manager-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.category-manager-summary span {
+  color: #5e6c84;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.category-manager-summary button {
+  min-height: 38px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 14px;
+  color: #ffffff;
+  background: #172b4d;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.category-manager-summary button:disabled {
+  color: #6b778c;
+  background: #dfe1e6;
+  cursor: not-allowed;
 }
 
 .category-input-row {
@@ -859,6 +896,141 @@ select {
   background: #ebecf0;
   font-size: 12px;
   font-weight: 800;
+}
+
+.category-admin-backdrop {
+  place-items: end center;
+  padding: 18px;
+}
+
+.category-admin-sheet {
+  width: min(100%, 560px);
+  max-height: calc(100svh - 36px);
+  gap: 14px;
+  overflow: hidden;
+}
+
+.category-admin-add,
+.category-admin-edit,
+.category-admin-subadd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.category-admin-edit {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.category-admin-add input,
+.category-admin-edit input,
+.category-admin-subadd input {
+  min-width: 0;
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: #172b4d;
+  background: #ffffff;
+}
+
+.category-admin-add button,
+.category-admin-edit button,
+.category-admin-subadd button {
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #172b4d;
+  background: #ffffff;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.category-admin-add button,
+.category-admin-edit button[type='submit'] {
+  border-color: #172b4d;
+  color: #ffffff;
+  background: #172b4d;
+}
+
+.category-admin-add button:disabled,
+.category-admin-edit button:disabled,
+.category-admin-subadd button:disabled {
+  border-color: #dfe1e6;
+  color: #6b778c;
+  background: #f4f5f7;
+  cursor: not-allowed;
+}
+
+.category-admin-list {
+  display: grid;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.category-admin-group {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #ebecf0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfcfb;
+}
+
+.category-admin-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+}
+
+.category-admin-level-1 {
+  margin-left: 18px;
+  border-left: 2px solid #dfe1e6;
+  padding-left: 10px;
+}
+
+.category-admin-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.category-admin-copy span {
+  overflow: hidden;
+  color: #172b4d;
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-admin-copy small {
+  color: #6b778c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.category-admin-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.category-admin-subadd {
+  margin-left: 18px;
+}
+
+.category-admin-empty {
+  margin: 0;
+  border: 1px dashed #d8ded9;
+  border-radius: 8px;
+  padding: 16px;
+  color: #6b778c;
+  background: #ffffff;
+  font-size: 13px;
+  text-align: center;
 }
 
 .category-empty {

@@ -28,7 +28,6 @@ type TaskListProps = {
   categories: TaskCategory[]
   isBusy: boolean
   tasks: Task[]
-  onAddCategory: (name: string, parentId?: string | null) => Promise<void>
   onDeleteTask: (taskId: string) => Promise<void>
   onEditTask: (
     taskId: string,
@@ -37,9 +36,6 @@ type TaskListProps = {
     dueDate: string | null,
     categoryId: string | null,
   ) => Promise<void>
-  onMoveCategory: (categoryId: string, direction: -1 | 1) => Promise<void>
-  onRenameCategory: (categoryId: string, name: string) => Promise<void>
-  onRemoveCategory: (categoryId: string) => Promise<void>
   onUpdateStatus: (taskId: string, status: TaskStatus) => Promise<void>
 }
 
@@ -64,18 +60,11 @@ export function TaskList({
   categories,
   isBusy,
   tasks,
-  onAddCategory,
   onDeleteTask,
   onEditTask,
-  onMoveCategory,
-  onRenameCategory,
-  onRemoveCategory,
   onUpdateStatus,
 }: TaskListProps) {
   const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<string[]>([])
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
-  const [editingCategoryName, setEditingCategoryName] = useState('')
-  const [subcategoryNames, setSubcategoryNames] = useState<Record<string, string>>({})
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [statusTask, setStatusTask] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState('')
@@ -188,36 +177,6 @@ export function TaskList({
     })
   }
 
-  function startCategoryEdit(category: TaskCategory) {
-    setEditingCategoryId(category.id)
-    setEditingCategoryName(category.name)
-  }
-
-  async function handleCategoryEditSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (!editingCategoryId || !editingCategoryName.trim()) {
-      return
-    }
-
-    await onRenameCategory(editingCategoryId, editingCategoryName)
-    setEditingCategoryId(null)
-    setEditingCategoryName('')
-  }
-
-  async function handleAddSubcategory(event: FormEvent<HTMLFormElement>, parentId: string) {
-    event.preventDefault()
-
-    const nextName = subcategoryNames[parentId]?.trim()
-
-    if (!nextName) {
-      return
-    }
-
-    await onAddCategory(nextName, parentId)
-    setSubcategoryNames((currentNames) => ({ ...currentNames, [parentId]: '' }))
-  }
-
   return (
     <>
       <div className="category-groups">
@@ -230,12 +189,6 @@ export function TaskList({
         ) : null}
         {taskGroups.map((group) => {
           const isCollapsed = collapsedCategoryIds.includes(group.id)
-          const category = group.category
-          const siblings = category ? getChildCategories(categories, category.parentId) : []
-          const categoryIndex = category
-            ? siblings.findIndex((sibling) => sibling.id === category.id)
-            : -1
-          const isTopCategory = Boolean(category && !category.parentId)
 
           return (
             <section
@@ -243,121 +196,19 @@ export function TaskList({
               key={group.id || 'default'}
             >
               <header className="category-group-header">
-                {editingCategoryId === group.id ? (
-                  <form
-                    className="category-edit-form"
-                    onSubmit={(event) => void handleCategoryEditSubmit(event)}
-                  >
-                    <input
-                      aria-label={`${group.name} 카테고리 이름`}
-                      disabled={isBusy}
-                      onChange={(event) => setEditingCategoryName(event.target.value)}
-                      value={editingCategoryName}
-                    />
-                    <button disabled={isBusy || !editingCategoryName.trim()} type="submit">
-                      저장
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingCategoryId(null)
-                        setEditingCategoryName('')
-                      }}
-                    >
-                      취소
-                    </button>
-                  </form>
-                ) : (
-                  <>
-                    <button
-                      aria-expanded={!isCollapsed}
-                      className="category-toggle"
-                      type="button"
-                      onClick={() => toggleCategory(group.id)}
-                    >
-                      <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                        <path d="M8.3 9.3a1 1 0 0 1 1.4 0L12 11.6l2.3-2.3a1 1 0 1 1 1.4 1.4l-3 3a1 1 0 0 1-1.4 0l-3-3a1 1 0 0 1 0-1.4Z" />
-                      </svg>
-                      <span>{group.name}</span>
-                      <small>{group.tasks.length}</small>
-                    </button>
-                    {!group.isDefault && category ? (
-                      <div className="category-actions">
-                        <button
-                          aria-label={`${group.name} 우선순위 올리기`}
-                          className="icon-button"
-                          disabled={isBusy || categoryIndex === 0}
-                          type="button"
-                          onClick={() => void onMoveCategory(group.id, -1)}
-                        >
-                          <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                            <path d="M12 5a1 1 0 0 1 .7.3l6 6a1 1 0 1 1-1.4 1.4L13 8.4V18a1 1 0 1 1-2 0V8.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l6-6A1 1 0 0 1 12 5Z" />
-                          </svg>
-                        </button>
-                        <button
-                          aria-label={`${group.name} 우선순위 내리기`}
-                          className="icon-button"
-                          disabled={isBusy || categoryIndex === siblings.length - 1}
-                          type="button"
-                          onClick={() => void onMoveCategory(group.id, 1)}
-                        >
-                          <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                            <path d="M12 19a1 1 0 0 1-.7-.3l-6-6a1 1 0 1 1 1.4-1.4L11 15.6V6a1 1 0 1 1 2 0v9.6l4.3-4.3a1 1 0 0 1 1.4 1.4l-6 6a1 1 0 0 1-.7.3Z" />
-                          </svg>
-                        </button>
-                        <button
-                          aria-label={`${group.name} 카테고리 수정`}
-                          className="icon-button"
-                          disabled={isBusy}
-                          type="button"
-                          onClick={() => startCategoryEdit(category)}
-                        >
-                          <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                            <path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25ZM19.71 7.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.06 1.06 2.75 2.75 1.06-1.06Z" />
-                          </svg>
-                        </button>
-                        <button
-                          aria-label={`${group.name} 카테고리 삭제`}
-                          className="icon-button delete-button"
-                          disabled={isBusy}
-                          type="button"
-                          onClick={() => void onRemoveCategory(group.id)}
-                        >
-                          <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                            <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7H4a1 1 0 0 1 0-2h4V4a1 1 0 0 1 1-1Zm2 2h2V5h-2Zm-4 2v13h10V7H7Z" />
-                          </svg>
-                        </button>
-                      </div>
-                    ) : null}
-                  </>
-                )}
-              </header>
-
-              {isTopCategory ? (
-                <form
-                  className="subcategory-form"
-                  onSubmit={(event) => void handleAddSubcategory(event, group.id)}
+                <button
+                  aria-expanded={!isCollapsed}
+                  className="category-toggle"
+                  type="button"
+                  onClick={() => toggleCategory(group.id)}
                 >
-                  <input
-                    aria-label={`${group.name} 하위 카테고리 이름`}
-                    disabled={isBusy}
-                    onChange={(event) =>
-                      setSubcategoryNames((currentNames) => ({
-                        ...currentNames,
-                        [group.id]: event.target.value,
-                      }))
-                    }
-                    placeholder="하위 카테고리 추가"
-                    value={subcategoryNames[group.id] ?? ''}
-                  />
-                  <button
-                    disabled={isBusy || !subcategoryNames[group.id]?.trim()}
-                    type="submit"
-                  >
-                    추가
-                  </button>
-                </form>
-              ) : null}
+                  <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                    <path d="M8.3 9.3a1 1 0 0 1 1.4 0L12 11.6l2.3-2.3a1 1 0 1 1 1.4 1.4l-3 3a1 1 0 0 1-1.4 0l-3-3a1 1 0 0 1 0-1.4Z" />
+                  </svg>
+                  <span>{group.name}</span>
+                  <small>{group.tasks.length}</small>
+                </button>
+              </header>
 
               {!isCollapsed && group.tasks.length === 0 ? (
                 <p className="category-empty">이 카테고리에는 아직 할 일이 없습니다.</p>
