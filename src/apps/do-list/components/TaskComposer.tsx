@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { TaskCategory, TaskStatus } from '../types/task'
+import type { RecurringScheduleType, TaskCategory, TaskStatus } from '../types/task'
+
+type RepeatOption = 'none' | RecurringScheduleType
 
 type TaskComposerProps = {
   categories: TaskCategory[]
   isBusy: boolean
   onCancel: () => void
+  onAddRecurringTask: (
+    title: string,
+    description: string,
+    scheduleType: RecurringScheduleType,
+    startDate: string,
+    categoryId: string | null,
+    intervalDays: number | null,
+  ) => Promise<void>
   onAddTask: (
     title: string,
     description: string,
@@ -20,6 +30,23 @@ const statusOptions: Array<{ label: string; value: TaskStatus }> = [
   { label: '막힘', value: 'blocked' },
   { label: '완료', value: 'done' },
 ]
+
+const repeatOptions: Array<{ label: string; value: RepeatOption }> = [
+  { label: '반복 안 함', value: 'none' },
+  { label: '매일', value: 'daily' },
+  { label: '매주', value: 'weekly' },
+  { label: '매월', value: 'monthly' },
+  { label: '특정 주기', value: 'interval' },
+]
+
+function getTodayString() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
 
 function getCategoryOptions(categories: TaskCategory[]) {
   const topCategories = categories.filter((category) => !category.parentId)
@@ -39,6 +66,7 @@ function getCategoryOptions(categories: TaskCategory[]) {
 export function TaskComposer({
   categories,
   isBusy,
+  onAddRecurringTask,
   onAddTask,
   onCancel,
 }: TaskComposerProps) {
@@ -47,6 +75,8 @@ export function TaskComposer({
   const [status, setStatus] = useState<TaskStatus>('todo')
   const [dueDate, setDueDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  const [repeatOption, setRepeatOption] = useState<RepeatOption>('none')
+  const [intervalDays, setIntervalDays] = useState(2)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const categoryOptions = getCategoryOptions(categories)
@@ -64,12 +94,25 @@ export function TaskComposer({
 
     setIsSubmitting(true)
     try {
-      await onAddTask(title, description, status, dueDate || null, categoryId || null)
+      if (repeatOption === 'none') {
+        await onAddTask(title, description, status, dueDate || null, categoryId || null)
+      } else {
+        await onAddRecurringTask(
+          title,
+          description,
+          repeatOption,
+          dueDate || getTodayString(),
+          categoryId || null,
+          repeatOption === 'interval' ? intervalDays : null,
+        )
+      }
       setTitle('')
       setDescription('')
       setStatus('todo')
       setDueDate('')
       setCategoryId('')
+      setRepeatOption('none')
+      setIntervalDays(2)
       onCancel()
     } finally {
       setIsSubmitting(false)
@@ -133,6 +176,34 @@ export function TaskComposer({
           value={dueDate}
         />
       </label>
+      <label className="field-label">
+        <span>반복</span>
+        <select
+          aria-label="반복 설정"
+          disabled={isSubmitting || isBusy}
+          onChange={(event) => setRepeatOption(event.target.value as RepeatOption)}
+          value={repeatOption}
+        >
+          {repeatOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {repeatOption === 'interval' ? (
+        <label className="field-label">
+          <span>며칠마다</span>
+          <input
+            aria-label="반복 간격"
+            disabled={isSubmitting || isBusy}
+            min={1}
+            onChange={(event) => setIntervalDays(Number(event.target.value))}
+            type="number"
+            value={intervalDays}
+          />
+        </label>
+      ) : null}
       <label className="field-label">
         <span>카테고리</span>
         <select

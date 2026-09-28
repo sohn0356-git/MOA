@@ -2,20 +2,112 @@ import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseConfigError } from '../../../services/firebase'
 import {
   createCategory,
+  createRecurringTask,
   createTask,
   deleteCategory,
+  deleteRecurringTask,
   deleteTask,
+  incrementRecurringTaskCompletedCount,
   subscribeToCategories,
+  subscribeToRecurringTasks,
   subscribeToTasks,
   updateCategoriesOrder,
   updateCategory,
+  updateRecurringTask,
   updateTask,
 } from '../services/taskService'
-import type { Task, TaskCategory, TaskStatus } from '../types/task'
+import type {
+  RecurringScheduleType,
+  RecurringTask,
+  Task,
+  TaskCategory,
+  TaskStatus,
+} from '../types/task'
+
+const MAX_RECURRING_OCCURRENCES_PER_SYNC = 60
+
+function getTodayString() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function parseDate(dateString: string) {
+  const [year, month, day] = dateString.split('-').map(Number)
+
+  return new Date(year, month - 1, day)
+}
+
+function formatDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function addDays(dateString: string, days: number) {
+  const date = parseDate(dateString)
+  date.setDate(date.getDate() + days)
+
+  return formatDate(date)
+}
+
+function addMonths(dateString: string, months: number) {
+  const date = parseDate(dateString)
+  const originalDay = date.getDate()
+
+  date.setDate(1)
+  date.setMonth(date.getMonth() + months)
+
+  const lastDayOfTargetMonth = new Date(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    0,
+  ).getDate()
+  date.setDate(Math.min(originalDay, lastDayOfTargetMonth))
+
+  return formatDate(date)
+}
+
+function getNextRecurringDate(recurringTask: RecurringTask, dueDate: string) {
+  if (recurringTask.scheduleType === 'weekly') {
+    return addDays(dueDate, 7)
+  }
+
+  if (recurringTask.scheduleType === 'monthly') {
+    return addMonths(dueDate, 1)
+  }
+
+  if (recurringTask.scheduleType === 'interval') {
+    return addDays(dueDate, recurringTask.intervalDays ?? 1)
+  }
+
+  return addDays(dueDate, 1)
+}
+
+function getRecurringOccurrencesDue(recurringTask: RecurringTask, today: string) {
+  const occurrences: string[] = []
+  let nextDueDate = recurringTask.nextDueDate || recurringTask.startDate
+
+  while (
+    nextDueDate <= today &&
+    occurrences.length < MAX_RECURRING_OCCURRENCES_PER_SYNC
+  ) {
+    occurrences.push(nextDueDate)
+    nextDueDate = getNextRecurringDate(recurringTask, nextDueDate)
+  }
+
+  return { nextDueDate, occurrences }
+}
 
 export function useTasks(userId: string | null) {
   const configError = useMemo(() => getFirebaseConfigError(), [])
   const [categories, setCategories] = useState<TaskCategory[]>([])
+  const [recurringTasks, setRecurringTasks] = useState<RecurringTask[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(!configError && Boolean(userId))
   const [error, setError] = useState<string | null>(configError)
@@ -37,17 +129,20 @@ export function useTasks(userId: string | null) {
       return undefined
     }
 
-    let didLoadTasks = false
     let didLoadCategories = false
+    let didLoadRecurringTasks = false
+    let didLoadTasks = false
 
-    function markLoaded(type: 'categories' | 'tasks') {
+    function markLoaded(type: 'categories' | 'recurringTasks' | 'tasks') {
       if (type === 'tasks') {
         didLoadTasks = true
+      } else if (type === 'recurringTasks') {
+        didLoadRecurringTasks = true
       } else {
         didLoadCategories = true
       }
 
-      if (didLoadTasks && didLoadCategories) {
+      if (didLoadTasks && didLoadCategories && didLoadRecurringTasks) {
         setIsLoading(false)
       }
     }
@@ -80,11 +175,94 @@ export function useTasks(userId: string | null) {
       },
     )
 
+    const unsubscribeRecurringTasks = subscribeToRecurringTasks(
+      userId,
+      (nextRecurringTasks) => {
+        setRecurringTasks(nextRecurringTasks)
+        setError(null)
+        markLoaded('recurringTasks')
+      },
+      (snapshotError) => {
+        setError(snapshotError.message)
+        setIsLoading(false)
+      },
+    )
+
     return () => {
       unsubscribeTasks()
       unsubscribeCategories()
+      unsubscribeRecurringTasks()
     }
   }, [configError, userId])
+
+  useEffect(() => {
+    if (configError || !userId || isLoading || recurringTasks.length === 0) {
+      return
+    }
+
+    const today = getTodayString()
+    const generatedOccurrenceKeys = new Set(
+      tasks
+        .filter((task) => task.recurringTaskId && task.recurringOccurrenceKey)
+        .map((task) => `${task.recurringTaskId}:${task.recurringOccurrenceKey}`),
+    )
+    const currentUserId = userId
+    let didCancel = false
+
+    async function syncRecurringTasks() {
+      const activeRecurringTasks = recurringTasks.filter((recurringTask) => {
+        return recurringTask.isActive && recurringTask.nextDueDate <= today
+      })
+
+      for (const recurringTask of activeRecurringTasks) {
+        if (didCancel) {
+          return
+        }
+
+        const { nextDueDate, occurrences } = getRecurringOccurrencesDue(
+          recurringTask,
+          today,
+        )
+        const missingOccurrences = occurrences.filter((occurrenceDate) => {
+          return !generatedOccurrenceKeys.has(`${recurringTask.id}:${occurrenceDate}`)
+        })
+
+        await Promise.all(
+          missingOccurrences.map((occurrenceDate) =>
+            createTask({
+              categoryId: recurringTask.categoryId,
+              description: recurringTask.description,
+              dueDate: occurrenceDate,
+              recurringOccurrenceKey: occurrenceDate,
+              recurringTaskId: recurringTask.id,
+              status: 'todo',
+              title: recurringTask.title,
+              userId: currentUserId,
+            }),
+          ),
+        )
+
+        await updateRecurringTask(currentUserId, recurringTask.id, {
+          lastGeneratedDate: occurrences.at(-1) ?? recurringTask.lastGeneratedDate,
+          nextDueDate,
+        })
+      }
+    }
+
+    void syncRecurringTasks().catch((syncError) => {
+      if (!didCancel) {
+        setError(
+          syncError instanceof Error
+            ? syncError.message
+            : 'Failed to sync recurring tasks.',
+        )
+      }
+    })
+
+    return () => {
+      didCancel = true
+    }
+  }, [configError, isLoading, recurringTasks, tasks, userId])
 
   async function addTask(
     title: string,
@@ -151,6 +329,79 @@ export function useTasks(userId: string | null) {
     }
   }
 
+  async function addRecurringTask(
+    title: string,
+    description: string,
+    scheduleType: RecurringScheduleType,
+    startDate: string,
+    categoryId: string | null,
+    intervalDays: number | null,
+  ) {
+    const trimmedTitle = title.trim()
+    const trimmedDescription = description.trim()
+
+    if (!trimmedTitle || !startDate) {
+      return
+    }
+
+    setIsMutating(true)
+
+    try {
+      await createRecurringTask(requireUserId(), {
+        categoryId,
+        description: trimmedDescription,
+        intervalDays: scheduleType === 'interval' ? Math.max(1, intervalDays ?? 1) : null,
+        nextDueDate: startDate,
+        scheduleType,
+        startDate,
+        title: trimmedTitle,
+      })
+    } catch (recurringTaskError) {
+      setError(
+        recurringTaskError instanceof Error
+          ? recurringTaskError.message
+          : 'Failed to save recurring task.',
+      )
+      throw recurringTaskError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function toggleRecurringTask(recurringTaskId: string, isActive: boolean) {
+    setIsMutating(true)
+
+    try {
+      await updateRecurringTask(requireUserId(), recurringTaskId, { isActive })
+    } catch (recurringTaskError) {
+      setError(
+        recurringTaskError instanceof Error
+          ? recurringTaskError.message
+          : 'Failed to update recurring task.',
+      )
+      throw recurringTaskError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function removeRecurringTask(recurringTaskId: string) {
+    setIsMutating(true)
+
+    try {
+      await deleteRecurringTask(requireUserId(), recurringTaskId)
+    } catch (recurringTaskError) {
+      setError(
+        recurringTaskError instanceof Error
+          ? recurringTaskError.message
+          : 'Failed to delete recurring task.',
+      )
+      throw recurringTaskError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
   async function renameCategory(categoryId: string, name: string) {
     const trimmedName = name.trim()
 
@@ -211,11 +462,27 @@ export function useTasks(userId: string | null) {
   }
 
   async function setTaskStatus(taskId: string, status: TaskStatus) {
+    const currentTask = tasks.find((task) => task.id === taskId)
     setIsMutating(true)
     setSyncMessage('Updating Realtime DB...')
 
     try {
-      await updateTask(requireUserId(), taskId, { status })
+      const currentUserId = requireUserId()
+      const shouldCountCompletion =
+        status === 'done' &&
+        currentTask?.status !== 'done' &&
+        Boolean(currentTask?.recurringTaskId) &&
+        !currentTask?.completedAt
+
+      await Promise.all([
+        updateTask(currentUserId, taskId, {
+          status,
+          ...(shouldCountCompletion ? { completedAt: { '.sv': 'timestamp' } } : {}),
+        }),
+        shouldCountCompletion && currentTask?.recurringTaskId
+          ? incrementRecurringTaskCompletedCount(currentUserId, currentTask.recurringTaskId)
+          : Promise.resolve(),
+      ])
       setSyncMessage('Updated. Waiting for realtime update...')
     } catch (taskError) {
       setError(
@@ -325,18 +592,22 @@ export function useTasks(userId: string | null) {
 
   return {
     categories,
+    recurringTasks,
     tasks,
     isLoading,
     isMutating,
     error,
     syncMessage,
     addCategory,
+    addRecurringTask,
     addTask,
     editTask,
     moveCategory,
     renameCategory,
     removeCategory,
+    removeRecurringTask,
     setTaskStatus,
+    toggleRecurringTask,
     removeTask,
   }
 }

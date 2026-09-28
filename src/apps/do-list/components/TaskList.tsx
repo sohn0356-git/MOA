@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { Task, TaskCategory, TaskStatus } from '../types/task'
 
 const statusLabels: Record<TaskStatus, string> = {
@@ -71,6 +71,7 @@ export function TaskList({
   const [editDescription, setEditDescription] = useState('')
   const [editDueDate, setEditDueDate] = useState('')
   const [editCategoryId, setEditCategoryId] = useState('')
+  const didInitializeCollapsedGroups = useRef(false)
   const categoryOptions = getCategoryOptions(categories)
   const taskGroups = useMemo(() => {
     const groups: CategoryGroup[] = [
@@ -108,6 +109,28 @@ export function TaskList({
 
     return groups.filter((group) => group.tasks.length > 0 || !group.isDefault)
   }, [categories, tasks])
+
+  useEffect(() => {
+    const groupIds = taskGroups.map((group) => group.id)
+
+    if (!didInitializeCollapsedGroups.current) {
+      setCollapsedCategoryIds(groupIds)
+      didInitializeCollapsedGroups.current = true
+      return
+    }
+
+    setCollapsedCategoryIds((currentIds) => {
+      const nextIds = new Set(currentIds)
+
+      groupIds.forEach((groupId) => {
+        if (!nextIds.has(groupId)) {
+          nextIds.add(groupId)
+        }
+      })
+
+      return Array.from(nextIds).filter((groupId) => groupIds.includes(groupId))
+    })
+  }, [taskGroups])
 
   useEffect(() => {
     if (!statusTask && !editingTask) {

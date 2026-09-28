@@ -188,8 +188,28 @@ users
     tasks
       {taskId}
         categoryId
+        completedAt
         content
+        description
+        dueDate
+        recurringOccurrenceKey
+        recurringTaskId
         status
+        title
+        createdAt
+        updatedAt
+    recurringTasks
+      {recurringTaskId}
+        categoryId
+        completedCount
+        description
+        intervalDays
+        isActive
+        lastGeneratedDate
+        nextDueDate
+        scheduleType
+        startDate
+        title
         createdAt
         updatedAt
 ```
@@ -198,6 +218,7 @@ Allowed task statuses:
 
 ```ts
 type TaskStatus = 'todo' | 'doing' | 'blocked' | 'done'
+type RecurringScheduleType = 'daily' | 'weekly' | 'monthly' | 'interval'
 ```
 
 Realtime Database access is separated from UI code:

@@ -394,6 +394,11 @@ select {
 .category-admin-edit button:focus-visible,
 .category-admin-subadd input:focus,
 .category-admin-subadd button:focus-visible,
+.recurring-admin-form input:focus,
+.recurring-admin-form textarea:focus,
+.recurring-admin-form select:focus,
+.recurring-admin-form button:focus-visible,
+.subtle-button:focus-visible,
 .task-composer button:focus-visible,
 .task-controls select:focus,
 .task-controls button:focus-visible {
@@ -538,6 +543,17 @@ select {
   display: grid;
   gap: 10px;
   margin-bottom: 16px;
+  border: 1px solid #dde2dc;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(9 30 66 / 7%);
+}
+
+.recurring-manager {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
   border: 1px solid #dde2dc;
   border-radius: 8px;
   padding: 12px;
@@ -1023,6 +1039,155 @@ select {
 }
 
 .category-admin-empty {
+  margin: 0;
+  border: 1px dashed #d8ded9;
+  border-radius: 8px;
+  padding: 16px;
+  color: #6b778c;
+  background: #ffffff;
+  font-size: 13px;
+  text-align: center;
+}
+
+.recurring-admin-backdrop {
+  place-items: end center;
+  padding: 18px;
+}
+
+.recurring-admin-sheet {
+  width: min(100%, 560px);
+  max-height: calc(100svh - 36px);
+  gap: 14px;
+  overflow: hidden;
+}
+
+.recurring-admin-form {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #ebecf0;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfb;
+}
+
+.recurring-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.recurring-admin-form input,
+.recurring-admin-form textarea,
+.recurring-admin-form select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: #172b4d;
+  background: #ffffff;
+}
+
+.recurring-admin-form textarea {
+  resize: vertical;
+}
+
+.recurring-admin-form > button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #172b4d;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.recurring-admin-form > button:disabled {
+  color: #6b778c;
+  background: #dfe1e6;
+  cursor: not-allowed;
+}
+
+.recurring-admin-list {
+  display: grid;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.recurring-admin-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ebecf0;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.recurring-admin-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.recurring-admin-copy span {
+  overflow: hidden;
+  color: #172b4d;
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recurring-admin-copy small {
+  overflow: hidden;
+  color: #6b778c;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recurring-admin-item strong {
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: #00875a;
+  background: #e3fcef;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.recurring-admin-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.subtle-button {
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #172b4d;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.subtle-button.danger {
+  color: #de350b;
+}
+
+.subtle-button:disabled {
+  color: #a5adba;
+  cursor: not-allowed;
+}
+
+.recurring-admin-empty {
   margin: 0;
   border: 1px dashed #d8ded9;
   border-radius: 8px;

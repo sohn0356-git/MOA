@@ -1,4 +1,5 @@
 import {
+  increment,
   off,
   onValue,
   orderByChild,
@@ -13,24 +14,53 @@ import {
 } from 'firebase/database'
 import { getRealtimeDb } from '../../../services/firebase'
 import type {
+  CreateRecurringTaskInput,
   CreateTaskInput,
+  RecurringScheduleType,
+  RecurringTask,
   Task,
   TaskCategory,
   TaskStatus,
+  UpdateRecurringTaskInput,
   UpdateTaskInput,
   UpdateCategoryInput,
 } from '../types/task'
 
 const CATEGORIES_PATH = 'categories'
+const RECURRING_TASKS_PATH = 'recurringTasks'
 const TASKS_PATH = 'tasks'
+const RECURRING_SCHEDULE_TYPES: RecurringScheduleType[] = [
+  'daily',
+  'weekly',
+  'monthly',
+  'interval',
+]
 const TASK_STATUSES: TaskStatus[] = ['todo', 'doing', 'blocked', 'done']
 
 type StoredTask = {
   categoryId?: unknown
+  completedAt?: unknown
   content?: unknown
   description?: unknown
   dueDate?: unknown
+  recurringOccurrenceKey?: unknown
+  recurringTaskId?: unknown
   status?: unknown
+  title?: unknown
+  createdAt?: unknown
+  updatedAt?: unknown
+}
+
+type StoredRecurringTask = {
+  categoryId?: unknown
+  completedCount?: unknown
+  description?: unknown
+  intervalDays?: unknown
+  isActive?: unknown
+  lastGeneratedDate?: unknown
+  nextDueDate?: unknown
+  scheduleType?: unknown
+  startDate?: unknown
   title?: unknown
   createdAt?: unknown
   updatedAt?: unknown
@@ -64,6 +94,17 @@ function getTaskRef(userId: string, taskId: string) {
   return ref(getRealtimeDb(), `${getUserPath(userId, TASKS_PATH)}/${taskId}`)
 }
 
+function getRecurringTasksRef(userId: string) {
+  return ref(getRealtimeDb(), getUserPath(userId, RECURRING_TASKS_PATH))
+}
+
+function getRecurringTaskRef(userId: string, recurringTaskId: string) {
+  return ref(
+    getRealtimeDb(),
+    `${getUserPath(userId, RECURRING_TASKS_PATH)}/${recurringTaskId}`,
+  )
+}
+
 function toTimestamp(value: unknown) {
   return typeof value === 'number' ? value : null
 }
@@ -74,6 +115,12 @@ function toOrder(value: unknown) {
 
 function toTaskStatus(value: unknown): TaskStatus {
   return TASK_STATUSES.includes(value as TaskStatus) ? (value as TaskStatus) : 'todo'
+}
+
+function toRecurringScheduleType(value: unknown): RecurringScheduleType {
+  return RECURRING_SCHEDULE_TYPES.includes(value as RecurringScheduleType)
+    ? (value as RecurringScheduleType)
+    : 'daily'
 }
 
 function toDueDate(value: unknown) {
@@ -90,11 +137,44 @@ function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
   return {
     id: taskId,
     categoryId: toCategoryId(data.categoryId),
+    completedAt: toTimestamp(data.completedAt),
     title,
     description: String(data.description ?? ''),
     content: title,
     dueDate: toDueDate(data.dueDate),
+    recurringOccurrenceKey: toDueDate(data.recurringOccurrenceKey),
+    recurringTaskId: toCategoryId(data.recurringTaskId),
     status: toTaskStatus(data.status),
+    createdAt: toTimestamp(data.createdAt),
+    updatedAt: toTimestamp(data.updatedAt),
+  }
+}
+
+function mapRecurringTaskSnapshot(
+  recurringTaskId: string,
+  data: StoredRecurringTask,
+): RecurringTask {
+  const startDate = toDueDate(data.startDate) ?? new Date().toISOString().slice(0, 10)
+  const nextDueDate = toDueDate(data.nextDueDate) ?? startDate
+
+  return {
+    id: recurringTaskId,
+    categoryId: toCategoryId(data.categoryId),
+    completedCount:
+      typeof data.completedCount === 'number' && Number.isFinite(data.completedCount)
+        ? data.completedCount
+        : 0,
+    description: String(data.description ?? ''),
+    intervalDays:
+      typeof data.intervalDays === 'number' && Number.isFinite(data.intervalDays)
+        ? Math.max(1, Math.floor(data.intervalDays))
+        : null,
+    isActive: data.isActive !== false,
+    lastGeneratedDate: toDueDate(data.lastGeneratedDate),
+    nextDueDate,
+    scheduleType: toRecurringScheduleType(data.scheduleType),
+    startDate,
+    title: String(data.title ?? ''),
     createdAt: toTimestamp(data.createdAt),
     updatedAt: toTimestamp(data.updatedAt),
   }
@@ -146,10 +226,27 @@ function mapCategories(snapshot: DataSnapshot) {
     })
 }
 
+function mapRecurringTasks(snapshot: DataSnapshot) {
+  const value = snapshot.val() as Record<string, StoredRecurringTask> | null
+
+  if (!value) {
+    return []
+  }
+
+  return Object.entries(value)
+    .map(([recurringTaskId, data]) => mapRecurringTaskSnapshot(recurringTaskId, data))
+    .filter((recurringTask) => recurringTask.title.trim() && recurringTask.nextDueDate)
+    .sort((firstTask, secondTask) => {
+      return firstTask.nextDueDate.localeCompare(secondTask.nextDueDate)
+    })
+}
+
 export async function createTask({
   categoryId,
   description,
   dueDate,
+  recurringOccurrenceKey = null,
+  recurringTaskId = null,
   status,
   title,
   userId,
@@ -159,12 +256,55 @@ export async function createTask({
   return set(taskRef, {
     content: title,
     categoryId,
+    completedAt: status === 'done' ? serverTimestamp() : null,
     description,
     dueDate,
+    recurringOccurrenceKey,
+    recurringTaskId,
     status,
     title,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
+  })
+}
+
+export async function createRecurringTask(
+  userId: string,
+  input: CreateRecurringTaskInput,
+) {
+  const recurringTaskRef = push(getRecurringTasksRef(userId))
+
+  return set(recurringTaskRef, {
+    ...input,
+    completedCount: 0,
+    isActive: true,
+    lastGeneratedDate: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function updateRecurringTask(
+  userId: string,
+  recurringTaskId: string,
+  input: UpdateRecurringTaskInput,
+) {
+  return update(getRecurringTaskRef(userId, recurringTaskId), {
+    ...input,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function deleteRecurringTask(userId: string, recurringTaskId: string) {
+  return remove(getRecurringTaskRef(userId, recurringTaskId))
+}
+
+export function incrementRecurringTaskCompletedCount(
+  userId: string,
+  recurringTaskId: string,
+) {
+  return updateRecurringTask(userId, recurringTaskId, {
+    completedCount: increment(1),
   })
 }
 
@@ -247,4 +387,16 @@ export function subscribeToCategories(
   onValue(categoriesQuery, (snapshot) => onNext(mapCategories(snapshot)), onError)
 
   return () => off(categoriesQuery)
+}
+
+export function subscribeToRecurringTasks(
+  userId: string,
+  onNext: (recurringTasks: RecurringTask[]) => void,
+  onError: (error: Error) => void,
+) {
+  const recurringTasksQuery = query(getRecurringTasksRef(userId), orderByChild('nextDueDate'))
+
+  onValue(recurringTasksQuery, (snapshot) => onNext(mapRecurringTasks(snapshot)), onError)
+
+  return () => off(recurringTasksQuery)
 }
