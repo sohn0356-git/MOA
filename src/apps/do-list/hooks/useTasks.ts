@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseConfigError } from '../../../services/firebase'
 import {
+  createCategory,
   createTask,
+  deleteCategory,
   deleteTask,
+  subscribeToCategories,
   subscribeToTasks,
   updateTask,
 } from '../services/taskService'
-import type { Task, TaskStatus } from '../types/task'
+import type { Task, TaskCategory, TaskStatus } from '../types/task'
 
 export function useTasks() {
   const configError = useMemo(() => getFirebaseConfigError(), [])
+  const [categories, setCategories] = useState<TaskCategory[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(!configError)
   const [error, setError] = useState<string | null>(configError)
@@ -23,12 +27,27 @@ export function useTasks() {
       return undefined
     }
 
-    const unsubscribe = subscribeToTasks(
+    let didLoadTasks = false
+    let didLoadCategories = false
+
+    function markLoaded(type: 'categories' | 'tasks') {
+      if (type === 'tasks') {
+        didLoadTasks = true
+      } else {
+        didLoadCategories = true
+      }
+
+      if (didLoadTasks && didLoadCategories) {
+        setIsLoading(false)
+      }
+    }
+
+    const unsubscribeTasks = subscribeToTasks(
       (nextTasks) => {
         setTasks(nextTasks)
-        setIsLoading(false)
         setError(null)
         setSyncMessage('Synced with Realtime DB.')
+        markLoaded('tasks')
       },
       (snapshotError) => {
         setError(snapshotError.message)
@@ -37,7 +56,22 @@ export function useTasks() {
       },
     )
 
-    return unsubscribe
+    const unsubscribeCategories = subscribeToCategories(
+      (nextCategories) => {
+        setCategories(nextCategories)
+        setError(null)
+        markLoaded('categories')
+      },
+      (snapshotError) => {
+        setError(snapshotError.message)
+        setIsLoading(false)
+      },
+    )
+
+    return () => {
+      unsubscribeTasks()
+      unsubscribeCategories()
+    }
   }, [configError])
 
   async function addTask(
@@ -45,6 +79,7 @@ export function useTasks() {
     description: string,
     status: TaskStatus,
     dueDate: string | null,
+    categoryId: string | null,
   ) {
     const trimmedTitle = title.trim()
     const trimmedDescription = description.trim()
@@ -58,6 +93,7 @@ export function useTasks() {
 
     try {
       await createTask({
+        categoryId,
         description: trimmedDescription,
         dueDate,
         status,
@@ -68,6 +104,29 @@ export function useTasks() {
       setError(taskError instanceof Error ? taskError.message : 'Failed to save task.')
       setSyncMessage('Save failed.')
       throw taskError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function addCategory(name: string) {
+    const trimmedName = name.trim()
+
+    if (!trimmedName) {
+      return
+    }
+
+    setIsMutating(true)
+
+    try {
+      await createCategory(trimmedName)
+    } catch (categoryError) {
+      setError(
+        categoryError instanceof Error
+          ? categoryError.message
+          : 'Failed to save category.',
+      )
+      throw categoryError
     } finally {
       setIsMutating(false)
     }
@@ -96,6 +155,7 @@ export function useTasks() {
     title: string,
     description: string,
     dueDate: string | null,
+    categoryId: string | null,
   ) {
     const trimmedTitle = title.trim()
     const trimmedDescription = description.trim()
@@ -111,6 +171,7 @@ export function useTasks() {
       await updateTask(taskId, {
         description: trimmedDescription,
         dueDate,
+        categoryId,
         title: trimmedTitle,
       })
       setSyncMessage('Updated. Waiting for realtime update...')
@@ -141,14 +202,39 @@ export function useTasks() {
     }
   }
 
+  async function removeCategory(categoryId: string) {
+    setIsMutating(true)
+
+    try {
+      const affectedTasks = tasks.filter((task) => task.categoryId === categoryId)
+
+      await Promise.all([
+        ...affectedTasks.map((task) => updateTask(task.id, { categoryId: null })),
+        deleteCategory(categoryId),
+      ])
+    } catch (categoryError) {
+      setError(
+        categoryError instanceof Error
+          ? categoryError.message
+          : 'Failed to delete category.',
+      )
+      throw categoryError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
   return {
+    categories,
     tasks,
     isLoading,
     isMutating,
     error,
     syncMessage,
+    addCategory,
     addTask,
     editTask,
+    removeCategory,
     setTaskStatus,
     removeTask,
   }

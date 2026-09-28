@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { TaskStatus } from '../types/task'
+import type { TaskCategory, TaskStatus } from '../types/task'
 
 type TaskComposerProps = {
+  categories: TaskCategory[]
   isBusy: boolean
   onCancel: () => void
   onAddTask: (
@@ -9,6 +10,7 @@ type TaskComposerProps = {
     description: string,
     status: TaskStatus,
     dueDate: string | null,
+    categoryId: string | null,
   ) => Promise<void>
 }
 
@@ -19,11 +21,17 @@ const statusOptions: Array<{ label: string; value: TaskStatus }> = [
   { label: '완료', value: 'done' },
 ]
 
-export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps) {
+export function TaskComposer({
+  categories,
+  isBusy,
+  onAddTask,
+  onCancel,
+}: TaskComposerProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<TaskStatus>('todo')
   const [dueDate, setDueDate] = useState('')
+  const [categoryId, setCategoryId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
 
@@ -40,11 +48,12 @@ export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps)
 
     setIsSubmitting(true)
     try {
-      await onAddTask(title, description, status, dueDate || null)
+      await onAddTask(title, description, status, dueDate || null, categoryId || null)
       setTitle('')
       setDescription('')
       setStatus('todo')
       setDueDate('')
+      setCategoryId('')
       onCancel()
     } finally {
       setIsSubmitting(false)
@@ -107,6 +116,22 @@ export function TaskComposer({ isBusy, onAddTask, onCancel }: TaskComposerProps)
           type="date"
           value={dueDate}
         />
+      </label>
+      <label className="field-label">
+        <span>카테고리</span>
+        <select
+          aria-label="카테고리"
+          disabled={isSubmitting || isBusy}
+          onChange={(event) => setCategoryId(event.target.value)}
+          value={categoryId}
+        >
+          <option value="">기본</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
       </label>
       <div className="sheet-actions">
         <button type="button" onClick={onCancel}>

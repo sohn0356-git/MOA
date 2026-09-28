@@ -16,14 +16,18 @@ const filterItems: Array<{ label: string; value: TaskFilter }> = [
 
 export function DoListApp() {
   const [activeFilter, setActiveFilter] = useState<TaskFilter>('active')
+  const [categoryName, setCategoryName] = useState('')
   const [isAddingTask, setIsAddingTask] = useState(false)
   const {
+    categories,
     tasks,
     isLoading,
     isMutating,
     error,
+    addCategory,
     addTask,
     editTask,
+    removeCategory,
     removeTask,
     setTaskStatus,
   } = useTasks()
@@ -51,6 +55,15 @@ export function DoListApp() {
   function handleBackHome() {
     history.pushState('', document.title, window.location.pathname + window.location.search)
     window.dispatchEvent(new HashChangeEvent('hashchange'))
+  }
+
+  async function handleAddCategory() {
+    if (!categoryName.trim()) {
+      return
+    }
+
+    await addCategory(categoryName)
+    setCategoryName('')
   }
 
   return (
@@ -96,6 +109,29 @@ export function DoListApp() {
         ))}
       </nav>
 
+      <section className="category-manager" aria-label="카테고리 관리">
+        <div className="category-input-row">
+          <input
+            aria-label="새 카테고리 이름"
+            onChange={(event) => setCategoryName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                void handleAddCategory()
+              }
+            }}
+            placeholder="카테고리 추가"
+            value={categoryName}
+          />
+          <button
+            disabled={isMutating || !categoryName.trim()}
+            type="button"
+            onClick={() => void handleAddCategory()}
+          >
+            추가
+          </button>
+        </div>
+      </section>
+
       {error ? <p className="app-error">{error}</p> : null}
       {isLoading ? (
         <div className="task-skeleton-list" aria-label="할 일 불러오는 중">
@@ -108,9 +144,11 @@ export function DoListApp() {
       {!isLoading && !error ? (
         <>
           <TaskList
+            categories={categories}
             isBusy={isMutating}
             onDeleteTask={removeTask}
             onEditTask={editTask}
+            onRemoveCategory={removeCategory}
             onUpdateStatus={setTaskStatus}
             tasks={visibleTasks}
           />
@@ -127,6 +165,7 @@ export function DoListApp() {
           {isAddingTask ? (
             <div className="sheet-backdrop" role="presentation">
               <TaskComposer
+                categories={categories}
                 isBusy={isMutating}
                 onAddTask={addTask}
                 onCancel={() => setIsAddingTask(false)}

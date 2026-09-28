@@ -15,14 +15,17 @@ import { getRealtimeDb } from '../../../services/firebase'
 import type {
   CreateTaskInput,
   Task,
+  TaskCategory,
   TaskStatus,
   UpdateTaskInput,
 } from '../types/task'
 
+const CATEGORIES_PATH = 'categories'
 const TASKS_PATH = 'tasks'
 const TASK_STATUSES: TaskStatus[] = ['todo', 'doing', 'blocked', 'done']
 
 type StoredTask = {
+  categoryId?: unknown
   content?: unknown
   description?: unknown
   dueDate?: unknown
@@ -30,6 +33,19 @@ type StoredTask = {
   title?: unknown
   createdAt?: unknown
   updatedAt?: unknown
+}
+
+type StoredCategory = {
+  name?: unknown
+  createdAt?: unknown
+}
+
+function getCategoriesRef() {
+  return ref(getRealtimeDb(), CATEGORIES_PATH)
+}
+
+function getCategoryRef(categoryId: string) {
+  return ref(getRealtimeDb(), `${CATEGORIES_PATH}/${categoryId}`)
 }
 
 function getTasksRef() {
@@ -52,11 +68,16 @@ function toDueDate(value: unknown) {
   return typeof value === 'string' && value ? value : null
 }
 
+function toCategoryId(value: unknown) {
+  return typeof value === 'string' && value ? value : null
+}
+
 function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
   const title = String(data.title ?? data.content ?? '')
 
   return {
     id: taskId,
+    categoryId: toCategoryId(data.categoryId),
     title,
     description: String(data.description ?? ''),
     content: title,
@@ -64,6 +85,14 @@ function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
     status: toTaskStatus(data.status),
     createdAt: toTimestamp(data.createdAt),
     updatedAt: toTimestamp(data.updatedAt),
+  }
+}
+
+function mapCategorySnapshot(categoryId: string, data: StoredCategory): TaskCategory {
+  return {
+    id: categoryId,
+    name: String(data.name ?? ''),
+    createdAt: toTimestamp(data.createdAt),
   }
 }
 
@@ -81,7 +110,23 @@ function mapTasks(snapshot: DataSnapshot) {
     })
 }
 
+function mapCategories(snapshot: DataSnapshot) {
+  const value = snapshot.val() as Record<string, StoredCategory> | null
+
+  if (!value) {
+    return []
+  }
+
+  return Object.entries(value)
+    .map(([categoryId, data]) => mapCategorySnapshot(categoryId, data))
+    .filter((category) => category.name.trim())
+    .sort((firstCategory, secondCategory) => {
+      return (firstCategory.createdAt ?? 0) - (secondCategory.createdAt ?? 0)
+    })
+}
+
 export async function createTask({
+  categoryId,
   description,
   dueDate,
   status,
@@ -91,6 +136,7 @@ export async function createTask({
 
   return set(taskRef, {
     content: title,
+    categoryId,
     description,
     dueDate,
     status,
@@ -98,6 +144,19 @@ export async function createTask({
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
+}
+
+export async function createCategory(name: string) {
+  const categoryRef = push(getCategoriesRef())
+
+  return set(categoryRef, {
+    name,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export async function deleteCategory(categoryId: string) {
+  return remove(getCategoryRef(categoryId))
 }
 
 export async function updateTask(taskId: string, input: UpdateTaskInput) {
@@ -125,4 +184,15 @@ export function subscribeToTasks(
   onValue(tasksQuery, (snapshot) => onNext(mapTasks(snapshot)), onError)
 
   return () => off(tasksQuery)
+}
+
+export function subscribeToCategories(
+  onNext: (categories: TaskCategory[]) => void,
+  onError: (error: Error) => void,
+) {
+  const categoriesQuery = query(getCategoriesRef(), orderByChild('createdAt'))
+
+  onValue(categoriesQuery, (snapshot) => onNext(mapCategories(snapshot)), onError)
+
+  return () => off(categoriesQuery)
 }

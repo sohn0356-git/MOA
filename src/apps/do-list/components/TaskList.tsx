@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import type { Task, TaskStatus } from '../types/task'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import type { Task, TaskCategory, TaskStatus } from '../types/task'
 
 const taskStatuses: TaskStatus[] = ['todo', 'doing', 'blocked', 'done']
 
@@ -11,6 +11,7 @@ const statusLabels: Record<TaskStatus, string> = {
 }
 
 type TaskListProps = {
+  categories: TaskCategory[]
   isBusy: boolean
   tasks: Task[]
   onDeleteTask: (taskId: string) => Promise<void>
@@ -19,22 +20,60 @@ type TaskListProps = {
     title: string,
     description: string,
     dueDate: string | null,
+    categoryId: string | null,
   ) => Promise<void>
+  onRemoveCategory: (categoryId: string) => Promise<void>
   onUpdateStatus: (taskId: string, status: TaskStatus) => Promise<void>
 }
 
 export function TaskList({
+  categories,
   isBusy,
   tasks,
   onDeleteTask,
   onEditTask,
+  onRemoveCategory,
   onUpdateStatus,
 }: TaskListProps) {
+  const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<string[]>([])
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [statusTask, setStatusTask] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editDueDate, setEditDueDate] = useState('')
+  const [editCategoryId, setEditCategoryId] = useState('')
+  const taskGroups = useMemo(() => {
+    const defaultGroup = {
+      id: '',
+      isDefault: true,
+      name: '기본',
+      tasks: tasks.filter((task) => !task.categoryId),
+    }
+    const categoryGroups = categories.map((category) => ({
+      id: category.id,
+      isDefault: false,
+      name: category.name,
+      tasks: tasks.filter((task) => task.categoryId === category.id),
+    }))
+
+    return [defaultGroup, ...categoryGroups].filter((group) => group.tasks.length > 0 || !group.isDefault)
+  }, [categories, tasks])
+
+  useEffect(() => {
+    if (!statusTask && !editingTask) {
+      return undefined
+    }
+
+    history.pushState({ doListModal: true }, document.title, window.location.href)
+
+    function handlePopState() {
+      setStatusTask(null)
+      closeEditModal()
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [editingTask, statusTask])
 
   if (tasks.length === 0) {
     return (
@@ -51,6 +90,7 @@ export function TaskList({
     setEditTitle(task.title)
     setEditDescription(task.description)
     setEditDueDate(task.dueDate ?? '')
+    setEditCategoryId(task.categoryId ?? '')
   }
 
   function closeEditModal() {
@@ -58,6 +98,7 @@ export function TaskList({
     setEditTitle('')
     setEditDescription('')
     setEditDueDate('')
+    setEditCategoryId('')
   }
 
   async function handleEditSubmit(event: FormEvent<HTMLFormElement>) {
@@ -67,7 +108,13 @@ export function TaskList({
       return
     }
 
-    await onEditTask(editingTask.id, editTitle, editDescription, editDueDate || null)
+    await onEditTask(
+      editingTask.id,
+      editTitle,
+      editDescription,
+      editDueDate || null,
+      editCategoryId || null,
+    )
     closeEditModal()
   }
 
@@ -80,67 +127,124 @@ export function TaskList({
     setStatusTask(null)
   }
 
+  function toggleCategory(categoryId: string) {
+    setCollapsedCategoryIds((currentIds) => {
+      if (currentIds.includes(categoryId)) {
+        return currentIds.filter((id) => id !== categoryId)
+      }
+
+      return [...currentIds, categoryId]
+    })
+  }
+
   return (
     <>
-      <ul className="task-list">
-        {tasks.map((task) => (
-          <li className={`task-item task-${task.status}`} key={task.id}>
-            <button
-              className="task-copy"
-              type="button"
-              onClick={() => openEditModal(task)}
-            >
-              <span className="task-title">{task.title}</span>
-              {task.description ? (
-                <p className="task-description">{task.description}</p>
+      <div className="category-groups">
+        {taskGroups.map((group) => {
+          const isCollapsed = collapsedCategoryIds.includes(group.id)
+
+          return (
+            <section className="category-group" key={group.id || 'default'}>
+              <header className="category-group-header">
+                <button
+                  aria-expanded={!isCollapsed}
+                  className="category-toggle"
+                  type="button"
+                  onClick={() => toggleCategory(group.id)}
+                >
+                  <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                    <path d="M8.3 9.3a1 1 0 0 1 1.4 0L12 11.6l2.3-2.3a1 1 0 1 1 1.4 1.4l-3 3a1 1 0 0 1-1.4 0l-3-3a1 1 0 0 1 0-1.4Z" />
+                  </svg>
+                  <span>{group.name}</span>
+                  <small>{group.tasks.length}</small>
+                </button>
+                {!group.isDefault ? (
+                  <button
+                    aria-label={`${group.name} 카테고리 삭제`}
+                    className="icon-button delete-button"
+                    disabled={isBusy}
+                    type="button"
+                    onClick={() => void onRemoveCategory(group.id)}
+                  >
+                    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                      <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7H4a1 1 0 0 1 0-2h4V4a1 1 0 0 1 1-1Zm2 2h2V5h-2Zm-4 2v13h10V7H7Z" />
+                    </svg>
+                  </button>
+                ) : null}
+              </header>
+
+              {!isCollapsed ? (
+                <ul className="task-list">
+                  {group.tasks.map((task) => (
+                    <li className={`task-item task-${task.status}`} key={task.id}>
+                      <button
+                        className="task-copy"
+                        type="button"
+                        onClick={() => openEditModal(task)}
+                      >
+                        <span className="task-title">{task.title}</span>
+                        {task.description ? (
+                          <p className="task-description">{task.description}</p>
+                        ) : null}
+                        {task.dueDate ? (
+                          <span className="due-date">기한 {task.dueDate}</span>
+                        ) : null}
+                      </button>
+                      <div className="task-controls">
+                        <button
+                          className={`status-chip status-text-${task.status}`}
+                          disabled={isBusy}
+                          type="button"
+                          onClick={() => setStatusTask(task)}
+                        >
+                          {statusLabels[task.status]}
+                        </button>
+                        <div className="task-actions">
+                          <button
+                            aria-label={`${task.title} 수정`}
+                            className="icon-button"
+                            disabled={isBusy}
+                            type="button"
+                            onClick={() => openEditModal(task)}
+                          >
+                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                              <path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25ZM19.71 7.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.06 1.06 2.75 2.75 1.06-1.06Z" />
+                            </svg>
+                          </button>
+                          <button
+                            aria-label={`${task.title} 삭제`}
+                            className="icon-button delete-button"
+                            disabled={isBusy}
+                            type="button"
+                            onClick={() => void onDeleteTask(task.id)}
+                          >
+                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                              <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7H4a1 1 0 0 1 0-2h4V4a1 1 0 0 1 1-1Zm2 2h2V5h-2Zm-4 2v13h10V7H7Zm3 3a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               ) : null}
-              {task.dueDate ? <span className="due-date">기한 {task.dueDate}</span> : null}
-            </button>
-            <div className="task-controls">
-              <button
-                className={`status-chip status-text-${task.status}`}
-                disabled={isBusy}
-                type="button"
-                onClick={() => setStatusTask(task)}
-              >
-                {statusLabels[task.status]}
-              </button>
-              <div className="task-actions">
-                <button
-                  aria-label={`Edit ${task.title}`}
-                  className="icon-button"
-                  disabled={isBusy}
-                  type="button"
-                  onClick={() => openEditModal(task)}
-                >
-                  <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                    <path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25ZM19.71 7.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.06 1.06 2.75 2.75 1.06-1.06Z" />
-                  </svg>
-                </button>
-                <button
-                  aria-label={`Delete ${task.title}`}
-                  className="icon-button delete-button"
-                  disabled={isBusy}
-                  type="button"
-                  onClick={() => void onDeleteTask(task.id)}
-                >
-                  <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                    <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7H4a1 1 0 0 1 0-2h4V4a1 1 0 0 1 1-1Zm2 2h2V5h-2Zm-4 2v13h10V7H7Zm3 3a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </section>
+          )
+        })}
+      </div>
 
       {statusTask ? (
-        <div className="modal-backdrop" role="presentation">
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setStatusTask(null)}
+        >
           <section
             aria-label={`${statusTask.title} 상태 변경`}
             aria-modal="true"
             className="task-modal status-sheet"
             role="dialog"
+            onClick={(event) => event.stopPropagation()}
           >
             <header className="modal-header">
               <h3>상태 변경</h3>
@@ -173,12 +277,17 @@ export function TaskList({
       ) : null}
 
       {editingTask ? (
-        <div className="modal-backdrop" role="presentation">
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={closeEditModal}
+        >
           <section
             aria-label={`${editingTask.title} 수정`}
             aria-modal="true"
             className="task-modal"
             role="dialog"
+            onClick={(event) => event.stopPropagation()}
           >
             <header className="modal-header">
               <h3>할 일 수정</h3>
@@ -219,6 +328,21 @@ export function TaskList({
                   type="date"
                   value={editDueDate}
                 />
+              </label>
+              <label className="field-label">
+                <span>카테고리</span>
+                <select
+                  disabled={isBusy}
+                  onChange={(event) => setEditCategoryId(event.target.value)}
+                  value={editCategoryId}
+                >
+                  <option value="">기본</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <div className="modal-actions">
                 <button type="button" onClick={closeEditModal}>

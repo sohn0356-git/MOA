@@ -427,6 +427,43 @@ select {
   opacity: 0.74;
 }
 
+.category-manager {
+  margin-bottom: 16px;
+}
+
+.category-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.category-input-row input {
+  min-width: 0;
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: #172b4d;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(9 30 66 / 9%);
+  font-size: 15px;
+}
+
+.category-input-row button {
+  border: 0;
+  border-radius: 14px;
+  padding: 0 15px;
+  color: #ffffff;
+  background: #172b4d;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.category-input-row button:disabled {
+  color: #6b778c;
+  background: #dfe1e6;
+  cursor: not-allowed;
+}
+
 .task-composer {
   display: grid;
   gap: 14px;
@@ -574,6 +611,68 @@ select {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.category-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.category-group {
+  display: grid;
+  gap: 10px;
+}
+
+.category-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.category-toggle {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  padding: 0;
+  color: #172b4d;
+  background: transparent;
+  cursor: pointer;
+}
+
+.category-toggle svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  fill: currentColor;
+  transition: transform 180ms ease;
+}
+
+.category-toggle[aria-expanded='false'] svg {
+  transform: rotate(-90deg);
+}
+
+.category-toggle span {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-toggle small {
+  display: inline-grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  color: #5e6c84;
+  background: #ebecf0;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .task-item {
@@ -863,7 +962,8 @@ select {
 }
 
 .edit-form input,
-.edit-form textarea {
+.edit-form textarea,
+.edit-form select {
   width: 100%;
   border: 1px solid #dfe1e6;
   border-radius: 8px;
