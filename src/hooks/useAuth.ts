@@ -3,6 +3,7 @@ import { FirebaseError } from 'firebase/app'
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithRedirect,
   signInWithPopup,
   signOut,
   type User,
@@ -16,8 +17,8 @@ function getAuthErrorMessage(error: unknown) {
   if (error instanceof FirebaseError) {
     if (error.code === 'auth/configuration-not-found') {
       return [
-        'Firebase Authentication 설정을 찾을 수 없습니다.',
-        'Firebase Console에서 Authentication을 시작하고 Google 로그인 제공업체를 활성화한 뒤, 현재 도메인을 Authorized domains에 추가하세요.',
+        'Firebase Authentication 설정을 찾을 수 없습니다. 배포된 Firebase API key가 Google 로그인을 활성화한 프로젝트와 같은지 확인하세요.',
+        'Authorized domains에는 프로토콜이나 경로 없이 sohn0356-git.github.io만 추가해야 합니다.',
       ].join(' ')
     }
 
@@ -35,6 +36,19 @@ function getAuthErrorMessage(error: unknown) {
   }
 
   return error instanceof Error ? error.message : 'Google login failed.'
+}
+
+function shouldFallbackToRedirect(error: unknown) {
+  if (!(error instanceof FirebaseError)) {
+    return false
+  }
+
+  return [
+    'auth/cancelled-popup-request',
+    'auth/configuration-not-found',
+    'auth/popup-blocked',
+    'auth/popup-closed-by-user',
+  ].includes(error.code)
 }
 
 export function useAuth() {
@@ -68,7 +82,18 @@ export function useAuth() {
     setAuthError(null)
 
     try {
-      await signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider())
+      const auth = getFirebaseAuth()
+      const provider = new GoogleAuthProvider()
+
+      try {
+        await signInWithPopup(auth, provider)
+      } catch (popupError) {
+        if (!shouldFallbackToRedirect(popupError)) {
+          throw popupError
+        }
+
+        await signInWithRedirect(auth, provider)
+      }
     } catch (error) {
       setAuthError(getAuthErrorMessage(error))
       throw error
