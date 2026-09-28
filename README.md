@@ -160,17 +160,38 @@ Local values belong in `.env`, which is ignored by Git. The committed template i
 
 For GitHub Pages production builds, `.github/workflows/deploy.yml` maps the same six GitHub Actions Secrets into the `npm run build` step so Vite exposes them through `import.meta.env.VITE_FIREBASE_*`.
 
+Firebase Console must also be configured for Authentication:
+
+1. Open **Authentication > Get started**.
+2. Open **Sign-in method** and enable **Google**.
+3. Open **Settings > Authorized domains** and add:
+   - `localhost`
+   - `sohn0356-git.github.io`
+4. Confirm the six `VITE_FIREBASE_*` values come from the same Firebase Web app and project.
+
+If login shows `auth/configuration-not-found`, Google Authentication is not enabled for the Firebase project behind the deployed API key, or the deployed secrets point at the wrong project.
+
 ## Do List Realtime Database Structure
 
-The Do List app stores tasks in Firebase Realtime Database:
+The Do List app stores tasks and categories by authenticated user in Firebase Realtime Database:
 
 ```text
-tasks
-  {taskId}
-    content
-    status
-    createdAt
-    updatedAt
+users
+  {uid}
+    categories
+      {categoryId}
+        name
+        parentId
+        order
+        createdAt
+        updatedAt
+    tasks
+      {taskId}
+        categoryId
+        content
+        status
+        createdAt
+        updatedAt
 ```
 
 Allowed task statuses:

@@ -10,6 +10,10 @@ type AuthGateProps = {
   user: User | null
 }
 
+function isMissingLocalConfig(authError: string | null) {
+  return Boolean(authError?.startsWith('Firebase configuration is missing:'))
+}
+
 export function AuthGate({
   authError,
   children,
@@ -49,7 +53,7 @@ export function AuthGate({
         {authError ? <p className="app-error">{authError}</p> : null}
         <button
           className="google-login-button"
-          disabled={isAuthMutating || Boolean(authError?.includes('configuration'))}
+          disabled={isAuthMutating || isMissingLocalConfig(authError)}
           type="button"
           onClick={() => void onSignIn()}
         >
