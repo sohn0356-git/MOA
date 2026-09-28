@@ -18,6 +18,7 @@ import type {
   TaskCategory,
   TaskStatus,
   UpdateTaskInput,
+  UpdateCategoryInput,
 } from '../types/task'
 
 const CATEGORIES_PATH = 'categories'
@@ -37,27 +38,38 @@ type StoredTask = {
 
 type StoredCategory = {
   name?: unknown
+  order?: unknown
+  parentId?: unknown
   createdAt?: unknown
+  updatedAt?: unknown
 }
 
-function getCategoriesRef() {
-  return ref(getRealtimeDb(), CATEGORIES_PATH)
+function getUserPath(userId: string, childPath: string) {
+  return `users/${userId}/${childPath}`
 }
 
-function getCategoryRef(categoryId: string) {
-  return ref(getRealtimeDb(), `${CATEGORIES_PATH}/${categoryId}`)
+function getCategoriesRef(userId: string) {
+  return ref(getRealtimeDb(), getUserPath(userId, CATEGORIES_PATH))
 }
 
-function getTasksRef() {
-  return ref(getRealtimeDb(), TASKS_PATH)
+function getCategoryRef(userId: string, categoryId: string) {
+  return ref(getRealtimeDb(), `${getUserPath(userId, CATEGORIES_PATH)}/${categoryId}`)
 }
 
-function getTaskRef(taskId: string) {
-  return ref(getRealtimeDb(), `${TASKS_PATH}/${taskId}`)
+function getTasksRef(userId: string) {
+  return ref(getRealtimeDb(), getUserPath(userId, TASKS_PATH))
+}
+
+function getTaskRef(userId: string, taskId: string) {
+  return ref(getRealtimeDb(), `${getUserPath(userId, TASKS_PATH)}/${taskId}`)
 }
 
 function toTimestamp(value: unknown) {
   return typeof value === 'number' ? value : null
+}
+
+function toOrder(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
 function toTaskStatus(value: unknown): TaskStatus {
@@ -89,10 +101,15 @@ function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
 }
 
 function mapCategorySnapshot(categoryId: string, data: StoredCategory): TaskCategory {
+  const createdAt = toTimestamp(data.createdAt)
+
   return {
     id: categoryId,
     name: String(data.name ?? ''),
-    createdAt: toTimestamp(data.createdAt),
+    order: toOrder(data.order) ?? createdAt ?? 0,
+    parentId: toCategoryId(data.parentId),
+    createdAt,
+    updatedAt: toTimestamp(data.updatedAt),
   }
 }
 
@@ -121,7 +138,11 @@ function mapCategories(snapshot: DataSnapshot) {
     .map(([categoryId, data]) => mapCategorySnapshot(categoryId, data))
     .filter((category) => category.name.trim())
     .sort((firstCategory, secondCategory) => {
-      return (firstCategory.createdAt ?? 0) - (secondCategory.createdAt ?? 0)
+      if (firstCategory.parentId !== secondCategory.parentId) {
+        return (firstCategory.parentId ?? '').localeCompare(secondCategory.parentId ?? '')
+      }
+
+      return firstCategory.order - secondCategory.order
     })
 }
 
@@ -131,8 +152,9 @@ export async function createTask({
   dueDate,
   status,
   title,
-}: CreateTaskInput) {
-  const taskRef = push(getTasksRef())
+  userId,
+}: CreateTaskInput & { userId: string }) {
+  const taskRef = push(getTasksRef(userId))
 
   return set(taskRef, {
     content: title,
@@ -146,40 +168,69 @@ export async function createTask({
   })
 }
 
-export async function createCategory(name: string) {
-  const categoryRef = push(getCategoriesRef())
+export async function createCategory(
+  userId: string,
+  name: string,
+  order: number,
+  parentId: string | null,
+) {
+  const categoryRef = push(getCategoriesRef(userId))
 
   return set(categoryRef, {
     name,
+    order,
+    parentId,
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   })
 }
 
-export async function deleteCategory(categoryId: string) {
-  return remove(getCategoryRef(categoryId))
+export async function updateCategory(
+  userId: string,
+  categoryId: string,
+  input: UpdateCategoryInput,
+) {
+  return update(getCategoryRef(userId, categoryId), {
+    ...input,
+    updatedAt: serverTimestamp(),
+  })
 }
 
-export async function updateTask(taskId: string, input: UpdateTaskInput) {
+export async function updateCategoriesOrder(userId: string, categories: TaskCategory[]) {
+  const updates = categories.reduce<Record<string, number>>((nextUpdates, category, index) => {
+    nextUpdates[`${getUserPath(userId, CATEGORIES_PATH)}/${category.id}/order`] = index
+    return nextUpdates
+  }, {})
+
+  return update(ref(getRealtimeDb()), updates)
+}
+
+export async function deleteCategory(userId: string, categoryId: string) {
+  return remove(getCategoryRef(userId, categoryId))
+}
+
+export async function updateTask(userId: string, taskId: string, input: UpdateTaskInput) {
   const nextInput = {
     ...input,
     ...(input.title ? { content: input.title } : {}),
   }
 
-  return update(getTaskRef(taskId), {
+  return update(getTaskRef(userId, taskId), {
     ...nextInput,
     updatedAt: serverTimestamp(),
   })
 }
 
-export async function deleteTask(taskId: string) {
-  return remove(getTaskRef(taskId))
+export async function deleteTask(userId: string, taskId: string) {
+  return remove(getTaskRef(userId, taskId))
 }
 
 export function subscribeToTasks(
+  userId: string,
   onNext: (tasks: Task[]) => void,
   onError: (error: Error) => void,
 ) {
-  const tasksQuery = query(getTasksRef(), orderByChild('createdAt'))
+  const tasksQuery = query(getTasksRef(userId), orderByChild('createdAt'))
 
   onValue(tasksQuery, (snapshot) => onNext(mapTasks(snapshot)), onError)
 
@@ -187,10 +238,11 @@ export function subscribeToTasks(
 }
 
 export function subscribeToCategories(
+  userId: string,
   onNext: (categories: TaskCategory[]) => void,
   onError: (error: Error) => void,
 ) {
-  const categoriesQuery = query(getCategoriesRef(), orderByChild('createdAt'))
+  const categoriesQuery = query(getCategoriesRef(userId), orderByChild('order'))
 
   onValue(categoriesQuery, (snapshot) => onNext(mapCategories(snapshot)), onError)
 

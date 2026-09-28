@@ -3,7 +3,10 @@ export type TaskStatus = 'todo' | 'doing' | 'blocked' | 'done'
 export type TaskCategory = {
   id: string
   name: string
+  order: number
+  parentId: string | null
   createdAt: number | null
+  updatedAt: number | null
 }
 
 export type Task = {
@@ -33,4 +36,10 @@ export type UpdateTaskInput = {
   dueDate?: string | null
   status?: TaskStatus
   title?: string
+}
+
+export type UpdateCategoryInput = {
+  name?: string
+  order?: number
+  parentId?: string | null
 }

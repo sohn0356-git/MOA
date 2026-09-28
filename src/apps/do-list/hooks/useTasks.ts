@@ -7,23 +7,33 @@ import {
   deleteTask,
   subscribeToCategories,
   subscribeToTasks,
+  updateCategoriesOrder,
+  updateCategory,
   updateTask,
 } from '../services/taskService'
 import type { Task, TaskCategory, TaskStatus } from '../types/task'
 
-export function useTasks() {
+export function useTasks(userId: string | null) {
   const configError = useMemo(() => getFirebaseConfigError(), [])
   const [categories, setCategories] = useState<TaskCategory[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
-  const [isLoading, setIsLoading] = useState(!configError)
+  const [isLoading, setIsLoading] = useState(!configError && Boolean(userId))
   const [error, setError] = useState<string | null>(configError)
   const [isMutating, setIsMutating] = useState(false)
   const [syncMessage, setSyncMessage] = useState(
     configError ? 'Firebase is not configured.' : 'Connecting to Realtime DB...',
   )
 
+  function requireUserId() {
+    if (!userId) {
+      throw new Error('Login is required.')
+    }
+
+    return userId
+  }
+
   useEffect(() => {
-    if (configError) {
+    if (configError || !userId) {
       return undefined
     }
 
@@ -43,6 +53,7 @@ export function useTasks() {
     }
 
     const unsubscribeTasks = subscribeToTasks(
+      userId,
       (nextTasks) => {
         setTasks(nextTasks)
         setError(null)
@@ -57,6 +68,7 @@ export function useTasks() {
     )
 
     const unsubscribeCategories = subscribeToCategories(
+      userId,
       (nextCategories) => {
         setCategories(nextCategories)
         setError(null)
@@ -72,7 +84,7 @@ export function useTasks() {
       unsubscribeTasks()
       unsubscribeCategories()
     }
-  }, [configError])
+  }, [configError, userId])
 
   async function addTask(
     title: string,
@@ -92,12 +104,15 @@ export function useTasks() {
     setSyncMessage('Saving to Realtime DB...')
 
     try {
+      const currentUserId = requireUserId()
+
       await createTask({
-        categoryId,
         description: trimmedDescription,
         dueDate,
+        categoryId,
         status,
         title: trimmedTitle,
+        userId: currentUserId,
       })
       setSyncMessage('Saved. Waiting for realtime update...')
     } catch (taskError) {
@@ -109,7 +124,7 @@ export function useTasks() {
     }
   }
 
-  async function addCategory(name: string) {
+  async function addCategory(name: string, parentId: string | null = null) {
     const trimmedName = name.trim()
 
     if (!trimmedName) {
@@ -119,7 +134,11 @@ export function useTasks() {
     setIsMutating(true)
 
     try {
-      await createCategory(trimmedName)
+      const siblingCount = categories.filter((category) => {
+        return category.parentId === parentId
+      }).length
+
+      await createCategory(requireUserId(), trimmedName, siblingCount, parentId)
     } catch (categoryError) {
       setError(
         categoryError instanceof Error
@@ -132,12 +151,71 @@ export function useTasks() {
     }
   }
 
+  async function renameCategory(categoryId: string, name: string) {
+    const trimmedName = name.trim()
+
+    if (!trimmedName) {
+      return
+    }
+
+    setIsMutating(true)
+
+    try {
+      await updateCategory(requireUserId(), categoryId, { name: trimmedName })
+    } catch (categoryError) {
+      setError(
+        categoryError instanceof Error
+          ? categoryError.message
+          : 'Failed to update category.',
+      )
+      throw categoryError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function moveCategory(categoryId: string, direction: -1 | 1) {
+    const movingCategory = categories.find((category) => category.id === categoryId)
+
+    if (!movingCategory) {
+      return
+    }
+
+    const siblings = categories.filter((category) => {
+      return category.parentId === movingCategory.parentId
+    })
+    const currentIndex = siblings.findIndex((category) => category.id === categoryId)
+    const nextIndex = currentIndex + direction
+
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= siblings.length) {
+      return
+    }
+
+    const nextCategories = [...siblings]
+    const [nextMovingCategory] = nextCategories.splice(currentIndex, 1)
+    nextCategories.splice(nextIndex, 0, nextMovingCategory)
+    setIsMutating(true)
+
+    try {
+      await updateCategoriesOrder(requireUserId(), nextCategories)
+    } catch (categoryError) {
+      setError(
+        categoryError instanceof Error
+          ? categoryError.message
+          : 'Failed to reorder categories.',
+      )
+      throw categoryError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
   async function setTaskStatus(taskId: string, status: TaskStatus) {
     setIsMutating(true)
     setSyncMessage('Updating Realtime DB...')
 
     try {
-      await updateTask(taskId, { status })
+      await updateTask(requireUserId(), taskId, { status })
       setSyncMessage('Updated. Waiting for realtime update...')
     } catch (taskError) {
       setError(
@@ -168,7 +246,7 @@ export function useTasks() {
     setSyncMessage('Updating Realtime DB...')
 
     try {
-      await updateTask(taskId, {
+      await updateTask(requireUserId(), taskId, {
         description: trimmedDescription,
         dueDate,
         categoryId,
@@ -189,7 +267,7 @@ export function useTasks() {
     setSyncMessage('Deleting from Realtime DB...')
 
     try {
-      await deleteTask(taskId)
+      await deleteTask(requireUserId(), taskId)
       setSyncMessage('Deleted. Waiting for realtime update...')
     } catch (taskError) {
       setError(
@@ -206,11 +284,32 @@ export function useTasks() {
     setIsMutating(true)
 
     try {
-      const affectedTasks = tasks.filter((task) => task.categoryId === categoryId)
+      const currentUserId = requireUserId()
+      const categoryIdsToRemove = new Set<string>([categoryId])
+      let didAddCategory = true
+
+      while (didAddCategory) {
+        didAddCategory = false
+        categories.forEach((category) => {
+          if (category.parentId && categoryIdsToRemove.has(category.parentId)) {
+            const previousSize = categoryIdsToRemove.size
+            categoryIdsToRemove.add(category.id)
+            didAddCategory = categoryIdsToRemove.size > previousSize
+          }
+        })
+      }
+
+      const affectedTasks = tasks.filter((task) => {
+        return task.categoryId ? categoryIdsToRemove.has(task.categoryId) : false
+      })
 
       await Promise.all([
-        ...affectedTasks.map((task) => updateTask(task.id, { categoryId: null })),
-        deleteCategory(categoryId),
+        ...affectedTasks.map((task) =>
+          updateTask(currentUserId, task.id, { categoryId: null }),
+        ),
+        ...Array.from(categoryIdsToRemove).map((nextCategoryId) =>
+          deleteCategory(currentUserId, nextCategoryId),
+        ),
       ])
     } catch (categoryError) {
       setError(
@@ -234,6 +333,8 @@ export function useTasks() {
     addCategory,
     addTask,
     editTask,
+    moveCategory,
+    renameCategory,
     removeCategory,
     setTaskStatus,
     removeTask,

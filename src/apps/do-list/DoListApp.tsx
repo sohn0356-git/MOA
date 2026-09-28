@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { signOut } from 'firebase/auth'
 import { TaskComposer } from './components/TaskComposer'
 import { TaskList } from './components/TaskList'
+import { getFirebaseAuth } from '../../services/firebase'
 import { useTasks } from './hooks/useTasks'
 import type { TaskStatus } from './types/task'
 
@@ -15,6 +17,8 @@ const filterItems: Array<{ label: string; value: TaskFilter }> = [
 ]
 
 export function DoListApp() {
+  const auth = getFirebaseAuth()
+  const userId = auth.currentUser?.uid ?? null
   const [activeFilter, setActiveFilter] = useState<TaskFilter>('active')
   const [categoryName, setCategoryName] = useState('')
   const [isAddingTask, setIsAddingTask] = useState(false)
@@ -27,10 +31,12 @@ export function DoListApp() {
     addCategory,
     addTask,
     editTask,
+    moveCategory,
+    renameCategory,
     removeCategory,
     removeTask,
     setTaskStatus,
-  } = useTasks()
+  } = useTasks(userId)
   const taskCounts = useMemo(() => {
     return tasks.reduce(
       (counts, task) => {
@@ -79,9 +85,15 @@ export function DoListApp() {
             <path d="M15.7 5.3a1 1 0 0 1 0 1.4L10.4 12l5.3 5.3a1 1 0 0 1-1.4 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.4 0Z" />
           </svg>
         </button>
-        <button aria-label="Do List menu" className="nav-icon-button" type="button">
+        <button
+          aria-label="로그아웃"
+          className="nav-icon-button"
+          disabled={isMutating}
+          type="button"
+          onClick={() => void signOut(auth)}
+        >
           <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-            <path d="M6 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" />
+            <path d="M16 17v-2h-5a1 1 0 1 1 0-2h5v-2l3 3-3 3ZM4 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3a1 1 0 1 1-2 0V4H6v16h6v-3a1 1 0 1 1 2 0v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Z" />
           </svg>
         </button>
       </header>
@@ -110,6 +122,10 @@ export function DoListApp() {
       </nav>
 
       <section className="category-manager" aria-label="카테고리 관리">
+        <div className="category-manager-copy">
+          <strong>카테고리</strong>
+          <span>{categories.length}개</span>
+        </div>
         <div className="category-input-row">
           <input
             aria-label="새 카테고리 이름"
@@ -127,7 +143,10 @@ export function DoListApp() {
             type="button"
             onClick={() => void handleAddCategory()}
           >
-            추가
+            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+              <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
+            </svg>
+            <span>추가</span>
           </button>
         </div>
       </section>
@@ -146,8 +165,11 @@ export function DoListApp() {
           <TaskList
             categories={categories}
             isBusy={isMutating}
+            onAddCategory={addCategory}
             onDeleteTask={removeTask}
             onEditTask={editTask}
+            onMoveCategory={moveCategory}
+            onRenameCategory={renameCategory}
             onRemoveCategory={removeCategory}
             onUpdateStatus={setTaskStatus}
             tasks={visibleTasks}

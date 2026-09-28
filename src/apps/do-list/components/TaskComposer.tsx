@@ -21,6 +21,21 @@ const statusOptions: Array<{ label: string; value: TaskStatus }> = [
   { label: '완료', value: 'done' },
 ]
 
+function getCategoryOptions(categories: TaskCategory[]) {
+  const topCategories = categories.filter((category) => !category.parentId)
+
+  return topCategories.flatMap((category) => {
+    const childCategories = categories
+      .filter((childCategory) => childCategory.parentId === category.id)
+      .map((childCategory) => ({
+        id: childCategory.id,
+        name: `${category.name} / ${childCategory.name}`,
+      }))
+
+    return [{ id: category.id, name: category.name }, ...childCategories]
+  })
+}
+
 export function TaskComposer({
   categories,
   isBusy,
@@ -34,6 +49,7 @@ export function TaskComposer({
   const [categoryId, setCategoryId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const categoryOptions = getCategoryOptions(categories)
 
   useEffect(() => {
     titleInputRef.current?.focus()
@@ -126,7 +142,7 @@ export function TaskComposer({
           value={categoryId}
         >
           <option value="">기본</option>
-          {categories.map((category) => (
+          {categoryOptions.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
             </option>

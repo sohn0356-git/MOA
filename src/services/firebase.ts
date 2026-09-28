@@ -1,4 +1,5 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
+import { getAuth, type Auth } from 'firebase/auth'
 import { getDatabase, type Database } from 'firebase/database'
 
 const firebaseConfig = {
@@ -20,6 +21,7 @@ const requiredConfigEntries = [
 ] as const
 
 let firebaseApp: FirebaseApp | null = null
+let firebaseAuth: Auth | null = null
 let realtimeDb: Database | null = null
 
 export function getMissingFirebaseConfigKeys() {
@@ -60,4 +62,9 @@ function getRealtimeDatabaseUrl() {
 export function getRealtimeDb() {
   realtimeDb ??= getDatabase(getFirebaseApp(), getRealtimeDatabaseUrl())
   return realtimeDb
+}
+
+export function getFirebaseAuth() {
+  firebaseAuth ??= getAuth(getFirebaseApp())
+  return firebaseAuth
 }
