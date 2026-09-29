@@ -37,6 +37,7 @@ type CategoryGroup = {
   isDefault: boolean
   level: number
   name: string
+  taskCount: number
   tasks: Task[]
 }
 
@@ -103,28 +104,40 @@ export function TaskList({
         isDefault: true,
         level: 0,
         name: '기본',
+        taskCount: tasks.filter((task) => !task.categoryId).length,
         tasks: tasks.filter((task) => !task.categoryId),
       },
     ]
 
     getChildCategories(categories, null).forEach((category) => {
+      const childCategories = getChildCategories(categories, category.id)
+      const directTasks = tasks.filter((task) => task.categoryId === category.id)
+      const childCategoryIds = new Set(childCategories.map((childCategory) => childCategory.id))
+      const childTasks = tasks.filter((task) => {
+        return task.categoryId ? childCategoryIds.has(task.categoryId) : false
+      })
+
       groups.push({
         category,
         id: category.id,
         isDefault: false,
         level: 0,
         name: category.name,
-        tasks: tasks.filter((task) => task.categoryId === category.id),
+        taskCount: directTasks.length + childTasks.length,
+        tasks: directTasks,
       })
 
-      getChildCategories(categories, category.id).forEach((childCategory) => {
+      childCategories.forEach((childCategory) => {
+        const childCategoryTasks = tasks.filter((task) => task.categoryId === childCategory.id)
+
         groups.push({
           category: childCategory,
           id: childCategory.id,
           isDefault: false,
           level: 1,
           name: childCategory.name,
-          tasks: tasks.filter((task) => task.categoryId === childCategory.id),
+          taskCount: childCategoryTasks.length,
+          tasks: childCategoryTasks,
         })
       })
     })
@@ -270,7 +283,7 @@ export function TaskList({
                     <path d="M8.3 9.3a1 1 0 0 1 1.4 0L12 11.6l2.3-2.3a1 1 0 1 1 1.4 1.4l-3 3a1 1 0 0 1-1.4 0l-3-3a1 1 0 0 1 0-1.4Z" />
                   </svg>
                   <span>{group.name}</span>
-                  <small>{group.tasks.length}</small>
+                  <small>{group.taskCount}</small>
                 </button>
               </header>
 
