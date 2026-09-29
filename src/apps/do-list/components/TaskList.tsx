@@ -246,6 +246,13 @@ export function TaskList({
         ) : null}
         {taskGroups.map((group) => {
           const isCollapsed = collapsedCategoryIds.includes(group.id)
+          const isHiddenByParent =
+            group.category?.parentId !== null &&
+            collapsedCategoryIds.includes(group.category?.parentId ?? '')
+
+          if (isHiddenByParent) {
+            return null
+          }
 
           return (
             <section

@@ -7,6 +7,7 @@ import { useTasks } from './hooks/useTasks'
 import type { Task, TaskCategory, TaskStatus } from './types/task'
 
 type TaskFilter = 'active' | TaskStatus
+type DoListTab = 'list' | 'stats'
 
 const filterItems: Array<{ label: string; value: TaskFilter }> = [
   { label: '미완료', value: 'active' },
@@ -33,6 +34,28 @@ function getChildCategories(categories: TaskCategory[], parentId: string | null)
 
 function getCategoryTaskCount(tasks: Task[], categoryId: string) {
   return tasks.filter((task) => task.categoryId === categoryId).length
+}
+
+function getCategoryName(categories: TaskCategory[], categoryId: string | null) {
+  if (!categoryId) {
+    return '기본'
+  }
+
+  const category = categories.find((currentCategory) => currentCategory.id === categoryId)
+
+  if (!category) {
+    return '알 수 없음'
+  }
+
+  if (!category.parentId) {
+    return category.name
+  }
+
+  const parentCategory = categories.find((currentCategory) => {
+    return currentCategory.id === category.parentId
+  })
+
+  return parentCategory ? `${parentCategory.name} / ${category.name}` : category.name
 }
 
 function CategoryManagerSheet({
@@ -267,6 +290,7 @@ function CategoryManagerSheet({
 export function DoListApp() {
   const auth = getFirebaseAuth()
   const userId = auth.currentUser?.uid ?? null
+  const [activeTab, setActiveTab] = useState<DoListTab>('list')
   const [activeFilter, setActiveFilter] = useState<TaskFilter>('active')
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false)
   const [isAddingTask, setIsAddingTask] = useState(false)
@@ -307,6 +331,26 @@ export function DoListApp() {
     return tasks.filter((task) => task.status === activeFilter)
   }, [activeFilter, tasks])
   const activeCount = taskCounts.todo + taskCounts.doing + taskCounts.blocked
+  const recurringCompletedCount = recurringTasks.reduce((total, recurringTask) => {
+    return total + recurringTask.completedCount
+  }, 0)
+  const categoryStats = useMemo(() => {
+    const categoryCounts = tasks.reduce<Record<string, number>>((counts, task) => {
+      const categoryKey = task.categoryId ?? ''
+      counts[categoryKey] = (counts[categoryKey] ?? 0) + 1
+      return counts
+    }, {})
+
+    return Object.entries(categoryCounts)
+      .map(([categoryId, count]) => ({
+        count,
+        id: categoryId || 'default',
+        name: getCategoryName(categories, categoryId || null),
+      }))
+      .sort((firstStat, secondStat) => secondStat.count - firstStat.count)
+      .slice(0, 5)
+  }, [categories, tasks])
+  const completionRate = tasks.length > 0 ? Math.round((taskCounts.done / tasks.length) * 100) : 0
 
   function handleBackHome() {
     history.pushState('', document.title, window.location.pathname + window.location.search)
@@ -346,29 +390,9 @@ export function DoListApp() {
             활성 {activeCount} · 완료 {taskCounts.done}
           </p>
         </div>
-      </div>
-
-      <nav className="task-filter-bar" aria-label="Task filters">
-        {filterItems.map((filter) => (
-          <button
-            className={filter.value === activeFilter ? 'filter-chip active' : 'filter-chip'}
-            key={filter.value}
-            type="button"
-            onClick={() => setActiveFilter(filter.value)}
-          >
-            <span>{filter.label}</span>
-            <small>{taskCounts[filter.value]}</small>
-          </button>
-        ))}
-      </nav>
-
-      <section className="category-manager" aria-label="카테고리 관리">
-        <div>
-          <strong>카테고리</strong>
-          <span>{categories.length}개</span>
-        </div>
         <button
           aria-label="카테고리 관리 열기"
+          className="title-action-button"
           disabled={isMutating}
           type="button"
           onClick={() => setIsCategoryManagerOpen(true)}
@@ -376,9 +400,94 @@ export function DoListApp() {
           <svg viewBox="0 0 24 24" role="presentation" focusable="false">
             <path d="M4 7a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm10-1h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2ZM4 12a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm14-1h1a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2ZM4 17a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm8-1h7a1 1 0 1 1 0 2h-7a1 1 0 1 1 0-2Z" />
           </svg>
-          <span>편집</span>
+          <span>카테고리</span>
         </button>
-      </section>
+      </div>
+
+      <nav className="do-list-tabs" aria-label="Do List views">
+        <button
+          aria-current={activeTab === 'list' ? 'page' : undefined}
+          type="button"
+          onClick={() => setActiveTab('list')}
+        >
+          목록
+        </button>
+        <button
+          aria-current={activeTab === 'stats' ? 'page' : undefined}
+          type="button"
+          onClick={() => setActiveTab('stats')}
+        >
+          통계
+        </button>
+      </nav>
+
+      {activeTab === 'list' ? (
+        <nav className="task-filter-bar" aria-label="Task filters">
+          {filterItems.map((filter) => (
+            <button
+              className={filter.value === activeFilter ? 'filter-chip active' : 'filter-chip'}
+              key={filter.value}
+              type="button"
+              onClick={() => setActiveFilter(filter.value)}
+            >
+              <span>{filter.label}</span>
+              <small>{taskCounts[filter.value]}</small>
+            </button>
+          ))}
+        </nav>
+      ) : null}
+
+      {activeTab === 'stats' ? (
+        <section className="stats-panel" aria-label="Do List 통계">
+          <div className="stats-grid">
+            <article className="stat-card primary">
+              <span>완료율</span>
+              <strong>{completionRate}%</strong>
+              <small>
+                {taskCounts.done}/{tasks.length || 0} 완료
+              </small>
+            </article>
+            <article className="stat-card">
+              <span>활성</span>
+              <strong>{activeCount}</strong>
+              <small>진행할 항목</small>
+            </article>
+            <article className="stat-card">
+              <span>반복 완료</span>
+              <strong>{recurringCompletedCount}</strong>
+              <small>{recurringTasks.length}개 반복 업무</small>
+            </article>
+          </div>
+          <div className="stats-section">
+            <h3>상태별</h3>
+            <div className="status-stats">
+              {filterItems
+                .filter((filter) => filter.value !== 'active')
+                .map((filter) => (
+                  <div className="status-stat-row" key={filter.value}>
+                    <span>{filter.label}</span>
+                    <strong>{taskCounts[filter.value]}</strong>
+                  </div>
+                ))}
+            </div>
+          </div>
+          <div className="stats-section">
+            <h3>카테고리별</h3>
+            {categoryStats.length > 0 ? (
+              <div className="category-stat-list">
+                {categoryStats.map((stat) => (
+                  <div className="category-stat-row" key={stat.id}>
+                    <span>{stat.name}</span>
+                    <strong>{stat.count}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="stats-empty">아직 집계할 할 일이 없습니다.</p>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       {error ? <p className="app-error">{error}</p> : null}
       {isLoading ? (
@@ -389,7 +498,7 @@ export function DoListApp() {
         </div>
       ) : null}
 
-      {!isLoading && !error ? (
+      {!isLoading && !error && activeTab === 'list' ? (
         <>
           <TaskList
             categories={categories}
@@ -410,6 +519,11 @@ export function DoListApp() {
               <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
             </svg>
           </button>
+        </>
+      ) : null}
+
+      {!isLoading && !error ? (
+        <>
           {isAddingTask ? (
             <div className="sheet-backdrop" role="presentation">
               <TaskComposer
