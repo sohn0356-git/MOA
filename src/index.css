@@ -1036,9 +1036,7 @@ select:disabled {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(12 18 28 / 34%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgb(12 18 28 / 92%);
 }
 
 .sheet-backdrop {
@@ -1048,6 +1046,9 @@ select:disabled {
 }
 
 .sheet-form {
+  background: var(--surface-strong);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   width: 100%;
   max-height: calc(100svh - env(safe-area-inset-top) - 24px);
   overflow-y: auto;
@@ -1295,6 +1296,7 @@ select:disabled {
 
 .task-controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
@@ -1448,7 +1450,10 @@ select:disabled {
   border-radius: 26px;
   padding: 18px;
   color: var(--text);
+  background: var(--surface-strong);
   box-shadow: var(--shadow-lg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .modal-header {

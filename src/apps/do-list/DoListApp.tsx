@@ -385,6 +385,7 @@ export function DoListApp() {
     addTask,
     editTask,
     moveCategory,
+    moveTask,
     renameCategory,
     removeCategory,
     removeTask,
@@ -614,6 +615,7 @@ export function DoListApp() {
             isBusy={isMutating}
             onDeleteTask={removeTask}
             onEditTask={editTask}
+            onMoveTask={moveTask}
             onUpdateStatus={setTaskStatus}
             recurringTasks={recurringTasks}
             tasks={visibleTasks}

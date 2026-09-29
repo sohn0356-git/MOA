@@ -57,6 +57,7 @@ type TaskListProps = {
     recurringIntervalDays?: number | null,
   ) => Promise<void>
   onUpdateStatus: (taskId: string, status: TaskStatus) => Promise<void>
+  onMoveTask: (taskId: string, direction: -1 | 1, orderedTasks: Task[]) => Promise<void>
 }
 
 function getChildCategories(categories: TaskCategory[], parentId: string | null) {
@@ -83,6 +84,7 @@ export function TaskList({
   tasks,
   onDeleteTask,
   onEditTask,
+  onMoveTask,
   onUpdateStatus,
 }: TaskListProps) {
   const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<string[]>([])
@@ -293,7 +295,7 @@ export function TaskList({
 
               {!isCollapsed && group.tasks.length > 0 ? (
                 <ul className="task-list">
-                  {group.tasks.map((task) => (
+                  {group.tasks.map((task, taskIndex) => (
                     <li className={`task-item task-${task.status}`} key={task.id}>
                       <button
                         className="task-copy"
@@ -318,6 +320,28 @@ export function TaskList({
                           {statusLabels[task.status]}
                         </button>
                         <div className="task-actions">
+                          <button
+                            aria-label={`${task.title} 위로 이동`}
+                            className="icon-button"
+                            disabled={isBusy || taskIndex === 0}
+                            type="button"
+                            onClick={() => void onMoveTask(task.id, -1, group.tasks)}
+                          >
+                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                              <path d="M12 5a1 1 0 0 1 .7.3l6 6a1 1 0 1 1-1.4 1.4L13 8.4V18a1 1 0 1 1-2 0V8.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l6-6A1 1 0 0 1 12 5Z" />
+                            </svg>
+                          </button>
+                          <button
+                            aria-label={`${task.title} 아래로 이동`}
+                            className="icon-button"
+                            disabled={isBusy || taskIndex === group.tasks.length - 1}
+                            type="button"
+                            onClick={() => void onMoveTask(task.id, 1, group.tasks)}
+                          >
+                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                              <path d="M12 19a1 1 0 0 1-.7-.3l-6-6a1 1 0 1 1 1.4-1.4L11 15.6V6a1 1 0 1 1 2 0v9.6l4.3-4.3a1 1 0 0 1 1.4 1.4l-6 6a1 1 0 0 1-.7.3Z" />
+                            </svg>
+                          </button>
                           <button
                             aria-label={`${task.title} 수정`}
                             className="icon-button"

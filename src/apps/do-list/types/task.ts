@@ -15,6 +15,7 @@ export type Task = {
   id: string
   categoryId: string | null
   completedAt: number | null
+  order: number
   title: string
   description: string
   content: string
@@ -58,6 +59,7 @@ export type UpdateTaskInput = {
   content?: string
   description?: string
   dueDate?: string | null
+  order?: number
   recurringOccurrenceKey?: string | null
   recurringTaskId?: string | null
   status?: TaskStatus

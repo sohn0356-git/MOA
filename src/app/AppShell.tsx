@@ -6,12 +6,8 @@ import { AppUpdateBanner } from '../components/AppUpdateBanner'
 import { useAuth } from '../hooks/useAuth'
 import { useAppUpdate } from '../hooks/useAppUpdate'
 
-function getRouteFromHash() {
-  return window.location.hash || ''
-}
-
 export function AppShell() {
-  const [activeRoute, setActiveRoute] = useState(getRouteFromHash)
+  const [activeRoute, setActiveRoute] = useState('')
   const {
     authError,
     isAuthLoading,
@@ -28,8 +24,16 @@ export function AppShell() {
   const ActiveAppComponent = activeApp?.component
 
   useEffect(() => {
+    if (window.location.hash) {
+      history.replaceState(
+        '',
+        document.title,
+        window.location.pathname + window.location.search,
+      )
+    }
+
     function handleHashChange() {
-      setActiveRoute(getRouteFromHash())
+      setActiveRoute(window.location.hash || '')
     }
 
     window.addEventListener('hashchange', handleHashChange)

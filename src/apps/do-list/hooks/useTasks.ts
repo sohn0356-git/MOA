@@ -15,6 +15,7 @@ import {
   updateCategory,
   updateRecurringTask,
   updateTask,
+  updateTasksOrder,
 } from '../services/taskService'
 import type {
   RecurringScheduleType,
@@ -473,6 +474,34 @@ export function useTasks(userId: string | null) {
     }
   }
 
+  async function moveTask(taskId: string, direction: -1 | 1, orderedTasks: Task[]) {
+    const currentIndex = orderedTasks.findIndex((task) => task.id === taskId)
+    const nextIndex = currentIndex + direction
+
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= orderedTasks.length) {
+      return
+    }
+
+    const nextTasks = [...orderedTasks]
+    const [nextMovingTask] = nextTasks.splice(currentIndex, 1)
+    nextTasks.splice(nextIndex, 0, nextMovingTask)
+    setIsMutating(true)
+    setSyncMessage('Reordering tasks...')
+
+    try {
+      await updateTasksOrder(requireUserId(), nextTasks)
+      setSyncMessage('Updated. Waiting for realtime update...')
+    } catch (taskError) {
+      setError(
+        taskError instanceof Error ? taskError.message : 'Failed to reorder tasks.',
+      )
+      setSyncMessage('Update failed.')
+      throw taskError
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
   async function setTaskStatus(taskId: string, status: TaskStatus) {
     const currentTask = tasks.find((task) => task.id === taskId)
     setIsMutating(true)
@@ -672,6 +701,7 @@ export function useTasks(userId: string | null) {
     addTask,
     editTask,
     moveCategory,
+    moveTask,
     renameCategory,
     removeCategory,
     removeRecurringTask,

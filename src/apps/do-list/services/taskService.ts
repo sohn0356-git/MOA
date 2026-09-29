@@ -43,6 +43,7 @@ type StoredTask = {
   content?: unknown
   description?: unknown
   dueDate?: unknown
+  order?: unknown
   recurringOccurrenceKey?: unknown
   recurringTaskId?: unknown
   status?: unknown
@@ -133,11 +134,13 @@ function toCategoryId(value: unknown) {
 
 function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
   const title = String(data.title ?? data.content ?? '')
+  const createdAt = toTimestamp(data.createdAt)
 
   return {
     id: taskId,
     categoryId: toCategoryId(data.categoryId),
     completedAt: toTimestamp(data.completedAt),
+    order: toOrder(data.order) ?? (createdAt ? -createdAt : 0),
     title,
     description: String(data.description ?? ''),
     content: title,
@@ -145,7 +148,7 @@ function mapTaskSnapshot(taskId: string, data: StoredTask): Task {
     recurringOccurrenceKey: toDueDate(data.recurringOccurrenceKey),
     recurringTaskId: toCategoryId(data.recurringTaskId),
     status: toTaskStatus(data.status),
-    createdAt: toTimestamp(data.createdAt),
+    createdAt,
     updatedAt: toTimestamp(data.updatedAt),
   }
 }
@@ -203,6 +206,10 @@ function mapTasks(snapshot: DataSnapshot) {
   return Object.entries(value)
     .map(([taskId, data]) => mapTaskSnapshot(taskId, data))
     .sort((firstTask, secondTask) => {
+      if (firstTask.order !== secondTask.order) {
+        return firstTask.order - secondTask.order
+      }
+
       return (secondTask.createdAt ?? 0) - (firstTask.createdAt ?? 0)
     })
 }
@@ -259,6 +266,7 @@ export async function createTask({
     completedAt: status === 'done' ? serverTimestamp() : null,
     description,
     dueDate,
+    order: -Date.now(),
     recurringOccurrenceKey,
     recurringTaskId,
     status,
@@ -341,6 +349,15 @@ export async function updateCategory(
 export async function updateCategoriesOrder(userId: string, categories: TaskCategory[]) {
   const updates = categories.reduce<Record<string, number>>((nextUpdates, category, index) => {
     nextUpdates[`${getUserPath(userId, CATEGORIES_PATH)}/${category.id}/order`] = index
+    return nextUpdates
+  }, {})
+
+  return update(ref(getRealtimeDb()), updates)
+}
+
+export async function updateTasksOrder(userId: string, tasks: Task[]) {
+  const updates = tasks.reduce<Record<string, number>>((nextUpdates, task, index) => {
+    nextUpdates[`${getUserPath(userId, TASKS_PATH)}/${task.id}/order`] = index
     return nextUpdates
   }, {})
 
