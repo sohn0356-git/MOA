@@ -74,16 +74,28 @@ function addMonths(dateString: string, months: number) {
 }
 
 function getNextRecurringDate(recurringTask: RecurringTask, dueDate: string) {
-  if (recurringTask.scheduleType === 'weekly') {
+  return getNextRecurringDateForSchedule(
+    recurringTask.scheduleType,
+    recurringTask.intervalDays,
+    dueDate,
+  )
+}
+
+function getNextRecurringDateForSchedule(
+  scheduleType: RecurringScheduleType,
+  intervalDays: number | null,
+  dueDate: string,
+) {
+  if (scheduleType === 'weekly') {
     return addDays(dueDate, 7)
   }
 
-  if (recurringTask.scheduleType === 'monthly') {
+  if (scheduleType === 'monthly') {
     return addMonths(dueDate, 1)
   }
 
-  if (recurringTask.scheduleType === 'interval') {
-    return addDays(dueDate, recurringTask.intervalDays ?? 1)
+  if (scheduleType === 'interval') {
+    return addDays(dueDate, intervalDays ?? 1)
   }
 
   return addDays(dueDate, 1)
@@ -501,6 +513,8 @@ export function useTasks(userId: string | null) {
     description: string,
     dueDate: string | null,
     categoryId: string | null,
+    recurringScheduleType: RecurringScheduleType | null = null,
+    recurringIntervalDays: number | null = null,
   ) {
     const trimmedTitle = title.trim()
     const trimmedDescription = description.trim()
@@ -513,12 +527,67 @@ export function useTasks(userId: string | null) {
     setSyncMessage('Updating Realtime DB...')
 
     try {
-      await updateTask(requireUserId(), taskId, {
+      const currentUserId = requireUserId()
+      const currentTask = tasks.find((task) => task.id === taskId)
+      const nextDueDate = dueDate || getTodayString()
+      const nextTaskInput = {
         description: trimmedDescription,
         dueDate,
         categoryId,
         title: trimmedTitle,
-      })
+      }
+
+      if (recurringScheduleType) {
+        const intervalDays =
+          recurringScheduleType === 'interval'
+            ? Math.max(1, recurringIntervalDays ?? 1)
+            : null
+
+        if (currentTask?.recurringTaskId) {
+          await Promise.all([
+            updateRecurringTask(currentUserId, currentTask.recurringTaskId, {
+              categoryId,
+              description: trimmedDescription,
+              intervalDays,
+              nextDueDate: getNextRecurringDateForSchedule(
+                recurringScheduleType,
+                intervalDays,
+                nextDueDate,
+              ),
+              scheduleType: recurringScheduleType,
+              startDate: currentTask.recurringOccurrenceKey ?? nextDueDate,
+              title: trimmedTitle,
+            }),
+            updateTask(currentUserId, taskId, {
+              ...nextTaskInput,
+              recurringOccurrenceKey: currentTask.recurringOccurrenceKey ?? nextDueDate,
+            }),
+          ])
+        } else {
+          const recurringTaskId = await createRecurringTask(currentUserId, {
+            categoryId,
+            description: trimmedDescription,
+            intervalDays,
+            nextDueDate: getNextRecurringDateForSchedule(
+              recurringScheduleType,
+              intervalDays,
+              nextDueDate,
+            ),
+            scheduleType: recurringScheduleType,
+            startDate: nextDueDate,
+            title: trimmedTitle,
+          })
+
+          await updateTask(currentUserId, taskId, {
+            ...nextTaskInput,
+            recurringOccurrenceKey: nextDueDate,
+            recurringTaskId,
+          })
+        }
+      } else {
+        await updateTask(currentUserId, taskId, nextTaskInput)
+      }
+
       setSyncMessage('Updated. Waiting for realtime update...')
     } catch (taskError) {
       setError(taskError instanceof Error ? taskError.message : 'Failed to update task.')

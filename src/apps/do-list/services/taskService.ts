@@ -274,7 +274,7 @@ export async function createRecurringTask(
 ) {
   const recurringTaskRef = push(getRecurringTasksRef(userId))
 
-  return set(recurringTaskRef, {
+  await set(recurringTaskRef, {
     ...input,
     completedCount: 0,
     isActive: true,
@@ -282,6 +282,8 @@ export async function createRecurringTask(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
+
+  return recurringTaskRef.key
 }
 
 export async function updateRecurringTask(

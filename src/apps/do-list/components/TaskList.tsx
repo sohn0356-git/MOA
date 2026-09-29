@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import type { Task, TaskCategory, TaskStatus } from '../types/task'
+import type {
+  RecurringScheduleType,
+  RecurringTask,
+  Task,
+  TaskCategory,
+  TaskStatus,
+} from '../types/task'
+
+type RepeatOption = 'none' | RecurringScheduleType
 
 const statusLabels: Record<TaskStatus, string> = {
   todo: '할 일',
@@ -15,6 +23,14 @@ const statusOptions: Array<{ description: string; label: string; value: TaskStat
   { description: '완료되어 닫힌 작업', label: '완료', value: 'done' },
 ]
 
+const repeatOptions: Array<{ label: string; value: RepeatOption }> = [
+  { label: '반복 안 함', value: 'none' },
+  { label: '매일', value: 'daily' },
+  { label: '매주', value: 'weekly' },
+  { label: '매월', value: 'monthly' },
+  { label: '특정 주기', value: 'interval' },
+]
+
 type CategoryGroup = {
   category: TaskCategory | null
   id: string
@@ -27,6 +43,7 @@ type CategoryGroup = {
 type TaskListProps = {
   categories: TaskCategory[]
   isBusy: boolean
+  recurringTasks: RecurringTask[]
   tasks: Task[]
   onDeleteTask: (taskId: string) => Promise<void>
   onEditTask: (
@@ -35,6 +52,8 @@ type TaskListProps = {
     description: string,
     dueDate: string | null,
     categoryId: string | null,
+    recurringScheduleType?: RecurringScheduleType | null,
+    recurringIntervalDays?: number | null,
   ) => Promise<void>
   onUpdateStatus: (taskId: string, status: TaskStatus) => Promise<void>
 }
@@ -59,6 +78,7 @@ function getCategoryOptions(categories: TaskCategory[]) {
 export function TaskList({
   categories,
   isBusy,
+  recurringTasks,
   tasks,
   onDeleteTask,
   onEditTask,
@@ -71,6 +91,8 @@ export function TaskList({
   const [editDescription, setEditDescription] = useState('')
   const [editDueDate, setEditDueDate] = useState('')
   const [editCategoryId, setEditCategoryId] = useState('')
+  const [editRepeatOption, setEditRepeatOption] = useState<RepeatOption>('none')
+  const [editIntervalDays, setEditIntervalDays] = useState(2)
   const didInitializeCollapsedGroups = useRef(false)
   const categoryOptions = getCategoryOptions(categories)
   const taskGroups = useMemo(() => {
@@ -149,11 +171,19 @@ export function TaskList({
   }, [editingTask, statusTask])
 
   function openEditModal(task: Task) {
+    const recurringTask = task.recurringTaskId
+      ? recurringTasks.find((currentRecurringTask) => {
+          return currentRecurringTask.id === task.recurringTaskId
+        })
+      : null
+
     setEditingTask(task)
     setEditTitle(task.title)
     setEditDescription(task.description)
     setEditDueDate(task.dueDate ?? '')
     setEditCategoryId(task.categoryId ?? '')
+    setEditRepeatOption(recurringTask?.scheduleType ?? 'none')
+    setEditIntervalDays(recurringTask?.intervalDays ?? 2)
   }
 
   function closeEditModal() {
@@ -162,6 +192,8 @@ export function TaskList({
     setEditDescription('')
     setEditDueDate('')
     setEditCategoryId('')
+    setEditRepeatOption('none')
+    setEditIntervalDays(2)
   }
 
   async function handleEditSubmit(event: FormEvent<HTMLFormElement>) {
@@ -177,6 +209,8 @@ export function TaskList({
       editDescription,
       editDueDate || null,
       editCategoryId || null,
+      editRepeatOption === 'none' ? null : editRepeatOption,
+      editRepeatOption === 'interval' ? editIntervalDays : null,
     )
     closeEditModal()
   }
@@ -420,6 +454,36 @@ export function TaskList({
                   ))}
                 </select>
               </label>
+              <label className="field-label">
+                <span>반복</span>
+                <select
+                  disabled={isBusy}
+                  onChange={(event) => setEditRepeatOption(event.target.value as RepeatOption)}
+                  value={editRepeatOption}
+                >
+                  {repeatOptions
+                    .filter((option) => {
+                      return editingTask.recurringTaskId ? option.value !== 'none' : true
+                    })
+                    .map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              {editRepeatOption === 'interval' ? (
+                <label className="field-label">
+                  <span>며칠마다</span>
+                  <input
+                    disabled={isBusy}
+                    min={1}
+                    onChange={(event) => setEditIntervalDays(Number(event.target.value))}
+                    type="number"
+                    value={editIntervalDays}
+                  />
+                </label>
+              ) : null}
               <div className="modal-actions">
                 <button type="button" onClick={closeEditModal}>
                   취소

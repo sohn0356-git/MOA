@@ -272,6 +272,7 @@ export function DoListApp() {
   const [isAddingTask, setIsAddingTask] = useState(false)
   const {
     categories,
+    recurringTasks,
     tasks,
     isLoading,
     isMutating,
@@ -396,6 +397,7 @@ export function DoListApp() {
             onDeleteTask={removeTask}
             onEditTask={editTask}
             onUpdateStatus={setTaskStatus}
+            recurringTasks={recurringTasks}
             tasks={visibleTasks}
           />
           <button
