@@ -873,6 +873,40 @@ select:disabled {
   gap: 14px;
 }
 
+.stats-period-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 4px;
+  background: rgb(255 255 255 / 62%);
+}
+
+.stats-period-bar button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: transparent;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.stats-period-bar button[aria-current='true'] {
+  color: #ffffff;
+  background: var(--blue);
+  box-shadow: 0 10px 22px rgb(0 122 255 / 18%);
+}
+
+.stats-period-label {
+  margin: -4px 0 0;
+  color: var(--text-faint);
+  font-size: 13px;
+  font-weight: 750;
+  text-align: center;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

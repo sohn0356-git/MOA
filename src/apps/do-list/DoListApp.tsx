@@ -8,6 +8,7 @@ import type { Task, TaskCategory, TaskStatus } from './types/task'
 
 type TaskFilter = 'active' | TaskStatus
 type DoListTab = 'list' | 'stats'
+type StatsPeriod = 'day' | 'month' | 'year'
 
 const filterItems: Array<{ label: string; value: TaskFilter }> = [
   { label: '미완료', value: 'active' },
@@ -15,6 +16,12 @@ const filterItems: Array<{ label: string; value: TaskFilter }> = [
   { label: '진행 중', value: 'doing' },
   { label: '막힘', value: 'blocked' },
   { label: '완료', value: 'done' },
+]
+
+const statsPeriodItems: Array<{ label: string; value: StatsPeriod }> = [
+  { label: '일', value: 'day' },
+  { label: '월', value: 'month' },
+  { label: '년', value: 'year' },
 ]
 
 type CategoryManagerSheetProps = {
@@ -56,6 +63,77 @@ function getCategoryName(categories: TaskCategory[], categoryId: string | null) 
   })
 
   return parentCategory ? `${parentCategory.name} / ${category.name}` : category.name
+}
+
+function getDateParts(timestamp: number | null) {
+  if (!timestamp) {
+    return null
+  }
+
+  const date = new Date(timestamp)
+
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  return {
+    day: formatLocalDate(date),
+    month: formatLocalMonth(date),
+    year: String(date.getFullYear()),
+  }
+}
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function formatLocalMonth(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+
+  return `${year}-${month}`
+}
+
+function getCurrentPeriodKey(period: StatsPeriod) {
+  const now = new Date()
+
+  if (period === 'year') {
+    return String(now.getFullYear())
+  }
+
+  if (period === 'month') {
+    return formatLocalMonth(now)
+  }
+
+  return formatLocalDate(now)
+}
+
+function getPeriodLabel(period: StatsPeriod, periodKey: string) {
+  if (period === 'year') {
+    return `${periodKey}년`
+  }
+
+  if (period === 'month') {
+    const [year, month] = periodKey.split('-')
+    return `${year}년 ${Number(month)}월`
+  }
+
+  const [year, month, day] = periodKey.split('-')
+  return `${year}년 ${Number(month)}월 ${Number(day)}일`
+}
+
+function isTaskInPeriod(task: Task, period: StatsPeriod, periodKey: string) {
+  return getDateParts(task.createdAt)?.[period] === periodKey
+}
+
+function isTaskCompletedInPeriod(task: Task, period: StatsPeriod, periodKey: string) {
+  const completedAt = task.completedAt ?? (task.status === 'done' ? task.updatedAt : null)
+
+  return getDateParts(completedAt)?.[period] === periodKey
 }
 
 function CategoryManagerSheet({
@@ -292,6 +370,7 @@ export function DoListApp() {
   const userId = auth.currentUser?.uid ?? null
   const [activeTab, setActiveTab] = useState<DoListTab>('list')
   const [activeFilter, setActiveFilter] = useState<TaskFilter>('active')
+  const [statsPeriod, setStatsPeriod] = useState<StatsPeriod>('day')
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false)
   const [isAddingTask, setIsAddingTask] = useState(false)
   const {
@@ -331,11 +410,27 @@ export function DoListApp() {
     return tasks.filter((task) => task.status === activeFilter)
   }, [activeFilter, tasks])
   const activeCount = taskCounts.todo + taskCounts.doing + taskCounts.blocked
-  const recurringCompletedCount = recurringTasks.reduce((total, recurringTask) => {
-    return total + recurringTask.completedCount
-  }, 0)
+  const statsPeriodKey = getCurrentPeriodKey(statsPeriod)
+  const periodTasks = useMemo(() => {
+    return tasks.filter((task) => isTaskInPeriod(task, statsPeriod, statsPeriodKey))
+  }, [statsPeriod, statsPeriodKey, tasks])
+  const periodCompletedTasks = useMemo(() => {
+    return tasks.filter((task) => isTaskCompletedInPeriod(task, statsPeriod, statsPeriodKey))
+  }, [statsPeriod, statsPeriodKey, tasks])
+  const periodTaskCounts = useMemo(() => {
+    return periodTasks.reduce(
+      (counts, task) => {
+        if (task.status !== 'done') {
+          counts.active += 1
+        }
+        counts[task.status] += 1
+        return counts
+      },
+      { active: 0, blocked: 0, doing: 0, done: 0, todo: 0 },
+    )
+  }, [periodTasks])
   const categoryStats = useMemo(() => {
-    const categoryCounts = tasks.reduce<Record<string, number>>((counts, task) => {
+    const categoryCounts = periodTasks.reduce<Record<string, number>>((counts, task) => {
       const categoryKey = task.categoryId ?? ''
       counts[categoryKey] = (counts[categoryKey] ?? 0) + 1
       return counts
@@ -349,8 +444,9 @@ export function DoListApp() {
       }))
       .sort((firstStat, secondStat) => secondStat.count - firstStat.count)
       .slice(0, 5)
-  }, [categories, tasks])
-  const completionRate = tasks.length > 0 ? Math.round((taskCounts.done / tasks.length) * 100) : 0
+  }, [categories, periodTasks])
+  const completionRate =
+    periodTasks.length > 0 ? Math.round((periodCompletedTasks.length / periodTasks.length) * 100) : 0
 
   function handleBackHome() {
     history.pushState('', document.title, window.location.pathname + window.location.search)
@@ -439,23 +535,36 @@ export function DoListApp() {
 
       {activeTab === 'stats' ? (
         <section className="stats-panel" aria-label="Do List 통계">
+          <div className="stats-period-bar" aria-label="통계 기간">
+            {statsPeriodItems.map((periodItem) => (
+              <button
+                aria-current={statsPeriod === periodItem.value ? 'true' : undefined}
+                key={periodItem.value}
+                type="button"
+                onClick={() => setStatsPeriod(periodItem.value)}
+              >
+                {periodItem.label}
+              </button>
+            ))}
+          </div>
+          <p className="stats-period-label">{getPeriodLabel(statsPeriod, statsPeriodKey)}</p>
           <div className="stats-grid">
             <article className="stat-card primary">
               <span>완료율</span>
               <strong>{completionRate}%</strong>
               <small>
-                {taskCounts.done}/{tasks.length || 0} 완료
+                {periodCompletedTasks.length}/{periodTasks.length || 0} 완료
               </small>
             </article>
             <article className="stat-card">
-              <span>활성</span>
-              <strong>{activeCount}</strong>
-              <small>진행할 항목</small>
+              <span>생성</span>
+              <strong>{periodTasks.length}</strong>
+              <small>기간 내 추가</small>
             </article>
             <article className="stat-card">
-              <span>반복 완료</span>
-              <strong>{recurringCompletedCount}</strong>
-              <small>{recurringTasks.length}개 반복 업무</small>
+              <span>완료</span>
+              <strong>{periodCompletedTasks.length}</strong>
+              <small>기간 내 완료</small>
             </article>
           </div>
           <div className="stats-section">
@@ -466,7 +575,7 @@ export function DoListApp() {
                 .map((filter) => (
                   <div className="status-stat-row" key={filter.value}>
                     <span>{filter.label}</span>
-                    <strong>{taskCounts[filter.value]}</strong>
+                    <strong>{periodTaskCounts[filter.value]}</strong>
                   </div>
                 ))}
             </div>
