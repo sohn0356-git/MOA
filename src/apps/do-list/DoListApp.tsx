@@ -4,13 +4,7 @@ import { TaskComposer } from './components/TaskComposer'
 import { TaskList } from './components/TaskList'
 import { getFirebaseAuth } from '../../services/firebase'
 import { useTasks } from './hooks/useTasks'
-import type {
-  RecurringScheduleType,
-  RecurringTask,
-  Task,
-  TaskCategory,
-  TaskStatus,
-} from './types/task'
+import type { Task, TaskCategory, TaskStatus } from './types/task'
 
 type TaskFilter = 'active' | TaskStatus
 
@@ -20,20 +14,6 @@ const filterItems: Array<{ label: string; value: TaskFilter }> = [
   { label: '진행 중', value: 'doing' },
   { label: '막힘', value: 'blocked' },
   { label: '완료', value: 'done' },
-]
-
-const scheduleLabels: Record<RecurringScheduleType, string> = {
-  daily: '매일',
-  weekly: '매주',
-  monthly: '매월',
-  interval: '특정 주기',
-}
-
-const scheduleOptions: Array<{ label: string; value: RecurringScheduleType }> = [
-  { label: '매일', value: 'daily' },
-  { label: '매주', value: 'weekly' },
-  { label: '매월', value: 'monthly' },
-  { label: '특정 주기', value: 'interval' },
 ]
 
 type CategoryManagerSheetProps = {
@@ -53,28 +33,6 @@ function getChildCategories(categories: TaskCategory[], parentId: string | null)
 
 function getCategoryTaskCount(tasks: Task[], categoryId: string) {
   return tasks.filter((task) => task.categoryId === categoryId).length
-}
-
-function getCategoryOptions(categories: TaskCategory[]) {
-  const topCategories = getChildCategories(categories, null)
-
-  return topCategories.flatMap((category) => {
-    const childCategories = getChildCategories(categories, category.id).map((childCategory) => ({
-      id: childCategory.id,
-      name: `${category.name} / ${childCategory.name}`,
-    }))
-
-    return [{ id: category.id, name: category.name }, ...childCategories]
-  })
-}
-
-function getTodayString() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
 }
 
 function CategoryManagerSheet({
@@ -169,6 +127,7 @@ function CategoryManagerSheet({
           </form>
         ) : (
           <>
+            <span className="category-admin-marker" aria-hidden="true" />
             <div className="category-admin-copy">
               <span>{category.name}</span>
               <small>{taskCount}개 할 일</small>
@@ -237,7 +196,7 @@ function CategoryManagerSheet({
         <header className="modal-header">
           <div>
             <h3>카테고리 관리</h3>
-            <p>분류를 추가하고 순서를 정리하세요.</p>
+            <p>상위 {topCategories.length}개 · 전체 {categories.length}개</p>
           </div>
           <button
             aria-label="카테고리 관리 닫기"
@@ -305,228 +264,14 @@ function CategoryManagerSheet({
   )
 }
 
-type RecurringTaskManagerSheetProps = {
-  categories: TaskCategory[]
-  isBusy: boolean
-  recurringTasks: RecurringTask[]
-  onAddRecurringTask: (
-    title: string,
-    description: string,
-    scheduleType: RecurringScheduleType,
-    startDate: string,
-    categoryId: string | null,
-    intervalDays: number | null,
-  ) => Promise<void>
-  onClose: () => void
-  onRemoveRecurringTask: (recurringTaskId: string) => Promise<void>
-  onToggleRecurringTask: (recurringTaskId: string, isActive: boolean) => Promise<void>
-}
-
-function RecurringTaskManagerSheet({
-  categories,
-  isBusy,
-  recurringTasks,
-  onAddRecurringTask,
-  onClose,
-  onRemoveRecurringTask,
-  onToggleRecurringTask,
-}: RecurringTaskManagerSheetProps) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [scheduleType, setScheduleType] = useState<RecurringScheduleType>('daily')
-  const [startDate, setStartDate] = useState(getTodayString())
-  const [categoryId, setCategoryId] = useState('')
-  const [intervalDays, setIntervalDays] = useState(2)
-  const categoryOptions = getCategoryOptions(categories)
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (!title.trim() || !startDate) {
-      return
-    }
-
-    await onAddRecurringTask(
-      title,
-      description,
-      scheduleType,
-      startDate,
-      categoryId || null,
-      scheduleType === 'interval' ? intervalDays : null,
-    )
-    setTitle('')
-    setDescription('')
-    setScheduleType('daily')
-    setStartDate(getTodayString())
-    setCategoryId('')
-    setIntervalDays(2)
-  }
-
-  return (
-    <div className="modal-backdrop recurring-admin-backdrop" role="presentation" onClick={onClose}>
-      <section
-        aria-label="반복 업무 관리"
-        aria-modal="true"
-        className="task-modal recurring-admin-sheet"
-        role="dialog"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="modal-header">
-          <div>
-            <h3>반복 업무</h3>
-            <p>정해진 주기에 맞춰 할 일을 자동으로 추가합니다.</p>
-          </div>
-          <button
-            aria-label="반복 업무 관리 닫기"
-            className="icon-button"
-            type="button"
-            onClick={onClose}
-          >
-            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-              <path d="M6.3 5.3a1 1 0 0 1 1.4 0L12 9.6l4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 11l4.3 4.3a1 1 0 0 1-1.4 1.4L12 12.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z" />
-            </svg>
-          </button>
-        </header>
-
-        <form className="recurring-admin-form" onSubmit={(event) => void handleSubmit(event)}>
-          <label className="field-label">
-            <span>업무</span>
-            <input
-              aria-label="반복 업무 이름"
-              disabled={isBusy}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="예: 물 마시기"
-              value={title}
-            />
-          </label>
-          <label className="field-label">
-            <span>메모</span>
-            <textarea
-              aria-label="반복 업무 메모"
-              disabled={isBusy}
-              onChange={(event) => setDescription(event.target.value)}
-              rows={2}
-              value={description}
-            />
-          </label>
-          <div className="recurring-admin-grid">
-            <label className="field-label">
-              <span>주기</span>
-              <select
-                aria-label="반복 주기"
-                disabled={isBusy}
-                onChange={(event) =>
-                  setScheduleType(event.target.value as RecurringScheduleType)
-                }
-                value={scheduleType}
-              >
-                {scheduleOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field-label">
-              <span>시작일</span>
-              <input
-                aria-label="반복 시작일"
-                disabled={isBusy}
-                onChange={(event) => setStartDate(event.target.value)}
-                type="date"
-                value={startDate}
-              />
-            </label>
-          </div>
-          {scheduleType === 'interval' ? (
-            <label className="field-label">
-              <span>며칠마다</span>
-              <input
-                aria-label="반복 간격"
-                disabled={isBusy}
-                min={1}
-                onChange={(event) => setIntervalDays(Number(event.target.value))}
-                type="number"
-                value={intervalDays}
-              />
-            </label>
-          ) : null}
-          <label className="field-label">
-            <span>카테고리</span>
-            <select
-              aria-label="반복 업무 카테고리"
-              disabled={isBusy}
-              onChange={(event) => setCategoryId(event.target.value)}
-              value={categoryId}
-            >
-              <option value="">기본</option>
-              {categoryOptions.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button disabled={isBusy || !title.trim() || !startDate} type="submit">
-            반복 업무 추가
-          </button>
-        </form>
-
-        <div className="recurring-admin-list">
-          {recurringTasks.length === 0 ? (
-            <p className="recurring-admin-empty">아직 반복 업무가 없습니다.</p>
-          ) : null}
-          {recurringTasks.map((recurringTask) => (
-            <article className="recurring-admin-item" key={recurringTask.id}>
-              <div className="recurring-admin-copy">
-                <span>{recurringTask.title}</span>
-                <small>
-                  {scheduleLabels[recurringTask.scheduleType]}
-                  {recurringTask.scheduleType === 'interval'
-                    ? ` ${recurringTask.intervalDays ?? 1}일마다`
-                    : ''}{' '}
-                  · 다음 {recurringTask.nextDueDate}
-                </small>
-              </div>
-              <strong>{recurringTask.completedCount}회 완료</strong>
-              <div className="recurring-admin-actions">
-                <button
-                  className="subtle-button"
-                  disabled={isBusy}
-                  type="button"
-                  onClick={() =>
-                    void onToggleRecurringTask(recurringTask.id, !recurringTask.isActive)
-                  }
-                >
-                  {recurringTask.isActive ? '일시정지' : '재개'}
-                </button>
-                <button
-                  className="subtle-button danger"
-                  disabled={isBusy}
-                  type="button"
-                  onClick={() => void onRemoveRecurringTask(recurringTask.id)}
-                >
-                  삭제
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
-  )
-}
-
 export function DoListApp() {
   const auth = getFirebaseAuth()
   const userId = auth.currentUser?.uid ?? null
   const [activeFilter, setActiveFilter] = useState<TaskFilter>('active')
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false)
-  const [isRecurringManagerOpen, setIsRecurringManagerOpen] = useState(false)
   const [isAddingTask, setIsAddingTask] = useState(false)
   const {
     categories,
-    recurringTasks,
     tasks,
     isLoading,
     isMutating,
@@ -538,10 +283,8 @@ export function DoListApp() {
     moveCategory,
     renameCategory,
     removeCategory,
-    removeRecurringTask,
     removeTask,
     setTaskStatus,
-    toggleRecurringTask,
   } = useTasks(userId)
   const taskCounts = useMemo(() => {
     return tasks.reduce(
@@ -563,9 +306,6 @@ export function DoListApp() {
     return tasks.filter((task) => task.status === activeFilter)
   }, [activeFilter, tasks])
   const activeCount = taskCounts.todo + taskCounts.doing + taskCounts.blocked
-  const recurringCompletedCount = recurringTasks.reduce((total, recurringTask) => {
-    return total + recurringTask.completedCount
-  }, 0)
 
   function handleBackHome() {
     history.pushState('', document.title, window.location.pathname + window.location.search)
@@ -622,39 +362,21 @@ export function DoListApp() {
       </nav>
 
       <section className="category-manager" aria-label="카테고리 관리">
-        <div className="category-manager-copy">
+        <div>
           <strong>카테고리</strong>
-          <span>{categories.length}개 분류</span>
+          <span>{categories.length}개</span>
         </div>
-        <div className="category-manager-summary">
-          <span>목록은 깔끔하게 보고, 분류 편집은 관리 화면에서 처리합니다.</span>
-          <button
-            disabled={isMutating}
-            type="button"
-            onClick={() => setIsCategoryManagerOpen(true)}
-          >
-            관리
-          </button>
-        </div>
-      </section>
-
-      <section className="recurring-manager" aria-label="반복 업무 관리">
-        <div className="category-manager-copy">
-          <strong>반복 업무</strong>
-          <span>
-            {recurringTasks.length}개 설정 · {recurringCompletedCount}회 완료
-          </span>
-        </div>
-        <div className="category-manager-summary">
-          <span>매일, 매주, 매월 또는 원하는 간격으로 할 일을 자동 추가합니다.</span>
-          <button
-            disabled={isMutating}
-            type="button"
-            onClick={() => setIsRecurringManagerOpen(true)}
-          >
-            설정
-          </button>
-        </div>
+        <button
+          aria-label="카테고리 관리 열기"
+          disabled={isMutating}
+          type="button"
+          onClick={() => setIsCategoryManagerOpen(true)}
+        >
+          <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+            <path d="M4 7a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm10-1h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2ZM4 12a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm14-1h1a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2ZM4 17a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm8-1h7a1 1 0 1 1 0 2h-7a1 1 0 1 1 0-2Z" />
+          </svg>
+          <span>편집</span>
+        </button>
       </section>
 
       {error ? <p className="app-error">{error}</p> : null}
@@ -707,17 +429,6 @@ export function DoListApp() {
               onRenameCategory={renameCategory}
               onRemoveCategory={removeCategory}
               tasks={tasks}
-            />
-          ) : null}
-          {isRecurringManagerOpen ? (
-            <RecurringTaskManagerSheet
-              categories={categories}
-              isBusy={isMutating}
-              onAddRecurringTask={addRecurringTask}
-              onClose={() => setIsRecurringManagerOpen(false)}
-              onRemoveRecurringTask={removeRecurringTask}
-              onToggleRecurringTask={toggleRecurringTask}
-              recurringTasks={recurringTasks}
             />
           ) : null}
         </>
