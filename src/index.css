@@ -1037,6 +1037,8 @@ select:disabled {
   position: fixed;
   inset: 0;
   background: rgb(12 18 28 / 92%);
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .sheet-backdrop {
@@ -1544,6 +1546,7 @@ select:disabled {
 .category-admin-sheet {
   width: min(100%, 640px);
   max-height: calc(100svh - 32px);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   overflow: hidden;
 }
@@ -1564,8 +1567,11 @@ select:disabled {
 
 .category-admin-list {
   gap: 10px;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-right: 2px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .category-admin-group {
