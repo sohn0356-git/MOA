@@ -27,7 +27,6 @@ export function AppGrid({ apps, onOpenApp }: AppGridProps) {
               <Icon />
             </span>
             <span className="app-name">{app.name}</span>
-            <span className="app-description">{app.description}</span>
           </button>
         )
       })}

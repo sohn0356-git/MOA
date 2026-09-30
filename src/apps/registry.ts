@@ -4,8 +4,8 @@ import { HabitApp } from './habit/HabitApp'
 import { HabitIcon } from './habit/HabitIcon'
 import { MeditationApp } from './meditation/MeditationApp'
 import { MeditationIcon } from './meditation/MeditationIcon'
-import { MemoApp } from './memo/MemoApp'
-import { MemoIcon } from './memo/MemoIcon'
+import { MiniRoomApp } from './mini-room/MiniRoomApp'
+import { MiniRoomIcon } from './mini-room/MiniRoomIcon'
 import { SampleApp } from './sample/SampleApp'
 import { SampleIcon } from './sample/SampleIcon'
 import { TimerApp } from './timer/TimerApp'
@@ -30,12 +30,12 @@ export const appRegistry: AppMeta[] = [
     component: MeditationApp,
   },
   {
-    id: 'memo',
-    name: 'Memo',
-    description: '생각과 링크를 바로 적어두는 빠른 메모장.',
-    icon: MemoIcon,
-    route: '#/memo',
-    component: MemoApp,
+    id: 'mini-room',
+    name: 'Mini Room',
+    description: '내 방을 꾸미고 친구 방을 탐방하는 미니룸.',
+    icon: MiniRoomIcon,
+    route: '#/mini-room',
+    component: MiniRoomApp,
   },
   {
     id: 'habit',
