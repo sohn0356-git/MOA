@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getFirebaseConfigError } from '../../../services/firebase'
 import {
   createCategory,
@@ -128,6 +128,7 @@ export function useTasks(userId: string | null) {
   const [syncMessage, setSyncMessage] = useState(
     configError ? 'Firebase is not configured.' : 'Connecting to Realtime DB...',
   )
+  const pendingRecurringOccurrenceKeys = useRef(new Set<string>())
 
   function requireUserId() {
     if (!userId) {
@@ -163,6 +164,15 @@ export function useTasks(userId: string | null) {
     const unsubscribeTasks = subscribeToTasks(
       userId,
       (nextTasks) => {
+        const nextGeneratedOccurrenceKeys = new Set(
+          nextTasks
+            .filter((task) => task.recurringTaskId && task.recurringOccurrenceKey)
+            .map((task) => `${task.recurringTaskId}:${task.recurringOccurrenceKey}`),
+        )
+
+        nextGeneratedOccurrenceKeys.forEach((occurrenceKey) => {
+          pendingRecurringOccurrenceKeys.current.delete(occurrenceKey)
+        })
         setTasks(nextTasks)
         setError(null)
         setSyncMessage('Synced with Realtime DB.')
@@ -237,22 +247,35 @@ export function useTasks(userId: string | null) {
           today,
         )
         const missingOccurrences = occurrences.filter((occurrenceDate) => {
-          return !generatedOccurrenceKeys.has(`${recurringTask.id}:${occurrenceDate}`)
+          const occurrenceKey = `${recurringTask.id}:${occurrenceDate}`
+
+          return (
+            !generatedOccurrenceKeys.has(occurrenceKey) &&
+            !pendingRecurringOccurrenceKeys.current.has(occurrenceKey)
+          )
         })
 
         await Promise.all(
-          missingOccurrences.map((occurrenceDate) =>
-            createTask({
-              categoryId: recurringTask.categoryId,
-              description: recurringTask.description,
-              dueDate: occurrenceDate,
-              recurringOccurrenceKey: occurrenceDate,
-              recurringTaskId: recurringTask.id,
-              status: 'todo',
-              title: recurringTask.title,
-              userId: currentUserId,
-            }),
-          ),
+          missingOccurrences.map(async (occurrenceDate) => {
+            const occurrenceKey = `${recurringTask.id}:${occurrenceDate}`
+            pendingRecurringOccurrenceKeys.current.add(occurrenceKey)
+
+            try {
+              await createTask({
+                categoryId: recurringTask.categoryId,
+                description: recurringTask.description,
+                dueDate: occurrenceDate,
+                recurringOccurrenceKey: occurrenceDate,
+                recurringTaskId: recurringTask.id,
+                status: 'todo',
+                title: recurringTask.title,
+                userId: currentUserId,
+              })
+            } catch (createTaskError) {
+              pendingRecurringOccurrenceKeys.current.delete(occurrenceKey)
+              throw createTaskError
+            }
+          }),
         )
 
         await updateRecurringTask(currentUserId, recurringTask.id, {
@@ -514,11 +537,14 @@ export function useTasks(userId: string | null) {
         currentTask?.status !== 'done' &&
         Boolean(currentTask?.recurringTaskId) &&
         !currentTask?.completedAt
+      const shouldSetCompletedAt = status === 'done' && currentTask?.status !== 'done'
+      const shouldClearCompletedAt = status !== 'done' && currentTask?.status === 'done'
 
       await Promise.all([
         updateTask(currentUserId, taskId, {
           status,
-          ...(shouldCountCompletion ? { completedAt: { '.sv': 'timestamp' } } : {}),
+          ...(shouldSetCompletedAt ? { completedAt: { '.sv': 'timestamp' } } : {}),
+          ...(shouldClearCompletedAt ? { completedAt: null } : {}),
         }),
         shouldCountCompletion && currentTask?.recurringTaskId
           ? incrementRecurringTaskCompletedCount(currentUserId, currentTask.recurringTaskId)

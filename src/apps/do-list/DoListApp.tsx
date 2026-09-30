@@ -4,7 +4,7 @@ import { TaskComposer } from './components/TaskComposer'
 import { TaskList } from './components/TaskList'
 import { getFirebaseAuth } from '../../services/firebase'
 import { useTasks } from './hooks/useTasks'
-import type { Task, TaskCategory, TaskStatus } from './types/task'
+import type { RecurringTask, Task, TaskCategory, TaskStatus } from './types/task'
 
 type TaskFilter = 'active' | TaskStatus
 type DoListTab = 'list' | 'stats'
@@ -131,9 +131,61 @@ function isTaskInPeriod(task: Task, period: StatsPeriod, periodKey: string) {
 }
 
 function isTaskCompletedInPeriod(task: Task, period: StatsPeriod, periodKey: string) {
+  if (task.status !== 'done') {
+    return false
+  }
+
   const completedAt = task.completedAt ?? (task.status === 'done' ? task.updatedAt : null)
 
   return getDateParts(completedAt)?.[period] === periodKey
+}
+
+function getTaskDedupeKey(task: Task) {
+  if (task.recurringTaskId && task.recurringOccurrenceKey) {
+    return `${task.recurringTaskId}:${task.recurringOccurrenceKey}`
+  }
+
+  return task.id
+}
+
+function shouldReplaceDuplicateTask(currentTask: Task, nextTask: Task) {
+  if (currentTask.status !== 'done' && nextTask.status === 'done') {
+    return true
+  }
+
+  if (currentTask.status === 'done' && nextTask.status !== 'done') {
+    return false
+  }
+
+  return (
+    (nextTask.updatedAt ?? nextTask.createdAt ?? 0) >
+    (currentTask.updatedAt ?? currentTask.createdAt ?? 0)
+  )
+}
+
+function getUniqueTasks(tasks: Task[]) {
+  const uniqueTasks = new Map<string, Task>()
+
+  tasks.forEach((task) => {
+    const taskKey = getTaskDedupeKey(task)
+    const currentTask = uniqueTasks.get(taskKey)
+
+    if (!currentTask || shouldReplaceDuplicateTask(currentTask, task)) {
+      uniqueTasks.set(taskKey, task)
+    }
+  })
+
+  return Array.from(uniqueTasks.values()).sort((firstTask, secondTask) => {
+    if (firstTask.order !== secondTask.order) {
+      return firstTask.order - secondTask.order
+    }
+
+    return (secondTask.createdAt ?? 0) - (firstTask.createdAt ?? 0)
+  })
+}
+
+function getRecurringTaskTitle(recurringTasks: RecurringTask[], recurringTaskId: string) {
+  return recurringTasks.find((recurringTask) => recurringTask.id === recurringTaskId)?.title
 }
 
 function CategoryManagerSheet({
@@ -391,8 +443,9 @@ export function DoListApp() {
     removeTask,
     setTaskStatus,
   } = useTasks(userId)
+  const uniqueTasks = useMemo(() => getUniqueTasks(tasks), [tasks])
   const taskCounts = useMemo(() => {
-    return tasks.reduce(
+    return uniqueTasks.reduce(
       (counts, task) => {
         if (task.status !== 'done') {
           counts.active += 1
@@ -402,22 +455,22 @@ export function DoListApp() {
       },
       { active: 0, blocked: 0, doing: 0, done: 0, todo: 0 },
     )
-  }, [tasks])
+  }, [uniqueTasks])
   const visibleTasks = useMemo(() => {
     if (activeFilter === 'active') {
-      return tasks.filter((task) => task.status !== 'done')
+      return uniqueTasks.filter((task) => task.status !== 'done')
     }
 
-    return tasks.filter((task) => task.status === activeFilter)
-  }, [activeFilter, tasks])
+    return uniqueTasks.filter((task) => task.status === activeFilter)
+  }, [activeFilter, uniqueTasks])
   const activeCount = taskCounts.todo + taskCounts.doing + taskCounts.blocked
   const statsPeriodKey = getCurrentPeriodKey(statsPeriod)
   const periodTasks = useMemo(() => {
-    return tasks.filter((task) => isTaskInPeriod(task, statsPeriod, statsPeriodKey))
-  }, [statsPeriod, statsPeriodKey, tasks])
+    return uniqueTasks.filter((task) => isTaskInPeriod(task, statsPeriod, statsPeriodKey))
+  }, [statsPeriod, statsPeriodKey, uniqueTasks])
   const periodCompletedTasks = useMemo(() => {
-    return tasks.filter((task) => isTaskCompletedInPeriod(task, statsPeriod, statsPeriodKey))
-  }, [statsPeriod, statsPeriodKey, tasks])
+    return uniqueTasks.filter((task) => isTaskCompletedInPeriod(task, statsPeriod, statsPeriodKey))
+  }, [statsPeriod, statsPeriodKey, uniqueTasks])
   const periodTaskCounts = useMemo(() => {
     return periodTasks.reduce(
       (counts, task) => {
@@ -446,8 +499,69 @@ export function DoListApp() {
       .sort((firstStat, secondStat) => secondStat.count - firstStat.count)
       .slice(0, 5)
   }, [categories, periodTasks])
+  const completedTaskStats = useMemo(() => {
+    type CompletedTaskStat = {
+      count: number
+      id: string
+      isRecurring: boolean
+      title: string
+    }
+
+    const completedCounts = periodCompletedTasks.reduce<Record<string, CompletedTaskStat>>((counts, task) => {
+      const taskKey = task.recurringTaskId ?? task.id
+      const title = task.recurringTaskId
+        ? getRecurringTaskTitle(recurringTasks, task.recurringTaskId) ?? task.title
+        : task.title
+      const currentCount = counts[taskKey]?.count ?? 0
+
+      counts[taskKey] = {
+        count: currentCount + 1,
+        id: taskKey,
+        isRecurring: Boolean(task.recurringTaskId),
+        title,
+      }
+
+      return counts
+    }, {})
+
+    return Object.values(completedCounts)
+      .sort((firstStat, secondStat) => secondStat.count - firstStat.count)
+      .slice(0, 6)
+  }, [periodCompletedTasks, recurringTasks])
+  const maxCompletedTaskCount = Math.max(
+    1,
+    ...completedTaskStats.map((stat) => stat.count),
+  )
+  const recurringCompletionStats = useMemo(() => {
+    const periodCounts = periodCompletedTasks.reduce<Record<string, number>>((counts, task) => {
+      if (task.recurringTaskId) {
+        counts[task.recurringTaskId] = (counts[task.recurringTaskId] ?? 0) + 1
+      }
+
+      return counts
+    }, {})
+
+    return recurringTasks
+      .map((recurringTask) => ({
+        completedCount: recurringTask.completedCount,
+        id: recurringTask.id,
+        periodCount: periodCounts[recurringTask.id] ?? 0,
+        title: recurringTask.title,
+      }))
+      .filter((stat) => stat.completedCount > 0 || stat.periodCount > 0)
+      .sort((firstStat, secondStat) => {
+        if (secondStat.periodCount !== firstStat.periodCount) {
+          return secondStat.periodCount - firstStat.periodCount
+        }
+
+        return secondStat.completedCount - firstStat.completedCount
+      })
+      .slice(0, 6)
+  }, [periodCompletedTasks, recurringTasks])
   const completionRate =
-    periodTasks.length > 0 ? Math.round((periodCompletedTasks.length / periodTasks.length) * 100) : 0
+    periodTasks.length > 0
+      ? Math.round((periodCompletedTasks.length / periodTasks.length) * 100)
+      : 0
 
   function handleBackHome() {
     history.pushState('', document.title, window.location.pathname + window.location.search)
@@ -569,6 +683,49 @@ export function DoListApp() {
             </article>
           </div>
           <div className="stats-section">
+            <h3>완료한 할 일</h3>
+            {completedTaskStats.length > 0 ? (
+              <div className="completion-chart">
+                {completedTaskStats.map((stat) => (
+                  <div className="completion-chart-row" key={stat.id}>
+                    <div className="completion-chart-copy">
+                      <span>{stat.title}</span>
+                      {stat.isRecurring ? <small>반복</small> : null}
+                    </div>
+                    <div
+                      aria-label={`${stat.title} ${stat.count}회 완료`}
+                      className="completion-bar-track"
+                    >
+                      <span
+                        className="completion-bar-fill"
+                        style={{ width: `${Math.max(8, (stat.count / maxCompletedTaskCount) * 100)}%` }}
+                      />
+                    </div>
+                    <strong>{stat.count}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="stats-empty">이 기간에 완료한 할 일이 없습니다.</p>
+            )}
+          </div>
+          <div className="stats-section">
+            <h3>반복업무 완료</h3>
+            {recurringCompletionStats.length > 0 ? (
+              <div className="recurring-completion-list">
+                {recurringCompletionStats.map((stat) => (
+                  <div className="recurring-completion-row" key={stat.id}>
+                    <span>{stat.title}</span>
+                    <strong>{stat.completedCount}회</strong>
+                    <small>이 기간 {stat.periodCount}회</small>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="stats-empty">완료한 반복업무가 없습니다.</p>
+            )}
+          </div>
+          <div className="stats-section">
             <h3>상태별</h3>
             <div className="status-stats">
               {filterItems
@@ -655,7 +812,7 @@ export function DoListApp() {
               onMoveCategory={moveCategory}
               onRenameCategory={renameCategory}
               onRemoveCategory={removeCategory}
-              tasks={tasks}
+              tasks={uniqueTasks}
             />
           ) : null}
         </>

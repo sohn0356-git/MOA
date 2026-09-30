@@ -97,6 +97,7 @@ export function TaskList({
   const [editRepeatOption, setEditRepeatOption] = useState<RepeatOption>('none')
   const [editIntervalDays, setEditIntervalDays] = useState(2)
   const didInitializeCollapsedGroups = useRef(false)
+  const knownCategoryGroupIds = useRef(new Set<string>())
   const categoryOptions = getCategoryOptions(categories)
   const taskGroups = useMemo(() => {
     const groups: CategoryGroup[] = [
@@ -149,9 +150,11 @@ export function TaskList({
 
   useEffect(() => {
     const groupIds = taskGroups.map((group) => group.id)
+    const previousGroupIds = knownCategoryGroupIds.current
 
     if (!didInitializeCollapsedGroups.current) {
       setCollapsedCategoryIds(groupIds)
+      knownCategoryGroupIds.current = new Set(groupIds)
       didInitializeCollapsedGroups.current = true
       return
     }
@@ -160,13 +163,14 @@ export function TaskList({
       const nextIds = new Set(currentIds)
 
       groupIds.forEach((groupId) => {
-        if (!nextIds.has(groupId)) {
+        if (!previousGroupIds.has(groupId)) {
           nextIds.add(groupId)
         }
       })
 
       return Array.from(nextIds).filter((groupId) => groupIds.includes(groupId))
     })
+    knownCategoryGroupIds.current = new Set(groupIds)
   }, [taskGroups])
 
   useEffect(() => {
