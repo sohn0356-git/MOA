@@ -1,7 +1,8 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app'
-import { getAuth, type Auth } from 'firebase/auth'
-import { getDatabase, type Database } from 'firebase/database'
-import { getStorage, type FirebaseStorage } from 'firebase/storage'
+import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
+import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
+import { getFunctions } from 'firebase/functions'
+import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -20,11 +21,6 @@ const requiredConfigEntries = [
   ['VITE_FIREBASE_MESSAGING_SENDER_ID', firebaseConfig.messagingSenderId],
   ['VITE_FIREBASE_APP_ID', firebaseConfig.appId],
 ] as const
-
-let firebaseApp: FirebaseApp | null = null
-let firebaseAuth: Auth | null = null
-let realtimeDb: Database | null = null
-let firebaseStorage: FirebaseStorage | null = null
 
 export function getMissingFirebaseConfigKeys() {
   return requiredConfigEntries
@@ -46,32 +42,26 @@ export function getFirebaseConfigError() {
   return `Firebase configuration is missing: ${missingKeys.join(', ')}`
 }
 
-export function getFirebaseApp() {
+function createFirebaseApp(): FirebaseApp | null {
   const configError = getFirebaseConfigError()
 
   if (configError) {
-    throw new Error(configError)
+    return null
   }
 
-  firebaseApp ??= initializeApp(firebaseConfig)
-  return firebaseApp
+  return getApps()[0] ?? initializeApp(firebaseConfig)
 }
 
-function getRealtimeDatabaseUrl() {
-  return `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`
-}
+export const app = createFirebaseApp()
+export const auth = app ? getAuth(app) : null
+export const db = app ? getFirestore(app) : null
+export const storage = app ? getStorage(app) : null
+export const functions = app ? getFunctions(app) : null
 
-export function getRealtimeDb() {
-  realtimeDb ??= getDatabase(getFirebaseApp(), getRealtimeDatabaseUrl())
-  return realtimeDb
-}
+export function requireFirebase() {
+  if (!auth || !db || !storage || !functions) {
+    throw new Error(getFirebaseConfigError() ?? 'Firebase is not initialized.')
+  }
 
-export function getFirebaseAuth() {
-  firebaseAuth ??= getAuth(getFirebaseApp())
-  return firebaseAuth
-}
-
-export function getFirebaseStorage() {
-  firebaseStorage ??= getStorage(getFirebaseApp())
-  return firebaseStorage
+  return { app: app as FirebaseApp, auth, db, storage, functions }
 }
