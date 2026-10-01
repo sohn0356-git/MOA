@@ -15,6 +15,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react'
+import type { User } from 'firebase/auth'
 import { isFirebaseConfigured } from '../../lib/firebase'
 import {
   addDiaryComment,
@@ -22,21 +23,19 @@ import {
   createAlbum,
   createDiaryPost,
   createGuestbookEntry,
+  createCurrentUserProfile,
   createPlacement,
   defaultMiniRoomLayout,
   deleteDiaryPost,
   deleteGuestbookEntry,
   ensureSeedData,
   findProfileByUsername,
-  login,
   logout,
   markAllNotificationsRead,
   purchaseItem,
   recordHomepageVisit,
-  registerWithProfile,
   removeFriend,
   replyGuestbook,
-  resetPassword,
   respondToFriendRequest,
   saveMiniRoomLayout,
   searchProfiles,
@@ -68,7 +67,6 @@ import type {
 } from '../../types/social'
 import { canViewContent, friendshipId } from '../../utils/social'
 
-type AuthMode = 'login' | 'register' | 'reset'
 type MiniTab = 'home' | 'diary' | 'photos' | 'miniroom' | 'guestbook' | 'friends'
 
 const tabs: Array<{ id: MiniTab; label: string }> = [
@@ -148,7 +146,7 @@ function useHashUsername() {
 }
 
 export function MiniRoomApp() {
-  const [authMode, setAuthMode] = useState<AuthMode>('login')
+  const [authUser, setAuthUser] = useState<User | null>(null)
   const [userProfile, setUserProfile] = useState<Profile | null>(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [authError, setAuthError] = useState('')
@@ -213,6 +211,7 @@ export function MiniRoomApp() {
 
     void ensureSeedData().catch(() => undefined)
     return subscribeAuth((snapshot) => {
+      setAuthUser(snapshot.user)
       setUserProfile(snapshot.profile)
       setIsAuthLoading(snapshot.loading)
       if (snapshot.profile && !routeUsername()) {
@@ -349,27 +348,15 @@ export function MiniRoomApp() {
     }
   }
 
-  async function handleAuth(event: React.FormEvent<HTMLFormElement>) {
+  async function handleProfileSetup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const email = String(form.get('email') ?? '')
-    const password = String(form.get('password') ?? '')
     const username = String(form.get('username') ?? '')
     const displayName = String(form.get('displayName') ?? '')
 
     await runAction(async () => {
-      if (authMode === 'register') {
-        await registerWithProfile({ email, password, username, displayName })
-        return
-      }
-
-      if (authMode === 'reset') {
-        await resetPassword(email)
-        return
-      }
-
-      await login(email, password)
-    }, authMode === 'reset' ? '비밀번호 재설정 메일을 보냈습니다.' : '')
+      await createCurrentUserProfile({ username, displayName })
+    }, '미니홈피 프로필을 만들었습니다.')
   }
 
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
@@ -383,47 +370,48 @@ export function MiniRoomApp() {
     return <MiniRoomShell><div className="mh-skeleton">미니홈피를 불러오는 중입니다.</div></MiniRoomShell>
   }
 
+  if (!authUser) {
+    return (
+      <MiniRoomShell>
+        <section className="mh-auth-card" aria-label="로그인 필요">
+          <div>
+            <p className="mh-kicker">MOA Minihome</p>
+            <h2>로그인이 필요합니다</h2>
+            <p>MOA에 로그인한 뒤 미니홈피를 사용할 수 있습니다.</p>
+          </div>
+          {(authError || status) ? <p className="mh-message">{authError || status}</p> : null}
+        </section>
+      </MiniRoomShell>
+    )
+  }
+
   if (!userProfile) {
     return (
       <MiniRoomShell>
-        <section className="mh-auth-card" aria-label="미니홈피 로그인">
+        <section className="mh-auth-card" aria-label="미니홈피 프로필 설정">
           <div>
             <p className="mh-kicker">MOA Minihome</p>
-            <h2>작은 인터넷 방을 엽니다</h2>
-            <p>이메일로 가입하고, 친구가 방문할 수 있는 개인 미니홈피를 만드세요.</p>
+            <h2>미니홈피 이름을 정합니다</h2>
+            <p>이미 로그인된 Firebase 계정으로 개인 미니홈피 프로필만 생성합니다.</p>
           </div>
-          <form className="mh-form" onSubmit={(event) => void handleAuth(event)}>
+          <form className="mh-form" onSubmit={(event) => void handleProfileSetup(event)}>
             <label>
-              이메일
-              <input required name="email" type="email" autoComplete="email" />
+              사용자 이름
+              <input required name="username" pattern="[a-zA-Z0-9_]{3,20}" placeholder="my_room" />
             </label>
-            {authMode !== 'reset' ? (
-              <label>
-                비밀번호
-                <input required name="password" type="password" autoComplete={authMode === 'register' ? 'new-password' : 'current-password'} minLength={6} />
-              </label>
-            ) : null}
-            {authMode === 'register' ? (
-              <>
-                <label>
-                  사용자 이름
-                  <input required name="username" pattern="[a-zA-Z0-9_]{3,20}" placeholder="my_room" />
-                </label>
-                <label>
-                  표시 이름
-                  <input required name="displayName" maxLength={24} placeholder="나의 별명" />
-                </label>
-              </>
-            ) : null}
+            <label>
+              표시 이름
+              <input
+                required
+                name="displayName"
+                maxLength={24}
+                placeholder={authUser.displayName || '나의 별명'}
+              />
+            </label>
             <button disabled={isBusy} type="submit">
-              {authMode === 'register' ? '회원가입' : authMode === 'reset' ? '재설정 메일 보내기' : '로그인'}
+              미니홈피 만들기
             </button>
           </form>
-          <div className="mh-auth-switcher">
-            <button type="button" onClick={() => setAuthMode('login')}>로그인</button>
-            <button type="button" onClick={() => setAuthMode('register')}>회원가입</button>
-            <button type="button" onClick={() => setAuthMode('reset')}>비밀번호 재설정</button>
-          </div>
           {(authError || status) ? <p className="mh-message">{authError || status}</p> : null}
         </section>
       </MiniRoomShell>

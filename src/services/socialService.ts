@@ -143,6 +143,29 @@ export async function registerWithProfile(input: RegisterInput) {
   return credential.user
 }
 
+export async function createCurrentUserProfile(input: {
+  username: string
+  displayName: string
+}) {
+  const { auth, functions } = requireFirebase()
+  const user = auth.currentUser
+
+  if (!user) {
+    throw new Error('Login is required.')
+  }
+
+  const username = normalizeUsername(input.username)
+  const displayName = input.displayName.trim() || user.displayName || username
+  await updateProfile(user, { displayName })
+
+  const createUserProfile = httpsCallable(functions, 'createUserProfile')
+  await createUserProfile({
+    username,
+    displayName,
+    photoURL: user.photoURL || defaultAvatar,
+  })
+}
+
 export function login(email: string, password: string) {
   return signInWithEmailAndPassword(requireFirebase().auth, email, password)
 }
