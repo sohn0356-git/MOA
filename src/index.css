@@ -1246,13 +1246,53 @@ select:disabled {
 
 .mh-bgm {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 9px;
   border: 1px solid rgb(92 66 35 / 14%);
   border-radius: 18px;
   padding: 10px;
   background: rgb(255 255 255 / 58%);
+}
+
+.mh-bgm-controls,
+.mh-volume,
+.mh-card-actions,
+.mh-album-tools,
+.mh-placement-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mh-bgm-controls,
+.mh-volume {
+  grid-column: 1 / -1;
+}
+
+.mh-bgm-controls button {
+  min-height: 32px;
+  border: 1px solid rgb(92 66 35 / 16%);
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: #2d251d;
+  background: #fffaf1;
+  font-weight: 850;
+}
+
+.mh-volume input {
+  accent-color: #9e4e12;
+}
+
+.mh-card-actions,
+.mh-album-tools,
+.mh-placement-list {
+  flex-wrap: wrap;
+}
+
+.mh-card-actions button,
+.mh-card-actions select {
+  min-height: 34px;
 }
 
 .mh-bgm strong,

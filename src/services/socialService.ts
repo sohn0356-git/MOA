@@ -40,6 +40,7 @@ import type {
   MiniRoomPlacedItem,
   MusicTrack,
   Notification,
+  Photo,
   Profile,
   ShopItem,
   Visibility,
@@ -382,6 +383,16 @@ export async function deleteDiaryPost(_ownerUid: string, postId: string) {
   await deleteDoc(doc(requireFirebase().db, 'diaryPosts', postId))
 }
 
+export async function updateDiaryPost(
+  postId: string,
+  input: Pick<DiaryPost, 'title' | 'content' | 'mood' | 'visibility'>,
+) {
+  await updateDoc(doc(requireFirebase().db, 'diaryPosts', postId), {
+    ...input,
+    updatedAt: serverTimestamp(),
+  })
+}
+
 export async function addDiaryComment(ownerUid: string, postId: string, author: Profile, message: string) {
   const commentRef = await addDoc(collection(requireFirebase().db, 'diaryPosts', postId, 'comments'), {
     ownerUid,
@@ -405,6 +416,17 @@ export async function createAlbum(ownerUid: string, name: string) {
   })
   await updateDoc(albumRef, { id: albumRef.id })
   return { id: albumRef.id, ownerUid, name, createdAt: now(), updatedAt: now() }
+}
+
+export async function renameAlbum(albumId: string, name: string) {
+  await updateDoc(doc(requireFirebase().db, 'albums', albumId), {
+    name,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function deleteAlbum(albumId: string) {
+  await deleteDoc(doc(requireFirebase().db, 'albums', albumId))
 }
 
 export async function uploadPhoto(
@@ -456,6 +478,14 @@ export async function addPhotoComment(ownerUid: string, photoId: string, author:
   })
   await updateDoc(commentRef, { id: commentRef.id })
   await createNotification(ownerUid, 'photo_comment', author.uid, photoId)
+}
+
+export async function updatePhoto(photoId: string, patch: Pick<Partial<Photo>, 'albumId' | 'caption' | 'visibility'>) {
+  await updateDoc(doc(requireFirebase().db, 'photos', photoId), patch)
+}
+
+export async function deletePhoto(photoId: string) {
+  await deleteDoc(doc(requireFirebase().db, 'photos', photoId))
 }
 
 export async function createGuestbookEntry(
@@ -545,6 +575,11 @@ export async function toggleReaction(
     userUid,
     createdAt: serverTimestamp(),
   })
+}
+
+export async function applyAvatarUrl(uid: string, file: File) {
+  const avatarUrl = await uploadAvatar(uid, file)
+  await updateMyProfile(uid, { avatarUrl, photoURL: avatarUrl })
 }
 
 export async function markNotificationRead(uid: string, notificationId: string) {

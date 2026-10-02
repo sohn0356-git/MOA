@@ -12,8 +12,11 @@ import {
   Search,
   Send,
   ShoppingBag,
+  SkipBack,
+  SkipForward,
   Sparkles,
   Users,
+  Volume2,
 } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { isFirebaseConfigured } from '../../lib/firebase'
@@ -26,14 +29,18 @@ import {
   createCurrentUserProfile,
   createPlacement,
   defaultMiniRoomLayout,
+  applyAvatarUrl,
+  deleteAlbum,
   deleteDiaryPost,
   deleteGuestbookEntry,
+  deletePhoto,
   ensureSeedData,
   findProfileByUsername,
   logout,
   markAllNotificationsRead,
   purchaseItem,
   recordHomepageVisit,
+  renameAlbum,
   removeFriend,
   replyGuestbook,
   respondToFriendRequest,
@@ -45,7 +52,10 @@ import {
   subscribeAuth,
   subscribeList,
   subscribeValue,
+  toggleReaction,
+  updateDiaryPost,
   updateMyProfile,
+  updatePhoto,
   uploadPhoto,
 } from '../../services/socialService'
 import type {
@@ -170,6 +180,7 @@ export function MiniRoomApp() {
   const [isBusy, setIsBusy] = useState(false)
   const [isEditingRoom, setIsEditingRoom] = useState(false)
   const [playingTrackId, setPlayingTrackId] = useState('')
+  const [bgmVolume, setBgmVolume] = useState(0.5)
   const routedUsername = useHashUsername()
 
   const viewerUid = userProfile?.uid ?? null
@@ -201,6 +212,7 @@ export function MiniRoomApp() {
     return allProfiles.filter((profile) => ids.includes(profile.uid))
   }, [allProfiles, friendships, targetProfile])
   const activeTrack = tracks.find((track) => track.id === (targetProfile?.activeBgmTrackId || playingTrackId)) ?? tracks[0]
+  const activeTrackIndex = Math.max(0, tracks.findIndex((track) => track.id === activeTrack?.id))
 
   useEffect(() => {
     if (!isFirebaseConfigured()) {
@@ -447,7 +459,17 @@ export function MiniRoomApp() {
           <BgmPlayer
             track={activeTrack}
             isPlaying={playingTrackId === activeTrack?.id}
+            volume={bgmVolume}
+            onNext={() => {
+              const nextTrack = tracks[(activeTrackIndex + 1) % Math.max(1, tracks.length)]
+              setPlayingTrackId(nextTrack?.id ?? '')
+            }}
+            onPrevious={() => {
+              const nextTrack = tracks[(activeTrackIndex - 1 + tracks.length) % Math.max(1, tracks.length)]
+              setPlayingTrackId(nextTrack?.id ?? '')
+            }}
             onToggle={() => setPlayingTrackId(playingTrackId === activeTrack?.id ? '' : activeTrack?.id ?? '')}
+            onVolume={setBgmVolume}
           />
           {!isOwner ? (
             <FriendAction
@@ -513,6 +535,8 @@ export function MiniRoomApp() {
               target={targetProfile}
               onCreate={(input) => runAction(() => createDiaryPost(userProfile, input), '다이어리를 저장했습니다.')}
               onDelete={(postId) => runAction(() => deleteDiaryPost(targetProfile.uid, postId), '다이어리를 삭제했습니다.')}
+              onReact={(postId) => runAction(() => toggleReaction(targetProfile.uid, 'diary', postId, userProfile.uid), '다이어리에 반응했습니다.')}
+              onUpdate={(postId, input) => runAction(() => updateDiaryPost(postId, input), '다이어리를 수정했습니다.')}
               onComment={(postId, message) => runAction(() => addDiaryComment(targetProfile.uid, postId, userProfile, message), '댓글을 남겼습니다.')}
             />
           ) : null}
@@ -526,10 +550,15 @@ export function MiniRoomApp() {
               profile={userProfile}
               target={targetProfile}
               onCreateAlbum={(name) => runAction(() => createAlbum(userProfile.uid, name), '앨범을 만들었습니다.')}
+              onDeleteAlbum={(albumId) => runAction(() => deleteAlbum(albumId), '앨범을 삭제했습니다.')}
+              onRenameAlbum={(albumId, name) => runAction(() => renameAlbum(albumId, name), '앨범 이름을 바꿨습니다.')}
               onUpload={(albumId, file, caption, visibility) => runAction(
                 () => uploadPhoto(userProfile, albumId, file, caption, visibility),
                 '사진을 업로드했습니다.',
               )}
+              onDeletePhoto={(photoId) => runAction(() => deletePhoto(photoId), '사진을 삭제했습니다.')}
+              onReact={(photoId) => runAction(() => toggleReaction(targetProfile.uid, 'photo', photoId, userProfile.uid), '사진에 반응했습니다.')}
+              onUpdatePhoto={(photoId, patch) => runAction(() => updatePhoto(photoId, patch), '사진 정보를 수정했습니다.')}
               onComment={(photoId, message) => runAction(() => addPhotoComment(targetProfile.uid, photoId, userProfile, message), '사진 댓글을 남겼습니다.')}
             />
           ) : null}
@@ -609,6 +638,16 @@ export function MiniRoomApp() {
             <button type="button" onClick={() => void markAllNotificationsRead(userProfile.uid)}>모두 읽음</button>
           </section>
 
+          {isOwner ? (
+            <ProfileSettingsPanel
+              isBusy={isBusy}
+              profile={userProfile}
+              tracks={tracks}
+              onSave={(patch) => runAction(() => updateMyProfile(userProfile.uid, patch), '홈페이지 설정을 저장했습니다.')}
+              onAvatar={(file) => runAction(() => applyAvatarUrl(userProfile.uid, file), '프로필 이미지를 바꿨습니다.')}
+            />
+          ) : null}
+
           <ShopPanel
             inventoryIds={ownedItemIds}
             isBusy={isBusy}
@@ -674,12 +713,20 @@ function MiniRoomShell({
 
 function BgmPlayer({
   isPlaying,
+  onNext,
+  onPrevious,
   onToggle,
+  onVolume,
   track,
+  volume,
 }: {
   isPlaying: boolean
+  onNext: () => void
+  onPrevious: () => void
   onToggle: () => void
+  onVolume: (volume: number) => void
   track?: MusicTrack
+  volume: number
 }) {
   return (
     <div className="mh-bgm">
@@ -688,7 +735,23 @@ function BgmPlayer({
         <strong>{track?.title ?? 'No track'}</strong>
         <span>{track?.artist ?? 'Select BGM'}</span>
       </div>
-      <button type="button" onClick={onToggle}>{isPlaying ? 'Pause' : 'Play'}</button>
+      <div className="mh-bgm-controls">
+        <button aria-label="Previous BGM" type="button" onClick={onPrevious}><SkipBack size={15} /></button>
+        <button type="button" onClick={onToggle}>{isPlaying ? 'Pause' : 'Play'}</button>
+        <button aria-label="Next BGM" type="button" onClick={onNext}><SkipForward size={15} /></button>
+      </div>
+      <label className="mh-volume">
+        <Volume2 size={15} />
+        <input
+          aria-label="BGM volume"
+          max="1"
+          min="0"
+          step="0.05"
+          type="range"
+          value={volume}
+          onChange={(event) => onVolume(Number(event.target.value))}
+        />
+      </label>
     </div>
   )
 }
@@ -789,6 +852,8 @@ function DiaryTab({
   onComment,
   onCreate,
   onDelete,
+  onReact,
+  onUpdate,
   posts,
   profile,
 }: {
@@ -797,6 +862,8 @@ function DiaryTab({
   onComment: (postId: string, message: string) => void
   onCreate: (input: Pick<DiaryPost, 'title' | 'content' | 'mood' | 'visibility'>) => void
   onDelete: (postId: string) => void
+  onReact: (postId: string) => void
+  onUpdate: (postId: string, input: Pick<DiaryPost, 'title' | 'content' | 'mood' | 'visibility'>) => void
   posts: DiaryPost[]
   profile: Profile
   target: Profile
@@ -838,7 +905,26 @@ function DiaryTab({
           <p>{post.content}</p>
           <footer>
             <span>{post.visibility}</span>
-            <span><Heart size={15} /> {post.reactionCount}</span>
+            <button type="button" onClick={() => onReact(post.id)}><Heart size={15} /> {post.reactionCount}</button>
+            {isOwner ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const title = window.prompt('제목', post.title)
+                  const content = window.prompt('내용', post.content)
+                  if (title && content) {
+                    onUpdate(post.id, {
+                      title,
+                      content,
+                      mood: post.mood,
+                      visibility: post.visibility,
+                    })
+                  }
+                }}
+              >
+                수정
+              </button>
+            ) : null}
             {isOwner ? <button type="button" onClick={() => onDelete(post.id)}>삭제</button> : null}
           </footer>
           <form className="mh-inline-form" onSubmit={(event) => {
@@ -862,6 +948,11 @@ function PhotosTab({
   isOwner,
   onComment,
   onCreateAlbum,
+  onDeleteAlbum,
+  onDeletePhoto,
+  onReact,
+  onRenameAlbum,
+  onUpdatePhoto,
   onUpload,
   photos,
   profile,
@@ -871,6 +962,11 @@ function PhotosTab({
   isOwner: boolean
   onComment: (photoId: string, message: string) => void
   onCreateAlbum: (name: string) => void
+  onDeleteAlbum: (albumId: string) => void
+  onDeletePhoto: (photoId: string) => void
+  onReact: (photoId: string) => void
+  onRenameAlbum: (albumId: string, name: string) => void
+  onUpdatePhoto: (photoId: string, patch: Pick<Partial<Photo>, 'albumId' | 'caption' | 'visibility'>) => void
   onUpload: (albumId: string, file: File, caption: string, visibility: Visibility) => void
   photos: Photo[]
   profile: Profile
@@ -892,6 +988,26 @@ function PhotosTab({
             <input name="album" placeholder="앨범 이름" />
             <button disabled={isBusy} type="submit">앨범 만들기</button>
           </form>
+          <div className="mh-album-tools">
+            {albums.map((album) => (
+              <div className="mh-friend-row" key={album.id}>
+                <span>{album.name}</span>
+                <button
+                  disabled={isBusy}
+                  type="button"
+                  onClick={() => {
+                    const name = window.prompt('앨범 이름', album.name)
+                    if (name) {
+                      onRenameAlbum(album.id, name)
+                    }
+                  }}
+                >
+                  이름 변경
+                </button>
+                <button disabled={isBusy} type="button" onClick={() => onDeleteAlbum(album.id)}>삭제</button>
+              </div>
+            ))}
+          </div>
           <form className="mh-form" onSubmit={(event) => {
             event.preventDefault()
             const form = new FormData(event.currentTarget)
@@ -920,7 +1036,33 @@ function PhotosTab({
           <article className="mh-photo-card" key={photo.id}>
             <img src={photo.imageUrl} alt={photo.caption || 'album photo'} />
             <p>{photo.caption || 'Untitled photo'}</p>
-            <small>{photo.visibility}</small>
+            <small>{photo.visibility} · {photo.reactionCount} reactions</small>
+            <div className="mh-card-actions">
+              <button type="button" onClick={() => onReact(photo.id)}><Heart size={15} /> 반응</button>
+              {isOwner ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const caption = window.prompt('사진 설명', photo.caption)
+                      if (caption !== null) {
+                        onUpdatePhoto(photo.id, { caption })
+                      }
+                    }}
+                  >
+                    설명
+                  </button>
+                  <select
+                    aria-label="앨범 이동"
+                    value={photo.albumId}
+                    onChange={(event) => onUpdatePhoto(photo.id, { albumId: event.target.value })}
+                  >
+                    {albums.map((album) => <option value={album.id} key={album.id}>{album.name}</option>)}
+                  </select>
+                  <button type="button" onClick={() => onDeletePhoto(photo.id)}>삭제</button>
+                </>
+              ) : null}
+            </div>
             <form className="mh-inline-form" onSubmit={(event) => {
               event.preventDefault()
               onComment(photo.id, comment)
@@ -991,6 +1133,63 @@ function MiniRoomTab({
             ))}
           </div>
           {ownedFurniture.length === 0 ? <p className="mh-empty">상점에서 가구를 구매하면 여기에 표시됩니다.</p> : null}
+        </section>
+      ) : null}
+      {isOwner && isEditing ? (
+        <section className="mh-panel">
+          <h3>배치 항목 조정</h3>
+          <div className="mh-placement-list">
+            {layout.items.map((placement) => {
+              const item = shopItems.find((shopItem) => shopItem.id === placement.itemId)
+              return (
+                <div className="mh-friend-row" key={placement.placementId}>
+                  <span>{item?.image ?? '□'} {item?.name ?? placement.itemId}</span>
+                  <button
+                    type="button"
+                    onClick={() => onChange({
+                      ...layout,
+                      items: layout.items.map((current) => current.placementId === placement.placementId
+                        ? { ...current, scale: Math.max(0.5, Number((current.scale - 0.1).toFixed(2))) }
+                        : current),
+                    })}
+                  >
+                    축소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange({
+                      ...layout,
+                      items: layout.items.map((current) => current.placementId === placement.placementId
+                        ? { ...current, scale: Math.min(1.8, Number((current.scale + 0.1).toFixed(2))) }
+                        : current),
+                    })}
+                  >
+                    확대
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange({
+                      ...layout,
+                      items: layout.items.map((current) => current.placementId === placement.placementId
+                        ? { ...current, rotation: (current.rotation + 15) % 360 }
+                        : current),
+                    })}
+                  >
+                    회전
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange({
+                      ...layout,
+                      items: layout.items.filter((current) => current.placementId !== placement.placementId),
+                    })}
+                  >
+                    제거
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </section>
       ) : null}
     </section>
@@ -1184,6 +1383,56 @@ function FriendsTab({
         </div>
         {friends.length === 0 ? <p className="mh-empty">아직 친구가 없습니다.</p> : null}
       </section>
+    </section>
+  )
+}
+
+function ProfileSettingsPanel({
+  isBusy,
+  onAvatar,
+  onSave,
+  profile,
+  tracks,
+}: {
+  isBusy: boolean
+  onAvatar: (file: File) => void
+  onSave: (patch: Partial<Profile>) => void
+  profile: Profile
+  tracks: MusicTrack[]
+}) {
+  return (
+    <section className="mh-panel">
+      <h3><Sparkles size={17} /> 내 홈 설정</h3>
+      <form className="mh-form" onSubmit={(event) => {
+        event.preventDefault()
+        const form = new FormData(event.currentTarget)
+        onSave({
+          homepageTitle: String(form.get('homepageTitle') ?? profile.homepageTitle),
+          statusMessage: String(form.get('statusMessage') ?? profile.statusMessage),
+          intro: String(form.get('intro') ?? profile.intro),
+          bio: String(form.get('intro') ?? profile.intro),
+          activeBgmTrackId: String(form.get('activeBgmTrackId') ?? profile.activeBgmTrackId),
+        })
+      }}>
+        <input name="homepageTitle" defaultValue={profile.homepageTitle} placeholder="홈페이지 제목" />
+        <input name="statusMessage" defaultValue={profile.statusMessage} placeholder="상태 메시지" />
+        <textarea name="intro" defaultValue={profile.intro} rows={3} placeholder="소개" />
+        <select name="activeBgmTrackId" defaultValue={profile.activeBgmTrackId}>
+          {tracks.map((track) => <option value={track.id} key={track.id}>{track.title} - {track.artist}</option>)}
+        </select>
+        <button disabled={isBusy} type="submit">저장</button>
+      </form>
+      <form className="mh-form" onSubmit={(event) => {
+        event.preventDefault()
+        const file = new FormData(event.currentTarget).get('avatar')
+        if (file instanceof File && file.size > 0) {
+          onAvatar(file)
+          event.currentTarget.reset()
+        }
+      }}>
+        <input name="avatar" type="file" accept="image/jpeg,image/png,image/webp" />
+        <button disabled={isBusy} type="submit">프로필 이미지 변경</button>
+      </form>
     </section>
   )
 }
