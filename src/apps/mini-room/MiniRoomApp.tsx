@@ -26,7 +26,7 @@ import {
   createAlbum,
   createDiaryPost,
   createGuestbookEntry,
-  createCurrentUserProfile,
+  createDefaultCurrentUserProfile,
   createPlacement,
   defaultMiniRoomLayout,
   applyAvatarUrl,
@@ -181,6 +181,7 @@ export function MiniRoomApp() {
   const [isEditingRoom, setIsEditingRoom] = useState(false)
   const [playingTrackId, setPlayingTrackId] = useState('')
   const [bgmVolume, setBgmVolume] = useState(0.5)
+  const profileBootstrapStarted = useRef(false)
   const routedUsername = useHashUsername()
 
   const viewerUid = userProfile?.uid ?? null
@@ -249,6 +250,18 @@ export function MiniRoomApp() {
 
     return subscribeList<Friendship>('friendships', setFriendships)
   }, [])
+
+  useEffect(() => {
+    if (!authUser || userProfile || isAuthLoading || profileBootstrapStarted.current) {
+      return
+    }
+
+    profileBootstrapStarted.current = true
+    void runAction(
+      () => createDefaultCurrentUserProfile(),
+      '기본 미니홈피 템플릿을 준비했습니다.',
+    )
+  }, [authUser, isAuthLoading, userProfile])
 
   useEffect(() => {
     if (!isFirebaseConfigured() || !userProfile) {
@@ -360,17 +373,6 @@ export function MiniRoomApp() {
     }
   }
 
-  async function handleProfileSetup(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const username = String(form.get('username') ?? '')
-    const displayName = String(form.get('displayName') ?? '')
-
-    await runAction(async () => {
-      await createCurrentUserProfile({ username, displayName })
-    }, '미니홈피 프로필을 만들었습니다.')
-  }
-
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     await runAction(async () => {
@@ -400,30 +402,12 @@ export function MiniRoomApp() {
   if (!userProfile) {
     return (
       <MiniRoomShell>
-        <section className="mh-auth-card" aria-label="미니홈피 프로필 설정">
+        <section className="mh-auth-card" aria-label="미니홈피 준비 중">
           <div>
             <p className="mh-kicker">MOA Minihome</p>
-            <h2>미니홈피 이름을 정합니다</h2>
-            <p>이미 로그인된 Firebase 계정으로 개인 미니홈피 프로필만 생성합니다.</p>
+            <h2>기본 미니홈피를 준비 중입니다</h2>
+            <p>기본 템플릿을 불러오고 있습니다. 곧 방 꾸미기 화면으로 이동합니다.</p>
           </div>
-          <form className="mh-form" onSubmit={(event) => void handleProfileSetup(event)}>
-            <label>
-              사용자 이름
-              <input required name="username" pattern="[a-zA-Z0-9_]{3,20}" placeholder="my_room" />
-            </label>
-            <label>
-              표시 이름
-              <input
-                required
-                name="displayName"
-                maxLength={24}
-                placeholder={authUser.displayName || '나의 별명'}
-              />
-            </label>
-            <button disabled={isBusy} type="submit">
-              미니홈피 만들기
-            </button>
-          </form>
           {(authError || status) ? <p className="mh-message">{authError || status}</p> : null}
         </section>
       </MiniRoomShell>

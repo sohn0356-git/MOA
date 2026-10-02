@@ -167,6 +167,23 @@ export async function createCurrentUserProfile(input: {
   })
 }
 
+export async function createDefaultCurrentUserProfile() {
+  const { auth } = requireFirebase()
+  const user = auth.currentUser
+
+  if (!user) {
+    throw new Error('Login is required.')
+  }
+
+  const emailName = user.email?.split('@')[0] ?? ''
+  const baseUsername = normalizeUsername(user.displayName || emailName || 'room')
+  const username = `${baseUsername || 'room'}_${user.uid.slice(0, 6).toLowerCase()}`
+  await createCurrentUserProfile({
+    username,
+    displayName: user.displayName || emailName || 'MOA 친구',
+  })
+}
+
 export function login(email: string, password: string) {
   return signInWithEmailAndPassword(requireFirebase().auth, email, password)
 }
