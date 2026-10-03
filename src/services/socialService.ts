@@ -569,6 +569,33 @@ export async function deleteMusicTrack(trackId: string) {
   await deleteDoc(doc(requireFirebase().db, 'musicTracks', trackId))
 }
 
+export async function uploadMusicTrackAudio(uid: string, trackId: string, file: File) {
+  if (!file.type.startsWith('audio/')) {
+    throw new Error('오디오 파일만 업로드할 수 있습니다.')
+  }
+
+  if (file.size > 50 * 1024 * 1024) {
+    throw new Error('오디오 파일은 50MB 이하여야 합니다.')
+  }
+
+  const extension = file.name.split('.').pop() || 'mp3'
+  const safeTrackId = slugifyPathSegment(trackId || crypto.randomUUID())
+  const path = `users/${uid}/music/${safeTrackId}-${now()}.${extension}`
+  const uploadTask = uploadBytesResumable(storageRef(requireFirebase().storage, path), file, {
+    contentType: file.type,
+  })
+  await uploadTask
+  return getDownloadURL(uploadTask.snapshot.ref)
+}
+
+function slugifyPathSegment(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export function createPlacement(itemId: string): MiniRoomPlacedItem {
   return {
     placementId: crypto.randomUUID(),

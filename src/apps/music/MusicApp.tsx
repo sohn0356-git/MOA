@@ -1,7 +1,13 @@
-import { ArrowLeft, Download, ListMusic, Music2, Plus, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Download, ListMusic, Music2, Plus, Save, Trash2, Upload } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { isFirebaseConfigured } from '../../lib/firebase'
-import { deleteMusicTrack, saveMusicTrack, seedTracks, subscribeValue } from '../../services/socialService'
+import { isFirebaseConfigured, requireFirebase } from '../../lib/firebase'
+import {
+  deleteMusicTrack,
+  saveMusicTrack,
+  seedTracks,
+  subscribeValue,
+  uploadMusicTrackAudio,
+} from '../../services/socialService'
 import type { MusicTrack } from '../../types/social'
 
 type MusicTrackForm = {
@@ -71,6 +77,7 @@ export function MusicApp() {
   const [form, setForm] = useState<MusicTrackForm>(emptyTrackForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -166,6 +173,40 @@ export function MusicApp() {
       setError(saveError instanceof Error ? saveError.message : '저장하지 못했습니다.')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  async function handleUploadAudio(file: File | undefined) {
+    if (!file) {
+      return
+    }
+
+    const nextId = form.id.trim() || slugify(`${form.artist}-${form.title}`) || crypto.randomUUID()
+
+    setIsUploading(true)
+    setError('')
+    setMessage('')
+
+    try {
+      const user = requireFirebase().auth.currentUser
+      if (!user) {
+        throw new Error('로그인 후 업로드할 수 있습니다.')
+      }
+
+      const audioUrl = await uploadMusicTrackAudio(user.uid, nextId, file)
+      const durationSeconds = await readAudioDuration(file)
+      setForm((currentForm) => ({
+        ...currentForm,
+        id: currentForm.id.trim() || nextId,
+        audioUrl,
+        durationSeconds: durationSeconds ? String(Math.round(durationSeconds)) : currentForm.durationSeconds,
+        title: currentForm.title.trim() || file.name.replace(/\.[^.]+$/, ''),
+      }))
+      setMessage('Storage에 업로드했고 Audio URL을 채웠습니다. 저장을 누르면 musicTracks 문서에 반영됩니다.')
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : '업로드하지 못했습니다.')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -334,6 +375,16 @@ export function MusicApp() {
           </label>
 
           <label>
+            <span>Upload audio</span>
+            <input
+              accept="audio/*"
+              disabled={isUploading}
+              type="file"
+              onChange={(event) => void handleUploadAudio(event.target.files?.[0])}
+            />
+          </label>
+
+          <label>
             <span>Duration seconds</span>
             <input
               min={0}
@@ -354,13 +405,18 @@ export function MusicApp() {
             </label>
 
             <div className="music-editor-actions">
-              <button className="music-delete-button" disabled={isSaving || !form.id.trim()} type="button" onClick={() => void handleDeleteTrack()}>
+              <button
+                className="music-delete-button"
+                disabled={isSaving || isUploading || !form.id.trim()}
+                type="button"
+                onClick={() => void handleDeleteTrack()}
+              >
                 <Trash2 aria-hidden="true" size={18} />
                 삭제
               </button>
-              <button className="music-primary-button" disabled={isSaving} type="submit">
-                <Save aria-hidden="true" size={18} />
-                {isSaving ? '저장 중' : '저장'}
+              <button className="music-primary-button" disabled={isSaving || isUploading} type="submit">
+                {isUploading ? <Upload aria-hidden="true" size={18} /> : <Save aria-hidden="true" size={18} />}
+                {isUploading ? '업로드 중' : isSaving ? '저장 중' : '저장'}
               </button>
             </div>
           </div>
@@ -370,4 +426,22 @@ export function MusicApp() {
       </div>
     </section>
   )
+}
+
+function readAudioDuration(file: File) {
+  return new Promise<number | null>((resolve) => {
+    const audio = document.createElement('audio')
+    const url = URL.createObjectURL(file)
+
+    audio.preload = 'metadata'
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(url)
+      resolve(Number.isFinite(audio.duration) ? audio.duration : null)
+    }
+    audio.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(null)
+    }
+    audio.src = url
+  })
 }
