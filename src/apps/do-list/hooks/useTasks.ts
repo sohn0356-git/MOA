@@ -117,6 +117,12 @@ function getRecurringOccurrencesDue(recurringTask: RecurringTask, today: string)
   return { nextDueDate, occurrences }
 }
 
+function hasOpenRecurringOccurrence(tasks: Task[], recurringTaskId: string) {
+  return tasks.some((task) => {
+    return task.recurringTaskId === recurringTaskId && task.status !== 'done'
+  })
+}
+
 export function useTasks(userId: string | null) {
   const configError = useMemo(() => getFirebaseConfigError(), [])
   const [categories, setCategories] = useState<TaskCategory[]>([])
@@ -246,40 +252,49 @@ export function useTasks(userId: string | null) {
           recurringTask,
           today,
         )
-        const missingOccurrences = occurrences.filter((occurrenceDate) => {
-          const occurrenceKey = `${recurringTask.id}:${occurrenceDate}`
-
-          return (
-            !generatedOccurrenceKeys.has(occurrenceKey) &&
-            !pendingRecurringOccurrenceKeys.current.has(occurrenceKey)
-          )
-        })
-
-        await Promise.all(
-          missingOccurrences.map(async (occurrenceDate) => {
+        const hasOpenOccurrence = hasOpenRecurringOccurrence(tasks, recurringTask.id)
+        const nextOccurrenceDate = occurrences
+          .filter((occurrenceDate) => {
             const occurrenceKey = `${recurringTask.id}:${occurrenceDate}`
-            pendingRecurringOccurrenceKeys.current.add(occurrenceKey)
 
-            try {
-              await createTask({
-                categoryId: recurringTask.categoryId,
-                description: recurringTask.description,
-                dueDate: occurrenceDate,
-                recurringOccurrenceKey: occurrenceDate,
-                recurringTaskId: recurringTask.id,
-                status: 'todo',
-                title: recurringTask.title,
-                userId: currentUserId,
-              })
-            } catch (createTaskError) {
-              pendingRecurringOccurrenceKeys.current.delete(occurrenceKey)
-              throw createTaskError
-            }
-          }),
-        )
+            return (
+              !generatedOccurrenceKeys.has(occurrenceKey) &&
+              !pendingRecurringOccurrenceKeys.current.has(occurrenceKey)
+            )
+          })
+          .at(-1)
+
+        if (hasOpenOccurrence) {
+          await updateRecurringTask(currentUserId, recurringTask.id, {
+            nextDueDate,
+          })
+          continue
+        }
+
+        if (nextOccurrenceDate) {
+          const occurrenceKey = `${recurringTask.id}:${nextOccurrenceDate}`
+
+          pendingRecurringOccurrenceKeys.current.add(occurrenceKey)
+
+          try {
+            await createTask({
+              categoryId: recurringTask.categoryId,
+              description: recurringTask.description,
+              dueDate: nextOccurrenceDate,
+              recurringOccurrenceKey: nextOccurrenceDate,
+              recurringTaskId: recurringTask.id,
+              status: 'todo',
+              title: recurringTask.title,
+              userId: currentUserId,
+            })
+          } catch (createTaskError) {
+            pendingRecurringOccurrenceKeys.current.delete(occurrenceKey)
+            throw createTaskError
+          }
+        }
 
         await updateRecurringTask(currentUserId, recurringTask.id, {
-          lastGeneratedDate: occurrences.at(-1) ?? recurringTask.lastGeneratedDate,
+          lastGeneratedDate: nextOccurrenceDate ?? recurringTask.lastGeneratedDate,
           nextDueDate,
         })
       }
