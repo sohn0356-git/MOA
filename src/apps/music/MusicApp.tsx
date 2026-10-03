@@ -1,5 +1,5 @@
 import { ArrowLeft, Download, ListMusic, Music2, Upload } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { isFirebaseConfigured, requireFirebase } from '../../lib/firebase'
 import {
   saveMusicTrack,
@@ -42,10 +42,12 @@ function slugify(value: string) {
 }
 
 export function MusicApp() {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [tracks, setTracks] = useState<MusicTrack[]>(Object.values(seedTracks))
   const [selectedTrackId, setSelectedTrackId] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [autoPlayNotice, setAutoPlayNotice] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -84,6 +86,26 @@ export function MusicApp() {
       setSelectedTrackId(selectedTrack?.id ?? '')
     }
   }, [selectedTrack, selectedTrackId, tracks])
+
+  useEffect(() => {
+    if (!selectedTrack?.audioUrl || !audioRef.current) {
+      return
+    }
+
+    const audio = audioRef.current
+    audio.load()
+
+    const playPromise = audio.play()
+    if (!playPromise) {
+      return
+    }
+
+    playPromise
+      .then(() => setAutoPlayNotice(''))
+      .catch(() => {
+        setAutoPlayNotice('자동 재생이 브라우저에서 차단됐습니다. 재생 버튼을 누르세요.')
+      })
+  }, [selectedTrack?.audioUrl, selectedTrack?.id])
 
   async function handleUploadAudio(file: File | undefined) {
     if (!file) {
@@ -166,7 +188,14 @@ export function MusicApp() {
                   {selectedTrack.artist} · {formatDuration(selectedTrack.durationSeconds)}
                 </span>
               </div>
-              <audio key={selectedTrack.id} controls src={selectedTrack.audioUrl}>
+              <audio
+                autoPlay
+                controls
+                key={selectedTrack.id}
+                playsInline
+                ref={audioRef}
+                src={selectedTrack.audioUrl}
+              >
                 <track kind="captions" />
               </audio>
               <a className="music-download-button" href={selectedTrack.audioUrl} download={downloadName(selectedTrack)}>
@@ -182,6 +211,7 @@ export function MusicApp() {
           )}
 
           {error ? <p className="app-error">{error}</p> : null}
+          {autoPlayNotice ? <p className="app-muted">{autoPlayNotice}</p> : null}
         </section>
 
         <section className="music-library" aria-labelledby="music-library-heading">
