@@ -1,8 +1,26 @@
-import { ArrowLeft, Download, ListMusic, Music2 } from 'lucide-react'
+import { ArrowLeft, Download, ListMusic, Music2, Plus, Save, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { isFirebaseConfigured } from '../../lib/firebase'
-import { seedTracks, subscribeValue } from '../../services/socialService'
+import { deleteMusicTrack, saveMusicTrack, seedTracks, subscribeValue } from '../../services/socialService'
 import type { MusicTrack } from '../../types/social'
+
+type MusicTrackForm = {
+  id: string
+  title: string
+  artist: string
+  audioUrl: string
+  durationSeconds: string
+  active: boolean
+}
+
+const emptyTrackForm: MusicTrackForm = {
+  id: '',
+  title: '',
+  artist: '',
+  audioUrl: '',
+  durationSeconds: '',
+  active: true,
+}
 
 function handleBackHome() {
   history.pushState('', document.title, window.location.pathname + window.location.search)
@@ -28,10 +46,32 @@ function downloadName(track: MusicTrack) {
   return `${baseName.replace(/[^\w.-]+/g, '-')}.mp3`
 }
 
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function formFromTrack(track: MusicTrack): MusicTrackForm {
+  return {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    audioUrl: track.audioUrl,
+    durationSeconds: String(track.durationSeconds || ''),
+    active: track.active,
+  }
+}
+
 export function MusicApp() {
   const [tracks, setTracks] = useState<MusicTrack[]>(Object.values(seedTracks))
   const [selectedTrackId, setSelectedTrackId] = useState('')
+  const [form, setForm] = useState<MusicTrackForm>(emptyTrackForm)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   const playableTracks = useMemo(() => tracks.filter((track) => track.audioUrl), [tracks])
@@ -69,6 +109,87 @@ export function MusicApp() {
       setSelectedTrackId(selectedTrack?.id ?? '')
     }
   }, [selectedTrack, selectedTrackId, tracks])
+
+  function updateForm<Key extends keyof MusicTrackForm>(key: Key, value: MusicTrackForm[Key]) {
+    setForm((currentForm) => ({ ...currentForm, [key]: value }))
+  }
+
+  function handleEditTrack(track: MusicTrack) {
+    setSelectedTrackId(track.id)
+    setForm(formFromTrack(track))
+    setError('')
+    setMessage('')
+  }
+
+  function handleNewTrack() {
+    setForm(emptyTrackForm)
+    setError('')
+    setMessage('')
+  }
+
+  async function handleSaveTrack() {
+    const nextId = form.id.trim() || slugify(`${form.artist}-${form.title}`)
+    const durationSeconds = Number(form.durationSeconds)
+
+    if (!nextId) {
+      setError('문서 ID 또는 제목/아티스트를 입력하세요.')
+      return
+    }
+
+    if (!form.title.trim() || !form.artist.trim()) {
+      setError('제목과 아티스트를 입력하세요.')
+      return
+    }
+
+    if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
+      setError('재생 시간은 0 이상의 숫자로 입력하세요.')
+      return
+    }
+
+    setIsSaving(true)
+    setError('')
+    setMessage('')
+
+    try {
+      await saveMusicTrack({
+        id: nextId,
+        title: form.title.trim(),
+        artist: form.artist.trim(),
+        audioUrl: form.audioUrl.trim(),
+        durationSeconds,
+        active: form.active,
+      })
+      setSelectedTrackId(nextId)
+      setForm((currentForm) => ({ ...currentForm, id: nextId }))
+      setMessage('Firebase에 저장했습니다.')
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : '저장하지 못했습니다.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleDeleteTrack() {
+    if (!form.id.trim()) {
+      setError('삭제할 문서 ID가 없습니다.')
+      return
+    }
+
+    setIsSaving(true)
+    setError('')
+    setMessage('')
+
+    try {
+      await deleteMusicTrack(form.id.trim())
+      setSelectedTrackId('')
+      setForm(emptyTrackForm)
+      setMessage('Firebase에서 삭제했습니다.')
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : '삭제하지 못했습니다.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <section className="sub-app utility-app music-app">
@@ -149,7 +270,7 @@ export function MusicApp() {
                   disabled={!isPlayable}
                   key={track.id}
                   type="button"
-                  onClick={() => setSelectedTrackId(track.id)}
+                  onClick={() => handleEditTrack(track)}
                 >
                   <span className="music-track-icon" aria-hidden="true">
                     <Music2 size={18} />
@@ -166,6 +287,86 @@ export function MusicApp() {
             })}
           </div>
         </section>
+
+        <form
+          className="music-compose music-editor"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void handleSaveTrack()
+          }}
+        >
+          <div className="music-results-header">
+            <div>
+              <h3>Write</h3>
+              <p>musicTracks 문서를 추가하거나 수정합니다.</p>
+            </div>
+            <button className="nav-icon-button" type="button" aria-label="New track" onClick={handleNewTrack}>
+              <Plus aria-hidden="true" size={18} />
+            </button>
+          </div>
+
+          <label>
+            <span>Document ID</span>
+            <input
+              value={form.id}
+              onChange={(event) => updateForm('id', event.target.value)}
+              placeholder="artist-title"
+            />
+          </label>
+
+          <label>
+            <span>Title</span>
+            <input value={form.title} onChange={(event) => updateForm('title', event.target.value)} />
+          </label>
+
+          <label>
+            <span>Artist</span>
+            <input value={form.artist} onChange={(event) => updateForm('artist', event.target.value)} />
+          </label>
+
+          <label>
+            <span>Audio URL</span>
+            <input
+              value={form.audioUrl}
+              onChange={(event) => updateForm('audioUrl', event.target.value)}
+              placeholder="https://..."
+            />
+          </label>
+
+          <label>
+            <span>Duration seconds</span>
+            <input
+              min={0}
+              type="number"
+              value={form.durationSeconds}
+              onChange={(event) => updateForm('durationSeconds', event.target.value)}
+            />
+          </label>
+
+          <div className="music-action-row">
+            <label className="music-toggle">
+              <input
+                checked={form.active}
+                type="checkbox"
+                onChange={(event) => updateForm('active', event.target.checked)}
+              />
+              <span>Active</span>
+            </label>
+
+            <div className="music-editor-actions">
+              <button className="music-delete-button" disabled={isSaving || !form.id.trim()} type="button" onClick={() => void handleDeleteTrack()}>
+                <Trash2 aria-hidden="true" size={18} />
+                삭제
+              </button>
+              <button className="music-primary-button" disabled={isSaving} type="submit">
+                <Save aria-hidden="true" size={18} />
+                {isSaving ? '저장 중' : '저장'}
+              </button>
+            </div>
+          </div>
+
+          {message ? <p className="app-muted">{message}</p> : null}
+        </form>
       </div>
     </section>
   )

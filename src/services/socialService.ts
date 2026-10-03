@@ -561,6 +561,14 @@ export async function saveMiniRoomLayout(ownerUid: string, layout: MiniRoomLayou
   })
 }
 
+export async function saveMusicTrack(track: MusicTrack) {
+  await setDoc(doc(requireFirebase().db, 'musicTracks', track.id), track)
+}
+
+export async function deleteMusicTrack(trackId: string) {
+  await deleteDoc(doc(requireFirebase().db, 'musicTracks', trackId))
+}
+
 export function createPlacement(itemId: string): MiniRoomPlacedItem {
   return {
     placementId: crypto.randomUUID(),

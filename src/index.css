@@ -761,6 +761,7 @@ select:disabled {
 
 .music-primary-button,
 .music-download-button,
+.music-delete-button,
 .music-task button {
   display: inline-flex;
   align-items: center;
@@ -780,14 +781,22 @@ select:disabled {
 }
 
 .music-download-button,
+.music-delete-button,
 .music-task button {
   border: 1px solid rgb(20 108 67 / 18%);
   color: #0f6b43;
   background: rgb(20 108 67 / 9%);
 }
 
+.music-delete-button {
+  border-color: rgb(185 28 28 / 18%);
+  color: #991b1b;
+  background: rgb(255 59 48 / 9%);
+}
+
 .music-primary-button:disabled,
 .music-download-button:disabled,
+.music-delete-button:disabled,
 .music-task button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -795,6 +804,17 @@ select:disabled {
 
 .music-results {
   align-content: start;
+}
+
+.music-editor {
+  grid-column: 1 / -1;
+}
+
+.music-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .music-results-header {
