@@ -766,6 +766,7 @@ select:disabled {
   border-radius: 12px;
   padding: 12px 14px;
   font-weight: 900;
+  text-decoration: none;
 }
 
 .music-primary-button {
@@ -919,6 +920,30 @@ select:disabled {
   margin: 0;
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.music-prompt-preview {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgb(248 250 252 / 76%);
+}
+
+.music-prompt-preview strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.music-prompt-preview p {
+  max-height: 160px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .mini-room-app {
