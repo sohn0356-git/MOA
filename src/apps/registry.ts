@@ -1,11 +1,11 @@
 import { DoListApp } from './do-list/DoListApp'
 import { DoListIcon } from './do-list/DoListIcon'
-import { HabitApp } from './habit/HabitApp'
-import { HabitIcon } from './habit/HabitIcon'
 import { MeditationApp } from './meditation/MeditationApp'
 import { MeditationIcon } from './meditation/MeditationIcon'
 import { MiniRoomApp } from './mini-room/MiniRoomApp'
 import { MiniRoomIcon } from './mini-room/MiniRoomIcon'
+import { MusicApp } from './music/MusicApp'
+import { MusicIcon } from './music/MusicIcon'
 import { SampleApp } from './sample/SampleApp'
 import { SampleIcon } from './sample/SampleIcon'
 import { TimerApp } from './timer/TimerApp'
@@ -38,12 +38,12 @@ export const appRegistry: AppMeta[] = [
     component: MiniRoomApp,
   },
   {
-    id: 'habit',
-    name: 'Habit',
-    description: '오늘의 기본 루틴을 체크하는 간단한 습관 앱.',
-    icon: HabitIcon,
-    route: '#/habit',
-    component: HabitApp,
+    id: 'music',
+    name: 'Music',
+    description: 'Musicful API로 새 음악을 생성하는 앱.',
+    icon: MusicIcon,
+    route: '#/music',
+    component: MusicApp,
   },
   {
     id: 'timer',
