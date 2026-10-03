@@ -1,32 +1,13 @@
-import { ArrowLeft, Download, ListMusic, Music2, Plus, Save, Trash2, Upload } from 'lucide-react'
+import { ArrowLeft, Download, ListMusic, Music2, Upload } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { isFirebaseConfigured, requireFirebase } from '../../lib/firebase'
 import {
-  deleteMusicTrack,
   saveMusicTrack,
   seedTracks,
   subscribeValue,
   uploadMusicTrackAudio,
 } from '../../services/socialService'
 import type { MusicTrack } from '../../types/social'
-
-type MusicTrackForm = {
-  id: string
-  title: string
-  artist: string
-  audioUrl: string
-  durationSeconds: string
-  active: boolean
-}
-
-const emptyTrackForm: MusicTrackForm = {
-  id: '',
-  title: '',
-  artist: '',
-  audioUrl: '',
-  durationSeconds: '',
-  active: true,
-}
 
 function handleBackHome() {
   history.pushState('', document.title, window.location.pathname + window.location.search)
@@ -60,23 +41,10 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
-function formFromTrack(track: MusicTrack): MusicTrackForm {
-  return {
-    id: track.id,
-    title: track.title,
-    artist: track.artist,
-    audioUrl: track.audioUrl,
-    durationSeconds: String(track.durationSeconds || ''),
-    active: track.active,
-  }
-}
-
 export function MusicApp() {
   const [tracks, setTracks] = useState<MusicTrack[]>(Object.values(seedTracks))
   const [selectedTrackId, setSelectedTrackId] = useState('')
-  const [form, setForm] = useState<MusicTrackForm>(emptyTrackForm)
   const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -117,65 +85,6 @@ export function MusicApp() {
     }
   }, [selectedTrack, selectedTrackId, tracks])
 
-  function updateForm<Key extends keyof MusicTrackForm>(key: Key, value: MusicTrackForm[Key]) {
-    setForm((currentForm) => ({ ...currentForm, [key]: value }))
-  }
-
-  function handleEditTrack(track: MusicTrack) {
-    setSelectedTrackId(track.id)
-    setForm(formFromTrack(track))
-    setError('')
-    setMessage('')
-  }
-
-  function handleNewTrack() {
-    setForm(emptyTrackForm)
-    setError('')
-    setMessage('')
-  }
-
-  async function handleSaveTrack() {
-    const nextId = form.id.trim() || slugify(`${form.artist}-${form.title}`)
-    const durationSeconds = Number(form.durationSeconds)
-
-    if (!nextId) {
-      setError('문서 ID 또는 제목/아티스트를 입력하세요.')
-      return
-    }
-
-    if (!form.title.trim() || !form.artist.trim()) {
-      setError('제목과 아티스트를 입력하세요.')
-      return
-    }
-
-    if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
-      setError('재생 시간은 0 이상의 숫자로 입력하세요.')
-      return
-    }
-
-    setIsSaving(true)
-    setError('')
-    setMessage('')
-
-    try {
-      await saveMusicTrack({
-        id: nextId,
-        title: form.title.trim(),
-        artist: form.artist.trim(),
-        audioUrl: form.audioUrl.trim(),
-        durationSeconds,
-        active: form.active,
-      })
-      setSelectedTrackId(nextId)
-      setForm((currentForm) => ({ ...currentForm, id: nextId }))
-      setMessage('Firebase에 저장했습니다.')
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : '저장하지 못했습니다.')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   async function handleUploadAudio(file: File | undefined) {
     if (!file) {
       return
@@ -183,7 +92,6 @@ export function MusicApp() {
 
     const titleFromFile = file.name.replace(/\.[^.]+$/, '').trim() || 'Untitled'
     const nextId = slugify(titleFromFile) || crypto.randomUUID()
-    const artist = form.artist.trim() || 'MOA'
 
     setIsUploading(true)
     setError('')
@@ -201,7 +109,7 @@ export function MusicApp() {
       const nextTrack: MusicTrack = {
         id: nextId,
         title: titleFromFile,
-        artist,
+        artist: 'MOA',
         audioUrl,
         durationSeconds: durationSeconds ? Math.round(durationSeconds) : 0,
         active: true,
@@ -209,34 +117,11 @@ export function MusicApp() {
 
       await saveMusicTrack(nextTrack)
       setSelectedTrackId(nextId)
-      setForm(formFromTrack(nextTrack))
       setMessage('업로드했고 노래 제목으로 Firebase에 저장했습니다.')
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : '업로드하지 못했습니다.')
     } finally {
       setIsUploading(false)
-    }
-  }
-
-  async function handleDeleteTrack() {
-    if (!form.id.trim()) {
-      setError('삭제할 문서 ID가 없습니다.')
-      return
-    }
-
-    setIsSaving(true)
-    setError('')
-    setMessage('')
-
-    try {
-      await deleteMusicTrack(form.id.trim())
-      setSelectedTrackId('')
-      setForm(emptyTrackForm)
-      setMessage('Firebase에서 삭제했습니다.')
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : '삭제하지 못했습니다.')
-    } finally {
-      setIsSaving(false)
     }
   }
 
@@ -319,7 +204,7 @@ export function MusicApp() {
                   disabled={!isPlayable}
                   key={track.id}
                   type="button"
-                  onClick={() => handleEditTrack(track)}
+                  onClick={() => setSelectedTrackId(track.id)}
                 >
                   <span className="music-track-icon" aria-hidden="true">
                     <Music2 size={18} />
@@ -337,52 +222,15 @@ export function MusicApp() {
           </div>
         </section>
 
-        <form
-          className="music-compose music-editor"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void handleSaveTrack()
-          }}
-        >
+        <section className="music-compose music-editor" aria-labelledby="music-upload-heading">
           <div className="music-results-header">
             <div>
-              <h3>Upload</h3>
-              <p>파일을 선택하면 파일명이 노래 제목으로 바로 저장됩니다.</p>
+              <h3 id="music-upload-heading">Upload</h3>
+              <p>파일 하나만 선택하면 나머지는 자동으로 저장됩니다.</p>
             </div>
-            <button className="nav-icon-button" type="button" aria-label="New track" onClick={handleNewTrack}>
-              <Plus aria-hidden="true" size={18} />
-            </button>
           </div>
 
-          <label>
-            <span>Document ID</span>
-            <input
-              value={form.id}
-              onChange={(event) => updateForm('id', event.target.value)}
-              placeholder="artist-title"
-            />
-          </label>
-
-          <label>
-            <span>Title</span>
-            <input value={form.title} onChange={(event) => updateForm('title', event.target.value)} />
-          </label>
-
-          <label>
-            <span>Artist</span>
-            <input value={form.artist} onChange={(event) => updateForm('artist', event.target.value)} />
-          </label>
-
-          <label>
-            <span>Audio URL</span>
-            <input
-              value={form.audioUrl}
-              onChange={(event) => updateForm('audioUrl', event.target.value)}
-              placeholder="https://..."
-            />
-          </label>
-
-          <label>
+          <label className="music-file-input">
             <span>Music file</span>
             <input
               accept="audio/*"
@@ -392,45 +240,15 @@ export function MusicApp() {
             />
           </label>
 
-          <label>
-            <span>Duration seconds</span>
-            <input
-              min={0}
-              type="number"
-              value={form.durationSeconds}
-              onChange={(event) => updateForm('durationSeconds', event.target.value)}
-            />
-          </label>
-
-          <div className="music-action-row">
-            <label className="music-toggle">
-              <input
-                checked={form.active}
-                type="checkbox"
-                onChange={(event) => updateForm('active', event.target.checked)}
-              />
-              <span>Active</span>
-            </label>
-
-            <div className="music-editor-actions">
-              <button
-                className="music-delete-button"
-                disabled={isSaving || isUploading || !form.id.trim()}
-                type="button"
-                onClick={() => void handleDeleteTrack()}
-              >
-                <Trash2 aria-hidden="true" size={18} />
-                삭제
-              </button>
-              <button className="music-primary-button" disabled={isSaving || isUploading} type="submit">
-                {isUploading ? <Upload aria-hidden="true" size={18} /> : <Save aria-hidden="true" size={18} />}
-                {isUploading ? '업로드 중' : isSaving ? '저장 중' : '저장'}
-              </button>
-            </div>
-          </div>
+          {isUploading ? (
+            <p className="app-muted">
+              <Upload aria-hidden="true" size={16} />
+              업로드 중
+            </p>
+          ) : null}
 
           {message ? <p className="app-muted">{message}</p> : null}
-        </form>
+        </section>
       </div>
     </section>
   )
