@@ -5,16 +5,20 @@ import {
   Check,
   ChevronRight,
   Heart,
+  HandHeart,
   Lock,
+  MessageCircleHeart,
   Pause,
   Play,
   Save,
+  Settings,
   Sparkles,
+  Sprout,
   Trash2,
   Users,
 } from 'lucide-react'
 import { FirebaseError } from 'firebase/app'
-import { onValue, push, ref, remove, serverTimestamp, set } from 'firebase/database'
+import { get, onValue, push, ref, remove, serverTimestamp, set } from 'firebase/database'
 import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseAuth, getRealtimeDb } from '../../services/firebase'
 
@@ -22,6 +26,7 @@ const LOCAL_STORAGE_KEY = 'moa.meditation.entries.v3'
 const SESSION_SECONDS = 5 * 60
 
 type Audience = 'private' | 'public' | 'group'
+type LuminaryTab = 'feed' | 'groups' | 'devotion' | 'prayer' | 'profile'
 type MeditationStep = 'read' | 'write' | 'review'
 
 type Verse = {
@@ -31,12 +36,15 @@ type Verse = {
 
 type ScripturePlan = {
   date: string
+  isRemote?: boolean
   title: string
   reference: string
   theme: string
   question: string
   verses: Verse[]
 }
+
+type FirebaseVerseRange = [unknown, unknown, unknown, unknown?]
 
 type MeditationEntry = {
   id: string
@@ -53,6 +61,18 @@ type MeditationEntry = {
 }
 
 const moods = ['고요함', '감사함', '무거움', '기대함', '회복']
+
+const luminaryTabs: Array<{
+  icon: typeof MessageCircleHeart
+  id: LuminaryTab
+  label: string
+}> = [
+  { icon: MessageCircleHeart, id: 'feed', label: '커뮤니티' },
+  { icon: Sprout, id: 'groups', label: '그룹' },
+  { icon: BookOpenText, id: 'devotion', label: '묵상' },
+  { icon: HandHeart, id: 'prayer', label: '중보기도' },
+  { icon: Settings, id: 'profile', label: '내프로필' },
+]
 
 const scripturePlans: ScripturePlan[] = [
   {
@@ -128,6 +148,10 @@ const scripturePlans: ScripturePlan[] = [
     ],
   },
 ]
+
+const knownPassageText: Record<string, Verse[]> = Object.fromEntries(
+  scripturePlans.map((plan) => [plan.reference, plan.verses]),
+)
 
 function getTodayKey() {
   const today = new Date()
@@ -209,6 +233,62 @@ function getPlanForDate(date: string) {
   return scripturePlans[index]
 }
 
+function buildReference(book: string, chapter: number, start: number, end: number) {
+  const range = start === end ? String(start) : `${start}-${end}`
+
+  return `${book} ${chapter}:${range}`
+}
+
+function createVerseShell(start: number, end: number, reference: string): Verse[] {
+  const verses: Verse[] = []
+
+  for (let verseNumber = start; verseNumber <= end; verseNumber += 1) {
+    verses.push({
+      number: verseNumber,
+      text: `${reference} 본문입니다. Firebase에서 오늘의 장절을 불러왔습니다.`,
+    })
+  }
+
+  return verses
+}
+
+function planFromFirebaseRange(date: string, range: FirebaseVerseRange): ScripturePlan | null {
+  const [bookValue, chapterValue, startValue, endValue] = range
+  const book = typeof bookValue === 'string' ? bookValue : ''
+  const chapter = Number(chapterValue)
+  const start = Number(startValue)
+  const end = Number(endValue ?? startValue)
+
+  if (!book || !Number.isFinite(chapter) || !Number.isFinite(start) || !Number.isFinite(end)) {
+    return null
+  }
+
+  const reference = buildReference(book, chapter, start, end)
+
+  return {
+    date,
+    isRemote: true,
+    title: '오늘의 본문',
+    reference,
+    theme: 'Firebase 말씀',
+    question: '오늘 이 본문에서 붙잡아야 할 한 문장은 무엇인가요?',
+    verses: knownPassageText[reference] ?? createVerseShell(start, end, reference),
+  }
+}
+
+async function fetchFirebasePlan(date: string) {
+  const [year, month, day] = date.split('-')
+  const dayKey = `${month}${day}`
+  const snapshot = await get(ref(getRealtimeDb(), `verse/${year}/${dayKey}`))
+  const value = snapshot.val() as FirebaseVerseRange[] | null
+
+  if (!Array.isArray(value) || !value.length) {
+    return null
+  }
+
+  return planFromFirebaseRange(date, value[0])
+}
+
 function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: number[]) {
   const selectedSet = new Set(selectedVerseNumbers)
   const verses = selectedVerseNumbers.length
@@ -223,8 +303,12 @@ function getUserEntriesPath(userId: string) {
 }
 
 export function MeditationApp() {
+  const [activeTab, setActiveTab] = useState<LuminaryTab>('devotion')
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
+  const [remotePlan, setRemotePlan] = useState<ScripturePlan | null>(null)
+  const [isPlanLoading, setIsPlanLoading] = useState(false)
+  const [planError, setPlanError] = useState('')
   const [step, setStep] = useState<MeditationStep>('read')
   const [mind, setMind] = useState('')
   const [apply, setApply] = useState('')
@@ -238,7 +322,10 @@ export function MeditationApp() {
     'local',
   )
   const [errorMessage, setErrorMessage] = useState('')
-  const plan = useMemo(() => getPlanForDate(selectedDate), [selectedDate])
+  const plan = useMemo(
+    () => remotePlan ?? getPlanForDate(selectedDate),
+    [remotePlan, selectedDate],
+  )
   const selectedVerseText = useMemo(
     () => getSelectedVerseText(plan, selectedVerseNumbers),
     [plan, selectedVerseNumbers],
@@ -251,6 +338,43 @@ export function MeditationApp() {
   useEffect(() => {
     setSelectedVerseNumbers([])
     setStep('read')
+    setRemotePlan(null)
+    setPlanError('')
+  }, [selectedDate])
+
+  useEffect(() => {
+    let active = true
+
+    setIsPlanLoading(true)
+    setPlanError('')
+    void fetchFirebasePlan(selectedDate)
+      .then((nextPlan) => {
+        if (!active) {
+          return
+        }
+
+        setRemotePlan(nextPlan)
+      })
+      .catch((error) => {
+        if (!active) {
+          return
+        }
+
+        setPlanError(
+          error instanceof Error
+            ? `Firebase 말씀 장절을 불러오지 못했습니다: ${error.message}`
+            : 'Firebase 말씀 장절을 불러오지 못했습니다.',
+        )
+      })
+      .finally(() => {
+        if (active) {
+          setIsPlanLoading(false)
+        }
+      })
+
+    return () => {
+      active = false
+    }
   }, [selectedDate])
 
   useEffect(() => {
@@ -424,6 +548,8 @@ export function MeditationApp() {
         </div>
       </header>
 
+      {activeTab === 'devotion' ? (
+        <>
       <div className="meditation-topbar">
         <label>
           <CalendarDays aria-hidden="true" />
@@ -447,14 +573,21 @@ export function MeditationApp() {
         </span>
       </div>
 
+      {planError ? <p className="meditation-error">{planError}</p> : null}
+
       <div className="meditation-hero meditation-luminary-hero">
         <div className="meditation-verse-card">
           <div className="meditation-section-label">
             <BookOpenText aria-hidden="true" />
-            <span>{plan.reference}</span>
+            <span>
+              {plan.reference}
+              {plan.isRemote ? ' · Firebase' : ' · fallback'}
+            </span>
           </div>
           <h3>{plan.title}</h3>
-          <blockquote>{selectedVerseText}</blockquote>
+          <blockquote>
+            {isPlanLoading ? 'Firebase에서 오늘의 본문을 불러오는 중입니다.' : selectedVerseText}
+          </blockquote>
           <p>{plan.question}</p>
           <div className="meditation-step-row" aria-label="Meditation steps">
             {(['read', 'write', 'review'] as MeditationStep[]).map((itemStep, index) => (
@@ -658,6 +791,157 @@ export function MeditationApp() {
           )}
         </section>
       ) : null}
+        </>
+      ) : (
+        <section className="meditation-tab-panel">
+          {activeTab === 'feed' ? (
+            <>
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">커뮤니티</span>
+                  <h3>공개 묵상 피드</h3>
+                </div>
+                <span className="meditation-complete">
+                  {entries.filter((entry) => entry.audience === 'public').length}개
+                </span>
+              </div>
+              <div className="meditation-entry-list">
+                {entries.filter((entry) => entry.audience === 'public').length ? (
+                  entries
+                    .filter((entry) => entry.audience === 'public')
+                    .map((entry) => (
+                      <article className="meditation-entry" key={entry.id}>
+                        <div>
+                          <strong>{entry.mood}</strong>
+                          <span>{formatDateTime(entry.createdAt)}</span>
+                        </div>
+                        <small>{entry.reference} · {entry.theme}</small>
+                        <blockquote>{entry.verseText}</blockquote>
+                        <p>{entry.mind || entry.apply}</p>
+                      </article>
+                    ))
+                ) : (
+                  <p className="meditation-empty">전체 공개로 저장된 묵상이 없습니다.</p>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {activeTab === 'groups' ? (
+            <>
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">그룹</span>
+                  <h3>그룹 공개 묵상</h3>
+                </div>
+                <span className="meditation-complete">
+                  {entries.filter((entry) => entry.audience === 'group').length}개
+                </span>
+              </div>
+              <div className="meditation-group-card">
+                <Users aria-hidden="true" />
+                <div>
+                  <strong>MOA 묵상 그룹</strong>
+                  <p>그룹 공개로 저장한 묵상을 한 곳에서 모아봅니다.</p>
+                </div>
+              </div>
+              <div className="meditation-entry-list">
+                {entries.filter((entry) => entry.audience === 'group').length ? (
+                  entries
+                    .filter((entry) => entry.audience === 'group')
+                    .map((entry) => (
+                      <article className="meditation-entry" key={entry.id}>
+                        <div>
+                          <strong>{entry.mood}</strong>
+                          <span>{formatDateTime(entry.createdAt)}</span>
+                        </div>
+                        <small>{entry.reference} · 그룹 공개</small>
+                        <p>{entry.mind || entry.apply}</p>
+                      </article>
+                    ))
+                ) : (
+                  <p className="meditation-empty">그룹 공개로 저장된 묵상이 없습니다.</p>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {activeTab === 'prayer' ? (
+            <>
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">중보기도</span>
+                  <h3>묵상에서 이어지는 기도</h3>
+                </div>
+                <span className="meditation-complete">{entries.length}개 기록</span>
+              </div>
+              <div className="meditation-entry-list">
+                {entries.length ? (
+                  entries.slice(0, 8).map((entry) => (
+                    <article className="meditation-entry" key={entry.id}>
+                      <div>
+                        <strong>{entry.reference}</strong>
+                        <span>{formatDateTime(entry.createdAt)}</span>
+                      </div>
+                      <p>{entry.apply || entry.mind || '오늘의 적용을 기도로 이어가세요.'}</p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="meditation-empty">기도로 이어갈 묵상 기록이 없습니다.</p>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {activeTab === 'profile' ? (
+            <>
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">내프로필</span>
+                  <h3>묵상 활동</h3>
+                </div>
+                <span className="meditation-complete">{syncState === 'synced' ? '동기화됨' : '로컬'}</span>
+              </div>
+              <div className="meditation-profile-grid">
+                <div>
+                  <strong>{entries.length}</strong>
+                  <span>전체 기록</span>
+                </div>
+                <div>
+                  <strong>{activeDays}</strong>
+                  <span>활동일</span>
+                </div>
+                <div>
+                  <strong>{entries.filter((entry) => entry.selectedDate === getTodayKey()).length}</strong>
+                  <span>오늘 기록</span>
+                </div>
+              </div>
+              <p className="meditation-focus">
+                Luminary와 동일하게 말씀 장절은 Firebase `verse/YYYY/MMDD`에서 읽고,
+                묵상 기록은 사용자별 Firebase 경로에 저장됩니다.
+              </p>
+            </>
+          ) : null}
+        </section>
+      )}
+
+      <nav className="meditation-bottom-tabs" aria-label="Luminary tabs">
+        {luminaryTabs.map((tab) => {
+          const Icon = tab.icon
+
+          return (
+            <button
+              className={activeTab === tab.id ? 'is-selected' : undefined}
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <Icon aria-hidden="true" />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </nav>
     </section>
   )
 }
