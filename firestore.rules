@@ -135,7 +135,7 @@ service cloud.firestore {
 
     match /musicTracks/{trackId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if signedIn();
     }
 
     match /homepageVisits/{visitId} {
