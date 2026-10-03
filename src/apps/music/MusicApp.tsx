@@ -181,7 +181,9 @@ export function MusicApp() {
       return
     }
 
-    const nextId = form.id.trim() || slugify(`${form.artist}-${form.title}`) || crypto.randomUUID()
+    const titleFromFile = file.name.replace(/\.[^.]+$/, '').trim() || 'Untitled'
+    const nextId = slugify(titleFromFile) || crypto.randomUUID()
+    const artist = form.artist.trim() || 'MOA'
 
     setIsUploading(true)
     setError('')
@@ -195,14 +197,20 @@ export function MusicApp() {
 
       const audioUrl = await uploadMusicTrackAudio(user.uid, nextId, file)
       const durationSeconds = await readAudioDuration(file)
-      setForm((currentForm) => ({
-        ...currentForm,
-        id: currentForm.id.trim() || nextId,
+
+      const nextTrack: MusicTrack = {
+        id: nextId,
+        title: titleFromFile,
+        artist,
         audioUrl,
-        durationSeconds: durationSeconds ? String(Math.round(durationSeconds)) : currentForm.durationSeconds,
-        title: currentForm.title.trim() || file.name.replace(/\.[^.]+$/, ''),
-      }))
-      setMessage('Storage에 업로드했고 Audio URL을 채웠습니다. 저장을 누르면 musicTracks 문서에 반영됩니다.')
+        durationSeconds: durationSeconds ? Math.round(durationSeconds) : 0,
+        active: true,
+      }
+
+      await saveMusicTrack(nextTrack)
+      setSelectedTrackId(nextId)
+      setForm(formFromTrack(nextTrack))
+      setMessage('업로드했고 노래 제목으로 Firebase에 저장했습니다.')
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : '업로드하지 못했습니다.')
     } finally {
@@ -338,8 +346,8 @@ export function MusicApp() {
         >
           <div className="music-results-header">
             <div>
-              <h3>Write</h3>
-              <p>musicTracks 문서를 추가하거나 수정합니다.</p>
+              <h3>Upload</h3>
+              <p>파일을 선택하면 파일명이 노래 제목으로 바로 저장됩니다.</p>
             </div>
             <button className="nav-icon-button" type="button" aria-label="New track" onClick={handleNewTrack}>
               <Plus aria-hidden="true" size={18} />
@@ -375,7 +383,7 @@ export function MusicApp() {
           </label>
 
           <label>
-            <span>Upload audio</span>
+            <span>Music file</span>
             <input
               accept="audio/*"
               disabled={isUploading}
