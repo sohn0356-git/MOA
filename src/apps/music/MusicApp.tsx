@@ -1,124 +1,74 @@
-import { ArrowLeft, Download, KeyRound, Music2, Sparkles } from 'lucide-react'
-import { useMemo, useState } from 'react'
-
-type GeneratedTrack = {
-  audioUrl: string
-  filename: string
-  songId: string
-}
-
-const elevenLabsApiKey = import.meta.env.VITE_ELEVENLABS_API_KEY as string | undefined
-const elevenLabsMusicUrl = 'https://api.elevenlabs.io/v1/music/stream'
+import { ArrowLeft, Download, ListMusic, Music2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { isFirebaseConfigured } from '../../lib/firebase'
+import { seedTracks, subscribeValue } from '../../services/socialService'
+import type { MusicTrack } from '../../types/social'
 
 function handleBackHome() {
   history.pushState('', document.title, window.location.pathname + window.location.search)
   window.dispatchEvent(new HashChangeEvent('hashchange'))
 }
 
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return '요청을 처리하지 못했습니다.'
+function listFromRecord<T>(value: Record<string, T> | null | undefined) {
+  return value ? Object.values(value) : []
 }
 
-function downloadName(title: string) {
-  const baseName = title.trim() || 'elevenlabs-track'
+function formatDuration(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '--:--'
+  }
+
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, '0')
+  return `${minutes}:${remainingSeconds}`
+}
+
+function downloadName(track: MusicTrack) {
+  const baseName = `${track.artist}-${track.title}`.trim() || track.id || 'moa-track'
   return `${baseName.replace(/[^\w.-]+/g, '-')}.mp3`
 }
 
-function buildPrompt(title: string, style: string, lyrics: string, instrumental: boolean) {
-  const lines = [
-    title.trim() ? `Title: ${title.trim()}` : '',
-    `Style: ${style.trim()}`,
-    instrumental ? 'Create an instrumental track with no vocals.' : '',
-    !instrumental && lyrics.trim() ? `Lyrics:\n${lyrics.trim()}` : '',
-  ].filter(Boolean)
-
-  return lines.join('\n\n')
-}
-
 export function MusicApp() {
-  const [title, setTitle] = useState('MOA Song')
-  const [style, setStyle] = useState('K-pop, bright synth, clean vocal, energetic chorus')
-  const [lyrics, setLyrics] = useState('')
-  const [model, setModel] = useState('music_v2_5')
-  const [instrumental, setInstrumental] = useState(false)
-  const [track, setTrack] = useState<GeneratedTrack | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [message, setMessage] = useState('')
+  const [tracks, setTracks] = useState<MusicTrack[]>(Object.values(seedTracks))
+  const [selectedTrackId, setSelectedTrackId] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const hasApiKey = Boolean(elevenLabsApiKey)
-  const promptPreview = useMemo(
-    () => buildPrompt(title, style, lyrics, instrumental),
-    [instrumental, lyrics, style, title],
+  const playableTracks = useMemo(() => tracks.filter((track) => track.audioUrl), [tracks])
+  const selectedTrack = useMemo(
+    () => tracks.find((track) => track.id === selectedTrackId) ?? playableTracks[0] ?? tracks[0],
+    [playableTracks, selectedTrackId, tracks],
   )
 
-  async function generateMusic() {
-    if (!elevenLabsApiKey) {
-      setError('GitHub Pages secret VITE_ELEVENLABS_API_KEY를 설정해야 합니다.')
-      return
-    }
-
-    if (!style.trim()) {
-      setError('스타일을 입력하세요.')
-      return
-    }
-
-    if (!instrumental && !lyrics.trim()) {
-      setError('가사를 입력하거나 Instrumental을 켜세요.')
-      return
+  useEffect(() => {
+    if (!isFirebaseConfigured()) {
+      setIsLoading(false)
+      setError('Firebase 환경 변수가 설정되지 않았습니다.')
+      return undefined
     }
 
     setError('')
-    setMessage('')
-    setIsGenerating(true)
+    setIsLoading(true)
 
-    try {
-      const response = await fetch(`${elevenLabsMusicUrl}?output_format=mp3_48000_192`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'xi-api-key': elevenLabsApiKey,
-        },
-        body: JSON.stringify({
-          prompt: promptPreview,
-          model_id: model,
-          force_instrumental: instrumental,
-        }),
-      })
+    const unsubscribe = subscribeValue<Record<string, MusicTrack>>('musicTracks', (value) => {
+      const nextTracks = listFromRecord(value)
+      setTracks(nextTracks.length > 0 ? nextTracks : Object.values(seedTracks))
+      setIsLoading(false)
+    })
 
-      if (!response.ok) {
-        if (response.status === 402) {
-          throw new Error('ElevenLabs Music API는 유료 플랜 또는 충분한 크레딧이 필요합니다.')
-        }
+    return unsubscribe
+  }, [])
 
-        const contentType = response.headers.get('content-type') ?? ''
-        const payload = contentType.includes('application/json') ? await response.json() : await response.text()
-        const detail = typeof payload === 'object' && payload && 'detail' in payload ? payload.detail : payload
-        throw new Error(typeof detail === 'string' ? detail : `ElevenLabs API error ${response.status}`)
-      }
-
-      if (track?.audioUrl) {
-        URL.revokeObjectURL(track.audioUrl)
-      }
-
-      const audioBlob = await response.blob()
-      const audioUrl = URL.createObjectURL(audioBlob)
-      setTrack({
-        audioUrl,
-        filename: downloadName(title),
-        songId: response.headers.get('song-id') ?? '',
-      })
-      setMessage('음악 생성이 완료됐습니다.')
-    } catch (requestError) {
-      setError(getErrorMessage(requestError))
-    } finally {
-      setIsGenerating(false)
+  useEffect(() => {
+    if (!selectedTrackId && selectedTrack) {
+      setSelectedTrackId(selectedTrack.id)
+      return
     }
-  }
+
+    if (selectedTrackId && tracks.every((track) => track.id !== selectedTrackId)) {
+      setSelectedTrackId(selectedTrack?.id ?? '')
+    }
+  }, [selectedTrack, selectedTrackId, tracks])
 
   return (
     <section className="sub-app utility-app music-app">
@@ -133,98 +83,38 @@ export function MusicApp() {
         </button>
         <div>
           <h2>Music</h2>
-          <p>가사와 스타일을 입력해 ElevenLabs 트랙을 생성합니다.</p>
+          <p>Firebase에 등록된 음악을 재생합니다.</p>
         </div>
         <div className="music-key-pill">
-          <KeyRound aria-hidden="true" size={16} />
-          <span>{hasApiKey ? 'ElevenLabs ready' : 'No API key'}</span>
+          <ListMusic aria-hidden="true" size={16} />
+          <span>{isLoading ? 'Loading' : `${playableTracks.length}/${tracks.length} playable`}</span>
         </div>
       </header>
 
       <div className="music-layout">
-        <form
-          className="music-compose"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void generateMusic()
-          }}
-        >
-          <label>
-            <span>Title</span>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={80} />
-          </label>
-
-          <label>
-            <span>Style</span>
-            <textarea
-              rows={4}
-              value={style}
-              onChange={(event) => setStyle(event.target.value)}
-              placeholder="장르, 분위기, 악기, 보컬 톤을 입력하세요."
-            />
-          </label>
-
-          <label>
-            <span>Lyrics</span>
-            <textarea
-              rows={10}
-              value={lyrics}
-              disabled={instrumental}
-              onChange={(event) => setLyrics(event.target.value)}
-              placeholder="[Verse]&#10;...&#10;&#10;[Chorus]&#10;..."
-            />
-          </label>
-
-          <label>
-            <span>Model</span>
-            <select value={model} onChange={(event) => setModel(event.target.value)}>
-              <option value="music_v2_5">music_v2_5</option>
-              <option value="music_v2">music_v2</option>
-              <option value="music_v1">music_v1</option>
-            </select>
-          </label>
-
-          <div className="music-action-row">
-            <label className="music-toggle">
-              <input
-                checked={instrumental}
-                type="checkbox"
-                onChange={(event) => setInstrumental(event.target.checked)}
-              />
-              <span>Instrumental</span>
-            </label>
-
-            <button className="music-primary-button" disabled={isGenerating || !hasApiKey} type="submit">
-              <Sparkles aria-hidden="true" size={18} />
-              {isGenerating ? '생성 중' : '음악 생성'}
-            </button>
-          </div>
-
-          {message ? <p className="app-muted">{message}</p> : null}
-          {error ? <p className="app-error">{error}</p> : null}
-        </form>
-
-        <section className="music-results" aria-labelledby="music-results-heading">
+        <section className="music-results music-now-playing" aria-labelledby="music-now-playing-heading">
           <div className="music-results-header">
             <div>
-              <h3 id="music-results-heading">Result</h3>
-              <p>{track?.songId ? `song-id: ${track.songId}` : 'No generation yet'}</p>
+              <h3 id="music-now-playing-heading">Now Playing</h3>
+              <p>{selectedTrack?.audioUrl ? selectedTrack.audioUrl : 'No playable track selected'}</p>
             </div>
           </div>
 
-          {track ? (
+          {selectedTrack?.audioUrl ? (
             <div className="music-player">
               <div className="music-cover-placeholder">
                 <Music2 aria-hidden="true" size={34} />
               </div>
               <div className="music-player-copy">
-                <strong>{title || 'Generated track'}</strong>
-                <span>{style}</span>
+                <strong>{selectedTrack.title}</strong>
+                <span>
+                  {selectedTrack.artist} · {formatDuration(selectedTrack.durationSeconds)}
+                </span>
               </div>
-              <audio controls src={track.audioUrl}>
+              <audio key={selectedTrack.id} controls src={selectedTrack.audioUrl}>
                 <track kind="captions" />
               </audio>
-              <a className="music-download-button" href={track.audioUrl} download={track.filename}>
+              <a className="music-download-button" href={selectedTrack.audioUrl} download={downloadName(selectedTrack)}>
                 <Download aria-hidden="true" size={18} />
                 다운로드
               </a>
@@ -232,13 +122,48 @@ export function MusicApp() {
           ) : (
             <div className="music-empty-state">
               <Music2 aria-hidden="true" size={34} />
-              <p>생성이 끝나면 플레이어와 다운로드 버튼이 표시됩니다.</p>
+              <p>Firebase `musicTracks` 문서에 재생 가능한 `audioUrl`을 등록하면 여기에 표시됩니다.</p>
             </div>
           )}
 
-          <div className="music-prompt-preview">
-            <strong>Prompt</strong>
-            <p>{promptPreview || '스타일과 가사를 입력하세요.'}</p>
+          {error ? <p className="app-error">{error}</p> : null}
+        </section>
+
+        <section className="music-library" aria-labelledby="music-library-heading">
+          <div className="music-results-header">
+            <div>
+              <h3 id="music-library-heading">Library</h3>
+              <p>{isLoading ? '불러오는 중' : `${tracks.length} tracks`}</p>
+            </div>
+          </div>
+
+          <div className="music-track-list">
+            {tracks.map((track) => {
+              const isSelected = track.id === selectedTrack?.id
+              const isPlayable = Boolean(track.audioUrl)
+
+              return (
+                <button
+                  className="music-track-row"
+                  data-active={isSelected}
+                  disabled={!isPlayable}
+                  key={track.id}
+                  type="button"
+                  onClick={() => setSelectedTrackId(track.id)}
+                >
+                  <span className="music-track-icon" aria-hidden="true">
+                    <Music2 size={18} />
+                  </span>
+                  <span>
+                    <strong>{track.title}</strong>
+                    <small>
+                      {track.artist} · {formatDuration(track.durationSeconds)}
+                    </small>
+                  </span>
+                  <em>{isPlayable ? 'Play' : 'No URL'}</em>
+                </button>
+              )
+            })}
           </div>
         </section>
       </div>
