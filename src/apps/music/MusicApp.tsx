@@ -44,7 +44,6 @@ export function MusicApp() {
   const [style, setStyle] = useState('K-pop, bright synth, clean vocal, energetic chorus')
   const [lyrics, setLyrics] = useState('')
   const [model, setModel] = useState('music_v2_5')
-  const [durationSeconds, setDurationSeconds] = useState(30)
   const [instrumental, setInstrumental] = useState(false)
   const [track, setTrack] = useState<GeneratedTrack | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -87,12 +86,15 @@ export function MusicApp() {
         body: JSON.stringify({
           prompt: promptPreview,
           model_id: model,
-          music_length_ms: durationSeconds * 1000,
           force_instrumental: instrumental,
         }),
       })
 
       if (!response.ok) {
+        if (response.status === 402) {
+          throw new Error('ElevenLabs Music API는 유료 플랜 또는 충분한 크레딧이 필요합니다.')
+        }
+
         const contentType = response.headers.get('content-type') ?? ''
         const payload = contentType.includes('application/json') ? await response.json() : await response.text()
         const detail = typeof payload === 'object' && payload && 'detail' in payload ? payload.detail : payload
@@ -173,26 +175,14 @@ export function MusicApp() {
             />
           </label>
 
-          <div className="music-controls">
-            <label>
-              <span>Model</span>
-              <select value={model} onChange={(event) => setModel(event.target.value)}>
-                <option value="music_v2_5">music_v2_5</option>
-                <option value="music_v2">music_v2</option>
-                <option value="music_v1">music_v1</option>
-              </select>
-            </label>
-            <label>
-              <span>Length</span>
-              <input
-                max={180}
-                min={3}
-                type="number"
-                value={durationSeconds}
-                onChange={(event) => setDurationSeconds(Number(event.target.value))}
-              />
-            </label>
-          </div>
+          <label>
+            <span>Model</span>
+            <select value={model} onChange={(event) => setModel(event.target.value)}>
+              <option value="music_v2_5">music_v2_5</option>
+              <option value="music_v2">music_v2</option>
+              <option value="music_v1">music_v1</option>
+            </select>
+          </label>
 
           <div className="music-action-row">
             <label className="music-toggle">
