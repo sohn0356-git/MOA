@@ -2665,6 +2665,7 @@ select:disabled {
 }
 
 .task-item {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
@@ -2695,7 +2696,7 @@ select:disabled {
 .task-copy {
   min-width: 0;
   border: 0;
-  padding: 0;
+  padding: 0 26px 0 0;
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -2781,6 +2782,46 @@ select:disabled {
 .status-text-done {
   color: #128a3d;
   background: rgb(52 199 89 / 15%);
+}
+
+.recurring-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  color: #64748b;
+  background: rgb(100 116 139 / 15%);
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.recurring-toggle svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+.recurring-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.recurring-toggle-active {
+  color: #0f766e;
+  background: rgb(20 184 166 / 19%);
+}
+
+.recurring-toggle:disabled {
+  cursor: wait;
+  opacity: 0.58;
+  transform: none;
 }
 
 .fab-button {

@@ -58,6 +58,7 @@ type TaskListProps = {
   ) => Promise<void>
   onUpdateStatus: (taskId: string, status: TaskStatus) => Promise<void>
   onMoveTask: (taskId: string, direction: -1 | 1, orderedTasks: Task[]) => Promise<void>
+  onToggleRecurringTask: (recurringTaskId: string, isActive: boolean) => Promise<void>
 }
 
 function getChildCategories(categories: TaskCategory[], parentId: string | null) {
@@ -85,6 +86,7 @@ export function TaskList({
   onDeleteTask,
   onEditTask,
   onMoveTask,
+  onToggleRecurringTask,
   onUpdateStatus,
 }: TaskListProps) {
   const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<string[]>([])
@@ -243,6 +245,17 @@ export function TaskList({
     setStatusTask(null)
   }
 
+  function getRecurringTask(task: Task) {
+    if (!task.recurringTaskId) {
+      return null
+    }
+
+    return (
+      recurringTasks.find((recurringTask) => recurringTask.id === task.recurringTaskId) ??
+      null
+    )
+  }
+
   function toggleCategory(categoryId: string) {
     setCollapsedCategoryIds((currentIds) => {
       if (currentIds.includes(categoryId)) {
@@ -299,79 +312,107 @@ export function TaskList({
 
               {!isCollapsed && group.tasks.length > 0 ? (
                 <ul className="task-list">
-                  {group.tasks.map((task, taskIndex) => (
-                    <li className={`task-item task-${task.status}`} key={task.id}>
-                      <button
-                        className="task-copy"
-                        type="button"
-                        onClick={() => openEditModal(task)}
-                      >
-                        <span className="task-title">{task.title}</span>
-                        {task.description ? (
-                          <p className="task-description">{task.description}</p>
+                  {group.tasks.map((task, taskIndex) => {
+                    const recurringTask = getRecurringTask(task)
+
+                    return (
+                      <li className={`task-item task-${task.status}`} key={task.id}>
+                        {recurringTask ? (
+                          <button
+                            aria-label={`${task.title} 반복 ${
+                              recurringTask.isActive ? '끄기' : '켜기'
+                            }`}
+                            aria-pressed={recurringTask.isActive}
+                            className={`recurring-toggle ${
+                              recurringTask.isActive ? 'recurring-toggle-active' : ''
+                            }`}
+                            disabled={isBusy}
+                            title={recurringTask.isActive ? '반복 켜짐' : '반복 꺼짐'}
+                            type="button"
+                            onClick={() =>
+                              void onToggleRecurringTask(
+                                recurringTask.id,
+                                !recurringTask.isActive,
+                              )
+                            }
+                          >
+                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                              <path d="M7 7h8.6l-2.3-2.3a1 1 0 0 1 1.4-1.4l4 4a1 1 0 0 1 0 1.4l-4 4a1 1 0 1 1-1.4-1.4L15.6 9H7a3 3 0 0 0-3 3 1 1 0 1 1-2 0 5 5 0 0 1 5-5Zm10 10H8.4l2.3 2.3a1 1 0 0 1-1.4 1.4l-4-4a1 1 0 0 1 0-1.4l4-4a1 1 0 1 1 1.4 1.4L8.4 15H17a3 3 0 0 0 3-3 1 1 0 1 1 2 0 5 5 0 0 1-5 5Z" />
+                            </svg>
+                          </button>
                         ) : null}
-                        {task.dueDate ? (
-                          <span className="due-date">기한 {task.dueDate}</span>
-                        ) : null}
-                      </button>
-                      <div className="task-controls">
                         <button
-                          className={`status-chip status-text-${task.status}`}
-                          disabled={isBusy}
+                          className="task-copy"
                           type="button"
-                          onClick={() => setStatusTask(task)}
+                          onClick={() => openEditModal(task)}
                         >
-                          {statusLabels[task.status]}
+                          <span className="task-title">{task.title}</span>
+                          {task.description ? (
+                            <p className="task-description">{task.description}</p>
+                          ) : null}
+                          {task.dueDate ? (
+                            <span className="due-date">기한 {task.dueDate}</span>
+                          ) : null}
                         </button>
-                        <div className="task-actions">
+                        <div className="task-controls">
                           <button
-                            aria-label={`${task.title} 위로 이동`}
-                            className="icon-button"
-                            disabled={isBusy || taskIndex === 0}
-                            type="button"
-                            onClick={() => void onMoveTask(task.id, -1, group.tasks)}
-                          >
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                              <path d="M12 5a1 1 0 0 1 .7.3l6 6a1 1 0 1 1-1.4 1.4L13 8.4V18a1 1 0 1 1-2 0V8.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l6-6A1 1 0 0 1 12 5Z" />
-                            </svg>
-                          </button>
-                          <button
-                            aria-label={`${task.title} 아래로 이동`}
-                            className="icon-button"
-                            disabled={isBusy || taskIndex === group.tasks.length - 1}
-                            type="button"
-                            onClick={() => void onMoveTask(task.id, 1, group.tasks)}
-                          >
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                              <path d="M12 19a1 1 0 0 1-.7-.3l-6-6a1 1 0 1 1 1.4-1.4L11 15.6V6a1 1 0 1 1 2 0v9.6l4.3-4.3a1 1 0 0 1 1.4 1.4l-6 6a1 1 0 0 1-.7.3Z" />
-                            </svg>
-                          </button>
-                          <button
-                            aria-label={`${task.title} 수정`}
-                            className="icon-button"
+                            className={`status-chip status-text-${task.status}`}
                             disabled={isBusy}
                             type="button"
-                            onClick={() => openEditModal(task)}
+                            onClick={() => setStatusTask(task)}
                           >
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                              <path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25ZM19.71 7.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.06 1.06 2.75 2.75 1.06-1.06Z" />
-                            </svg>
+                            {statusLabels[task.status]}
                           </button>
-                          <button
-                            aria-label={`${task.title} 삭제`}
-                            className="icon-button delete-button"
-                            disabled={isBusy}
-                            type="button"
-                            onClick={() => void onDeleteTask(task.id)}
-                          >
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                              <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7H4a1 1 0 0 1 0-2h4V4a1 1 0 0 1 1-1Zm2 2h2V5h-2Zm-4 2v13h10V7H7Zm3 3a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
-                            </svg>
-                          </button>
+                          <div className="task-actions">
+                            <button
+                              aria-label={`${task.title} 위로 이동`}
+                              className="icon-button"
+                              disabled={isBusy || taskIndex === 0}
+                              type="button"
+                              onClick={() => void onMoveTask(task.id, -1, group.tasks)}
+                            >
+                              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                <path d="M12 5a1 1 0 0 1 .7.3l6 6a1 1 0 1 1-1.4 1.4L13 8.4V18a1 1 0 1 1-2 0V8.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l6-6A1 1 0 0 1 12 5Z" />
+                              </svg>
+                            </button>
+                            <button
+                              aria-label={`${task.title} 아래로 이동`}
+                              className="icon-button"
+                              disabled={isBusy || taskIndex === group.tasks.length - 1}
+                              type="button"
+                              onClick={() => void onMoveTask(task.id, 1, group.tasks)}
+                            >
+                              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                <path d="M12 19a1 1 0 0 1-.7-.3l-6-6a1 1 0 1 1 1.4-1.4L11 15.6V6a1 1 0 1 1 2 0v9.6l4.3-4.3a1 1 0 0 1 1.4 1.4l-6 6a1 1 0 0 1-.7.3Z" />
+                              </svg>
+                            </button>
+                            <button
+                              aria-label={`${task.title} 수정`}
+                              className="icon-button"
+                              disabled={isBusy}
+                              type="button"
+                              onClick={() => openEditModal(task)}
+                            >
+                              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                <path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25ZM19.71 7.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.06 1.06 2.75 2.75 1.06-1.06Z" />
+                              </svg>
+                            </button>
+                            <button
+                              aria-label={`${task.title} 삭제`}
+                              className="icon-button delete-button"
+                              disabled={isBusy}
+                              type="button"
+                              onClick={() => void onDeleteTask(task.id)}
+                            >
+                              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7H4a1 1 0 0 1 0-2h4V4a1 1 0 0 1 1-1Zm2 2h2V5h-2Zm-4 2v13h10V7H7Zm3 3a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
+                      </li>
+                    )
+                  })}
                 </ul>
               ) : null}
             </section>

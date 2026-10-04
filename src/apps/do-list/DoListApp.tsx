@@ -442,6 +442,7 @@ export function DoListApp() {
     removeCategory,
     removeTask,
     setTaskStatus,
+    toggleRecurringTask,
   } = useTasks(userId)
   const uniqueTasks = useMemo(() => getUniqueTasks(tasks), [tasks])
   const taskCounts = useMemo(() => {
@@ -773,6 +774,7 @@ export function DoListApp() {
             onDeleteTask={removeTask}
             onEditTask={editTask}
             onMoveTask={moveTask}
+            onToggleRecurringTask={toggleRecurringTask}
             onUpdateStatus={setTaskStatus}
             recurringTasks={recurringTasks}
             tasks={visibleTasks}
