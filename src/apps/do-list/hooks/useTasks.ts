@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseConfigError } from '../../../services/firebase'
 import {
   createCategory,
@@ -74,14 +74,6 @@ function addMonths(dateString: string, months: number) {
   return formatDate(date)
 }
 
-function getNextRecurringDate(recurringTask: RecurringTask, dueDate: string) {
-  return getNextRecurringDateForSchedule(
-    recurringTask.scheduleType,
-    recurringTask.intervalDays,
-    dueDate,
-  )
-}
-
 function getNextRecurringDateForSchedule(
   scheduleType: RecurringScheduleType,
   intervalDays: number | null,
@@ -102,25 +94,52 @@ function getNextRecurringDateForSchedule(
   return addDays(dueDate, 1)
 }
 
-function getRecurringOccurrencesDue(recurringTask: RecurringTask, today: string) {
+function getRecurringOccurrencesDueForSchedule(
+  scheduleType: RecurringScheduleType,
+  intervalDays: number | null,
+  startDate: string,
+  today: string,
+) {
   const occurrences: string[] = []
-  let nextDueDate = recurringTask.nextDueDate || recurringTask.startDate
+  let nextDueDate = startDate
 
   while (
     nextDueDate <= today &&
     occurrences.length < MAX_RECURRING_OCCURRENCES_PER_SYNC
   ) {
     occurrences.push(nextDueDate)
-    nextDueDate = getNextRecurringDate(recurringTask, nextDueDate)
+    nextDueDate = getNextRecurringDateForSchedule(
+      scheduleType,
+      intervalDays,
+      nextDueDate,
+    )
   }
 
   return { nextDueDate, occurrences }
 }
 
-function hasOpenRecurringOccurrence(tasks: Task[], recurringTaskId: string) {
-  return tasks.some((task) => {
-    return task.recurringTaskId === recurringTaskId && task.status !== 'done'
-  })
+function getRecurringOccurrencesDue(recurringTask: RecurringTask, today: string) {
+  return getRecurringOccurrencesDueForSchedule(
+    recurringTask.scheduleType,
+    recurringTask.intervalDays,
+    recurringTask.nextDueDate || recurringTask.startDate,
+    today,
+  )
+}
+
+function getReusableRecurringTask(tasks: Task[], recurringTaskId: string) {
+  return tasks
+    .filter((task) => task.recurringTaskId === recurringTaskId)
+    .sort((firstTask, secondTask) => {
+      const firstDate = firstTask.recurringOccurrenceKey ?? firstTask.dueDate ?? ''
+      const secondDate = secondTask.recurringOccurrenceKey ?? secondTask.dueDate ?? ''
+
+      if (firstDate !== secondDate) {
+        return secondDate.localeCompare(firstDate)
+      }
+
+      return (secondTask.createdAt ?? 0) - (firstTask.createdAt ?? 0)
+    })[0]
 }
 
 export function useTasks(userId: string | null) {
@@ -134,7 +153,6 @@ export function useTasks(userId: string | null) {
   const [syncMessage, setSyncMessage] = useState(
     configError ? 'Firebase is not configured.' : 'Connecting to Realtime DB...',
   )
-  const pendingRecurringOccurrenceKeys = useRef(new Set<string>())
 
   function requireUserId() {
     if (!userId) {
@@ -170,15 +188,6 @@ export function useTasks(userId: string | null) {
     const unsubscribeTasks = subscribeToTasks(
       userId,
       (nextTasks) => {
-        const nextGeneratedOccurrenceKeys = new Set(
-          nextTasks
-            .filter((task) => task.recurringTaskId && task.recurringOccurrenceKey)
-            .map((task) => `${task.recurringTaskId}:${task.recurringOccurrenceKey}`),
-        )
-
-        nextGeneratedOccurrenceKeys.forEach((occurrenceKey) => {
-          pendingRecurringOccurrenceKeys.current.delete(occurrenceKey)
-        })
         setTasks(nextTasks)
         setError(null)
         setSyncMessage('Synced with Realtime DB.')
@@ -230,11 +239,6 @@ export function useTasks(userId: string | null) {
     }
 
     const today = getTodayString()
-    const generatedOccurrenceKeys = new Set(
-      tasks
-        .filter((task) => task.recurringTaskId && task.recurringOccurrenceKey)
-        .map((task) => `${task.recurringTaskId}:${task.recurringOccurrenceKey}`),
-    )
     const currentUserId = userId
     let didCancel = false
 
@@ -252,49 +256,52 @@ export function useTasks(userId: string | null) {
           recurringTask,
           today,
         )
-        const hasOpenOccurrence = hasOpenRecurringOccurrence(tasks, recurringTask.id)
-        const nextOccurrenceDate = occurrences
-          .filter((occurrenceDate) => {
-            const occurrenceKey = `${recurringTask.id}:${occurrenceDate}`
+        const reusableTask = getReusableRecurringTask(tasks, recurringTask.id)
+        const nextOccurrenceDate = occurrences.at(-1)
 
-            return (
-              !generatedOccurrenceKeys.has(occurrenceKey) &&
-              !pendingRecurringOccurrenceKeys.current.has(occurrenceKey)
-            )
+        if (!nextOccurrenceDate) {
+          continue
+        }
+
+        if (!reusableTask) {
+          await createTask({
+            categoryId: recurringTask.categoryId,
+            description: recurringTask.description,
+            dueDate: nextOccurrenceDate,
+            recurringOccurrenceKey: nextOccurrenceDate,
+            recurringTaskId: recurringTask.id,
+            status: 'todo',
+            title: recurringTask.title,
+            userId: currentUserId,
           })
-          .at(-1)
-
-        if (hasOpenOccurrence) {
           await updateRecurringTask(currentUserId, recurringTask.id, {
+            lastGeneratedDate: nextOccurrenceDate,
             nextDueDate,
           })
           continue
         }
 
-        if (nextOccurrenceDate) {
-          const occurrenceKey = `${recurringTask.id}:${nextOccurrenceDate}`
-
-          pendingRecurringOccurrenceKeys.current.add(occurrenceKey)
-
-          try {
-            await createTask({
+        if (reusableTask.status === 'done') {
+          await Promise.all([
+            updateTask(currentUserId, reusableTask.id, {
               categoryId: recurringTask.categoryId,
+              completedAt: null,
               description: recurringTask.description,
               dueDate: nextOccurrenceDate,
               recurringOccurrenceKey: nextOccurrenceDate,
-              recurringTaskId: recurringTask.id,
               status: 'todo',
               title: recurringTask.title,
-              userId: currentUserId,
-            })
-          } catch (createTaskError) {
-            pendingRecurringOccurrenceKeys.current.delete(occurrenceKey)
-            throw createTaskError
-          }
+            }),
+            incrementRecurringTaskCompletedCount(currentUserId, recurringTask.id),
+            updateRecurringTask(currentUserId, recurringTask.id, {
+              lastGeneratedDate: nextOccurrenceDate,
+              nextDueDate,
+            }),
+          ])
+          continue
         }
 
         await updateRecurringTask(currentUserId, recurringTask.id, {
-          lastGeneratedDate: nextOccurrenceDate ?? recurringTask.lastGeneratedDate,
           nextDueDate,
         })
       }
@@ -398,15 +405,39 @@ export function useTasks(userId: string | null) {
     setIsMutating(true)
 
     try {
-      await createRecurringTask(requireUserId(), {
+      const currentUserId = requireUserId()
+      const normalizedIntervalDays =
+        scheduleType === 'interval' ? Math.max(1, intervalDays ?? 1) : null
+      const today = getTodayString()
+      const { nextDueDate, occurrences } = getRecurringOccurrencesDueForSchedule(
+        scheduleType,
+        normalizedIntervalDays,
+        startDate,
+        today,
+      )
+      const firstOccurrenceDate = occurrences.at(-1)
+      const recurringTaskId = await createRecurringTask(currentUserId, {
         categoryId,
         description: trimmedDescription,
-        intervalDays: scheduleType === 'interval' ? Math.max(1, intervalDays ?? 1) : null,
-        nextDueDate: startDate,
+        intervalDays: normalizedIntervalDays,
+        nextDueDate: firstOccurrenceDate ? nextDueDate : startDate,
         scheduleType,
         startDate,
         title: trimmedTitle,
       })
+
+      if (firstOccurrenceDate && recurringTaskId) {
+        await createTask({
+          categoryId,
+          description: trimmedDescription,
+          dueDate: firstOccurrenceDate,
+          recurringOccurrenceKey: firstOccurrenceDate,
+          recurringTaskId,
+          status: 'todo',
+          title: trimmedTitle,
+          userId: currentUserId,
+        })
+      }
     } catch (recurringTaskError) {
       setError(
         recurringTaskError instanceof Error
@@ -547,24 +578,14 @@ export function useTasks(userId: string | null) {
 
     try {
       const currentUserId = requireUserId()
-      const shouldCountCompletion =
-        status === 'done' &&
-        currentTask?.status !== 'done' &&
-        Boolean(currentTask?.recurringTaskId) &&
-        !currentTask?.completedAt
       const shouldSetCompletedAt = status === 'done' && currentTask?.status !== 'done'
       const shouldClearCompletedAt = status !== 'done' && currentTask?.status === 'done'
 
-      await Promise.all([
-        updateTask(currentUserId, taskId, {
-          status,
-          ...(shouldSetCompletedAt ? { completedAt: { '.sv': 'timestamp' } } : {}),
-          ...(shouldClearCompletedAt ? { completedAt: null } : {}),
-        }),
-        shouldCountCompletion && currentTask?.recurringTaskId
-          ? incrementRecurringTaskCompletedCount(currentUserId, currentTask.recurringTaskId)
-          : Promise.resolve(),
-      ])
+      await updateTask(currentUserId, taskId, {
+        status,
+        ...(shouldSetCompletedAt ? { completedAt: { '.sv': 'timestamp' } } : {}),
+        ...(shouldClearCompletedAt ? { completedAt: null } : {}),
+      })
       setSyncMessage('Updated. Waiting for realtime update...')
     } catch (taskError) {
       setError(
