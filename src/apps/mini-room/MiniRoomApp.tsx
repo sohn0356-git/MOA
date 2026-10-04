@@ -4,9 +4,11 @@ import {
   BookOpen,
   Camera,
   Coins,
+  Cross,
   Heart,
   Home,
   LogOut,
+  NotebookPen,
   Music,
   Save,
   Search,
@@ -15,6 +17,7 @@ import {
   SkipBack,
   SkipForward,
   Sparkles,
+  UserRound,
   Users,
   Volume2,
 } from 'lucide-react'
@@ -77,7 +80,17 @@ import type {
 } from '../../types/social'
 import { canViewContent, friendshipId } from '../../utils/social'
 
-type MiniTab = 'home' | 'diary' | 'photos' | 'miniroom' | 'guestbook' | 'friends'
+type MiniTab =
+  | 'home'
+  | 'diary'
+  | 'photos'
+  | 'miniroom'
+  | 'guestbook'
+  | 'friends'
+  | 'cross'
+  | 'meditation'
+  | 'prayer'
+  | 'profile'
 
 const tabs: Array<{ id: MiniTab; label: string }> = [
   { id: 'home', label: 'HOME' },
@@ -86,6 +99,14 @@ const tabs: Array<{ id: MiniTab; label: string }> = [
   { id: 'miniroom', label: 'MINIROOM' },
   { id: 'guestbook', label: 'GUESTBOOK' },
   { id: 'friends', label: 'FRIENDS' },
+]
+
+const bottomTabs: Array<{ id: MiniTab; label: string; icon: typeof Home }> = [
+  { id: 'home', label: '홈', icon: Home },
+  { id: 'cross', label: '십자가', icon: Cross },
+  { id: 'meditation', label: '묵상', icon: NotebookPen },
+  { id: 'prayer', label: '기도제목', icon: Heart },
+  { id: 'profile', label: '마이프로필', icon: UserRound },
 ]
 
 const moods = ['cozy', 'happy', 'quiet', 'blue', 'busy']
@@ -463,9 +484,9 @@ export function MiniRoomApp() {
               target={targetProfile}
               onRequest={(nickname) => runAction(
                 () => sendFriendRequest(userProfile, targetProfile.uid, nickname),
-                '친구 신청을 보냈습니다.',
+                '일촌 신청을 보냈습니다.',
               )}
-              onRemove={() => friendship ? runAction(() => removeFriend(friendship), '친구를 삭제했습니다.') : undefined}
+              onRemove={() => friendship ? runAction(() => removeFriend(friendship), '일촌을 삭제했습니다.') : undefined}
             />
           ) : null}
         </aside>
@@ -477,8 +498,8 @@ export function MiniRoomApp() {
               <h1>{targetProfile.homepageTitle}</h1>
             </div>
             <div className="mh-toolbar">
-              <button type="button" onClick={() => setActiveTab('home')}><Home size={17} />홈</button>
-              <button type="button" onClick={() => setActiveTab('friends')}><Users size={17} />친구</button>
+              <button type="button" onClick={() => setActiveTab('home')}><Home size={17} />홈피</button>
+              <button type="button" onClick={() => setActiveTab('friends')}><Users size={17} />일촌</button>
               <button type="button" onClick={() => setActiveTab('miniroom')}><Sparkles size={17} />방</button>
             </div>
           </header>
@@ -591,8 +612,56 @@ export function MiniRoomApp() {
               profile={userProfile}
               target={targetProfile}
               friends={friendProfiles}
-              onAccept={(request, nickname) => runAction(() => respondToFriendRequest(request, true, nickname), '친구 신청을 수락했습니다.')}
-              onReject={(request) => runAction(() => respondToFriendRequest(request, false, ''), '친구 신청을 거절했습니다.')}
+              onAccept={(request, nickname) => runAction(() => respondToFriendRequest(request, true, nickname), '일촌 신청을 수락했습니다.')}
+              onReject={(request) => runAction(() => respondToFriendRequest(request, false, ''), '일촌 신청을 거절했습니다.')}
+            />
+          ) : null}
+
+          {activeTab === 'cross' ? (
+            <CrossTab profile={targetProfile} />
+          ) : null}
+
+          {activeTab === 'meditation' ? (
+            <MeditationMiniTab
+              isBusy={isBusy}
+              isOwner={isOwner}
+              posts={visibleDiary.filter((post) => post.mood === 'meditation')}
+              onCreate={(content) => runAction(
+                () => createDiaryPost(userProfile, {
+                  title: '오늘의 묵상',
+                  content,
+                  mood: 'meditation',
+                  visibility: 'private',
+                }),
+                '묵상을 저장했습니다.',
+              )}
+            />
+          ) : null}
+
+          {activeTab === 'prayer' ? (
+            <PrayerTab
+              isBusy={isBusy}
+              isOwner={isOwner}
+              posts={visibleDiary.filter((post) => post.mood === 'prayer')}
+              onCreate={(title, content) => runAction(
+                () => createDiaryPost(userProfile, {
+                  title,
+                  content,
+                  mood: 'prayer',
+                  visibility: 'private',
+                }),
+                '기도제목을 저장했습니다.',
+              )}
+            />
+          ) : null}
+
+          {activeTab === 'profile' && isOwner ? (
+            <ProfileSettingsPanel
+              isBusy={isBusy}
+              profile={userProfile}
+              tracks={tracks}
+              onSave={(patch) => runAction(() => updateMyProfile(userProfile.uid, patch), '홈페이지 설정을 저장했습니다.')}
+              onAvatar={(file) => runAction(() => applyAvatarUrl(userProfile.uid, file), '프로필 이미지를 바꿨습니다.')}
             />
           ) : null}
         </main>
@@ -657,6 +726,22 @@ export function MiniRoomApp() {
           />
         </aside>
       </div>
+      <nav className="mh-bottom-tabs" aria-label="미니홈피 하단 탭">
+        {bottomTabs.map((tab) => {
+          const Icon = tab.icon
+          return (
+            <button
+              aria-current={activeTab === tab.id ? 'page' : undefined}
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <Icon size={18} />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </nav>
     </MiniRoomShell>
   )
 }
@@ -680,7 +765,7 @@ function MiniRoomShell({
         </button>
         <div>
           <p>MOA Minihome</p>
-          <strong>My own little place</strong>
+          <strong>Minihompy</strong>
         </div>
         {profile ? (
           <div className="mh-session">
@@ -716,6 +801,7 @@ function BgmPlayer({
     <div className="mh-bgm">
       <Music size={18} />
       <div>
+        <span>Jukebox</span>
         <strong>{track?.title ?? 'No track'}</strong>
         <span>{track?.artist ?? 'Select BGM'}</span>
       </div>
@@ -758,20 +844,20 @@ function FriendAction({
   const [nickname, setNickname] = useState('')
 
   if (friendship?.status === 'accepted') {
-    return <button className="mh-danger-button" type="button" onClick={onRemove}>친구 끊기</button>
+    return <button className="mh-danger-button" type="button" onClick={onRemove}>일촌 끊기</button>
   }
 
   if (friendship?.status === 'pending') {
-    return <p className="mh-muted-note">친구 신청 대기 중</p>
+    return <p className="mh-muted-note">일촌 신청 대기 중</p>
   }
 
   return (
     <form className="mh-inline-form" onSubmit={(event) => {
       event.preventDefault()
-      onRequest(nickname || `${target.displayName} 친구`)
+      onRequest(nickname || `${target.displayName} 일촌`)
     }}>
-      <input aria-label="친구 별명" value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder={`${viewer.displayName}만의 별명`} />
-      <button disabled={isBusy} type="submit"><Send size={16} />친구 신청</button>
+      <input aria-label="일촌명" value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder={`${viewer.displayName}만의 일촌명`} />
+      <button disabled={isBusy} type="submit"><Send size={16} />일촌 신청</button>
     </form>
   )
 }
@@ -1341,22 +1427,22 @@ function FriendsTab({
     <section className="mh-stack">
       {target.uid === profile.uid ? (
         <section className="mh-panel">
-          <h3>받은 친구 신청</h3>
+          <h3>받은 일촌 신청</h3>
           {requests.map((request) => {
             const sender = allProfiles.find((item) => item.uid === request.fromUid)
             return (
               <div className="mh-friend-row" key={request.id}>
                 <span>{sender?.displayName ?? 'Unknown'} <small>{request.fromNickname}</small></span>
-                <button disabled={isBusy} type="button" onClick={() => onAccept(request, `${sender?.displayName ?? '친구'}님`)}>수락</button>
+                <button disabled={isBusy} type="button" onClick={() => onAccept(request, `${sender?.displayName ?? '일촌'}님`)}>수락</button>
                 <button disabled={isBusy} type="button" onClick={() => onReject(request)}>거절</button>
               </div>
             )
           })}
-          {requests.length === 0 ? <p className="mh-empty">새 친구 신청이 없습니다.</p> : null}
+          {requests.length === 0 ? <p className="mh-empty">새 일촌 신청이 없습니다.</p> : null}
         </section>
       ) : null}
       <section className="mh-panel">
-        <h3>{target.displayName}님의 친구</h3>
+        <h3>{target.displayName}님의 일촌</h3>
         <div className="mh-compact-list">
           {friends.map((friend) => (
             <button key={friend.uid} type="button" onClick={() => goHome(friend.username)}>
@@ -1365,8 +1451,104 @@ function FriendsTab({
             </button>
           ))}
         </div>
-        {friends.length === 0 ? <p className="mh-empty">아직 친구가 없습니다.</p> : null}
+        {friends.length === 0 ? <p className="mh-empty">아직 일촌이 없습니다.</p> : null}
       </section>
+    </section>
+  )
+}
+
+function CrossTab({ profile }: { profile: Profile }) {
+  return (
+    <section className="mh-stack">
+      <article className="mh-panel mh-cross-panel">
+        <Cross size={42} />
+        <div>
+          <p className="mh-kicker">Today is...</p>
+          <h3>{profile.statusMessage || '평안'}</h3>
+          <p>{profile.intro}</p>
+        </div>
+      </article>
+      <section className="mh-panel">
+        <h3>오늘 붙잡을 문장</h3>
+        <p className="mh-muted-note">
+          수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라.
+        </p>
+        <p className="mh-muted-note">마태복음 11:28</p>
+      </section>
+    </section>
+  )
+}
+
+function MeditationMiniTab({
+  isBusy,
+  isOwner,
+  onCreate,
+  posts,
+}: {
+  isBusy: boolean
+  isOwner: boolean
+  onCreate: (content: string) => void
+  posts: DiaryPost[]
+}) {
+  return (
+    <section className="mh-stack">
+      {isOwner ? (
+        <form className="mh-panel mh-form" onSubmit={(event) => {
+          event.preventDefault()
+          const form = new FormData(event.currentTarget)
+          onCreate(String(form.get('content') ?? ''))
+          event.currentTarget.reset()
+        }}>
+          <h3>묵상 기록</h3>
+          <textarea required name="content" rows={5} placeholder="오늘 마음에 남은 말씀과 생각을 적어보세요." />
+          <button disabled={isBusy} type="submit">묵상 저장</button>
+        </form>
+      ) : null}
+      {posts.map((post) => (
+        <article className="mh-diary-page" key={post.id}>
+          <header><span>묵상</span><time>{formatDate(post.createdAt)}</time></header>
+          <h3>{post.title}</h3>
+          <p>{post.content}</p>
+        </article>
+      ))}
+      {posts.length === 0 ? <p className="mh-empty">저장된 묵상이 없습니다.</p> : null}
+    </section>
+  )
+}
+
+function PrayerTab({
+  isBusy,
+  isOwner,
+  onCreate,
+  posts,
+}: {
+  isBusy: boolean
+  isOwner: boolean
+  onCreate: (title: string, content: string) => void
+  posts: DiaryPost[]
+}) {
+  return (
+    <section className="mh-stack">
+      {isOwner ? (
+        <form className="mh-panel mh-form" onSubmit={(event) => {
+          event.preventDefault()
+          const form = new FormData(event.currentTarget)
+          onCreate(String(form.get('title') ?? '기도제목'), String(form.get('content') ?? ''))
+          event.currentTarget.reset()
+        }}>
+          <h3>기도제목</h3>
+          <input required name="title" placeholder="기도 제목" />
+          <textarea required name="content" rows={4} placeholder="함께 기억할 기도제목을 적어보세요." />
+          <button disabled={isBusy} type="submit">기도제목 저장</button>
+        </form>
+      ) : null}
+      {posts.map((post) => (
+        <article className="mh-preview" key={post.id}>
+          <strong>{post.title}</strong>
+          <p>{post.content}</p>
+        </article>
+      ))}
+      {posts.length === 0 ? <p className="mh-empty">저장된 기도제목이 없습니다.</p> : null}
     </section>
   )
 }
@@ -1439,7 +1621,7 @@ function ShopPanel({
   return (
     <section className="mh-panel">
       <h3><ShoppingBag size={17} /> 상점</h3>
-      <p className="mh-wallet"><Coins size={16} /> Pine {wallet?.balance ?? 0}</p>
+      <p className="mh-wallet"><Coins size={16} /> Stars {wallet?.balance ?? 0}</p>
       <div className="mh-shop-grid">
         {items.filter((item) => item.active).slice(0, 12).map((item) => {
           const owned = inventoryIds.has(item.id)
@@ -1447,7 +1629,7 @@ function ShopPanel({
             <div className="mh-shop-item" key={item.id}>
               <span>{item.image}</span>
               <strong>{item.name}</strong>
-              <small>{item.price} Pine</small>
+              <small>{item.price} Stars</small>
               <button disabled={isBusy} type="button" onClick={() => owned ? onApply(item) : onBuy(item)}>
                 {owned ? '적용' : '구매'}
               </button>
