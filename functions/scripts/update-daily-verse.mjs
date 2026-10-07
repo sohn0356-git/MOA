@@ -1,7 +1,10 @@
 import { cert, initializeApp } from 'firebase-admin/app'
 import { getDatabase } from 'firebase-admin/database'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 
 const DURANNO_HOME = 'https://www.duranno.com/'
+const SCRIPTURE_CACHE_PATH = resolve(process.cwd(), '../public/scripture/gae.json')
 
 function getKstDateKey(value = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -121,6 +124,39 @@ function parseBibleVerses(html, startVerse, endVerse) {
   return verses
 }
 
+async function readScriptureCache() {
+  try {
+    return JSON.parse(await readFile(SCRIPTURE_CACHE_PATH, 'utf8'))
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return {
+        translation: '개역개정',
+        books: {},
+      }
+    }
+
+    throw error
+  }
+}
+
+async function mergeScriptureCache(range, verses) {
+  const [book, chapter] = range
+  const chapterKey = String(chapter)
+  const cache = await readScriptureCache()
+
+  cache.translation = '개역개정'
+  cache.books ??= {}
+  cache.books[book] ??= {}
+  cache.books[book][chapterKey] ??= {}
+
+  for (const verse of verses) {
+    cache.books[book][chapterKey][String(verse.number)] = verse.text
+  }
+
+  await mkdir(dirname(SCRIPTURE_CACHE_PATH), { recursive: true })
+  await writeFile(SCRIPTURE_CACHE_PATH, `${JSON.stringify(cache, null, 2)}\n`)
+}
+
 function getServiceAccount() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT
 
@@ -142,6 +178,7 @@ async function main() {
   const range = parseTodayQt(html)
   const bible = await fetchDurannoBible(isoDate)
   const verses = parseBibleVerses(bible.html, range[2], range[3])
+  await mergeScriptureCache(range, verses)
 
   initializeApp({
     credential: cert(serviceAccount),
@@ -149,13 +186,7 @@ async function main() {
   })
 
   const db = getDatabase()
-  await db.ref(`verse/${year}/${dayKey}`).set({
-    range,
-    source: 'duranno',
-    sourceUrl: bible.sourceUrl,
-    translation: '개역개정',
-    verses,
-  })
+  await db.ref(`verse/${year}/${dayKey}`).set([range])
   console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}, ${verses.length} verses`)
 }
 

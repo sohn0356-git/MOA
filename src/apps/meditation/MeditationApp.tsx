@@ -58,6 +58,11 @@ type FirebaseVersePayload = {
   verses?: unknown
 }
 
+type ScriptureCache = {
+  translation?: string
+  books?: Record<string, Record<string, Record<string, string>>>
+}
+
 type MeditationEntry = {
   id: string
   apply: string
@@ -199,6 +204,7 @@ const scripturePlans: ScripturePlan[] = [
 const knownPassageText: Record<string, Verse[]> = Object.fromEntries(
   scripturePlans.map((plan) => [plan.reference, plan.verses]),
 )
+let scriptureCachePromise: Promise<ScriptureCache | null> | null = null
 
 function getTodayKey() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -326,6 +332,55 @@ function normalizeFirebaseVerses(value: unknown): Verse[] | null {
   return verses.length ? verses : null
 }
 
+async function loadScriptureCache() {
+  scriptureCachePromise ??= fetch(`${import.meta.env.BASE_URL}scripture/gae.json`, {
+    cache: 'no-cache',
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return null
+      }
+
+      return response.json() as Promise<ScriptureCache>
+    })
+    .catch(() => null)
+
+  return scriptureCachePromise
+}
+
+async function getScriptureVersesFromCache(range: FirebaseVerseRange) {
+  const [bookValue, chapterValue, startValue, endValue] = range
+  const book = typeof bookValue === 'string' ? bookValue : ''
+  const chapter = Number(chapterValue)
+  const start = Number(startValue)
+  const end = Number(endValue ?? startValue)
+
+  if (!book || !Number.isFinite(chapter) || !Number.isFinite(start) || !Number.isFinite(end)) {
+    return null
+  }
+
+  const cache = await loadScriptureCache()
+  const chapterVerses = cache?.books?.[book]?.[String(chapter)]
+
+  if (!chapterVerses) {
+    return null
+  }
+
+  const verses: Verse[] = []
+
+  for (let verseNumber = start; verseNumber <= end; verseNumber += 1) {
+    const text = chapterVerses[String(verseNumber)]
+
+    if (!text) {
+      return null
+    }
+
+    verses.push({ number: verseNumber, text })
+  }
+
+  return verses
+}
+
 function planFromFirebaseRange(
   date: string,
   range: FirebaseVerseRange,
@@ -375,7 +430,8 @@ async function fetchFirebasePlan(date: string) {
       return null
     }
 
-    return planFromFirebaseRange(date, value[0])
+    const verses = await getScriptureVersesFromCache(value[0])
+    return planFromFirebaseRange(date, value[0], verses, '개역개정')
   }
 
   const range = Array.isArray(value.range) ? value.range : null
@@ -386,7 +442,9 @@ async function fetchFirebasePlan(date: string) {
     return null
   }
 
-  return planFromFirebaseRange(date, range, verses, translation)
+  const cachedVerses = await getScriptureVersesFromCache(range)
+
+  return planFromFirebaseRange(date, range, cachedVerses ?? verses, translation ?? '개역개정')
 }
 
 function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: number[]) {
