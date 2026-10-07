@@ -2,31 +2,36 @@ import {
   ArrowLeft,
   BookOpenText,
   CalendarDays,
+  Camera,
   Check,
   ChevronRight,
   Heart,
+  HelpCircle,
+  ImageUp,
   HandHeart,
   Lock,
   MessageCircleHeart,
+  Music2,
   Pause,
   Play,
   Save,
+  Send,
   Settings,
   Sparkles,
-  Sprout,
   Trash2,
   Users,
 } from 'lucide-react'
 import { FirebaseError } from 'firebase/app'
 import { get, onValue, push, ref, remove, serverTimestamp, set } from 'firebase/database'
+import { getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebase/storage'
 import { useEffect, useMemo, useState } from 'react'
-import { getFirebaseAuth, getRealtimeDb } from '../../services/firebase'
+import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
 
 const LOCAL_STORAGE_KEY = 'moa.meditation.entries.v3'
 const SESSION_SECONDS = 5 * 60
 
 type Audience = 'private' | 'public' | 'group'
-type LuminaryTab = 'feed' | 'groups' | 'devotion' | 'prayer' | 'profile'
+type LuminaryTab = 'cross' | 'devotion' | 'lunch' | 'prayer' | 'qna' | 'profile'
 type MeditationStep = 'read' | 'write' | 'review'
 
 type Verse = {
@@ -60,6 +65,30 @@ type MeditationEntry = {
   verseText: string
 }
 
+type CrossPhoto = {
+  id: string
+  caption: string
+  createdAt: string
+  imageUrl: string
+  selectedDate: string
+  storagePath: string
+}
+
+type PrayerRequest = {
+  id: string
+  body: string
+  createdAt: string
+  isAnswered: boolean
+  title: string
+}
+
+type FaithQuestion = {
+  id: string
+  body: string
+  createdAt: string
+  title: string
+}
+
 const moods = ['고요함', '감사함', '무거움', '기대함', '회복']
 
 const luminaryTabs: Array<{
@@ -67,11 +96,22 @@ const luminaryTabs: Array<{
   id: LuminaryTab
   label: string
 }> = [
-  { icon: MessageCircleHeart, id: 'feed', label: '커뮤니티' },
-  { icon: Sprout, id: 'groups', label: '그룹' },
+  { icon: Camera, id: 'cross', label: '오늘사진' },
   { icon: BookOpenText, id: 'devotion', label: '묵상' },
-  { icon: HandHeart, id: 'prayer', label: '중보기도' },
+  { icon: Music2, id: 'lunch', label: '오찬추' },
+  { icon: HandHeart, id: 'prayer', label: '기도제목' },
+  { icon: HelpCircle, id: 'qna', label: '신앙Q&A' },
   { icon: Settings, id: 'profile', label: '내프로필' },
+]
+
+const lunchPraiseTracks = [
+  { title: '은혜', artist: '손경민' },
+  { title: 'Way Maker', artist: 'Sinach' },
+  { title: '주 은혜임을', artist: '마커스워십' },
+  { title: '내 모습 이대로', artist: '제이어스' },
+  { title: '꽃들도', artist: 'Jworship' },
+  { title: '주 품에', artist: '어노인팅' },
+  { title: '충만', artist: '지선' },
 ]
 
 const scripturePlans: ScripturePlan[] = [
@@ -154,10 +194,15 @@ const knownPassageText: Record<string, Verse[]> = Object.fromEntries(
 )
 
 function getTodayKey() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+  }).formatToParts(new Date())
+  const year = parts.find((part) => part.type === 'year')?.value ?? '1970'
+  const month = parts.find((part) => part.type === 'month')?.value ?? '01'
+  const day = parts.find((part) => part.type === 'day')?.value ?? '01'
 
   return `${year}-${month}-${day}`
 }
@@ -302,8 +347,20 @@ function getUserEntriesPath(userId: string) {
   return `users/${userId}/meditationEntries`
 }
 
+function getUserCrossPhotosPath(userId: string) {
+  return `users/${userId}/crossPhotos`
+}
+
+function getUserPrayerRequestsPath(userId: string) {
+  return `users/${userId}/prayerRequests`
+}
+
+function getUserFaithQuestionsPath(userId: string) {
+  return `users/${userId}/faithQuestions`
+}
+
 export function MeditationApp() {
-  const [activeTab, setActiveTab] = useState<LuminaryTab>('devotion')
+  const [activeTab, setActiveTab] = useState<LuminaryTab>('cross')
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
   const [remotePlan, setRemotePlan] = useState<ScripturePlan | null>(null)
@@ -318,6 +375,17 @@ export function MeditationApp() {
   const [remainingSeconds, setRemainingSeconds] = useState(SESSION_SECONDS)
   const [isRunning, setIsRunning] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [crossPhotos, setCrossPhotos] = useState<CrossPhoto[]>([])
+  const [crossCaption, setCrossCaption] = useState('')
+  const [crossFile, setCrossFile] = useState<File | null>(null)
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false)
+  const [prayerRequests, setPrayerRequests] = useState<PrayerRequest[]>([])
+  const [prayerTitle, setPrayerTitle] = useState('')
+  const [prayerBody, setPrayerBody] = useState('')
+  const [faithQuestions, setFaithQuestions] = useState<FaithQuestion[]>([])
+  const [questionTitle, setQuestionTitle] = useState('')
+  const [questionBody, setQuestionBody] = useState('')
+  const [trackIndex, setTrackIndex] = useState(() => Math.floor(Math.random() * lunchPraiseTracks.length))
   const [syncState, setSyncState] = useState<'local' | 'syncing' | 'synced' | 'error'>(
     'local',
   )
@@ -334,6 +402,25 @@ export function MeditationApp() {
   const completedToday = entries.some((entry) => entry.selectedDate === selectedDate)
   const activeDays = new Set(entries.map((entry) => entry.selectedDate)).size
   const canSave = Boolean(mind.trim() || apply.trim())
+  const selectedDateEntries = entries.filter((entry) => entry.selectedDate === selectedDate)
+  const selectedDateEntry = selectedDateEntries[0] ?? null
+  const todayKey = getTodayKey()
+  const todayCrossPhoto = crossPhotos.find((photo) => photo.selectedDate === todayKey) ?? null
+  const currentTrack = lunchPraiseTracks[trackIndex]
+  const currentTrackSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    `${currentTrack.title} ${currentTrack.artist}`,
+  )}`
+  const weekDates = useMemo(() => {
+    const baseDate = new Date(`${selectedDate}T00:00:00`)
+    const startDate = new Date(baseDate)
+    startDate.setDate(baseDate.getDate() - baseDate.getDay())
+
+    return Array.from({ length: 7 }).map((_, index) => {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + index)
+      return date
+    })
+  }, [selectedDate])
 
   useEffect(() => {
     setSelectedVerseNumbers([])
@@ -408,6 +495,52 @@ export function MeditationApp() {
     )
 
     return unsubscribe
+  }, [currentUser])
+
+  useEffect(() => {
+    if (!currentUser) {
+      setCrossPhotos([])
+      setPrayerRequests([])
+      setFaithQuestions([])
+      return undefined
+    }
+
+    const subscriptions = [
+      onValue(ref(getRealtimeDb(), getUserCrossPhotosPath(currentUser.uid)), (snapshot) => {
+        const value = snapshot.val() as Record<string, Omit<CrossPhoto, 'id'>> | null
+        const photos = value
+          ? Object.entries(value)
+              .map(([id, photo]) => ({ ...photo, id }))
+              .sort((firstPhoto, secondPhoto) => Date.parse(secondPhoto.createdAt) - Date.parse(firstPhoto.createdAt))
+          : []
+
+        setCrossPhotos(photos)
+      }),
+      onValue(ref(getRealtimeDb(), getUserPrayerRequestsPath(currentUser.uid)), (snapshot) => {
+        const value = snapshot.val() as Record<string, Omit<PrayerRequest, 'id'>> | null
+        const requests = value
+          ? Object.entries(value)
+              .map(([id, request]) => ({ ...request, id }))
+              .sort((firstRequest, secondRequest) => Date.parse(secondRequest.createdAt) - Date.parse(firstRequest.createdAt))
+          : []
+
+        setPrayerRequests(requests)
+      }),
+      onValue(ref(getRealtimeDb(), getUserFaithQuestionsPath(currentUser.uid)), (snapshot) => {
+        const value = snapshot.val() as Record<string, Omit<FaithQuestion, 'id'>> | null
+        const questions = value
+          ? Object.entries(value)
+              .map(([id, question]) => ({ ...question, id }))
+              .sort((firstQuestion, secondQuestion) => Date.parse(secondQuestion.createdAt) - Date.parse(firstQuestion.createdAt))
+          : []
+
+        setFaithQuestions(questions)
+      }),
+    ]
+
+    return () => {
+      subscriptions.forEach((unsubscribe) => unsubscribe())
+    }
   }, [currentUser])
 
   useEffect(() => {
@@ -527,6 +660,80 @@ export function MeditationApp() {
     setEntries((currentEntries) => currentEntries.filter((currentEntry) => currentEntry.id !== entry.id))
   }
 
+  async function handleCrossPhotoUpload() {
+    if (!currentUser || !crossFile || isPhotoUploading || todayCrossPhoto) {
+      return
+    }
+
+    setIsPhotoUploading(true)
+    setErrorMessage('')
+
+    try {
+      const extension = crossFile.name.split('.').pop() || 'webp'
+      const path = `users/${currentUser.uid}/photos/cross-${todayKey}.${extension}`
+      const uploadTask = uploadBytesResumable(storageRef(getFirebaseStorage(), path), crossFile, {
+        contentType: crossFile.type,
+      })
+      await uploadTask
+      const imageUrl = await getDownloadURL(uploadTask.snapshot.ref)
+      const photoRef = push(ref(getRealtimeDb(), getUserCrossPhotosPath(currentUser.uid)))
+
+      await set(photoRef, {
+        caption: crossCaption.trim(),
+        createdAt: new Date().toISOString(),
+        createdAtMs: serverTimestamp(),
+        imageUrl,
+        selectedDate: todayKey,
+        storagePath: path,
+      })
+      setCrossCaption('')
+      setCrossFile(null)
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? `사진 업로드에 실패했습니다: ${error.message}` : '사진 업로드에 실패했습니다.',
+      )
+    } finally {
+      setIsPhotoUploading(false)
+    }
+  }
+
+  async function handlePrayerSave() {
+    if (!currentUser || (!prayerTitle.trim() && !prayerBody.trim())) {
+      return
+    }
+
+    const prayerRef = push(ref(getRealtimeDb(), getUserPrayerRequestsPath(currentUser.uid)))
+    await set(prayerRef, {
+      body: prayerBody.trim(),
+      createdAt: new Date().toISOString(),
+      createdAtMs: serverTimestamp(),
+      isAnswered: false,
+      title: prayerTitle.trim() || '기도제목',
+    })
+    setPrayerTitle('')
+    setPrayerBody('')
+  }
+
+  async function handleQuestionSave() {
+    if (!currentUser || (!questionTitle.trim() && !questionBody.trim())) {
+      return
+    }
+
+    const questionRef = push(ref(getRealtimeDb(), getUserFaithQuestionsPath(currentUser.uid)))
+    await set(questionRef, {
+      body: questionBody.trim(),
+      createdAt: new Date().toISOString(),
+      createdAtMs: serverTimestamp(),
+      title: questionTitle.trim() || '신앙 질문',
+    })
+    setQuestionTitle('')
+    setQuestionBody('')
+  }
+
+  function handleNextTrack() {
+    setTrackIndex((currentIndex) => (currentIndex + 1 + Math.floor(Math.random() * (lunchPraiseTracks.length - 1))) % lunchPraiseTracks.length)
+  }
+
   return (
     <section className="sub-app meditation-screen">
       <header className="meditation-header">
@@ -572,6 +779,55 @@ export function MeditationApp() {
                 : '로컬 모드'}
         </span>
       </div>
+
+      <div className="meditation-calendar-strip" aria-label="Meditation calendar">
+        {weekDates.map((date) => {
+          const dateKey = [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, '0'),
+            String(date.getDate()).padStart(2, '0'),
+          ].join('-')
+          const isSelected = dateKey === selectedDate
+          const hasEntry = entries.some((entry) => entry.selectedDate === dateKey)
+
+          return (
+            <button
+              className={isSelected ? 'is-selected' : undefined}
+              key={dateKey}
+              type="button"
+              onClick={() => setSelectedDate(dateKey)}
+            >
+              <span>
+                {new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date)}
+              </span>
+              <strong>{date.getDate()}</strong>
+              {hasEntry ? <i aria-label="Meditation saved" /> : <em />}
+            </button>
+          )
+        })}
+      </div>
+
+      {selectedDateEntry ? (
+        <section className="meditation-saved-card" aria-label="Saved devotion for selected date">
+          <div className="meditation-panel-heading">
+            <div>
+              <span className="meditation-kicker">묵상</span>
+              <h3>{selectedDateEntry.reference}</h3>
+            </div>
+            <span className="meditation-complete">저장됨</span>
+          </div>
+          <blockquote>{selectedDateEntry.verseText}</blockquote>
+          {selectedDateEntry.mind ? <p>{selectedDateEntry.mind}</p> : null}
+          {selectedDateEntry.apply ? (
+            <p className="meditation-entry-apply">적용 · {selectedDateEntry.apply}</p>
+          ) : null}
+        </section>
+      ) : (
+        <section className="meditation-saved-card meditation-saved-empty">
+          <span className="meditation-kicker">묵상</span>
+          <p>해당 날짜의 묵상이 아직 등록되지 않았습니다.</p>
+        </section>
+      )}
 
       {planError ? <p className="meditation-error">{planError}</p> : null}
 
@@ -794,74 +1050,100 @@ export function MeditationApp() {
         </>
       ) : (
         <section className="meditation-tab-panel">
-          {activeTab === 'feed' ? (
+          {activeTab === 'cross' ? (
             <>
               <div className="meditation-panel-heading">
                 <div>
-                  <span className="meditation-kicker">커뮤니티</span>
-                  <h3>공개 묵상 피드</h3>
+                  <span className="meditation-kicker">오늘의 사진</span>
+                  <h3>삶의 자리에서 발견한 십자가</h3>
                 </div>
-                <span className="meditation-complete">
-                  {entries.filter((entry) => entry.audience === 'public').length}개
-                </span>
+                <span className="meditation-complete">{crossPhotos.length}장</span>
               </div>
-              <div className="meditation-entry-list">
-                {entries.filter((entry) => entry.audience === 'public').length ? (
-                  entries
-                    .filter((entry) => entry.audience === 'public')
-                    .map((entry) => (
-                      <article className="meditation-entry" key={entry.id}>
-                        <div>
-                          <strong>{entry.mood}</strong>
-                          <span>{formatDateTime(entry.createdAt)}</span>
-                        </div>
-                        <small>{entry.reference} · {entry.theme}</small>
-                        <blockquote>{entry.verseText}</blockquote>
-                        <p>{entry.mind || entry.apply}</p>
-                      </article>
-                    ))
-                ) : (
-                  <p className="meditation-empty">전체 공개로 저장된 묵상이 없습니다.</p>
-                )}
+              {todayCrossPhoto ? (
+                <article className="meditation-photo-card">
+                  <img alt="오늘 발견한 십자가" src={todayCrossPhoto.imageUrl} />
+                  <div>
+                    <strong>{todayCrossPhoto.selectedDate}</strong>
+                    <p>{todayCrossPhoto.caption || '오늘의 십자가를 기록했습니다.'}</p>
+                  </div>
+                </article>
+              ) : (
+                <div className="meditation-upload-card">
+                  <label>
+                    <ImageUp aria-hidden="true" />
+                    <span>{crossFile ? crossFile.name : '사진 선택'}</span>
+                    <input
+                      accept="image/jpeg,image/png,image/webp"
+                      type="file"
+                      onChange={(event) => setCrossFile(event.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <input
+                    maxLength={80}
+                    placeholder="사진에 남길 짧은 문장"
+                    value={crossCaption}
+                    onChange={(event) => setCrossCaption(event.target.value)}
+                  />
+                  <button
+                    disabled={!currentUser || !crossFile || isPhotoUploading}
+                    type="button"
+                    onClick={() => void handleCrossPhotoUpload()}
+                  >
+                    <Camera aria-hidden="true" />
+                    <span>{isPhotoUploading ? '업로드 중' : '오늘 사진 올리기'}</span>
+                  </button>
+                </div>
+              )}
+              {errorMessage ? <p className="meditation-error">{errorMessage}</p> : null}
+              <div className="meditation-photo-grid">
+                {crossPhotos.slice(0, 9).map((photo) => (
+                  <article className="meditation-photo-tile" key={photo.id}>
+                    <img alt={photo.caption || '십자가 사진'} src={photo.imageUrl} />
+                    <span>{photo.selectedDate}</span>
+                  </article>
+                ))}
               </div>
             </>
           ) : null}
 
-          {activeTab === 'groups' ? (
+          {activeTab === 'lunch' ? (
             <>
               <div className="meditation-panel-heading">
                 <div>
-                  <span className="meditation-kicker">그룹</span>
-                  <h3>그룹 공개 묵상</h3>
+                  <span className="meditation-kicker">오찬추</span>
+                  <h3>오늘 점심 찬양 추천</h3>
                 </div>
-                <span className="meditation-complete">
-                  {entries.filter((entry) => entry.audience === 'group').length}개
-                </span>
+                <span className="meditation-complete">랜덤</span>
               </div>
-              <div className="meditation-group-card">
-                <Users aria-hidden="true" />
+              <article className="meditation-track-card">
+                <Music2 aria-hidden="true" />
                 <div>
-                  <strong>MOA 묵상 그룹</strong>
-                  <p>그룹 공개로 저장한 묵상을 한 곳에서 모아봅니다.</p>
+                  <span>{currentTrack.artist}</span>
+                  <strong>{currentTrack.title}</strong>
                 </div>
-              </div>
-              <div className="meditation-entry-list">
-                {entries.filter((entry) => entry.audience === 'group').length ? (
-                  entries
-                    .filter((entry) => entry.audience === 'group')
-                    .map((entry) => (
-                      <article className="meditation-entry" key={entry.id}>
-                        <div>
-                          <strong>{entry.mood}</strong>
-                          <span>{formatDateTime(entry.createdAt)}</span>
-                        </div>
-                        <small>{entry.reference} · 그룹 공개</small>
-                        <p>{entry.mind || entry.apply}</p>
-                      </article>
-                    ))
-                ) : (
-                  <p className="meditation-empty">그룹 공개로 저장된 묵상이 없습니다.</p>
-                )}
+                <div className="meditation-track-actions">
+                  <button type="button" onClick={handleNextTrack}>
+                    <Sparkles aria-hidden="true" />
+                    <span>다른 찬양</span>
+                  </button>
+                  <a href={currentTrackSearchUrl} rel="noreferrer" target="_blank">
+                    <Play aria-hidden="true" />
+                    <span>재생</span>
+                  </a>
+                </div>
+              </article>
+              <div className="meditation-song-list">
+                {lunchPraiseTracks.map((track, index) => (
+                  <button
+                    className={trackIndex === index ? 'is-selected' : undefined}
+                    key={`${track.artist}-${track.title}`}
+                    type="button"
+                    onClick={() => setTrackIndex(index)}
+                  >
+                    <strong>{track.title}</strong>
+                    <span>{track.artist}</span>
+                  </button>
+                ))}
               </div>
             </>
           ) : null}
@@ -871,23 +1153,92 @@ export function MeditationApp() {
               <div className="meditation-panel-heading">
                 <div>
                   <span className="meditation-kicker">중보기도</span>
-                  <h3>묵상에서 이어지는 기도</h3>
+                  <h3>기도제목</h3>
                 </div>
-                <span className="meditation-complete">{entries.length}개 기록</span>
+                <span className="meditation-complete">{prayerRequests.length}개</span>
+              </div>
+              <div className="meditation-compact-form">
+                <input
+                  placeholder="제목"
+                  value={prayerTitle}
+                  onChange={(event) => setPrayerTitle(event.target.value)}
+                />
+                <textarea
+                  placeholder="함께 기도할 내용을 적어주세요."
+                  rows={4}
+                  value={prayerBody}
+                  onChange={(event) => setPrayerBody(event.target.value)}
+                />
+                <button
+                  disabled={!currentUser || (!prayerTitle.trim() && !prayerBody.trim())}
+                  type="button"
+                  onClick={() => void handlePrayerSave()}
+                >
+                  <Send aria-hidden="true" />
+                  <span>올리기</span>
+                </button>
               </div>
               <div className="meditation-entry-list">
-                {entries.length ? (
-                  entries.slice(0, 8).map((entry) => (
-                    <article className="meditation-entry" key={entry.id}>
+                {prayerRequests.length ? (
+                  prayerRequests.map((request) => (
+                    <article className="meditation-entry" key={request.id}>
                       <div>
-                        <strong>{entry.reference}</strong>
-                        <span>{formatDateTime(entry.createdAt)}</span>
+                        <strong>{request.title}</strong>
+                        <span>{formatDateTime(request.createdAt)}</span>
                       </div>
-                      <p>{entry.apply || entry.mind || '오늘의 적용을 기도로 이어가세요.'}</p>
+                      <p>{request.body}</p>
                     </article>
                   ))
                 ) : (
-                  <p className="meditation-empty">기도로 이어갈 묵상 기록이 없습니다.</p>
+                  <p className="meditation-empty">등록된 기도제목이 없습니다.</p>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {activeTab === 'qna' ? (
+            <>
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">신앙 Q&A</span>
+                  <h3>질문을 모아두는 공간</h3>
+                </div>
+                <span className="meditation-complete">{faithQuestions.length}개</span>
+              </div>
+              <div className="meditation-compact-form">
+                <input
+                  placeholder="질문 제목"
+                  value={questionTitle}
+                  onChange={(event) => setQuestionTitle(event.target.value)}
+                />
+                <textarea
+                  placeholder="말씀, 신앙생활, 공동체에 대한 질문을 적어주세요."
+                  rows={5}
+                  value={questionBody}
+                  onChange={(event) => setQuestionBody(event.target.value)}
+                />
+                <button
+                  disabled={!currentUser || (!questionTitle.trim() && !questionBody.trim())}
+                  type="button"
+                  onClick={() => void handleQuestionSave()}
+                >
+                  <Send aria-hidden="true" />
+                  <span>질문 올리기</span>
+                </button>
+              </div>
+              <div className="meditation-entry-list">
+                {faithQuestions.length ? (
+                  faithQuestions.map((question) => (
+                    <article className="meditation-entry" key={question.id}>
+                      <div>
+                        <strong>{question.title}</strong>
+                        <span>{formatDateTime(question.createdAt)}</span>
+                      </div>
+                      <p>{question.body}</p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="meditation-empty">아직 올라온 질문이 없습니다.</p>
                 )}
               </div>
             </>
@@ -908,12 +1259,12 @@ export function MeditationApp() {
                   <span>전체 기록</span>
                 </div>
                 <div>
-                  <strong>{activeDays}</strong>
-                  <span>활동일</span>
+                  <strong>{crossPhotos.length}</strong>
+                  <span>십자가 사진</span>
                 </div>
                 <div>
-                  <strong>{entries.filter((entry) => entry.selectedDate === getTodayKey()).length}</strong>
-                  <span>오늘 기록</span>
+                  <strong>{prayerRequests.length + faithQuestions.length}</strong>
+                  <span>기도와 질문</span>
                 </div>
               </div>
               <p className="meditation-focus">
