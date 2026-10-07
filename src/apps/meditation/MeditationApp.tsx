@@ -12,7 +12,6 @@ import {
   Lock,
   MessageCircleHeart,
   Music2,
-  Pause,
   Play,
   Save,
   Send,
@@ -24,14 +23,13 @@ import {
 import { FirebaseError } from 'firebase/app'
 import { get, onValue, push, ref, remove, serverTimestamp, set } from 'firebase/database'
 import { getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebase/storage'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
 
 const LOCAL_STORAGE_KEY = 'moa.meditation.entries.v3'
-const SESSION_SECONDS = 5 * 60
 
 type Audience = 'private' | 'public' | 'group'
-type LuminaryTab = 'cross' | 'devotion' | 'lunch' | 'prayer' | 'qna' | 'profile'
+type LuminaryTab = 'feed' | 'devotion' | 'prayer' | 'qna' | 'profile'
 type MeditationStep = 'read' | 'write' | 'review'
 type ScriptureLanguage = 'ko' | 'en' | 'ja'
 
@@ -89,6 +87,14 @@ type CrossPhoto = {
   storagePath: string
 }
 
+type LunchPraiseTrack = {
+  id: string
+  active?: boolean
+  artist: string
+  audioUrl?: string
+  title: string
+}
+
 type PrayerRequest = {
   id: string
   body: string
@@ -111,22 +117,21 @@ const luminaryTabs: Array<{
   id: LuminaryTab
   label: string
 }> = [
-  { icon: Camera, id: 'cross', label: '오늘사진' },
+  { icon: Camera, id: 'feed', label: '피드' },
   { icon: BookOpenText, id: 'devotion', label: '묵상' },
-  { icon: Music2, id: 'lunch', label: '오찬추' },
   { icon: HandHeart, id: 'prayer', label: '기도제목' },
   { icon: HelpCircle, id: 'qna', label: '신앙Q&A' },
   { icon: Settings, id: 'profile', label: '내프로필' },
 ]
 
-const lunchPraiseTracks = [
-  { title: '은혜', artist: '손경민' },
-  { title: 'Way Maker', artist: 'Sinach' },
-  { title: '주 은혜임을', artist: '마커스워십' },
-  { title: '내 모습 이대로', artist: '제이어스' },
-  { title: '꽃들도', artist: 'Jworship' },
-  { title: '주 품에', artist: '어노인팅' },
-  { title: '충만', artist: '지선' },
+const fallbackLunchPraiseTracks: LunchPraiseTrack[] = [
+  { id: 'grace', title: '은혜', artist: '손경민' },
+  { id: 'way-maker', title: 'Way Maker', artist: 'Sinach' },
+  { id: 'his-grace', title: '주 은혜임을', artist: '마커스워십' },
+  { id: 'as-i-am', title: '내 모습 이대로', artist: '제이어스' },
+  { id: 'flowers', title: '꽃들도', artist: 'Jworship' },
+  { id: 'in-his-arms', title: '주 품에', artist: '어노인팅' },
+  { id: 'fullness', title: '충만', artist: '지선' },
 ]
 
 const scripturePlans: ScripturePlan[] = [
@@ -304,13 +309,6 @@ function createLocalId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-function formatSeconds(totalSeconds: number) {
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-}
-
 function formatDateTime(value: string) {
   const date = new Date(value)
 
@@ -410,6 +408,38 @@ function normalizeFirebaseVerses(value: unknown): Verse[] | null {
     .filter((item): item is Verse => item !== null)
 
   return verses.length ? verses : null
+}
+
+function normalizeLunchPraiseTracks(value: unknown): LunchPraiseTrack[] {
+  if (!value || typeof value !== 'object') {
+    return []
+  }
+
+  return Object.entries(value as Record<string, unknown>)
+    .map(([id, item]): LunchPraiseTrack | null => {
+      if (!item || typeof item !== 'object') {
+        return null
+      }
+
+      const data = item as Record<string, unknown>
+      const title = typeof data.title === 'string' ? data.title.trim() : ''
+      const artist = typeof data.artist === 'string' ? data.artist.trim() : 'MOA'
+      const audioUrl = typeof data.audioUrl === 'string' ? data.audioUrl.trim() : ''
+      const active = typeof data.active === 'boolean' ? data.active : true
+
+      if (!title || !active) {
+        return null
+      }
+
+      return {
+        id,
+        active,
+        artist,
+        audioUrl: audioUrl || undefined,
+        title,
+      }
+    })
+    .filter((track): track is LunchPraiseTrack => track !== null)
 }
 
 async function loadScriptureBook(language: ScriptureLanguage, book: string) {
@@ -569,7 +599,8 @@ function getUserFaithQuestionsPath(userId: string) {
 }
 
 export function MeditationApp() {
-  const [activeTab, setActiveTab] = useState<LuminaryTab>('cross')
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [activeTab, setActiveTab] = useState<LuminaryTab>('feed')
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
   const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>('ko')
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
@@ -582,8 +613,6 @@ export function MeditationApp() {
   const [mood, setMood] = useState(moods[0])
   const [audience, setAudience] = useState<Audience>('private')
   const [entries, setEntries] = useState<MeditationEntry[]>(loadLocalEntries)
-  const [remainingSeconds, setRemainingSeconds] = useState(SESSION_SECONDS)
-  const [isRunning, setIsRunning] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [crossPhotos, setCrossPhotos] = useState<CrossPhoto[]>([])
   const [crossCaption, setCrossCaption] = useState('')
@@ -595,7 +624,10 @@ export function MeditationApp() {
   const [faithQuestions, setFaithQuestions] = useState<FaithQuestion[]>([])
   const [questionTitle, setQuestionTitle] = useState('')
   const [questionBody, setQuestionBody] = useState('')
-  const [trackIndex, setTrackIndex] = useState(() => Math.floor(Math.random() * lunchPraiseTracks.length))
+  const [lunchPraiseTracks, setLunchPraiseTracks] = useState<LunchPraiseTrack[]>(fallbackLunchPraiseTracks)
+  const [trackIndex, setTrackIndex] = useState(() => Math.floor(Math.random() * fallbackLunchPraiseTracks.length))
+  const [isTrackLoading, setIsTrackLoading] = useState(true)
+  const [audioNotice, setAudioNotice] = useState('')
   const [syncState, setSyncState] = useState<'local' | 'syncing' | 'synced' | 'error'>(
     'local',
   )
@@ -615,10 +647,11 @@ export function MeditationApp() {
   const selectedDateEntries = entries.filter((entry) => entry.selectedDate === selectedDate)
   const selectedDateEntry = selectedDateEntries[0] ?? null
   const todayKey = getTodayKey()
-  const todayCrossPhoto = crossPhotos.find((photo) => photo.selectedDate === todayKey) ?? null
-  const currentTrack = lunchPraiseTracks[trackIndex]
+  const featuredCrossPhoto = crossPhotos[0] ?? null
+  const playableLunchTracks = lunchPraiseTracks.filter((track) => track.audioUrl)
+  const currentTrack = lunchPraiseTracks[trackIndex] ?? lunchPraiseTracks[0]
   const currentTrackSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
-    `${currentTrack.title} ${currentTrack.artist}`,
+    `${currentTrack?.title ?? ''} ${currentTrack?.artist ?? ''}`,
   )}`
   const weekDates = useMemo(() => {
     const baseDate = new Date(`${selectedDate}T00:00:00`)
@@ -760,23 +793,47 @@ export function MeditationApp() {
   }, [entries, syncState])
 
   useEffect(() => {
-    if (!isRunning) {
-      return undefined
+    setIsTrackLoading(true)
+
+    const unsubscribe = onValue(
+      ref(getRealtimeDb(), 'lunchPraiseTracks'),
+      (snapshot) => {
+        const remoteTracks = normalizeLunchPraiseTracks(snapshot.val())
+
+        setLunchPraiseTracks(remoteTracks.length ? remoteTracks : fallbackLunchPraiseTracks)
+        setTrackIndex((currentIndex) => {
+          const nextLength = remoteTracks.length || fallbackLunchPraiseTracks.length
+          return currentIndex < nextLength ? currentIndex : 0
+        })
+        setIsTrackLoading(false)
+      },
+      () => {
+        setLunchPraiseTracks(fallbackLunchPraiseTracks)
+        setIsTrackLoading(false)
+      },
+    )
+
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    if (!currentTrack?.audioUrl || !audioRef.current) {
+      setAudioNotice('')
+      return
     }
 
-    const intervalId = window.setInterval(() => {
-      setRemainingSeconds((currentSeconds) => {
-        if (currentSeconds <= 1) {
-          setIsRunning(false)
-          return 0
-        }
+    const audio = audioRef.current
+    audio.load()
+    const playPromise = audio.play()
 
-        return currentSeconds - 1
-      })
-    }, 1000)
+    if (!playPromise) {
+      return
+    }
 
-    return () => window.clearInterval(intervalId)
-  }, [isRunning])
+    playPromise
+      .then(() => setAudioNotice(''))
+      .catch(() => setAudioNotice('브라우저 자동 재생이 차단됐습니다. 재생 버튼을 누르세요.'))
+  }, [currentTrack?.audioUrl, currentTrack?.id])
 
   function handleBackHome() {
     history.pushState('', document.title, window.location.pathname + window.location.search)
@@ -791,11 +848,6 @@ export function MeditationApp() {
 
       return [...currentNumbers, verseNumber].sort((first, second) => first - second)
     })
-  }
-
-  function resetTimer() {
-    setIsRunning(false)
-    setRemainingSeconds(SESSION_SECONDS)
   }
 
   async function handleSave() {
@@ -871,7 +923,7 @@ export function MeditationApp() {
   }
 
   async function handleCrossPhotoUpload() {
-    if (!currentUser || !crossFile || isPhotoUploading || todayCrossPhoto) {
+    if (!currentUser || !crossFile || isPhotoUploading) {
       return
     }
 
@@ -880,7 +932,7 @@ export function MeditationApp() {
 
     try {
       const extension = crossFile.name.split('.').pop() || 'webp'
-      const path = `users/${currentUser.uid}/photos/cross-${todayKey}.${extension}`
+      const path = `users/${currentUser.uid}/photos/cross-${todayKey}-${createLocalId()}.${extension}`
       const uploadTask = uploadBytesResumable(storageRef(getFirebaseStorage(), path), crossFile, {
         contentType: crossFile.type,
       })
@@ -941,7 +993,14 @@ export function MeditationApp() {
   }
 
   function handleNextTrack() {
-    setTrackIndex((currentIndex) => (currentIndex + 1 + Math.floor(Math.random() * (lunchPraiseTracks.length - 1))) % lunchPraiseTracks.length)
+    setTrackIndex((currentIndex) => {
+      if (lunchPraiseTracks.length <= 1) {
+        return 0
+      }
+
+      const offset = 1 + Math.floor(Math.random() * (lunchPraiseTracks.length - 1))
+      return (currentIndex + offset) % lunchPraiseTracks.length
+    })
   }
 
   return (
@@ -956,8 +1015,8 @@ export function MeditationApp() {
           <ArrowLeft aria-hidden="true" />
         </button>
         <div>
-          <span className="meditation-kicker">Luminary flow</span>
-          <h2>묵상</h2>
+          <span className="meditation-kicker">MOA Faith</span>
+          <h2>{activeTab === 'feed' ? '피드' : activeTab === 'devotion' ? '묵상' : activeTab === 'prayer' ? '기도제목' : activeTab === 'qna' ? '신앙 Q&A' : '내프로필'}</h2>
         </div>
         <div className="meditation-streak" aria-label="Meditation activity">
           <strong>{activeDays}</strong>
@@ -1051,9 +1110,18 @@ export function MeditationApp() {
             </span>
           </div>
           <h3>{plan.title}</h3>
-          <blockquote>
-            {isPlanLoading ? 'Firebase에서 오늘의 본문을 불러오는 중입니다.' : selectedVerseText}
-          </blockquote>
+          <div className="meditation-hero-verses">
+            {isPlanLoading ? (
+              <p>Firebase에서 오늘의 본문을 불러오는 중입니다.</p>
+            ) : (
+              plan.verses.map((verse) => (
+                <p key={verse.number}>
+                  <sup>{verse.number}</sup>
+                  <span>{verse.text}</span>
+                </p>
+              ))
+            )}
+          </div>
           <p>{plan.question}</p>
           <div className="meditation-language-row" aria-label="Scripture language">
             {scriptureLanguageOptions.map((option) => (
@@ -1082,23 +1150,6 @@ export function MeditationApp() {
             ))}
           </div>
         </div>
-
-        <aside className="meditation-session-card">
-          <div className="meditation-section-label">
-            <Sparkles aria-hidden="true" />
-            <span>{plan.theme}</span>
-          </div>
-          <strong>{formatSeconds(remainingSeconds)}</strong>
-          <div className="meditation-session-actions">
-            <button type="button" onClick={() => setIsRunning((current) => !current)}>
-              {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-              <span>{isRunning ? '멈춤' : '시작'}</span>
-            </button>
-            <button type="button" onClick={resetTimer}>
-              <span>초기화</span>
-            </button>
-          </div>
-        </aside>
       </div>
 
       {errorMessage ? <p className="meditation-error">{errorMessage}</p> : null}
@@ -1273,28 +1324,38 @@ export function MeditationApp() {
         </>
       ) : (
         <section className="meditation-tab-panel">
-          {activeTab === 'cross' ? (
+          {activeTab === 'feed' ? (
             <>
-              <div className="meditation-panel-heading">
+              <section className="meditation-feed-hero" aria-labelledby="faith-feed-title">
                 <div>
-                  <span className="meditation-kicker">오늘의 사진</span>
-                  <h3>삶의 자리에서 발견한 십자가</h3>
+                  <span className="meditation-kicker">Faith feed</span>
+                  <h3 id="faith-feed-title">십자가를 발견한 순간들</h3>
+                  <p>올린 사진은 Firebase Storage에 저장되고, 피드에는 URL과 문장이 함께 전시됩니다.</p>
                 </div>
                 <span className="meditation-complete">{crossPhotos.length}장</span>
-              </div>
-              {todayCrossPhoto ? (
-                <article className="meditation-photo-card">
-                  <img alt="오늘 발견한 십자가" src={todayCrossPhoto.imageUrl} />
+              </section>
+
+              {featuredCrossPhoto ? (
+                <article className="meditation-photo-card meditation-featured-photo">
+                  <img alt={featuredCrossPhoto.caption || '십자가 사진'} src={featuredCrossPhoto.imageUrl} />
                   <div>
-                    <strong>{todayCrossPhoto.selectedDate}</strong>
-                    <p>{todayCrossPhoto.caption || '오늘의 십자가를 기록했습니다.'}</p>
+                    <strong>{featuredCrossPhoto.caption || '십자가를 발견한 순간'}</strong>
+                    <p>{featuredCrossPhoto.selectedDate}</p>
                   </div>
                 </article>
-              ) : (
-                <div className="meditation-upload-card">
+              ) : null}
+
+              <div className="meditation-feed-grid">
+                <section className="meditation-upload-card" aria-label="십자가 사진 업로드">
+                  <div className="meditation-panel-heading">
+                    <div>
+                      <span className="meditation-kicker">Upload</span>
+                      <h3>사진 올리기</h3>
+                    </div>
+                  </div>
                   <label>
                     <ImageUp aria-hidden="true" />
-                    <span>{crossFile ? crossFile.name : '사진 선택'}</span>
+                    <span>{crossFile ? crossFile.name : '이미지 선택'}</span>
                     <input
                       accept="image/jpeg,image/png,image/webp"
                       type="file"
@@ -1313,60 +1374,55 @@ export function MeditationApp() {
                     onClick={() => void handleCrossPhotoUpload()}
                   >
                     <Camera aria-hidden="true" />
-                    <span>{isPhotoUploading ? '업로드 중' : '오늘 사진 올리기'}</span>
+                    <span>{isPhotoUploading ? '업로드 중' : '피드에 올리기'}</span>
                   </button>
-                </div>
-              )}
+                </section>
+
+                <section className="meditation-track-card" aria-label="오찬추">
+                  <Music2 aria-hidden="true" />
+                  <div>
+                    <span>{isTrackLoading ? '불러오는 중' : `${playableLunchTracks.length}개 URL 재생 가능`}</span>
+                    <strong>{currentTrack?.title ?? '오찬추'}</strong>
+                    <small>{currentTrack?.artist ?? 'Firebase에 찬양 URL을 등록하세요.'}</small>
+                  </div>
+                  {currentTrack?.audioUrl ? (
+                    <audio controls key={currentTrack.id} playsInline ref={audioRef} src={currentTrack.audioUrl}>
+                      <track kind="captions" />
+                    </audio>
+                  ) : null}
+                  {audioNotice ? <p className="meditation-inline-note">{audioNotice}</p> : null}
+                  <div className="meditation-track-actions">
+                    <button type="button" onClick={handleNextTrack}>
+                      <Sparkles aria-hidden="true" />
+                      <span>랜덤</span>
+                    </button>
+                    {currentTrack?.audioUrl ? (
+                      <a href={currentTrack.audioUrl} rel="noreferrer" target="_blank">
+                        <Play aria-hidden="true" />
+                        <span>열기</span>
+                      </a>
+                    ) : (
+                      <a href={currentTrackSearchUrl} rel="noreferrer" target="_blank">
+                        <Play aria-hidden="true" />
+                        <span>검색</span>
+                      </a>
+                    )}
+                  </div>
+                </section>
+              </div>
+
               {errorMessage ? <p className="meditation-error">{errorMessage}</p> : null}
               <div className="meditation-photo-grid">
-                {crossPhotos.slice(0, 9).map((photo) => (
-                  <article className="meditation-photo-tile" key={photo.id}>
-                    <img alt={photo.caption || '십자가 사진'} src={photo.imageUrl} />
-                    <span>{photo.selectedDate}</span>
-                  </article>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {activeTab === 'lunch' ? (
-            <>
-              <div className="meditation-panel-heading">
-                <div>
-                  <span className="meditation-kicker">오찬추</span>
-                  <h3>오늘 점심 찬양 추천</h3>
-                </div>
-                <span className="meditation-complete">랜덤</span>
-              </div>
-              <article className="meditation-track-card">
-                <Music2 aria-hidden="true" />
-                <div>
-                  <span>{currentTrack.artist}</span>
-                  <strong>{currentTrack.title}</strong>
-                </div>
-                <div className="meditation-track-actions">
-                  <button type="button" onClick={handleNextTrack}>
-                    <Sparkles aria-hidden="true" />
-                    <span>다른 찬양</span>
-                  </button>
-                  <a href={currentTrackSearchUrl} rel="noreferrer" target="_blank">
-                    <Play aria-hidden="true" />
-                    <span>재생</span>
-                  </a>
-                </div>
-              </article>
-              <div className="meditation-song-list">
-                {lunchPraiseTracks.map((track, index) => (
-                  <button
-                    className={trackIndex === index ? 'is-selected' : undefined}
-                    key={`${track.artist}-${track.title}`}
-                    type="button"
-                    onClick={() => setTrackIndex(index)}
-                  >
-                    <strong>{track.title}</strong>
-                    <span>{track.artist}</span>
-                  </button>
-                ))}
+                {crossPhotos.length ? (
+                  crossPhotos.slice(0, 12).map((photo) => (
+                    <article className="meditation-photo-tile" key={photo.id}>
+                      <img alt={photo.caption || '십자가 사진'} src={photo.imageUrl} />
+                      <span>{photo.caption || photo.selectedDate}</span>
+                    </article>
+                  ))
+                ) : (
+                  <p className="meditation-empty">아직 전시된 사진이 없습니다.</p>
+                )}
               </div>
             </>
           ) : null}
