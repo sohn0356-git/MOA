@@ -5,6 +5,8 @@ import { dirname, resolve } from 'node:path'
 
 const DURANNO_HOME = 'https://www.duranno.com/'
 const SCRIPTURE_CACHE_PATH = resolve(process.cwd(), '../public/scripture/gae.json')
+const REQUEST_TIMEOUT_MS = 15000
+const FIREBASE_WRITE_TIMEOUT_MS = 15000
 
 function getKstDateKey(value = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -43,6 +45,7 @@ async function fetchDurannoHome() {
     headers: {
       'user-agent': 'MOA daily verse updater (+https://github.com/sohn0356/MOA)',
     },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
   if (!response.ok) {
@@ -59,6 +62,7 @@ async function fetchDurannoBible(isoDate) {
     headers: {
       'user-agent': 'MOA daily verse updater (+https://github.com/sohn0356/MOA)',
     },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
   if (!response.ok) {
@@ -68,8 +72,16 @@ async function fetchDurannoBible(isoDate) {
   const buffer = await response.arrayBuffer()
   return {
     html: new TextDecoder('euc-kr').decode(buffer),
-    sourceUrl,
   }
+}
+
+function withTimeout(promise, timeoutMs, label) {
+  let timeoutId
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms.`)), timeoutMs)
+  })
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
 }
 
 function parseTodayQt(html) {
@@ -186,7 +198,7 @@ async function main() {
   })
 
   const db = getDatabase()
-  await db.ref(`verse/${year}/${dayKey}`).set([range])
+  await withTimeout(db.ref(`verse/${year}/${dayKey}`).set([range]), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
   console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}, ${verses.length} verses`)
 }
 
