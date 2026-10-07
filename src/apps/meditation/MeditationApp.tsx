@@ -33,6 +33,7 @@ const SESSION_SECONDS = 5 * 60
 type Audience = 'private' | 'public' | 'group'
 type LuminaryTab = 'cross' | 'devotion' | 'lunch' | 'prayer' | 'qna' | 'profile'
 type MeditationStep = 'read' | 'write' | 'review'
+type ScriptureLanguage = 'ko' | 'en' | 'ja'
 
 type Verse = {
   number: number
@@ -59,6 +60,7 @@ type FirebaseVersePayload = {
 }
 
 type ScriptureCache = {
+  language?: string
   translation?: string
   book?: string
   chapters?: Record<string, Record<string, string>>
@@ -206,6 +208,15 @@ const knownPassageText: Record<string, Verse[]> = Object.fromEntries(
   scripturePlans.map((plan) => [plan.reference, plan.verses]),
 )
 const scriptureBookCachePromises = new Map<string, Promise<ScriptureCache | null>>()
+const scriptureLanguageOptions: Array<{
+  id: ScriptureLanguage
+  label: string
+  translation: string
+}> = [
+  { id: 'ko', label: '한국어', translation: '개역개정' },
+  { id: 'en', label: 'English', translation: 'World English Bible' },
+  { id: 'ja', label: '日本語', translation: 'Japanese Bungo-yaku' },
+]
 const scriptureBookSlugs: Record<string, string> = {
   창세기: 'genesis',
   출애굽기: 'exodus',
@@ -401,20 +412,21 @@ function normalizeFirebaseVerses(value: unknown): Verse[] | null {
   return verses.length ? verses : null
 }
 
-async function loadScriptureBook(book: string) {
+async function loadScriptureBook(language: ScriptureLanguage, book: string) {
   const slug = scriptureBookSlugs[book]
 
   if (!slug) {
     return null
   }
 
-  const existingPromise = scriptureBookCachePromises.get(slug)
+  const cacheKey = `${language}:${slug}`
+  const existingPromise = scriptureBookCachePromises.get(cacheKey)
 
   if (existingPromise) {
     return existingPromise
   }
 
-  const promise = fetch(`${import.meta.env.BASE_URL}scripture/ko/${slug}.json`, {
+  const promise = fetch(`${import.meta.env.BASE_URL}scripture/${language}/${slug}.json`, {
     cache: 'no-cache',
   })
     .then((response) => {
@@ -426,11 +438,11 @@ async function loadScriptureBook(book: string) {
     })
     .catch(() => null)
 
-  scriptureBookCachePromises.set(slug, promise)
+  scriptureBookCachePromises.set(cacheKey, promise)
   return promise
 }
 
-async function getScriptureVersesFromCache(range: FirebaseVerseRange) {
+async function getScriptureVersesFromCache(language: ScriptureLanguage, range: FirebaseVerseRange) {
   const [bookValue, chapterValue, startValue, endValue] = range
   const book = typeof bookValue === 'string' ? bookValue : ''
   const chapter = Number(chapterValue)
@@ -441,7 +453,7 @@ async function getScriptureVersesFromCache(range: FirebaseVerseRange) {
     return null
   }
 
-  const cache = await loadScriptureBook(book)
+  const cache = await loadScriptureBook(language, book)
   const chapterVerses = cache?.chapters?.[String(chapter)]
 
   if (!chapterVerses) {
@@ -497,7 +509,7 @@ function planFromFirebaseRange(
   }
 }
 
-async function fetchFirebasePlan(date: string) {
+async function fetchFirebasePlan(date: string, language: ScriptureLanguage) {
   const [year, month, day] = date.split('-')
   const dayKey = `${month}${day}`
   const snapshot = await get(ref(getRealtimeDb(), `verse/${year}/${dayKey}`))
@@ -512,8 +524,9 @@ async function fetchFirebasePlan(date: string) {
       return null
     }
 
-    const verses = await getScriptureVersesFromCache(value[0])
-    return planFromFirebaseRange(date, value[0], verses, '개역개정')
+    const verses = await getScriptureVersesFromCache(language, value[0])
+    const translation = scriptureLanguageOptions.find((option) => option.id === language)?.translation
+    return planFromFirebaseRange(date, value[0], verses, translation)
   }
 
   const range = Array.isArray(value.range) ? value.range : null
@@ -524,9 +537,10 @@ async function fetchFirebasePlan(date: string) {
     return null
   }
 
-  const cachedVerses = await getScriptureVersesFromCache(range)
+  const cachedVerses = await getScriptureVersesFromCache(language, range)
+  const selectedTranslation = scriptureLanguageOptions.find((option) => option.id === language)?.translation
 
-  return planFromFirebaseRange(date, range, cachedVerses ?? verses, translation ?? '개역개정')
+  return planFromFirebaseRange(date, range, cachedVerses ?? verses, selectedTranslation ?? translation)
 }
 
 function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: number[]) {
@@ -557,6 +571,7 @@ function getUserFaithQuestionsPath(userId: string) {
 export function MeditationApp() {
   const [activeTab, setActiveTab] = useState<LuminaryTab>('cross')
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
+  const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>('ko')
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
   const [remotePlan, setRemotePlan] = useState<ScripturePlan | null>(null)
   const [isPlanLoading, setIsPlanLoading] = useState(false)
@@ -622,14 +637,14 @@ export function MeditationApp() {
     setStep('read')
     setRemotePlan(null)
     setPlanError('')
-  }, [selectedDate])
+  }, [selectedDate, scriptureLanguage])
 
   useEffect(() => {
     let active = true
 
     setIsPlanLoading(true)
     setPlanError('')
-    void fetchFirebasePlan(selectedDate)
+    void fetchFirebasePlan(selectedDate, scriptureLanguage)
       .then((nextPlan) => {
         if (!active) {
           return
@@ -657,7 +672,7 @@ export function MeditationApp() {
     return () => {
       active = false
     }
-  }, [selectedDate])
+  }, [selectedDate, scriptureLanguage])
 
   useEffect(() => {
     if (!currentUser) {
@@ -1040,6 +1055,19 @@ export function MeditationApp() {
             {isPlanLoading ? 'Firebase에서 오늘의 본문을 불러오는 중입니다.' : selectedVerseText}
           </blockquote>
           <p>{plan.question}</p>
+          <div className="meditation-language-row" aria-label="Scripture language">
+            {scriptureLanguageOptions.map((option) => (
+              <button
+                className={scriptureLanguage === option.id ? 'is-selected' : undefined}
+                key={option.id}
+                title={option.translation}
+                type="button"
+                onClick={() => setScriptureLanguage(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <div className="meditation-step-row" aria-label="Meditation steps">
             {(['read', 'write', 'review'] as MeditationStep[]).map((itemStep, index) => (
               <button

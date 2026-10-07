@@ -3727,6 +3727,30 @@ select:disabled {
   gap: 8px;
 }
 
+.meditation-language-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.meditation-language-row button {
+  min-height: 36px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: var(--text-muted);
+  background: rgb(255 255 255 / 68%);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.meditation-language-row button.is-selected {
+  border-color: rgb(0 122 255 / 28%);
+  color: #0f3768;
+  background: rgb(0 122 255 / 10%);
+}
+
 .meditation-step-row button {
   display: inline-flex;
   align-items: center;

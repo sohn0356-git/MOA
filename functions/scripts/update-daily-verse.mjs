@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const DURANNO_HOME = 'https://www.duranno.com/'
-const SCRIPTURE_CACHE_DIR = resolve(process.cwd(), '../public/scripture/ko')
+const SCRIPTURE_CACHE_ROOT = resolve(process.cwd(), '../public/scripture')
 const REQUEST_TIMEOUT_MS = 15000
 const FIREBASE_WRITE_TIMEOUT_MS = 15000
 const BOOK_SLUGS = {
@@ -74,6 +74,78 @@ const BOOK_SLUGS = {
   요한삼서: '3-john',
   유다서: 'jude',
   요한계시록: 'revelation',
+}
+const GETBIBLE_BOOK_NAMES = {
+  창세기: 'Genesis',
+  출애굽기: 'Exodus',
+  레위기: 'Leviticus',
+  민수기: 'Numbers',
+  신명기: 'Deuteronomy',
+  여호수아: 'Joshua',
+  사사기: 'Judges',
+  룻기: 'Ruth',
+  사무엘상: '1 Samuel',
+  사무엘하: '2 Samuel',
+  열왕기상: '1 Kings',
+  열왕기하: '2 Kings',
+  역대상: '1 Chronicles',
+  역대하: '2 Chronicles',
+  에스라: 'Ezra',
+  느헤미야: 'Nehemiah',
+  에스더: 'Esther',
+  욥기: 'Job',
+  시편: 'Psalms',
+  잠언: 'Proverbs',
+  전도서: 'Ecclesiastes',
+  아가: 'Song of Songs',
+  이사야: 'Isaiah',
+  예레미야: 'Jeremiah',
+  예레미야애가: 'Lamentations',
+  에스겔: 'Ezekiel',
+  다니엘: 'Daniel',
+  호세아: 'Hosea',
+  요엘: 'Joel',
+  아모스: 'Amos',
+  오바댜: 'Obadiah',
+  요나: 'Jonah',
+  미가: 'Micah',
+  나훔: 'Nahum',
+  하박국: 'Habakkuk',
+  스바냐: 'Zephaniah',
+  학개: 'Haggai',
+  스가랴: 'Zechariah',
+  말라기: 'Malachi',
+  마태복음: 'Matthew',
+  마가복음: 'Mark',
+  누가복음: 'Luke',
+  요한복음: 'John',
+  사도행전: 'Acts',
+  로마서: 'Romans',
+  고린도전서: '1 Corinthians',
+  고린도후서: '2 Corinthians',
+  갈라디아서: 'Galatians',
+  에베소서: 'Ephesians',
+  빌립보서: 'Philippians',
+  골로새서: 'Colossians',
+  데살로니가전서: '1 Thessalonians',
+  데살로니가후서: '2 Thessalonians',
+  디모데전서: '1 Timothy',
+  디모데후서: '2 Timothy',
+  디도서: 'Titus',
+  빌레몬서: 'Philemon',
+  히브리서: 'Hebrews',
+  야고보서: 'James',
+  베드로전서: '1 Peter',
+  베드로후서: '2 Peter',
+  요한일서: '1 John',
+  요한이서: '2 John',
+  요한삼서: '3 John',
+  유다서: 'Jude',
+  요한계시록: 'Revelation',
+}
+const GETBIBLE_TRANSLATIONS = {
+  en: { key: 'web', name: 'World English Bible' },
+  ja: { key: 'japbungo', name: 'Japanese Bungo-yaku' },
 }
 
 function getKstDateKey(value = new Date()) {
@@ -204,25 +276,26 @@ function parseBibleVerses(html, startVerse, endVerse) {
   return verses
 }
 
-function getScriptureBookPath(book) {
+function getScriptureBookPath(book, language = 'ko') {
   const slug = BOOK_SLUGS[book]
 
   if (!slug) {
     throw new Error(`Unsupported scripture book name: ${book}`)
   }
 
-  return resolve(SCRIPTURE_CACHE_DIR, `${slug}.json`)
+  return resolve(SCRIPTURE_CACHE_ROOT, language, `${slug}.json`)
 }
 
-async function readScriptureBook(book) {
-  const bookPath = getScriptureBookPath(book)
+async function readScriptureBook(book, language = 'ko', translation = '개역개정') {
+  const bookPath = getScriptureBookPath(book, language)
 
   try {
     return JSON.parse(await readFile(bookPath, 'utf8'))
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       return {
-        translation: '개역개정',
+        translation,
+        language,
         book,
         chapters: {},
       }
@@ -232,12 +305,30 @@ async function readScriptureBook(book) {
   }
 }
 
-async function mergeScriptureCache(range, verses) {
+function hasCachedVerses(cache, range) {
+  const [, chapter, startVerse, endVerse] = range
+  const chapterVerses = cache.chapters?.[String(chapter)]
+
+  if (!chapterVerses) {
+    return false
+  }
+
+  for (let verseNumber = startVerse; verseNumber <= endVerse; verseNumber += 1) {
+    if (!chapterVerses[String(verseNumber)]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+async function mergeScriptureCache(language, range, verses, translation) {
   const [book, chapter] = range
   const chapterKey = String(chapter)
-  const cache = await readScriptureBook(book)
+  const cache = await readScriptureBook(book, language, translation)
 
-  cache.translation = '개역개정'
+  cache.translation = translation
+  cache.language = language
   cache.book = book
   cache.chapters ??= {}
   cache.chapters[chapterKey] ??= {}
@@ -246,8 +337,60 @@ async function mergeScriptureCache(range, verses) {
     cache.chapters[chapterKey][String(verse.number)] = verse.text
   }
 
-  await mkdir(SCRIPTURE_CACHE_DIR, { recursive: true })
-  await writeFile(getScriptureBookPath(book), `${JSON.stringify(cache, null, 2)}\n`)
+  await mkdir(resolve(SCRIPTURE_CACHE_ROOT, language), { recursive: true })
+  await writeFile(getScriptureBookPath(book, language), `${JSON.stringify(cache, null, 2)}\n`)
+}
+
+async function fetchGetBibleVerses(language, range) {
+  const [book, chapter, startVerse, endVerse] = range
+  const translation = GETBIBLE_TRANSLATIONS[language]
+  const bookName = GETBIBLE_BOOK_NAMES[book]
+
+  if (!translation || !bookName) {
+    throw new Error(`Unsupported scripture source for ${language} ${book}.`)
+  }
+
+  const response = await fetch(`https://api.getbible.net/v2/${translation.key}.json`, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  })
+
+  if (!response.ok) {
+    throw new Error(`getBible ${translation.key} request failed with HTTP ${response.status}.`)
+  }
+
+  const data = await response.json()
+  const sourceBook = data.books?.find((item) => item.name === bookName)
+  const sourceChapter = sourceBook?.chapters?.find((item) => Number(item.chapter) === chapter)
+
+  if (!sourceChapter) {
+    throw new Error(`Could not find ${bookName} ${chapter} in ${translation.key}.`)
+  }
+
+  const verses = sourceChapter.verses
+    .filter((verse) => Number(verse.verse) >= startVerse && Number(verse.verse) <= endVerse)
+    .map((verse) => ({
+      number: Number(verse.verse),
+      text: String(verse.text ?? '').replace(/\s+/g, ' ').trim(),
+    }))
+
+  if (verses.length !== endVerse - startVerse + 1) {
+    throw new Error(`Expected ${endVerse - startVerse + 1} ${language} verses, parsed ${verses.length}.`)
+  }
+
+  return verses
+}
+
+async function updateLanguageCache(language, range, getVerses, translation) {
+  const [book] = range
+  const cache = await readScriptureBook(book, language, translation)
+
+  if (hasCachedVerses(cache, range)) {
+    return false
+  }
+
+  const verses = await getVerses()
+  await mergeScriptureCache(language, range, verses, translation)
+  return true
 }
 
 function getServiceAccount() {
@@ -269,9 +412,12 @@ async function main() {
   const { dayKey, isoDate, year } = getKstDateKey(targetDate)
   const html = await fetchDurannoHome()
   const range = parseTodayQt(html)
-  const bible = await fetchDurannoBible(isoDate)
-  const verses = parseBibleVerses(bible.html, range[2], range[3])
-  await mergeScriptureCache(range, verses)
+  await updateLanguageCache('ko', range, async () => {
+    const bible = await fetchDurannoBible(isoDate)
+    return parseBibleVerses(bible.html, range[2], range[3])
+  }, '개역개정')
+  await updateLanguageCache('en', range, () => fetchGetBibleVerses('en', range), GETBIBLE_TRANSLATIONS.en.name)
+  await updateLanguageCache('ja', range, () => fetchGetBibleVerses('ja', range), GETBIBLE_TRANSLATIONS.ja.name)
 
   const app = initializeApp({
     credential: cert(serviceAccount),
@@ -285,7 +431,7 @@ async function main() {
     await deleteApp(app)
   }
 
-  console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}, ${verses.length} verses`)
+  console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}`)
 }
 
 main().catch((error) => {
