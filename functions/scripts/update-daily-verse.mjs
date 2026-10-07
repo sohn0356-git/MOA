@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const DURANNO_HOME = 'https://www.duranno.com/'
-const SCRIPTURE_CACHE_DIR = resolve(process.cwd(), '../public/scripture')
+const SCRIPTURE_CACHE_DIR = resolve(process.cwd(), '../public/scripture/ko')
 const REQUEST_TIMEOUT_MS = 15000
 const FIREBASE_WRITE_TIMEOUT_MS = 15000
 const BOOK_SLUGS = {

@@ -414,7 +414,7 @@ async function loadScriptureBook(book: string) {
     return existingPromise
   }
 
-  const promise = fetch(`${import.meta.env.BASE_URL}scripture/${slug}.json`, {
+  const promise = fetch(`${import.meta.env.BASE_URL}scripture/ko/${slug}.json`, {
     cache: 'no-cache',
   })
     .then((response) => {
