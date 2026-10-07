@@ -206,6 +206,74 @@ const knownPassageText: Record<string, Verse[]> = Object.fromEntries(
   scripturePlans.map((plan) => [plan.reference, plan.verses]),
 )
 const scriptureBookCachePromises = new Map<string, Promise<ScriptureCache | null>>()
+const scriptureBookSlugs: Record<string, string> = {
+  창세기: 'genesis',
+  출애굽기: 'exodus',
+  레위기: 'leviticus',
+  민수기: 'numbers',
+  신명기: 'deuteronomy',
+  여호수아: 'joshua',
+  사사기: 'judges',
+  룻기: 'ruth',
+  사무엘상: '1-samuel',
+  사무엘하: '2-samuel',
+  열왕기상: '1-kings',
+  열왕기하: '2-kings',
+  역대상: '1-chronicles',
+  역대하: '2-chronicles',
+  에스라: 'ezra',
+  느헤미야: 'nehemiah',
+  에스더: 'esther',
+  욥기: 'job',
+  시편: 'psalms',
+  잠언: 'proverbs',
+  전도서: 'ecclesiastes',
+  아가: 'song-of-songs',
+  이사야: 'isaiah',
+  예레미야: 'jeremiah',
+  예레미야애가: 'lamentations',
+  에스겔: 'ezekiel',
+  다니엘: 'daniel',
+  호세아: 'hosea',
+  요엘: 'joel',
+  아모스: 'amos',
+  오바댜: 'obadiah',
+  요나: 'jonah',
+  미가: 'micah',
+  나훔: 'nahum',
+  하박국: 'habakkuk',
+  스바냐: 'zephaniah',
+  학개: 'haggai',
+  스가랴: 'zechariah',
+  말라기: 'malachi',
+  마태복음: 'matthew',
+  마가복음: 'mark',
+  누가복음: 'luke',
+  요한복음: 'john',
+  사도행전: 'acts',
+  로마서: 'romans',
+  고린도전서: '1-corinthians',
+  고린도후서: '2-corinthians',
+  갈라디아서: 'galatians',
+  에베소서: 'ephesians',
+  빌립보서: 'philippians',
+  골로새서: 'colossians',
+  데살로니가전서: '1-thessalonians',
+  데살로니가후서: '2-thessalonians',
+  디모데전서: '1-timothy',
+  디모데후서: '2-timothy',
+  디도서: 'titus',
+  빌레몬서: 'philemon',
+  히브리서: 'hebrews',
+  야고보서: 'james',
+  베드로전서: '1-peter',
+  베드로후서: '2-peter',
+  요한일서: '1-john',
+  요한이서: '2-john',
+  요한삼서: '3-john',
+  유다서: 'jude',
+  요한계시록: 'revelation',
+}
 
 function getTodayKey() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -334,13 +402,19 @@ function normalizeFirebaseVerses(value: unknown): Verse[] | null {
 }
 
 async function loadScriptureBook(book: string) {
-  const existingPromise = scriptureBookCachePromises.get(book)
+  const slug = scriptureBookSlugs[book]
+
+  if (!slug) {
+    return null
+  }
+
+  const existingPromise = scriptureBookCachePromises.get(slug)
 
   if (existingPromise) {
     return existingPromise
   }
 
-  const promise = fetch(`${import.meta.env.BASE_URL}scripture/gae/${encodeURIComponent(book)}.json`, {
+  const promise = fetch(`${import.meta.env.BASE_URL}scripture/${slug}.json`, {
     cache: 'no-cache',
   })
     .then((response) => {
@@ -352,7 +426,7 @@ async function loadScriptureBook(book: string) {
     })
     .catch(() => null)
 
-  scriptureBookCachePromises.set(book, promise)
+  scriptureBookCachePromises.set(slug, promise)
   return promise
 }
 
