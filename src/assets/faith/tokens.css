@@ -1,0 +1,9 @@
+ :root { --faith-orchid:#A53EB5; --faith-primary:#863292; --faith-melon:#FFB199; --faith-selected:#FFF0E9; --faith-bg:#FFFFFF; --faith-text:#222127; --faith-muted:#62616B; --faith-border:#E5E3E8; --faith-radius:12px; --faith-chip-radius:8px; --faith-space-1:4px; --faith-space-2:8px; --faith-space-3:12px; --faith-space-4:16px; --faith-space-5:20px; --faith-space-6:24px; --faith-space-8:32px; }
+.faith-icon { width:24px; height:24px; flex-shrink:0; }
+.faith-reaction { display:inline-flex; align-items:center; gap:6px; min-height:44px; min-width:44px; border:0; padding:0 6px; background:transparent; color:var(--faith-text); font:inherit; font-size:14px; }
+.faith-reaction svg { width:22px; height:22px; }
+.faith-reaction[aria-pressed=true] { color:var(--faith-primary); }
+.faith-primary { min-height:48px; border:0; border-radius:12px; padding:0 20px; background:var(--faith-primary); color:white; font-weight:600; }
+.faith-youtube { aspect-ratio:16/9; width:100%; border:0; display:block; }
+.faith-icon-button { width:44px; height:44px; display:inline-grid; place-items:center; border:0; background:transparent; color:inherit; }
+.faith-icon-button:focus-visible,.faith-reaction:focus-visible,.faith-primary:focus-visible { outline:2px solid var(--faith-primary); outline-offset:3px; }

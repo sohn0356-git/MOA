@@ -5111,3 +5111,730 @@ select:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+.faith-screen {
+  --faith-orchid: #a53eb5;
+  --faith-primary: #863292;
+  --faith-melon: #ffb199;
+  --faith-selected: #fff0e9;
+  --faith-bg: #ffffff;
+  --faith-text: #222127;
+  --faith-muted: #62616b;
+  --faith-border: #e5e3e8;
+  background: var(--faith-bg);
+  color: var(--faith-text);
+  margin: 0 auto;
+  max-width: 760px;
+  min-height: 100dvh;
+  padding: 0 20px calc(92px + env(safe-area-inset-bottom));
+}
+
+.faith-header {
+  align-items: center;
+  background: rgb(255 255 255 / 94%);
+  border-bottom: 1px solid var(--faith-border);
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  height: 56px;
+  margin: 0 -20px;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.faith-title {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.faith-title > svg {
+  color: var(--faith-orchid);
+}
+
+.faith-title span {
+  color: var(--faith-muted);
+  display: block;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.faith-title h2 {
+  color: var(--faith-text);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.faith-content,
+.faith-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.faith-content {
+  padding-top: 20px;
+}
+
+.faith-icon {
+  flex-shrink: 0;
+  height: 24px;
+  width: 24px;
+}
+
+.faith-icon-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--faith-text);
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+  width: 44px;
+}
+
+.faith-icon-button:focus-visible,
+.faith-primary:focus-visible,
+.faith-text-button:focus-visible,
+.faith-reaction:focus-visible,
+.faith-bottom-nav button:focus-visible,
+.faith-tags button:focus-visible,
+.faith-tabs button:focus-visible,
+.faith-segment button:focus-visible {
+  outline: 2px solid var(--faith-primary);
+  outline-offset: 3px;
+}
+
+.faith-primary {
+  align-items: center;
+  background: var(--faith-primary);
+  border: 0;
+  border-radius: 12px;
+  color: white;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+}
+
+.faith-primary:disabled,
+.faith-reaction:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.faith-text-button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--faith-primary);
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 8px;
+}
+
+.faith-panel,
+.faith-reading,
+.faith-detail,
+.faith-youtube-section,
+.faith-photo-post,
+.faith-prayer-post,
+.faith-question-post {
+  background: var(--faith-bg);
+  border: 1px solid var(--faith-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.faith-youtube-section {
+  border: 0;
+  padding: 0;
+}
+
+.faith-youtube-section h3,
+.faith-section-head h3,
+.faith-prayer-post h3,
+.faith-question-post h3,
+.faith-detail h3 {
+  color: var(--faith-text);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.faith-youtube {
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 12px;
+  display: block;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.faith-youtube-link {
+  color: var(--faith-primary);
+  display: inline-block;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.faith-section-head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.faith-section-head p,
+.faith-muted,
+.faith-meta,
+.faith-empty,
+.faith-question-line {
+  color: var(--faith-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+.faith-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.faith-date,
+.faith-search-row label,
+.faith-field input,
+.faith-field textarea,
+.faith-comment-composer,
+.faith-file-field {
+  background: white;
+  border: 1px solid var(--faith-border);
+  border-radius: 12px;
+}
+
+.faith-date,
+.faith-search-row label,
+.faith-file-field {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 12px;
+}
+
+.faith-date input,
+.faith-search-row input,
+.faith-field input,
+.faith-field textarea,
+.faith-comment-composer input {
+  background: transparent;
+  border: 0;
+  color: var(--faith-text);
+  font: inherit;
+  min-width: 0;
+  outline: 0;
+  width: 100%;
+}
+
+.faith-field {
+  display: grid;
+  gap: 8px;
+}
+
+.faith-field span {
+  color: var(--faith-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.faith-field input {
+  height: 48px;
+  padding: 0 12px;
+}
+
+.faith-field textarea {
+  line-height: 1.55;
+  min-height: 112px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.faith-tabs,
+.faith-segment,
+.faith-language-row {
+  background: #f8f7f9;
+  border-radius: 12px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.faith-tabs button,
+.faith-segment button,
+.faith-language-row button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--faith-muted);
+  flex: 1 1 0;
+  font: inherit;
+  min-height: 40px;
+  padding: 0 10px;
+}
+
+.faith-tabs button[aria-selected='true'],
+.faith-segment button[aria-pressed='true'],
+.faith-language-row button[aria-pressed='true'] {
+  background: var(--faith-selected);
+  color: var(--faith-primary);
+  font-weight: 600;
+}
+
+.faith-verse-list {
+  display: grid;
+  gap: 8px;
+  line-height: 1.7;
+  margin-top: 16px;
+}
+
+.faith-verse-list button {
+  align-items: start;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--faith-text);
+  display: grid;
+  font: inherit;
+  grid-template-columns: 24px 1fr;
+  line-height: 1.7;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.faith-verse-list button.is-selected {
+  background: var(--faith-selected);
+}
+
+.faith-verse-list sup {
+  color: var(--faith-primary);
+  font-size: 12px;
+  top: 0;
+}
+
+.faith-focus {
+  background: var(--faith-selected);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.faith-focus span {
+  color: var(--faith-primary);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.faith-focus p,
+.faith-photo-post p,
+.faith-prayer-post p,
+.faith-question-post p,
+.faith-detail p,
+.faith-detail blockquote {
+  color: var(--faith-text);
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+.faith-detail blockquote {
+  border-left: 3px solid var(--faith-melon);
+  margin: 16px 0;
+  padding-left: 12px;
+}
+
+.faith-detail h4,
+.faith-related h4 {
+  font-size: 15px;
+  margin: 16px 0 0;
+}
+
+.faith-search-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.faith-search-row > button {
+  align-items: center;
+  background: var(--faith-selected);
+  border: 0;
+  border-radius: 12px;
+  color: var(--faith-primary);
+  display: inline-flex;
+  justify-content: center;
+}
+
+.faith-list,
+.faith-record-list {
+  display: grid;
+  gap: 12px;
+}
+
+.faith-meta {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.faith-meta strong {
+  color: var(--faith-text);
+  font-size: 14px;
+}
+
+.faith-photo-post img {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  display: block;
+  margin-top: 12px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.faith-reaction-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.faith-reaction {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--faith-text);
+  display: inline-flex;
+  font: inherit;
+  font-size: 14px;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 6px;
+}
+
+.faith-reaction svg {
+  height: 22px;
+  width: 22px;
+}
+
+.faith-reaction[aria-pressed='true'] {
+  color: var(--faith-primary);
+}
+
+.faith-record-row {
+  border-bottom: 1px solid var(--faith-border);
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.faith-record-row button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  text-align: left;
+}
+
+.faith-record-row time,
+.faith-record-row span {
+  color: var(--faith-muted);
+  font-size: 13px;
+}
+
+.faith-record-row strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.faith-check-row {
+  align-items: center;
+  color: var(--faith-muted);
+  display: inline-flex;
+  font-size: 14px;
+  gap: 8px;
+}
+
+.faith-comments {
+  border-top: 1px solid var(--faith-border);
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.faith-comments article {
+  display: grid;
+  gap: 4px;
+}
+
+.faith-comments article > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.faith-comments p {
+  font-size: 15px;
+  margin: 0;
+}
+
+.faith-comments button {
+  background: transparent;
+  border: 0;
+  color: var(--faith-primary);
+  justify-self: start;
+  padding: 0;
+}
+
+.faith-comment-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  min-height: 48px;
+  padding-left: 12px;
+}
+
+.faith-comment-composer button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--faith-primary);
+  display: flex;
+  justify-content: center;
+}
+
+.faith-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.faith-tags button,
+.faith-tags span,
+.faith-suggestions button {
+  background: var(--faith-selected);
+  border: 0;
+  border-radius: 8px;
+  color: var(--faith-primary);
+  font: inherit;
+  font-size: 14px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.faith-tags button[aria-pressed='true'],
+.faith-suggestions button[aria-selected='true'] {
+  background: var(--faith-melon);
+  color: var(--faith-text);
+}
+
+.faith-tag-editor,
+.faith-related {
+  display: grid;
+  gap: 12px;
+}
+
+.faith-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.faith-file-field {
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.faith-file-field input {
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.faith-alert {
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 12px;
+}
+
+.faith-alert-error {
+  background: #fff1f1;
+  color: #8a1f1f;
+}
+
+.faith-alert-success {
+  background: var(--faith-selected);
+  color: var(--faith-primary);
+}
+
+.faith-empty {
+  background: #faf9fb;
+  border: 1px dashed var(--faith-border);
+  border-radius: 12px;
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+}
+
+.faith-profile {
+  align-items: center;
+  border-bottom: 1px solid var(--faith-border);
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.faith-profile > svg {
+  color: var(--faith-orchid);
+  height: 44px;
+  width: 44px;
+}
+
+.faith-profile h3 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.faith-profile p {
+  color: var(--faith-muted);
+  margin: 4px 0 0;
+}
+
+.faith-week {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.faith-week button {
+  background: white;
+  border: 1px solid var(--faith-border);
+  border-radius: 12px;
+  color: var(--faith-text);
+  display: grid;
+  gap: 2px;
+  min-height: 64px;
+  padding: 6px 0;
+}
+
+.faith-week button[aria-pressed='true'] {
+  background: var(--faith-selected);
+  border-color: var(--faith-melon);
+  color: var(--faith-primary);
+}
+
+.faith-week span,
+.faith-week em {
+  color: var(--faith-muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.faith-sync-dot {
+  background: var(--faith-primary);
+  border-radius: 999px;
+  height: 10px;
+  justify-self: center;
+  width: 10px;
+}
+
+.faith-bottom-nav {
+  background: rgb(255 255 255 / 96%);
+  border: 1px solid var(--faith-border);
+  border-radius: 16px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  box-shadow: 0 12px 28px rgb(34 33 39 / 10%);
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  left: max(12px, env(safe-area-inset-left));
+  margin: 0 auto;
+  max-width: 720px;
+  padding: 6px;
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 30;
+}
+
+.faith-bottom-nav button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--faith-muted);
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  font-size: 11px;
+  gap: 3px;
+  min-height: 54px;
+  padding: 5px 0;
+}
+
+.faith-bottom-nav button[aria-current='page'] {
+  background: var(--faith-selected);
+  color: var(--faith-primary);
+  font-weight: 600;
+}
+
+.faith-bottom-nav svg {
+  height: 22px;
+  width: 22px;
+}
+
+@media (min-width: 820px) {
+  .faith-screen {
+    padding-inline: 24px;
+  }
+
+  .faith-header {
+    margin-inline: -24px;
+    padding-inline: 24px;
+  }
+}
+
+@media (max-width: 380px) {
+  .faith-screen {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .faith-header {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .faith-bottom-nav span {
+    font-size: 10px;
+  }
+}

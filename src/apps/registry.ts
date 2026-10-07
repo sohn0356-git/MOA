@@ -23,8 +23,8 @@ export const appRegistry: AppMeta[] = [
   },
   {
     id: 'meditation',
-    name: '묵상',
-    description: '짧은 질문을 붙잡고 생각을 기록하는 묵상 노트.',
+    name: 'MOA Faith',
+    description: '말씀, 묵상, 기도와 질문을 함께 기록하는 신앙 공간.',
     icon: MeditationIcon,
     route: '#/meditation',
     component: MeditationApp,
