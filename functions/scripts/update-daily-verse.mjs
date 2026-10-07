@@ -1,5 +1,5 @@
 import { cert, initializeApp } from 'firebase-admin/app'
-import { getDatabase, ServerValue } from 'firebase-admin/database'
+import { getDatabase } from 'firebase-admin/database'
 
 const DURANNO_HOME = 'https://www.duranno.com/'
 
@@ -100,14 +100,7 @@ async function main() {
 
   const db = getDatabase()
   await db.ref(`verse/${year}/${dayKey}`).set([range])
-  await db.ref(`verseMeta/${year}/${dayKey}`).set({
-    date: isoDate,
-    reference: `${range[0]} ${range[1]}:${range[2]}${range[2] === range[3] ? '' : `-${range[3]}`}`,
-    source: DURANNO_HOME,
-    updatedAt: ServerValue.TIMESTAMP,
-  })
-
-  console.log(`Updated verse/${year}/${dayKey}: ${JSON.stringify(range)}`)
+  console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}`)
 }
 
 main().catch((error) => {

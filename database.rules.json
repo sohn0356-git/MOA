@@ -4,10 +4,6 @@
       ".read": true,
       ".write": "auth != null && auth.token.admin === true"
     },
-    "verseMeta": {
-      ".read": true,
-      ".write": "auth != null && auth.token.admin === true"
-    },
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

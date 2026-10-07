@@ -269,13 +269,22 @@ function getPlanForDate(date: string) {
   const exactPlan = scripturePlans.find((plan) => plan.date === date)
 
   if (exactPlan) {
-    return exactPlan
+    return {
+      ...exactPlan,
+      title: '랜덤 묵상 본문',
+      theme: `랜덤 · ${exactPlan.theme}`,
+    }
   }
 
   const seed = date.split('-').join('')
   const index = Number(seed) % scripturePlans.length
+  const plan = scripturePlans[index]
 
-  return scripturePlans[index]
+  return {
+    ...plan,
+    title: '랜덤 묵상 본문',
+    theme: `랜덤 · ${plan.theme}`,
+  }
 }
 
 function buildReference(book: string, chapter: number, start: number, end: number) {
@@ -837,7 +846,7 @@ export function MeditationApp() {
             <BookOpenText aria-hidden="true" />
             <span>
               {plan.reference}
-              {plan.isRemote ? ' · Firebase' : ' · fallback'}
+              {plan.isRemote ? ' · Firebase' : ' · 랜덤'}
             </span>
           </div>
           <h3>{plan.title}</h3>
