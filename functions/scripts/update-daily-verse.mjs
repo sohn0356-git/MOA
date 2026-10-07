@@ -1,4 +1,4 @@
-import { cert, initializeApp } from 'firebase-admin/app'
+import { cert, deleteApp, initializeApp } from 'firebase-admin/app'
 import { getDatabase } from 'firebase-admin/database'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
@@ -192,13 +192,18 @@ async function main() {
   const verses = parseBibleVerses(bible.html, range[2], range[3])
   await mergeScriptureCache(range, verses)
 
-  initializeApp({
+  const app = initializeApp({
     credential: cert(serviceAccount),
     databaseURL,
   })
 
-  const db = getDatabase()
-  await withTimeout(db.ref(`verse/${year}/${dayKey}`).set([range]), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
+  try {
+    const db = getDatabase()
+    await withTimeout(db.ref(`verse/${year}/${dayKey}`).set([range]), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
+  } finally {
+    await deleteApp(app)
+  }
+
   console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}, ${verses.length} verses`)
 }
 
