@@ -5,6 +5,7 @@ import {
   Camera,
   Check,
   ChevronRight,
+  Edit3,
   Heart,
   HelpCircle,
   ImageUp,
@@ -14,6 +15,7 @@ import {
   Music2,
   Play,
   Save,
+  Search,
   Send,
   Settings,
   Sparkles,
@@ -30,7 +32,7 @@ const LOCAL_STORAGE_KEY = 'moa.meditation.entries.v3'
 
 type Audience = 'private' | 'public' | 'group'
 type LuminaryTab = 'feed' | 'devotion' | 'prayer' | 'qna' | 'profile'
-type MeditationStep = 'read' | 'write' | 'review'
+type DevotionView = 'today' | 'read' | 'write' | 'records' | 'detail' | 'edit'
 type ScriptureLanguage = 'ko' | 'en' | 'ja'
 
 type Verse = {
@@ -322,6 +324,36 @@ function formatDateTime(value: string) {
   }).format(date)
 }
 
+function formatDateLabel(value: string) {
+  const date = new Date(`${value}T00:00:00`)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'short',
+  }).format(date)
+}
+
+function getEntryTitle(entry: MeditationEntry) {
+  return entry.mind.trim().split('\n')[0] || entry.apply.trim().split('\n')[0] || entry.reference
+}
+
+function getAudienceLabel(audience: Audience) {
+  if (audience === 'group') {
+    return '그룹 공개'
+  }
+
+  if (audience === 'public') {
+    return '전체 공개'
+  }
+
+  return '나만 보기'
+}
+
 function loadLocalEntries(): MeditationEntry[] {
   try {
     const value = window.localStorage.getItem(LOCAL_STORAGE_KEY)
@@ -600,20 +632,24 @@ function getUserFaithQuestionsPath(userId: string) {
 
 export function MeditationApp() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [activeTab, setActiveTab] = useState<LuminaryTab>('feed')
+  const [activeTab, setActiveTab] = useState<LuminaryTab>('devotion')
+  const [devotionView, setDevotionView] = useState<DevotionView>('today')
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
   const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>('ko')
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
   const [remotePlan, setRemotePlan] = useState<ScripturePlan | null>(null)
   const [isPlanLoading, setIsPlanLoading] = useState(false)
   const [planError, setPlanError] = useState('')
-  const [step, setStep] = useState<MeditationStep>('read')
   const [mind, setMind] = useState('')
   const [apply, setApply] = useState('')
   const [mood, setMood] = useState(moods[0])
   const [audience, setAudience] = useState<Audience>('private')
   const [entries, setEntries] = useState<MeditationEntry[]>(loadLocalEntries)
   const [isSaving, setIsSaving] = useState(false)
+  const [selectedEntryId, setSelectedEntryId] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterDate, setFilterDate] = useState('')
+  const [statusMessage, setStatusMessage] = useState('')
   const [crossPhotos, setCrossPhotos] = useState<CrossPhoto[]>([])
   const [crossCaption, setCrossCaption] = useState('')
   const [crossFile, setCrossFile] = useState<File | null>(null)
@@ -646,6 +682,16 @@ export function MeditationApp() {
   const canSave = Boolean(mind.trim() || apply.trim())
   const selectedDateEntries = entries.filter((entry) => entry.selectedDate === selectedDate)
   const selectedDateEntry = selectedDateEntries[0] ?? null
+  const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null
+  const filteredEntries = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase()
+
+    return entries.filter((entry) => {
+      const matchesDate = filterDate ? entry.selectedDate === filterDate : true
+      const searchable = `${entry.reference} ${entry.theme} ${entry.mood} ${entry.verseText} ${entry.mind} ${entry.apply}`.toLowerCase()
+      return matchesDate && (!query || searchable.includes(query))
+    })
+  }, [entries, filterDate, searchTerm])
   const todayKey = getTodayKey()
   const featuredCrossPhoto = crossPhotos[0] ?? null
   const playableLunchTracks = lunchPraiseTracks.filter((track) => track.audioUrl)
@@ -667,7 +713,6 @@ export function MeditationApp() {
 
   useEffect(() => {
     setSelectedVerseNumbers([])
-    setStep('read')
     setRemotePlan(null)
     setPlanError('')
   }, [selectedDate, scriptureLanguage])
@@ -855,8 +900,9 @@ export function MeditationApp() {
       return
     }
 
+    const localId = createLocalId()
     const entry: MeditationEntry = {
-      id: createLocalId(),
+      id: localId,
       apply: apply.trim(),
       audience,
       createdAt: new Date().toISOString(),
@@ -871,21 +917,25 @@ export function MeditationApp() {
 
     setIsSaving(true)
     setErrorMessage('')
+    setStatusMessage('')
 
     try {
+      let savedEntry = entry
+
       if (currentUser) {
         const entryRef = push(ref(getRealtimeDb(), getUserEntriesPath(currentUser.uid)))
+        savedEntry = { ...entry, id: entryRef.key ?? entry.id }
         await set(entryRef, {
-          apply: entry.apply,
-          audience: entry.audience,
-          mind: entry.mind,
-          mood: entry.mood,
-          reference: entry.reference,
-          selectedDate: entry.selectedDate,
-          selectedVerseNumbers: entry.selectedVerseNumbers,
-          theme: entry.theme,
-          verseText: entry.verseText,
-          createdAt: entry.createdAt,
+          apply: savedEntry.apply,
+          audience: savedEntry.audience,
+          mind: savedEntry.mind,
+          mood: savedEntry.mood,
+          reference: savedEntry.reference,
+          selectedDate: savedEntry.selectedDate,
+          selectedVerseNumbers: savedEntry.selectedVerseNumbers,
+          theme: savedEntry.theme,
+          verseText: savedEntry.verseText,
+          createdAt: savedEntry.createdAt,
           createdAtMs: serverTimestamp(),
         })
       } else {
@@ -894,32 +944,106 @@ export function MeditationApp() {
 
       setMind('')
       setApply('')
-      setStep('review')
+      setSelectedEntryId(savedEntry.id)
+      setDevotionView('detail')
+      setStatusMessage('묵상을 저장했습니다.')
     } catch (error) {
-      setEntries((currentEntries) => [entry, ...currentEntries].slice(0, 30))
       setSyncState('error')
       setErrorMessage(
         error instanceof FirebaseError
           ? error.message
-          : 'Firebase 저장에 실패해 이 브라우저에 임시 저장했습니다.',
+          : '저장하지 못했습니다. 작성 내용은 그대로 두었습니다.',
       )
-      setStep('review')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  function startWriting() {
+    setMind('')
+    setApply('')
+    setMood(moods[0])
+    setAudience('private')
+    setDevotionView('write')
+  }
+
+  function startEdit(entry: MeditationEntry) {
+    setSelectedEntryId(entry.id)
+    setSelectedDate(entry.selectedDate)
+    setSelectedVerseNumbers(entry.selectedVerseNumbers)
+    setMind(entry.mind)
+    setApply(entry.apply)
+    setMood(entry.mood)
+    setAudience(entry.audience)
+    setDevotionView('edit')
+  }
+
+  async function handleUpdate() {
+    if (!selectedEntry || !canSave || isSaving) {
+      return
+    }
+
+    const updatedEntry: MeditationEntry = {
+      ...selectedEntry,
+      apply: apply.trim(),
+      audience,
+      mind: mind.trim(),
+      mood,
+      selectedVerseNumbers,
+      verseText: selectedVerseText,
+    }
+
+    setIsSaving(true)
+    setErrorMessage('')
+    setStatusMessage('')
+
+    try {
+      if (currentUser && syncState === 'synced') {
+        await set(ref(getRealtimeDb(), `${getUserEntriesPath(currentUser.uid)}/${selectedEntry.id}`), {
+          apply: updatedEntry.apply,
+          audience: updatedEntry.audience,
+          mind: updatedEntry.mind,
+          mood: updatedEntry.mood,
+          reference: updatedEntry.reference,
+          selectedDate: updatedEntry.selectedDate,
+          selectedVerseNumbers: updatedEntry.selectedVerseNumbers,
+          theme: updatedEntry.theme,
+          verseText: updatedEntry.verseText,
+          createdAt: updatedEntry.createdAt,
+          updatedAt: new Date().toISOString(),
+          updatedAtMs: serverTimestamp(),
+        })
+      } else {
+        setEntries((currentEntries) =>
+          currentEntries.map((entry) => (entry.id === selectedEntry.id ? updatedEntry : entry)),
+        )
+      }
+
+      setSelectedEntryId(updatedEntry.id)
+      setDevotionView('detail')
+      setStatusMessage('수정 내용을 저장했습니다.')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '수정 내용을 저장하지 못했습니다.')
     } finally {
       setIsSaving(false)
     }
   }
 
   async function handleDelete(entry: MeditationEntry) {
-    if (!window.confirm('이 묵상 기록을 삭제할까요?')) {
+    if (!window.confirm(`${formatDateLabel(entry.selectedDate)}의 묵상 기록을 삭제할까요?`)) {
       return
     }
 
     if (currentUser && syncState === 'synced') {
       await remove(ref(getRealtimeDb(), `${getUserEntriesPath(currentUser.uid)}/${entry.id}`))
+      setDevotionView('records')
+      setSelectedEntryId('')
       return
     }
 
     setEntries((currentEntries) => currentEntries.filter((currentEntry) => currentEntry.id !== entry.id))
+    setDevotionView('records')
+    setSelectedEntryId('')
   }
 
   async function handleCrossPhotoUpload() {
@@ -1006,322 +1130,403 @@ export function MeditationApp() {
   return (
     <section className="sub-app meditation-screen">
       <header className="meditation-header">
-        <button
-          aria-label="Back to apps"
-          className="nav-icon-button"
-          type="button"
-          onClick={handleBackHome}
-        >
+        <button aria-label="앱 목록으로 돌아가기" className="nav-icon-button" type="button" onClick={handleBackHome}>
           <ArrowLeft aria-hidden="true" />
         </button>
         <div>
           <span className="meditation-kicker">MOA Faith</span>
           <h2>{activeTab === 'feed' ? '피드' : activeTab === 'devotion' ? '묵상' : activeTab === 'prayer' ? '기도제목' : activeTab === 'qna' ? '신앙 Q&A' : '내프로필'}</h2>
         </div>
-        <div className="meditation-streak" aria-label="Meditation activity">
+        <div className="meditation-streak" aria-label="묵상 활동일">
           <strong>{activeDays}</strong>
           <span>활동일</span>
         </div>
       </header>
 
-      {activeTab === 'devotion' ? (
-        <>
-      <div className="meditation-topbar">
-        <label>
-          <CalendarDays aria-hidden="true" />
-          <span>날짜</span>
-          <input
-            max="2099-12-31"
-            min="2020-01-01"
-            type="date"
-            value={selectedDate}
-            onChange={(event) => setSelectedDate(event.target.value)}
-          />
-        </label>
-        <span className={`meditation-sync meditation-sync-${syncState}`}>
-          {syncState === 'synced'
-            ? 'Firebase 동기화됨'
-            : syncState === 'syncing'
-              ? '동기화 중'
-              : syncState === 'error'
-                ? '로컬 보관 중'
-                : '로컬 모드'}
-        </span>
-      </div>
-
-      <div className="meditation-calendar-strip" aria-label="Meditation calendar">
-        {weekDates.map((date) => {
-          const dateKey = [
-            date.getFullYear(),
-            String(date.getMonth() + 1).padStart(2, '0'),
-            String(date.getDate()).padStart(2, '0'),
-          ].join('-')
-          const isSelected = dateKey === selectedDate
-          const hasEntry = entries.some((entry) => entry.selectedDate === dateKey)
+      <nav className="meditation-section-tabs" aria-label="MOA Faith">
+        {luminaryTabs.map((tab) => {
+          const Icon = tab.icon
 
           return (
             <button
-              className={isSelected ? 'is-selected' : undefined}
-              key={dateKey}
+              className={activeTab === tab.id ? 'is-selected' : undefined}
+              key={tab.id}
               type="button"
-              onClick={() => setSelectedDate(dateKey)}
+              onClick={() => {
+                setActiveTab(tab.id)
+                if (tab.id === 'devotion') {
+                  setDevotionView('today')
+                }
+              }}
             >
-              <span>
-                {new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date)}
-              </span>
-              <strong>{date.getDate()}</strong>
-              {hasEntry ? <i aria-label="Meditation saved" /> : <em />}
+              <Icon aria-hidden="true" />
+              <span>{tab.label}</span>
             </button>
           )
         })}
-      </div>
+      </nav>
 
-      {selectedDateEntry ? (
-        <section className="meditation-saved-card" aria-label="Saved devotion for selected date">
-          <div className="meditation-panel-heading">
-            <div>
-              <span className="meditation-kicker">묵상</span>
-              <h3>{selectedDateEntry.reference}</h3>
-            </div>
-            <span className="meditation-complete">저장됨</span>
-          </div>
-          <blockquote>{selectedDateEntry.verseText}</blockquote>
-          {selectedDateEntry.mind ? <p>{selectedDateEntry.mind}</p> : null}
-          {selectedDateEntry.apply ? (
-            <p className="meditation-entry-apply">적용 · {selectedDateEntry.apply}</p>
-          ) : null}
-        </section>
-      ) : (
-        <section className="meditation-saved-card meditation-saved-empty">
-          <span className="meditation-kicker">묵상</span>
-          <p>해당 날짜의 묵상이 아직 등록되지 않았습니다.</p>
-        </section>
-      )}
-
-      {planError ? <p className="meditation-error">{planError}</p> : null}
-
-      <div className="meditation-hero meditation-luminary-hero">
-        <div className="meditation-verse-card">
-          <div className="meditation-section-label">
-            <BookOpenText aria-hidden="true" />
-            <span>
-              {plan.reference}
-              {plan.isRemote ? ' · Firebase' : ' · 랜덤'}
+      {activeTab === 'devotion' ? (
+        <section className="meditation-devotion">
+          <div className="meditation-topbar">
+            <label>
+              <CalendarDays aria-hidden="true" />
+              <span>날짜</span>
+              <input
+                max="2099-12-31"
+                min="2020-01-01"
+                type="date"
+                value={selectedDate}
+                onChange={(event) => {
+                  setSelectedDate(event.target.value)
+                  setDevotionView('today')
+                }}
+              />
+            </label>
+            <span className={`meditation-sync meditation-sync-${syncState}`}>
+              {syncState === 'synced'
+                ? '동기화됨'
+                : syncState === 'syncing'
+                  ? '동기화 중'
+                  : syncState === 'error'
+                    ? '연결 불안정'
+                    : '로컬 모드'}
             </span>
           </div>
-          <h3>{plan.title}</h3>
-          <div className="meditation-hero-verses">
-            {isPlanLoading ? (
-              <p>Firebase에서 오늘의 본문을 불러오는 중입니다.</p>
-            ) : (
-              plan.verses.map((verse) => (
-                <p key={verse.number}>
-                  <sup>{verse.number}</sup>
-                  <span>{verse.text}</span>
-                </p>
-              ))
-            )}
-          </div>
-          <p>{plan.question}</p>
-          <div className="meditation-language-row" aria-label="Scripture language">
-            {scriptureLanguageOptions.map((option) => (
-              <button
-                className={scriptureLanguage === option.id ? 'is-selected' : undefined}
-                key={option.id}
-                title={option.translation}
-                type="button"
-                onClick={() => setScriptureLanguage(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <div className="meditation-step-row" aria-label="Meditation steps">
-            {(['read', 'write', 'review'] as MeditationStep[]).map((itemStep, index) => (
-              <button
-                className={step === itemStep ? 'is-selected' : undefined}
-                key={itemStep}
-                type="button"
-                onClick={() => setStep(itemStep)}
-              >
-                <span>{index + 1}</span>
-                {itemStep === 'read' ? '읽기' : itemStep === 'write' ? '기록' : '돌아보기'}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {errorMessage ? <p className="meditation-error">{errorMessage}</p> : null}
+          {errorMessage ? <p className="meditation-error">{errorMessage}</p> : null}
+          {statusMessage ? <p className="meditation-success">{statusMessage}</p> : null}
 
-      {step === 'read' ? (
-        <section className="meditation-reading-panel" aria-labelledby="meditation-read-title">
-          <div className="meditation-panel-heading">
-            <div>
-              <span className="meditation-kicker">본문 읽기</span>
-              <h3 id="meditation-read-title">마음에 남는 절을 선택하세요</h3>
-            </div>
-            {selectedVerseNumbers.length ? (
-              <span className="meditation-complete">
-                <Check aria-hidden="true" />
-                {selectedVerseNumbers.length}절 선택
-              </span>
-            ) : null}
-          </div>
-          <div className="meditation-verse-list">
-            {plan.verses.map((verse) => (
-              <button
-                className={selectedVerseNumbers.includes(verse.number) ? 'is-selected' : undefined}
-                key={verse.number}
-                type="button"
-                onClick={() => toggleVerse(verse.number)}
-              >
-                <sup>{verse.number}</sup>
-                <span>{verse.text}</span>
-              </button>
-            ))}
-          </div>
-          <button className="meditation-next-button" type="button" onClick={() => setStep('write')}>
-            묵상 기록하기
-            <ChevronRight aria-hidden="true" />
-          </button>
-        </section>
-      ) : null}
-
-      {step === 'write' ? (
-        <div className="meditation-workspace">
-          <section className="meditation-writing-panel" aria-labelledby="meditation-writing-title">
-            <div className="meditation-panel-heading">
-              <div>
-                <span className="meditation-kicker">묵상과 적용</span>
-                <h3 id="meditation-writing-title">기록하기</h3>
-              </div>
-              {completedToday ? (
-                <span className="meditation-complete">
-                  <Check aria-hidden="true" />
-                  오늘 기록 있음
-                </span>
-              ) : null}
-            </div>
-
-            <div className="meditation-mood-row" aria-label="Mood">
-              {moods.map((itemMood) => (
-                <button
-                  className={mood === itemMood ? 'is-selected' : undefined}
-                  key={itemMood}
-                  type="button"
-                  onClick={() => setMood(itemMood)}
-                >
-                  <Heart aria-hidden="true" />
-                  <span>{itemMood}</span>
-                </button>
-              ))}
-            </div>
-
-            <label className="meditation-textarea-label">
-              <span>묵상</span>
-              <textarea
-                onChange={(event) => setMind(event.target.value)}
-                placeholder="말씀을 통해 발견한 하나님, 나의 마음, 떠오른 기도를 적어보세요."
-                rows={7}
-                value={mind}
-              />
-            </label>
-
-            <label className="meditation-textarea-label">
-              <span>적용</span>
-              <textarea
-                onChange={(event) => setApply(event.target.value)}
-                placeholder="오늘 실천할 한 가지를 구체적으로 적어보세요."
-                rows={5}
-                value={apply}
-              />
-            </label>
-
-            <div className="meditation-audience-row" aria-label="Audience">
-              {[
-                { icon: Lock, id: 'private', label: '나만 보기' },
-                { icon: Sparkles, id: 'public', label: '전체 공개' },
-                { icon: Users, id: 'group', label: '그룹 공개' },
-              ].map((item) => {
-                const Icon = item.icon
-
-                return (
-                  <button
-                    className={audience === item.id ? 'is-selected' : undefined}
-                    key={item.id}
-                    type="button"
-                    onClick={() => setAudience(item.id as Audience)}
-                  >
-                    <Icon aria-hidden="true" />
-                    {item.label}
+          {devotionView === 'today' ? (
+            <>
+              <section className="meditation-today-card" aria-labelledby="today-devotion-title">
+                <div className="meditation-date-line">{formatDateLabel(selectedDate)}</div>
+                <div>
+                  <span className="meditation-kicker">오늘의 말씀</span>
+                  <h3 id="today-devotion-title">{plan.title}</h3>
+                  <p>{plan.reference}</p>
+                </div>
+                <blockquote>{isPlanLoading ? '말씀을 불러오는 중입니다.' : selectedVerseText}</blockquote>
+                {planError ? <p className="meditation-error">{planError}</p> : null}
+                <div className="meditation-primary-actions">
+                  {selectedDateEntry ? (
+                    <button
+                      className="meditation-primary-button"
+                      type="button"
+                      onClick={() => {
+                        setSelectedEntryId(selectedDateEntry.id)
+                        setDevotionView('detail')
+                      }}
+                    >
+                      묵상 다시 보기
+                      <ChevronRight aria-hidden="true" />
+                    </button>
+                  ) : mind.trim() || apply.trim() ? (
+                    <button className="meditation-primary-button" type="button" onClick={() => setDevotionView('write')}>
+                      이어서 작성하기
+                      <ChevronRight aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <button className="meditation-primary-button" type="button" onClick={() => setDevotionView('read')}>
+                      묵상 시작하기
+                      <ChevronRight aria-hidden="true" />
+                    </button>
+                  )}
+                  <button className="meditation-secondary-button" type="button" onClick={() => setDevotionView('records')}>
+                    내 기록
                   </button>
-                )
-              })}
-            </div>
+                </div>
+              </section>
 
-            <div className="meditation-writing-actions">
-              <span>{mind.trim().length + apply.trim().length}자</span>
-              <button disabled={!canSave || isSaving} type="button" onClick={() => void handleSave()}>
-                <Save aria-hidden="true" />
-                <span>{isSaving ? '저장 중' : '저장'}</span>
-              </button>
-            </div>
-          </section>
+              <div className="meditation-calendar-strip" aria-label="묵상 날짜">
+                {weekDates.map((date) => {
+                  const dateKey = [
+                    date.getFullYear(),
+                    String(date.getMonth() + 1).padStart(2, '0'),
+                    String(date.getDate()).padStart(2, '0'),
+                  ].join('-')
+                  const isSelected = dateKey === selectedDate
+                  const hasEntry = entries.some((entry) => entry.selectedDate === dateKey)
 
-          <aside className="meditation-history-panel">
-            <span className="meditation-kicker">선택한 본문</span>
-            <p className="meditation-focus">{selectedVerseText}</p>
-          </aside>
-        </div>
-      ) : null}
+                  return (
+                    <button
+                      className={isSelected ? 'is-selected' : undefined}
+                      key={dateKey}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(dateKey)
+                        setDevotionView('today')
+                      }}
+                    >
+                      <span>{new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date)}</span>
+                      <strong>{date.getDate()}</strong>
+                      {hasEntry ? <i aria-label="기록 있음" /> : <em />}
+                    </button>
+                  )
+                })}
+              </div>
 
-      {step === 'review' ? (
-        <section className="meditation-history-panel meditation-review-panel" aria-labelledby="meditation-history-title">
-          <div className="meditation-panel-heading">
-            <div>
-              <span className="meditation-kicker">최근 기록</span>
-              <h3 id="meditation-history-title">돌아보기</h3>
-            </div>
-            <span className="meditation-complete">{entries.length}개 기록</span>
-          </div>
-
-          {entries.length > 0 ? (
-            <div className="meditation-entry-list">
-              {entries.map((entry) => (
-                <article className="meditation-entry" key={entry.id}>
+              <section className="meditation-list-section" aria-labelledby="recent-devotions-title">
+                <div className="meditation-panel-heading">
                   <div>
-                    <strong>{entry.mood}</strong>
-                    <span>{formatDateTime(entry.createdAt)}</span>
+                    <span className="meditation-kicker">최근 내 기록</span>
+                    <h3 id="recent-devotions-title">다시 읽기</h3>
                   </div>
-                  <small>
-                    {entry.reference} · {entry.theme} ·{' '}
-                    {entry.audience === 'private'
-                      ? '나만 보기'
-                      : entry.audience === 'group'
-                        ? '그룹 공개'
-                        : '전체 공개'}
-                  </small>
-                  <blockquote>{entry.verseText}</blockquote>
-                  {entry.mind ? <p>{entry.mind}</p> : null}
-                  {entry.apply ? <p className="meditation-entry-apply">적용 · {entry.apply}</p> : null}
+                  <button className="meditation-text-button" type="button" onClick={() => setDevotionView('records')}>
+                    전체 보기
+                  </button>
+                </div>
+                {entries.length ? (
+                  <div className="meditation-record-list">
+                    {entries.slice(0, 4).map((entry) => (
+                      <button
+                        className="meditation-record-row"
+                        key={entry.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedEntryId(entry.id)
+                          setDevotionView('detail')
+                        }}
+                      >
+                        <time>{formatDateLabel(entry.selectedDate)}</time>
+                        <strong>{getEntryTitle(entry)}</strong>
+                        <span>{entry.reference}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="meditation-empty">아직 저장된 묵상이 없습니다. 오늘 말씀부터 천천히 시작해보세요.</p>
+                )}
+              </section>
+            </>
+          ) : null}
+
+          {devotionView === 'read' ? (
+            <section className="meditation-reading-panel" aria-labelledby="meditation-read-title">
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">{plan.reference}</span>
+                  <h3 id="meditation-read-title">{plan.title}</h3>
+                </div>
+                <button className="meditation-text-button" type="button" onClick={() => setDevotionView('today')}>
+                  오늘로
+                </button>
+              </div>
+              <div className="meditation-language-row" aria-label="말씀 언어">
+                {scriptureLanguageOptions.map((option) => (
                   <button
-                    aria-label="Delete meditation entry"
-                    className="meditation-delete-button"
+                    className={scriptureLanguage === option.id ? 'is-selected' : undefined}
+                    key={option.id}
+                    title={option.translation}
                     type="button"
-                    onClick={() => void handleDelete(entry)}
+                    onClick={() => setScriptureLanguage(option.id)}
                   >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="meditation-verse-list">
+                {isPlanLoading ? (
+                  <p className="meditation-empty">말씀을 불러오고 있습니다.</p>
+                ) : (
+                  plan.verses.map((verse) => (
+                    <button
+                      className={selectedVerseNumbers.includes(verse.number) ? 'is-selected' : undefined}
+                      key={verse.number}
+                      type="button"
+                      onClick={() => toggleVerse(verse.number)}
+                    >
+                      <sup>{verse.number}</sup>
+                      <span>{verse.text}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+              <p className="meditation-question">{plan.question}</p>
+              <button className="meditation-primary-button" type="button" onClick={startWriting}>
+                묵상 기록하기
+                <ChevronRight aria-hidden="true" />
+              </button>
+            </section>
+          ) : null}
+
+          {devotionView === 'write' || devotionView === 'edit' ? (
+            <section className="meditation-writing-panel meditation-writing-screen" aria-labelledby="meditation-writing-title">
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">{plan.reference}</span>
+                  <h3 id="meditation-writing-title">{devotionView === 'edit' ? '묵상 수정' : '묵상 기록'}</h3>
+                </div>
+                {completedToday && devotionView !== 'edit' ? (
+                  <span className="meditation-complete">
+                    <Check aria-hidden="true" />
+                    오늘 기록 있음
+                  </span>
+                ) : null}
+              </div>
+              <div className="meditation-focus">
+                <strong>마음에 남은 말씀</strong>
+                <p>{selectedVerseText}</p>
+              </div>
+              <div className="meditation-mood-row" aria-label="오늘 마음">
+                {moods.map((itemMood) => (
+                  <button
+                    className={mood === itemMood ? 'is-selected' : undefined}
+                    key={itemMood}
+                    type="button"
+                    onClick={() => setMood(itemMood)}
+                  >
+                    <Heart aria-hidden="true" />
+                    <span>{itemMood}</span>
+                  </button>
+                ))}
+              </div>
+              <label className="meditation-textarea-label">
+                <span>나의 묵상</span>
+                <textarea
+                  onChange={(event) => setMind(event.target.value)}
+                  placeholder="말씀을 읽으며 떠오른 생각과 마음을 적어보세요."
+                  rows={8}
+                  value={mind}
+                />
+              </label>
+              <label className="meditation-textarea-label">
+                <span>오늘의 적용</span>
+                <textarea
+                  onChange={(event) => setApply(event.target.value)}
+                  placeholder="오늘 실천할 한 가지를 짧게 적어보세요."
+                  rows={5}
+                  value={apply}
+                />
+              </label>
+              <div className="meditation-audience-row" aria-label="공개 범위">
+                {[
+                  { icon: Lock, id: 'private', label: '나만 보기' },
+                  { icon: Sparkles, id: 'public', label: '전체 공개' },
+                  { icon: Users, id: 'group', label: '그룹 공개' },
+                ].map((item) => {
+                  const Icon = item.icon
+
+                  return (
+                    <button
+                      className={audience === item.id ? 'is-selected' : undefined}
+                      key={item.id}
+                      type="button"
+                      onClick={() => setAudience(item.id as Audience)}
+                    >
+                      <Icon aria-hidden="true" />
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="meditation-writing-actions">
+                <span>{mind.trim().length + apply.trim().length}자</span>
+                <div>
+                  <button className="meditation-secondary-button" type="button" onClick={() => setDevotionView(devotionView === 'edit' ? 'detail' : 'today')}>
+                    취소
+                  </button>
+                  <button
+                    className="meditation-primary-button"
+                    disabled={!canSave || isSaving}
+                    type="button"
+                    onClick={() => void (devotionView === 'edit' ? handleUpdate() : handleSave())}
+                  >
+                    <Save aria-hidden="true" />
+                    <span>{isSaving ? '저장 중' : '저장'}</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {devotionView === 'records' ? (
+            <section className="meditation-list-section" aria-labelledby="records-title">
+              <div className="meditation-panel-heading">
+                <div>
+                  <span className="meditation-kicker">내 기록</span>
+                  <h3 id="records-title">날짜별 묵상</h3>
+                </div>
+                <button className="meditation-primary-button" type="button" onClick={() => setDevotionView('read')}>
+                  새 묵상
+                </button>
+              </div>
+              <div className="meditation-record-tools">
+                <label>
+                  <Search aria-hidden="true" />
+                  <input
+                    placeholder="말씀, 묵상 내용 검색"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </label>
+                <input type="date" value={filterDate} onChange={(event) => setFilterDate(event.target.value)} />
+              </div>
+              {entries.length === 0 ? (
+                <p className="meditation-empty">저장된 묵상이 없습니다.</p>
+              ) : filteredEntries.length === 0 ? (
+                <p className="meditation-empty">검색 조건에 맞는 묵상이 없습니다.</p>
+              ) : (
+                <div className="meditation-record-list">
+                  {filteredEntries.map((entry) => (
+                    <button
+                      className="meditation-record-row"
+                      key={entry.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedEntryId(entry.id)
+                        setDevotionView('detail')
+                      }}
+                    >
+                      <time>{formatDateLabel(entry.selectedDate)}</time>
+                      <strong>{getEntryTitle(entry)}</strong>
+                      <span>
+                        {entry.reference} · {getAudienceLabel(entry.audience)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {devotionView === 'detail' && selectedEntry ? (
+            <article className="meditation-detail" aria-labelledby="entry-detail-title">
+              <div className="meditation-detail-header">
+                <button className="meditation-text-button" type="button" onClick={() => setDevotionView('records')}>
+                  내 기록
+                </button>
+                <div>
+                  <span className="meditation-kicker">{formatDateLabel(selectedEntry.selectedDate)}</span>
+                  <h3 id="entry-detail-title">{getEntryTitle(selectedEntry)}</h3>
+                  <p>{selectedEntry.reference} · {getAudienceLabel(selectedEntry.audience)}</p>
+                </div>
+                <div className="meditation-detail-actions">
+                  <button aria-label="묵상 수정" type="button" onClick={() => startEdit(selectedEntry)}>
+                    <Edit3 aria-hidden="true" />
+                  </button>
+                  <button aria-label="묵상 삭제" type="button" onClick={() => void handleDelete(selectedEntry)}>
                     <Trash2 aria-hidden="true" />
                   </button>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="meditation-empty">아직 저장된 묵상 기록이 없습니다.</p>
-          )}
+                </div>
+              </div>
+              <blockquote>{selectedEntry.verseText}</blockquote>
+              {selectedEntry.mind ? (
+                <section>
+                  <h4>나의 묵상</h4>
+                  <p>{selectedEntry.mind}</p>
+                </section>
+              ) : null}
+              {selectedEntry.apply ? (
+                <section>
+                  <h4>오늘의 적용</h4>
+                  <p>{selectedEntry.apply}</p>
+                </section>
+              ) : null}
+              <small>{formatDateTime(selectedEntry.createdAt)} 저장</small>
+            </article>
+          ) : null}
         </section>
-      ) : null}
-        </>
       ) : (
         <section className="meditation-tab-panel">
           {activeTab === 'feed' ? (
@@ -1555,23 +1760,6 @@ export function MeditationApp() {
         </section>
       )}
 
-      <nav className="meditation-bottom-tabs" aria-label="Luminary tabs">
-        {luminaryTabs.map((tab) => {
-          const Icon = tab.icon
-
-          return (
-            <button
-              className={activeTab === tab.id ? 'is-selected' : undefined}
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <Icon aria-hidden="true" />
-              <span>{tab.label}</span>
-            </button>
-          )
-        })}
-      </nav>
     </section>
   )
 }
