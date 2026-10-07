@@ -60,7 +60,8 @@ type FirebaseVersePayload = {
 
 type ScriptureCache = {
   translation?: string
-  books?: Record<string, Record<string, Record<string, string>>>
+  book?: string
+  chapters?: Record<string, Record<string, string>>
 }
 
 type MeditationEntry = {
@@ -204,7 +205,7 @@ const scripturePlans: ScripturePlan[] = [
 const knownPassageText: Record<string, Verse[]> = Object.fromEntries(
   scripturePlans.map((plan) => [plan.reference, plan.verses]),
 )
-let scriptureCachePromise: Promise<ScriptureCache | null> | null = null
+const scriptureBookCachePromises = new Map<string, Promise<ScriptureCache | null>>()
 
 function getTodayKey() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -332,8 +333,14 @@ function normalizeFirebaseVerses(value: unknown): Verse[] | null {
   return verses.length ? verses : null
 }
 
-async function loadScriptureCache() {
-  scriptureCachePromise ??= fetch(`${import.meta.env.BASE_URL}scripture/gae.json`, {
+async function loadScriptureBook(book: string) {
+  const existingPromise = scriptureBookCachePromises.get(book)
+
+  if (existingPromise) {
+    return existingPromise
+  }
+
+  const promise = fetch(`${import.meta.env.BASE_URL}scripture/gae/${encodeURIComponent(book)}.json`, {
     cache: 'no-cache',
   })
     .then((response) => {
@@ -345,7 +352,8 @@ async function loadScriptureCache() {
     })
     .catch(() => null)
 
-  return scriptureCachePromise
+  scriptureBookCachePromises.set(book, promise)
+  return promise
 }
 
 async function getScriptureVersesFromCache(range: FirebaseVerseRange) {
@@ -359,8 +367,8 @@ async function getScriptureVersesFromCache(range: FirebaseVerseRange) {
     return null
   }
 
-  const cache = await loadScriptureCache()
-  const chapterVerses = cache?.books?.[book]?.[String(chapter)]
+  const cache = await loadScriptureBook(book)
+  const chapterVerses = cache?.chapters?.[String(chapter)]
 
   if (!chapterVerses) {
     return null

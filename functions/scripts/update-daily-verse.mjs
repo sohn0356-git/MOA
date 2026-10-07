@@ -1,10 +1,10 @@
 import { cert, deleteApp, initializeApp } from 'firebase-admin/app'
 import { getDatabase } from 'firebase-admin/database'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 
 const DURANNO_HOME = 'https://www.duranno.com/'
-const SCRIPTURE_CACHE_PATH = resolve(process.cwd(), '../public/scripture/gae.json')
+const SCRIPTURE_CACHE_DIR = resolve(process.cwd(), '../public/scripture/gae')
 const REQUEST_TIMEOUT_MS = 15000
 const FIREBASE_WRITE_TIMEOUT_MS = 15000
 
@@ -136,14 +136,25 @@ function parseBibleVerses(html, startVerse, endVerse) {
   return verses
 }
 
-async function readScriptureCache() {
+function getScriptureBookPath(book) {
+  if (book.includes('/') || book.includes('\\')) {
+    throw new Error(`Invalid scripture book name: ${book}`)
+  }
+
+  return resolve(SCRIPTURE_CACHE_DIR, `${book}.json`)
+}
+
+async function readScriptureBook(book) {
+  const bookPath = getScriptureBookPath(book)
+
   try {
-    return JSON.parse(await readFile(SCRIPTURE_CACHE_PATH, 'utf8'))
+    return JSON.parse(await readFile(bookPath, 'utf8'))
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       return {
         translation: '개역개정',
-        books: {},
+        book,
+        chapters: {},
       }
     }
 
@@ -154,19 +165,19 @@ async function readScriptureCache() {
 async function mergeScriptureCache(range, verses) {
   const [book, chapter] = range
   const chapterKey = String(chapter)
-  const cache = await readScriptureCache()
+  const cache = await readScriptureBook(book)
 
   cache.translation = '개역개정'
-  cache.books ??= {}
-  cache.books[book] ??= {}
-  cache.books[book][chapterKey] ??= {}
+  cache.book = book
+  cache.chapters ??= {}
+  cache.chapters[chapterKey] ??= {}
 
   for (const verse of verses) {
-    cache.books[book][chapterKey][String(verse.number)] = verse.text
+    cache.chapters[chapterKey][String(verse.number)] = verse.text
   }
 
-  await mkdir(dirname(SCRIPTURE_CACHE_PATH), { recursive: true })
-  await writeFile(SCRIPTURE_CACHE_PATH, `${JSON.stringify(cache, null, 2)}\n`)
+  await mkdir(SCRIPTURE_CACHE_DIR, { recursive: true })
+  await writeFile(getScriptureBookPath(book), `${JSON.stringify(cache, null, 2)}\n`)
 }
 
 function getServiceAccount() {
