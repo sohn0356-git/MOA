@@ -50,6 +50,25 @@ async function fetchDurannoHome() {
   return new TextDecoder('euc-kr').decode(buffer)
 }
 
+async function fetchDurannoBible(isoDate) {
+  const sourceUrl = `${DURANNO_HOME}qt/view/bible.asp?qtDate=${isoDate}&d=k`
+  const response = await fetch(sourceUrl, {
+    headers: {
+      'user-agent': 'MOA daily verse updater (+https://github.com/sohn0356/MOA)',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Duranno Bible request failed with HTTP ${response.status}.`)
+  }
+
+  const buffer = await response.arrayBuffer()
+  return {
+    html: new TextDecoder('euc-kr').decode(buffer),
+    sourceUrl,
+  }
+}
+
 function parseTodayQt(html) {
   const todayQtMatch = html.match(/<h2[^>]*>[\s\S]*?alt=["']오늘의 QT["'][\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<\/h2>/)
   const source = todayQtMatch?.[1]
@@ -73,6 +92,35 @@ function parseTodayQt(html) {
   return [book, chapter, startVerse, endVerse]
 }
 
+function parseBibleVerses(html, startVerse, endVerse) {
+  const bibleMatch = html.match(/<div class=["']bible["'][^>]*>([\s\S]*?)<\/div>\s*<div class=["']amen/)
+  const bibleHtml = bibleMatch?.[1]
+
+  if (!bibleHtml) {
+    throw new Error('Could not find the Duranno Bible text section.')
+  }
+
+  const verses = []
+  const rowPattern = /<tr>\s*<th[^>]*>\s*(\d+)\s*<\/th>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<\/tr>/g
+
+  for (const match of bibleHtml.matchAll(rowPattern)) {
+    const number = Number(match[1])
+
+    if (number >= startVerse && number <= endVerse) {
+      verses.push({
+        number,
+        text: stripTags(match[2]),
+      })
+    }
+  }
+
+  if (verses.length !== endVerse - startVerse + 1) {
+    throw new Error(`Expected ${endVerse - startVerse + 1} Bible verses, parsed ${verses.length}.`)
+  }
+
+  return verses
+}
+
 function getServiceAccount() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT
 
@@ -92,6 +140,8 @@ async function main() {
   const { dayKey, isoDate, year } = getKstDateKey(targetDate)
   const html = await fetchDurannoHome()
   const range = parseTodayQt(html)
+  const bible = await fetchDurannoBible(isoDate)
+  const verses = parseBibleVerses(bible.html, range[2], range[3])
 
   initializeApp({
     credential: cert(serviceAccount),
@@ -99,8 +149,14 @@ async function main() {
   })
 
   const db = getDatabase()
-  await db.ref(`verse/${year}/${dayKey}`).set([range])
-  console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}`)
+  await db.ref(`verse/${year}/${dayKey}`).set({
+    range,
+    source: 'duranno',
+    sourceUrl: bible.sourceUrl,
+    translation: '개역개정',
+    verses,
+  })
+  console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}, ${verses.length} verses`)
 }
 
 main().catch((error) => {

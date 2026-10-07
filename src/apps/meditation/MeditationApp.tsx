@@ -51,6 +51,13 @@ type ScripturePlan = {
 
 type FirebaseVerseRange = [unknown, unknown, unknown, unknown?]
 
+type FirebaseVersePayload = {
+  range?: FirebaseVerseRange
+  sourceUrl?: unknown
+  translation?: unknown
+  verses?: unknown
+}
+
 type MeditationEntry = {
   id: string
   apply: string
@@ -293,20 +300,38 @@ function buildReference(book: string, chapter: number, start: number, end: numbe
   return `${book} ${chapter}:${range}`
 }
 
-function createVerseShell(start: number, end: number, reference: string): Verse[] {
-  const verses: Verse[] = []
-
-  for (let verseNumber = start; verseNumber <= end; verseNumber += 1) {
-    verses.push({
-      number: verseNumber,
-      text: `${reference} 본문입니다. Firebase에서 오늘의 장절을 불러왔습니다.`,
-    })
+function normalizeFirebaseVerses(value: unknown): Verse[] | null {
+  if (!Array.isArray(value)) {
+    return null
   }
 
-  return verses
+  const verses = value
+    .map((item) => {
+      if (typeof item !== 'object' || item === null) {
+        return null
+      }
+
+      const verse = item as Record<string, unknown>
+      const number = Number(verse.number)
+      const text = typeof verse.text === 'string' ? verse.text.trim() : ''
+
+      if (!Number.isFinite(number) || !text) {
+        return null
+      }
+
+      return { number, text }
+    })
+    .filter((item): item is Verse => item !== null)
+
+  return verses.length ? verses : null
 }
 
-function planFromFirebaseRange(date: string, range: FirebaseVerseRange): ScripturePlan | null {
+function planFromFirebaseRange(
+  date: string,
+  range: FirebaseVerseRange,
+  remoteVerses?: Verse[] | null,
+  translation?: string,
+): ScripturePlan | null {
   const [bookValue, chapterValue, startValue, endValue] = range
   const book = typeof bookValue === 'string' ? bookValue : ''
   const chapter = Number(chapterValue)
@@ -318,15 +343,20 @@ function planFromFirebaseRange(date: string, range: FirebaseVerseRange): Scriptu
   }
 
   const reference = buildReference(book, chapter, start, end)
+  const verses = remoteVerses ?? knownPassageText[reference] ?? null
+
+  if (!verses?.length) {
+    return null
+  }
 
   return {
     date,
     isRemote: true,
     title: '오늘의 본문',
     reference,
-    theme: 'Firebase 말씀',
+    theme: translation ? `Firebase 말씀 · ${translation}` : 'Firebase 말씀',
     question: '오늘 이 본문에서 붙잡아야 할 한 문장은 무엇인가요?',
-    verses: knownPassageText[reference] ?? createVerseShell(start, end, reference),
+    verses,
   }
 }
 
@@ -334,13 +364,29 @@ async function fetchFirebasePlan(date: string) {
   const [year, month, day] = date.split('-')
   const dayKey = `${month}${day}`
   const snapshot = await get(ref(getRealtimeDb(), `verse/${year}/${dayKey}`))
-  const value = snapshot.val() as FirebaseVerseRange[] | null
+  const value = snapshot.val() as FirebaseVerseRange[] | FirebaseVersePayload | null
 
-  if (!Array.isArray(value) || !value.length) {
+  if (!value) {
     return null
   }
 
-  return planFromFirebaseRange(date, value[0])
+  if (Array.isArray(value)) {
+    if (!value.length) {
+      return null
+    }
+
+    return planFromFirebaseRange(date, value[0])
+  }
+
+  const range = Array.isArray(value.range) ? value.range : null
+  const verses = normalizeFirebaseVerses(value.verses)
+  const translation = typeof value.translation === 'string' ? value.translation : undefined
+
+  if (!range) {
+    return null
+  }
+
+  return planFromFirebaseRange(date, range, verses, translation)
 }
 
 function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: number[]) {
