@@ -5838,3 +5838,504 @@ select:disabled {
     font-size: 10px;
   }
 }
+
+.app-shell-faith {
+  background: #ffffff;
+  margin: 0;
+  max-width: none;
+  min-height: 100svh;
+  padding: 0;
+  width: 100%;
+}
+
+.app-shell-faith .update-banner {
+  margin: 8px 16px;
+}
+
+.faith-screen {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: none;
+  min-height: 100svh;
+  padding: 0 16px calc(72px + env(safe-area-inset-bottom));
+  width: 100%;
+}
+
+.faith-header {
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+
+.faith-title {
+  gap: 8px;
+}
+
+.faith-title > svg {
+  height: 24px;
+  width: 24px;
+}
+
+.faith-title span {
+  font-size: 11px;
+}
+
+.faith-title h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.faith-icon-button svg {
+  height: 22px;
+  width: 22px;
+}
+
+.faith-content {
+  padding-top: 14px;
+}
+
+.faith-content,
+.faith-stack {
+  gap: 16px;
+}
+
+.faith-panel,
+.faith-reading,
+.faith-detail,
+.faith-compose-screen {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  gap: 14px;
+  padding: 0;
+}
+
+.faith-photo-post,
+.faith-prayer-post,
+.faith-question-post {
+  background: #ffffff;
+  border: 0;
+  border-bottom: 1px solid var(--faith-border);
+  border-radius: 0;
+  padding: 16px 0;
+}
+
+.faith-list {
+  gap: 0;
+}
+
+.faith-youtube-section h3,
+.faith-section-head h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.faith-prayer-post h3,
+.faith-question-post h3,
+.faith-detail h3 {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.faith-section-head {
+  gap: 10px;
+  min-height: 40px;
+}
+
+.faith-section-head p,
+.faith-muted,
+.faith-meta,
+.faith-empty,
+.faith-question-line {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.faith-youtube {
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.faith-youtube-link {
+  color: var(--faith-muted);
+  font-size: 12px;
+  margin-top: 6px;
+  text-decoration: none;
+}
+
+.faith-date,
+.faith-search-row label,
+.faith-file-field {
+  min-height: 42px;
+  padding: 0 10px;
+}
+
+.faith-date {
+  height: 42px;
+}
+
+.faith-tabs,
+.faith-segment,
+.faith-language-row {
+  border-radius: 10px;
+  gap: 2px;
+  padding: 3px;
+}
+
+.faith-tabs button,
+.faith-segment button {
+  border-radius: 8px;
+  font-size: 14px;
+  min-height: 34px;
+  padding: 0 8px;
+}
+
+.faith-language-row {
+  margin-top: 2px;
+}
+
+.faith-language-row button {
+  font-size: 13px;
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+.faith-reading .faith-section-head {
+  align-items: flex-start;
+  min-height: 0;
+}
+
+.faith-reading .faith-section-head > div {
+  min-width: 0;
+}
+
+.faith-reading .faith-section-head h3 {
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.faith-tool-row {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  height: 40px;
+  justify-content: flex-end;
+}
+
+.faith-tool-row .faith-icon-button {
+  height: 40px;
+  width: 40px;
+}
+
+.faith-verse-list {
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.faith-verse-list button {
+  border-radius: 10px;
+  grid-template-columns: 22px 1fr;
+  line-height: 1.7;
+  padding: 4px 0;
+}
+
+.faith-verse-list button.is-selected {
+  padding: 8px 10px;
+}
+
+.faith-verse-list sup {
+  font-size: 12px;
+}
+
+.faith-focus p,
+.faith-photo-post p,
+.faith-prayer-post p,
+.faith-question-post p,
+.faith-detail p,
+.faith-detail blockquote {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+
+.faith-photo-post img {
+  border-radius: 10px;
+  margin-left: -16px;
+  margin-top: 10px;
+  width: calc(100% + 32px);
+}
+
+.faith-meta {
+  font-size: 12px;
+}
+
+.faith-meta strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.faith-meta time,
+.faith-meta span {
+  color: var(--faith-muted);
+  font-size: 12px;
+}
+
+.faith-reaction-row {
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.faith-reaction {
+  border-radius: 8px;
+  font-size: 13px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 4px;
+}
+
+.faith-reaction svg {
+  height: 21px;
+  width: 21px;
+}
+
+.faith-field {
+  gap: 6px;
+}
+
+.faith-field span {
+  font-size: 13px;
+}
+
+.faith-field input {
+  height: 42px;
+  padding: 0 10px;
+}
+
+.faith-field textarea {
+  font-size: 15px;
+  line-height: 1.55;
+  min-height: 92px;
+  padding: 10px;
+}
+
+.faith-primary {
+  min-height: 46px;
+}
+
+.faith-file-field {
+  align-items: center;
+  border-style: dashed;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  min-height: 148px;
+  padding: 16px;
+}
+
+.faith-file-field img {
+  border-radius: 10px;
+  display: block;
+  max-height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.faith-file-field span {
+  color: var(--faith-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.faith-search-row {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.faith-search-row label {
+  min-height: 42px;
+}
+
+.faith-search-row > button {
+  border-radius: 10px;
+}
+
+.faith-tags {
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin: 0 -16px;
+  overflow-x: auto;
+  padding: 0 16px 2px;
+  scrollbar-width: none;
+}
+
+.faith-tags::-webkit-scrollbar {
+  display: none;
+}
+
+.faith-tags button,
+.faith-tags span,
+.faith-suggestions button {
+  border-radius: 8px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  min-height: 26px;
+  padding: 0 8px;
+}
+
+.faith-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.faith-record-list {
+  gap: 0;
+}
+
+.faith-record-row {
+  gap: 6px;
+  padding: 12px 0;
+}
+
+.faith-record-row time,
+.faith-record-row span {
+  font-size: 12px;
+}
+
+.faith-record-row strong {
+  font-size: 15px;
+}
+
+.faith-profile {
+  padding-bottom: 12px;
+}
+
+.faith-profile > svg {
+  height: 36px;
+  width: 36px;
+}
+
+.faith-profile h3 {
+  font-size: 20px;
+}
+
+.faith-profile p {
+  font-size: 13px;
+}
+
+.faith-week {
+  gap: 2px;
+}
+
+.faith-week button {
+  border: 0;
+  border-radius: 8px;
+  min-height: 44px;
+  padding: 2px 0;
+}
+
+.faith-week button[aria-pressed='true'] {
+  background: transparent;
+  border: 0;
+  color: var(--faith-primary);
+}
+
+.faith-week span,
+.faith-week em {
+  font-size: 10px;
+}
+
+.faith-week em {
+  color: var(--faith-primary);
+  font-size: 13px;
+  line-height: 0.8;
+  min-height: 10px;
+}
+
+.faith-week strong {
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.faith-week button[aria-pressed='true'] strong {
+  background: var(--faith-selected);
+  border-radius: 8px;
+  display: inline-grid;
+  min-height: 26px;
+  min-width: 26px;
+  place-items: center;
+}
+
+.faith-sync-dot {
+  display: none;
+}
+
+.faith-bottom-nav {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--faith-border);
+  bottom: 0;
+  box-shadow: none;
+  left: 0;
+  max-width: none;
+  padding: 2px 6px calc(2px + env(safe-area-inset-bottom));
+  right: 0;
+}
+
+.faith-bottom-nav button {
+  border-radius: 8px;
+  font-size: 11px;
+  gap: 2px;
+  min-height: 50px;
+  padding: 2px 0;
+}
+
+.faith-bottom-nav button[aria-current='page'] {
+  background: transparent;
+}
+
+.faith-bottom-nav button[aria-current='page'] svg {
+  background: var(--faith-selected);
+  border-radius: 10px;
+  box-sizing: content-box;
+  padding: 4px 9px;
+}
+
+.faith-bottom-nav svg {
+  height: 22px;
+  width: 22px;
+}
+
+@media (min-width: 720px) {
+  .app-shell-faith {
+    background: #f7f6f8;
+    padding: 24px 0;
+  }
+
+  .faith-screen {
+    border: 1px solid var(--faith-border);
+    border-radius: 18px;
+    margin: 0 auto;
+    max-width: 430px;
+    min-height: min(820px, calc(100svh - 48px));
+    overflow: hidden;
+  }
+
+  .faith-header {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+
+  .faith-bottom-nav {
+    left: 50%;
+    max-width: 430px;
+    transform: translateX(-50%);
+  }
+}

@@ -49,7 +49,7 @@ export function AppShell() {
         user={user}
         onSignIn={signInWithGoogle}
       >
-        <main className={`app-shell app-shell-subapp ${activeApp.id === 'mini-room' ? 'app-shell-minihome' : ''}`}>
+        <main className={`app-shell app-shell-subapp ${activeApp.id === 'mini-room' ? 'app-shell-minihome' : ''} ${activeApp.id === 'meditation' ? 'app-shell-faith' : ''}`}>
           {hasUpdate ? (
             <AppUpdateBanner
               isUpdating={isUpdating}

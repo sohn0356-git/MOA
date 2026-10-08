@@ -292,6 +292,36 @@ function formatDateTime(value: string | number | undefined) {
   return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
+function formatRelativeTime(value: string | number | undefined) {
+  const date = new Date(value ?? '')
+
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const diffMs = date.getTime() - Date.now()
+  const absMs = Math.abs(diffMs)
+  const formatter = new Intl.RelativeTimeFormat('ko-KR', { numeric: 'auto' })
+
+  if (absMs < 60 * 1000) {
+    return '방금 전'
+  }
+
+  if (absMs < 60 * 60 * 1000) {
+    return formatter.format(Math.round(diffMs / (60 * 1000)), 'minute')
+  }
+
+  if (absMs < 24 * 60 * 60 * 1000) {
+    return formatter.format(Math.round(diffMs / (60 * 60 * 1000)), 'hour')
+  }
+
+  if (absMs < 7 * 24 * 60 * 60 * 1000) {
+    return formatter.format(Math.round(diffMs / (24 * 60 * 60 * 1000)), 'day')
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' }).format(date)
+}
+
 function formatDateLabel(value: string) {
   const date = new Date(`${value}T00:00:00+09:00`)
 
@@ -663,6 +693,15 @@ export function MeditationApp() {
   }, [selectedDate])
   const lunchPraise = lunchPraiseTracks[0]
   const lunchPraiseEmbedUrl = lunchPraise ? getYouTubeEmbedUrl(lunchPraise.videoId || lunchPraise.youtubeUrl) : null
+  const photoPreviewUrl = useMemo(() => (crossFile ? URL.createObjectURL(crossFile) : ''), [crossFile])
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl) {
+        URL.revokeObjectURL(photoPreviewUrl)
+      }
+    }
+  }, [photoPreviewUrl])
 
   useEffect(() => {
     setSelectedVerseNumbers([])
@@ -1145,6 +1184,11 @@ export function MeditationApp() {
     return '내 기록'
   }
 
+  const canCreateFromHeader =
+    (activeTab === 'feed' && feedView === 'list') ||
+    (activeTab === 'prayer' && prayerView === 'list') ||
+    (activeTab === 'qna' && qnaView === 'list')
+
   return (
     <section className="sub-app faith-screen">
       <header className="faith-header">
@@ -1158,12 +1202,12 @@ export function MeditationApp() {
             <h2>{renderHeaderTitle()}</h2>
           </div>
         </div>
-        {activeTab === 'profile' ? (
-          <span className="faith-sync-dot" aria-label={syncState === 'synced' ? '동기화됨' : '연결 상태 확인 필요'} />
-        ) : (
+        {canCreateFromHeader ? (
           <button aria-label="새로 작성" className="faith-icon-button" type="button" onClick={handlePrimaryCreate}>
             <Icon name="plus" />
           </button>
+        ) : (
+          <span aria-hidden="true" />
         )}
       </header>
 
@@ -1173,19 +1217,23 @@ export function MeditationApp() {
         {activeTab === 'feed' ? (
           <section className="faith-stack">
             {feedView === 'write' ? (
-              <section className="faith-panel" aria-labelledby="photo-write-title">
+              <section className="faith-compose-screen" aria-labelledby="photo-write-title">
                 <div className="faith-section-head">
                   <h3 id="photo-write-title">사진 올리기</h3>
                   <button className="faith-text-button" type="button" onClick={() => setFeedView('list')}>취소</button>
                 </div>
                 <label className="faith-file-field">
-                  <Icon name="photo" />
-                  <span>{crossFile ? crossFile.name : '이미지 선택'}</span>
+                  {photoPreviewUrl ? (
+                    <img alt="" src={photoPreviewUrl} />
+                  ) : (
+                    <Icon name="photo" />
+                  )}
+                  <span>{crossFile ? '사진 변경' : '사진 선택'}</span>
                   <input accept="image/jpeg,image/png,image/webp" type="file" onChange={(event) => setCrossFile(event.target.files?.[0] ?? null)} />
                 </label>
                 <label className="faith-field">
                   <span>짧은 문장</span>
-                  <input maxLength={80} value={crossCaption} onChange={(event) => setCrossCaption(event.target.value)} />
+                  <textarea maxLength={80} rows={4} value={crossCaption} onChange={(event) => setCrossCaption(event.target.value)} />
                 </label>
                 <button className="faith-primary" disabled={!currentUser || !crossFile || isPhotoUploading} type="button" onClick={() => void handlePhotoUpload()}>
                   {isPhotoUploading ? '업로드 중' : '피드에 올리기'}
@@ -1223,7 +1271,7 @@ export function MeditationApp() {
                       <article className="faith-photo-post" key={photo.id}>
                         <div className="faith-meta">
                           <strong>{photo.authorName || authorName}</strong>
-                          <time>{formatDateTime(photo.createdAt)}</time>
+                          <time>{formatRelativeTime(photo.createdAt)}</time>
                         </div>
                         <img alt={photo.caption || '피드 사진'} src={photo.imageUrl} />
                         {photo.caption ? <p>{photo.caption}</p> : null}
@@ -1263,17 +1311,17 @@ export function MeditationApp() {
                     <h3 id="scripture-title">{plan.reference}</h3>
                     <p>{plan.title}</p>
                   </div>
-                  <div className="faith-icon-group">
-                    <button aria-label="글자 크기 줄이기" className="faith-icon-button" type="button" onClick={() => setFontScale((value) => Math.max(0.9, value - 0.05))}>
-                      <Icon name="font-size" />
-                    </button>
-                    <button aria-label="글자 크기 키우기" className="faith-icon-button" type="button" onClick={() => setFontScale((value) => Math.min(1.15, value + 0.05))}>
-                      <Icon name="plus" />
-                    </button>
-                    <button aria-label="선택 구절 책갈피" aria-pressed={bookmarked} className="faith-icon-button" type="button" onClick={() => setBookmarked((value) => !value)}>
-                      <Icon name={bookmarked ? 'bookmark-filled' : 'bookmark'} />
-                    </button>
-                  </div>
+                </div>
+                <div className="faith-tool-row">
+                  <button aria-label="글자 크기 줄이기" className="faith-icon-button" type="button" onClick={() => setFontScale((value) => Math.max(0.9, value - 0.05))}>
+                    <Icon name="font-size" />
+                  </button>
+                  <button aria-label="글자 크기 키우기" className="faith-icon-button" type="button" onClick={() => setFontScale((value) => Math.min(1.15, value + 0.05))}>
+                    <Icon name="plus" />
+                  </button>
+                  <button aria-label="선택 구절 책갈피" aria-pressed={bookmarked} className="faith-icon-button" type="button" onClick={() => setBookmarked((value) => !value)}>
+                    <Icon name={bookmarked ? 'bookmark-filled' : 'bookmark'} />
+                  </button>
                 </div>
                 <div className="faith-language-row" aria-label="말씀 언어">
                   {scriptureLanguageOptions.map((option) => (
@@ -1417,7 +1465,7 @@ export function MeditationApp() {
               <div className="faith-list">
                 {prayerRequests.length ? prayerRequests.map((request) => (
                   <article className="faith-prayer-post" key={request.id}>
-                    <div className="faith-meta"><strong>{request.authorName || authorName}</strong><time>{formatDateTime(request.createdAt)}</time></div>
+                    <div className="faith-meta"><strong>{request.authorName || authorName}</strong><time>{formatRelativeTime(request.createdAt)}</time></div>
                     <h3>{request.title}</h3>
                     {request.body ? <p>{request.body}</p> : null}
                     <ReactionRow
@@ -1508,7 +1556,7 @@ export function MeditationApp() {
                   {filteredQuestions.length ? filteredQuestions.map((question) => (
                     <article className="faith-question-post" key={question.id}>
                       <h3>{question.title}</h3>
-                      <p>{question.body}</p>
+                      <p className="faith-clamp">{question.body}</p>
                       <div className="faith-tags">{question.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
                       <div className="faith-meta"><strong>{question.authorName || authorName}</strong><span>답변 {question.answerCount ?? 0}</span></div>
                     </article>
@@ -1541,7 +1589,7 @@ export function MeditationApp() {
                   <button aria-pressed={dateKey === selectedDate} key={dateKey} type="button" onClick={() => setSelectedDate(dateKey)}>
                     <span>{new Intl.DateTimeFormat('ko-KR', { weekday: 'short', timeZone: 'Asia/Seoul' }).format(date)}</span>
                     <strong>{date.getDate()}</strong>
-                    <em>{count}</em>
+                    <em>{count > 0 ? '•' : ''}</em>
                   </button>
                 )
               })}
