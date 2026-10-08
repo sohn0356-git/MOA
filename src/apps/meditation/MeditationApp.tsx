@@ -1256,9 +1256,6 @@ export function MeditationApp() {
                         src={lunchPraiseEmbedUrl}
                         title={lunchPraise?.title ? `오찬추: ${lunchPraise.title}` : '오늘의 찬송 추천 YouTube 영상'}
                       />
-                      {lunchPraise?.youtubeUrl ? (
-                        <a className="faith-youtube-link" href={lunchPraise.youtubeUrl} rel="noreferrer" target="_blank">YouTube에서 열기</a>
-                      ) : null}
                     </>
                   ) : (
                     <EmptyState>중앙 설정에 YouTube videoId 또는 링크가 아직 없습니다.</EmptyState>
