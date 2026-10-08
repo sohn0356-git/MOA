@@ -1118,8 +1118,8 @@ export function MeditationApp() {
   const profileAvatarPreview = profileUseDefaultAvatar ? '' : profilePreviewObjectUrl || currentProfile.avatarUrl
 
   useEffect(() => {
-    setEditingPhotoCaption(selectedProfilePhoto?.caption ?? '')
-  }, [selectedProfilePhoto?.caption, selectedProfilePhoto?.id])
+    setEditingPhotoCaption((selectedProfilePhoto ?? selectedFeedPhoto)?.caption ?? '')
+  }, [selectedFeedPhoto?.caption, selectedFeedPhoto?.id, selectedProfilePhoto?.caption, selectedProfilePhoto?.id])
 
   useEffect(() => {
     return () => {
@@ -2314,14 +2314,14 @@ export function MeditationApp() {
                   </div>
                   <p className="faith-muted">일상에서 만난 십자가를 사진으로 나눠보세요.</p>
                   {activeCrossPhoto ? (
-                    <article className={`faith-photo-slide faith-photo-slide-${photoSlideDirection}`} key={activeCrossPhoto.id}>
+                    <article className="faith-photo-slide" key={activeCrossPhoto.id}>
                       <AuthorRow
                         avatarUrl={activeCrossPhoto.authorAvatarUrl}
                         name={activeCrossPhoto.authorName || authorName}
                         time={formatRelativeTime(activeCrossPhoto.createdAt)}
                       />
                       <div
-                        className="faith-photo-frame"
+                        className={`faith-photo-frame faith-photo-frame-${photoSlideDirection}`}
                         onTouchEnd={(event) => {
                           const start = photoTouchRef.current
                           photoTouchRef.current = null
@@ -3035,13 +3035,23 @@ export function MeditationApp() {
             <img alt={selectedFeedPhoto.caption || '십자가 사진'} src={selectedFeedPhoto.imageUrl} />
             <div>
               <time>{formatDateTime(selectedFeedPhoto.createdAt)}</time>
-              {selectedFeedPhoto.caption ? <p>{selectedFeedPhoto.caption}</p> : null}
               {selectedFeedPhoto.ownerUid === currentUser?.uid ? (
-                <div className="faith-detail-actions">
-                  <button className="faith-danger-button" type="button" onClick={() => void handlePhotoDelete(selectedFeedPhoto)}>
-                    <Icon name="close" /> 삭제
-                  </button>
-                </div>
+                <>
+                  <label className="faith-field">
+                    <span>짧은 문장</span>
+                    <textarea rows={3} value={editingPhotoCaption} onChange={(event) => setEditingPhotoCaption(event.target.value)} />
+                  </label>
+                  <div className="faith-detail-actions">
+                    <button className="faith-outline-button" type="button" onClick={() => void handlePhotoCaptionUpdate(selectedFeedPhoto)}>
+                      <Icon name="edit" /> 수정
+                    </button>
+                    <button className="faith-danger-button" type="button" onClick={() => void handlePhotoDelete(selectedFeedPhoto)}>
+                      <Icon name="close" /> 삭제
+                    </button>
+                  </div>
+                </>
+              ) : selectedFeedPhoto.caption ? (
+                <p>{selectedFeedPhoto.caption}</p>
               ) : null}
             </div>
           </article>

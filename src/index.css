@@ -6594,12 +6594,14 @@ select:disabled {
   gap: 8px;
 }
 
-.faith-photo-slide-forward {
-  animation: faith-photo-slide-forward 240ms ease-out both;
+.faith-photo-frame-forward .faith-photo-open,
+.faith-photo-frame-forward > img {
+  animation: faith-photo-slide-forward 220ms ease-out both;
 }
 
-.faith-photo-slide-backward {
-  animation: faith-photo-slide-backward 240ms ease-out both;
+.faith-photo-frame-backward .faith-photo-open,
+.faith-photo-frame-backward > img {
+  animation: faith-photo-slide-backward 220ms ease-out both;
 }
 
 @keyframes faith-photo-slide-forward {
@@ -6627,8 +6629,10 @@ select:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .faith-photo-slide-forward,
-  .faith-photo-slide-backward {
+  .faith-photo-frame-forward .faith-photo-open,
+  .faith-photo-frame-forward > img,
+  .faith-photo-frame-backward .faith-photo-open,
+  .faith-photo-frame-backward > img {
     animation: none;
   }
 }
