@@ -29,6 +29,30 @@
   --blur: saturate(180%) blur(22px);
 }
 
+@font-face {
+  font-family: "NanumSquare Neo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/nanum-square-neo/NanumSquareNeoTTF-bRg.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "NanumSquare Neo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/nanum-square-neo/NanumSquareNeoTTF-cBd.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "NanumSquare Neo";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./assets/fonts/nanum-square-neo/NanumSquareNeoTTF-dEb.woff2") format("woff2");
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5847,6 +5871,7 @@ select:disabled {
 
 .faith-screen {
   font-size: 15px;
+  font-family: "NanumSquare Neo", system-ui, sans-serif;
   line-height: 1.6;
   margin: 0;
   max-width: none;
@@ -6140,6 +6165,10 @@ select:disabled {
 
 .faith-search-row {
   grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.faith-search-row label:only-child {
+  grid-column: 1 / -1;
 }
 
 .faith-search-row label {
@@ -6594,17 +6623,7 @@ select:disabled {
 }
 
 .faith-photo-nav {
-  background: rgb(255 255 255 / 86%);
-  border: 1px solid rgb(229 227 232 / 80%);
-  border-radius: 999px;
-  color: var(--faith-text);
-  display: grid;
-  height: 38px;
-  place-items: center;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 38px;
+  display: none;
 }
 
 .faith-photo-nav:disabled {
@@ -6856,6 +6875,27 @@ select:disabled {
 
 .faith-photo-frame img {
   object-fit: cover;
+}
+
+.faith-photo-dots {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  justify-content: center;
+  min-height: 16px;
+}
+
+.faith-photo-dots button {
+  background: #d8d5dc;
+  border: 0;
+  border-radius: 999px;
+  height: 8px;
+  padding: 0;
+  width: 8px;
+}
+
+.faith-photo-dots button[aria-pressed='true'] {
+  background: var(--faith-orchid);
 }
 
 .faith-photo-slide > p {
@@ -7183,6 +7223,106 @@ select:disabled {
 
 .faith-action-sheet button:last-child {
   color: var(--faith-muted);
+}
+
+.faith-upload-progress {
+  background: #faf9fb;
+  border: 1px solid var(--faith-border);
+  border-radius: 12px;
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.faith-upload-progress > div:first-child {
+  align-items: center;
+  color: var(--faith-text);
+  display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  justify-content: space-between;
+}
+
+.faith-upload-progress progress {
+  accent-color: var(--faith-orchid);
+  height: 8px;
+  width: 100%;
+}
+
+.faith-upload-progress small {
+  color: var(--faith-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.faith-upload-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.faith-upload-actions button,
+.faith-mini-actions button {
+  background: transparent;
+  border: 0;
+  color: var(--faith-primary);
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+.faith-row-link {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  min-height: 44px;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.faith-row-link svg {
+  color: var(--faith-muted);
+  height: 20px;
+  width: 20px;
+}
+
+.faith-mini-actions {
+  display: grid;
+  gap: 2px;
+}
+
+.faith-license-sheet {
+  background: #ffffff;
+  border-radius: 16px 16px 12px 12px;
+  box-shadow: 0 18px 50px rgb(34 33 39 / 18%);
+  display: grid;
+  gap: 12px;
+  max-height: min(82svh, 700px);
+  max-width: 430px;
+  overflow: hidden;
+  padding: 16px;
+  width: 100%;
+}
+
+.faith-license-sheet pre {
+  background: #faf9fb;
+  border: 1px solid var(--faith-border);
+  border-radius: 10px;
+  color: var(--faith-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0;
+  max-height: 62svh;
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
 }
 
 .faith-file-field img {
