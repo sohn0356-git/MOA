@@ -6731,6 +6731,486 @@ select:disabled {
   margin: 0;
 }
 
+.faith-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 52px;
+}
+
+.faith-title,
+.faith-title-brand {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.faith-title h2,
+.faith-title-brand h2 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.faith-title-brand svg {
+  color: var(--faith-primary);
+}
+
+.faith-avatar-button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  height: 44px;
+  place-items: center;
+  width: 44px;
+}
+
+.faith-avatar {
+  align-items: center;
+  background: var(--faith-selected);
+  border-radius: 999px;
+  color: var(--faith-primary);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-weight: 700;
+  justify-content: center;
+  line-height: 1;
+  object-fit: cover;
+  overflow: hidden;
+}
+
+.faith-avatar-header {
+  height: 34px;
+  width: 34px;
+}
+
+.faith-avatar-post {
+  font-size: 13px;
+  height: 34px;
+  width: 34px;
+}
+
+.faith-avatar-comment {
+  font-size: 11px;
+  height: 26px;
+  width: 26px;
+}
+
+.faith-avatar-profile {
+  font-size: 28px;
+  height: 78px;
+  width: 78px;
+}
+
+.faith-author-row {
+  align-items: center;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: auto minmax(0, 1fr) 44px;
+  min-height: 44px;
+}
+
+.faith-author-row strong {
+  color: var(--faith-text);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.faith-author-row time {
+  color: var(--faith-muted);
+  display: block;
+  font-size: 12px;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+.faith-youtube-section {
+  border-bottom: 1px solid var(--faith-border);
+  padding-bottom: 16px;
+}
+
+.faith-cross-section {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.faith-photo-frame {
+  aspect-ratio: 1 / 1;
+  background: #f6f5f7;
+  border-radius: 10px;
+}
+
+.faith-photo-open {
+  background: transparent;
+  border: 0;
+  display: block;
+  height: 100%;
+  padding: 0;
+  width: 100%;
+}
+
+.faith-photo-frame img {
+  object-fit: cover;
+}
+
+.faith-photo-slide > p {
+  color: var(--faith-text);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 2px 0 0;
+}
+
+.faith-underline-tabs {
+  align-items: center;
+  border-bottom: 1px solid var(--faith-border);
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.faith-underline-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.faith-underline-tabs button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--faith-muted);
+  flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 40px;
+  padding: 0 1px;
+}
+
+.faith-underline-tabs button[aria-selected='true'] {
+  border-bottom-color: var(--faith-primary);
+  color: var(--faith-primary);
+}
+
+.faith-qna-search {
+  align-items: center;
+  background: #f8f7f9;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 22px minmax(0, 1fr) 32px;
+  min-height: 44px;
+  padding: 0 10px 0 12px;
+}
+
+.faith-qna-search:focus-within {
+  border-color: var(--faith-primary);
+  box-shadow: 0 0 0 2px rgb(134 50 146 / 10%);
+}
+
+.faith-qna-search input {
+  background: transparent;
+  border: 0;
+  color: var(--faith-text);
+  font-size: 15px;
+  outline: none;
+  padding: 0;
+  width: 100%;
+}
+
+.faith-qna-search svg {
+  color: var(--faith-muted);
+  height: 20px;
+  width: 20px;
+}
+
+.faith-qna-search button {
+  background: transparent;
+  border: 0;
+  color: var(--faith-muted);
+  display: grid;
+  height: 32px;
+  place-items: center;
+  width: 32px;
+}
+
+.faith-question-actions {
+  align-items: center;
+  color: var(--faith-muted);
+  display: inline-flex;
+  font-size: 13px;
+  gap: 5px;
+  min-height: 32px;
+}
+
+.faith-question-actions svg {
+  height: 20px;
+  width: 20px;
+}
+
+.faith-write-fab {
+  align-items: center;
+  background: var(--faith-primary);
+  border: 0;
+  border-radius: 999px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  box-shadow: 0 10px 22px rgb(134 50 146 / 24%);
+  color: #ffffff;
+  display: inline-flex;
+  height: 52px;
+  justify-content: center;
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  width: 52px;
+  z-index: 25;
+}
+
+.faith-write-fab svg {
+  height: 22px;
+  width: 22px;
+}
+
+.faith-prayer-post,
+.faith-question-post {
+  display: grid;
+  gap: 7px;
+  padding: 13px 0;
+}
+
+.faith-prayer-post h3,
+.faith-question-post h3 {
+  margin-top: 2px;
+}
+
+.faith-comment-preview {
+  align-items: start;
+  background: #faf9fb;
+  border-radius: 10px;
+  display: grid;
+  gap: 7px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 8px;
+}
+
+.faith-comment-preview p {
+  color: var(--faith-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.faith-comment-preview strong {
+  color: var(--faith-text);
+  font-weight: 600;
+}
+
+.faith-comments article {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.faith-comments article > div {
+  min-width: 0;
+}
+
+.faith-comments article > div > div {
+  align-items: baseline;
+  display: flex;
+  gap: 6px;
+}
+
+.faith-profile {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 8px 0 4px;
+}
+
+.faith-profile-photo-edit {
+  display: inline-grid;
+  position: relative;
+  width: max-content;
+}
+
+.faith-profile-photo-edit > button {
+  align-items: center;
+  background: var(--faith-primary);
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  bottom: -2px;
+  color: #ffffff;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  position: absolute;
+  right: -3px;
+  width: 28px;
+}
+
+.faith-profile-photo-edit > button svg {
+  height: 15px;
+  width: 15px;
+}
+
+.faith-profile h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.faith-profile p {
+  color: var(--faith-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 4px 0 10px;
+}
+
+.faith-outline-button {
+  background: #ffffff;
+  border: 1px solid #d8d5dc;
+  border-radius: 10px;
+  color: var(--faith-text);
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.faith-profile-counts {
+  border-bottom: 1px solid var(--faith-border);
+  border-top: 1px solid var(--faith-border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 12px 0;
+  text-align: center;
+}
+
+.faith-profile-counts strong {
+  color: var(--faith-text);
+  display: block;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.faith-profile-counts span {
+  color: var(--faith-muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.faith-panel > .faith-tabs {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--faith-border);
+  border-radius: 0;
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0;
+}
+
+.faith-panel > .faith-tabs button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--faith-muted);
+  font-size: 14px;
+  min-height: 42px;
+}
+
+.faith-panel > .faith-tabs button[aria-selected='true'] {
+  background: transparent;
+  border-bottom-color: var(--faith-primary);
+  color: var(--faith-primary);
+}
+
+.faith-profile-edit {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  padding-top: 14px;
+}
+
+.faith-profile-edit .faith-field {
+  justify-self: stretch;
+  width: 100%;
+}
+
+.faith-counter {
+  color: var(--faith-muted);
+  font-size: 12px;
+  justify-self: end;
+  margin: -6px 0 0;
+}
+
+.faith-action-sheet {
+  background: #ffffff;
+  border-radius: 16px;
+  display: grid;
+  gap: 2px;
+  max-width: 430px;
+  overflow: hidden;
+  padding: 8px;
+  width: 100%;
+}
+
+.faith-action-sheet button,
+.faith-action-sheet label {
+  align-items: center;
+  background: #ffffff;
+  border: 0;
+  border-radius: 10px;
+  color: var(--faith-primary);
+  display: flex;
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.faith-action-sheet input {
+  display: none;
+}
+
+.faith-action-sheet button:last-child {
+  color: var(--faith-muted);
+}
+
+.faith-file-field img {
+  aspect-ratio: 1;
+  max-height: none;
+}
+
+.faith-position-controls {
+  display: grid;
+  gap: 9px;
+}
+
+.faith-position-controls label {
+  display: grid;
+  gap: 5px;
+}
+
+.faith-position-controls span {
+  color: var(--faith-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.faith-position-controls input {
+  accent-color: var(--faith-primary);
+  width: 100%;
+}
+
 @media (min-width: 720px) {
   .app-shell-faith {
     background: #f7f6f8;
@@ -6758,6 +7238,11 @@ select:disabled {
   }
 
   .faith-photo-fab {
+    left: calc(50% + 151px);
+    right: auto;
+  }
+
+  .faith-write-fab {
     left: calc(50% + 151px);
     right: auto;
   }
