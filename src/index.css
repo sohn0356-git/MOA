@@ -6299,6 +6299,438 @@ select:disabled {
   width: 22px;
 }
 
+.faith-field input,
+.faith-field textarea,
+.faith-search-row input,
+.faith-comment-composer input {
+  background: #ffffff;
+  border: 1px solid #d8d5dc;
+  border-radius: 11px;
+  outline: none;
+}
+
+.faith-field input:focus,
+.faith-field textarea:focus,
+.faith-search-row input:focus,
+.faith-comment-composer input:focus,
+.faith-date:focus-within,
+.faith-search-row label:focus-within,
+.faith-file-field:focus-within {
+  border-color: var(--faith-primary);
+  box-shadow: 0 0 0 2px rgb(134 50 146 / 10%);
+}
+
+.faith-field input {
+  padding: 0 13px;
+}
+
+.faith-field textarea {
+  min-height: 96px;
+  padding: 12px 13px;
+  resize: vertical;
+}
+
+.faith-comment-composer {
+  align-items: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
+}
+
+.faith-comment-composer label {
+  display: grid;
+  gap: 5px;
+}
+
+.faith-comment-composer label span {
+  color: var(--faith-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.faith-comment-composer input {
+  height: 42px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.faith-tags button,
+.faith-tags span,
+.faith-suggestions button {
+  align-items: center;
+  border: 1px solid transparent;
+  display: inline-flex;
+  gap: 5px;
+  height: 30px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.faith-tags span {
+  background: #ffffff;
+  border-color: var(--faith-border);
+  color: var(--faith-muted);
+}
+
+.faith-tag-chip svg {
+  height: 14px;
+  width: 14px;
+}
+
+.faith-tag-chip.is-selected,
+.faith-tags button[aria-pressed='true'] {
+  background: var(--faith-primary);
+  color: #ffffff;
+}
+
+.faith-suggestions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.faith-suggestions button {
+  background: #ffffff;
+  border-color: var(--faith-border);
+  color: var(--faith-text);
+}
+
+.faith-suggestions button[aria-selected='true'] {
+  background: var(--faith-selected);
+  border-color: var(--faith-melon);
+  color: var(--faith-primary);
+}
+
+.faith-inline-empty {
+  color: var(--faith-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.faith-verse-empty {
+  align-items: center;
+  background: #fffafa;
+  border: 1px dashed #d8d5dc;
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 18px 14px;
+  text-align: center;
+}
+
+.faith-verse-empty svg {
+  color: var(--faith-primary);
+  height: 24px;
+  width: 24px;
+}
+
+.faith-verse-empty strong {
+  color: var(--faith-text);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.faith-verse-empty p {
+  color: var(--faith-muted);
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+
+.faith-focus {
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.faith-focus .faith-section-head {
+  min-height: 0;
+}
+
+.faith-selected-verses {
+  display: grid;
+  gap: 8px;
+}
+
+.faith-selected-verses p {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  margin: 0;
+}
+
+.faith-selected-verses sup {
+  color: var(--faith-primary);
+  font-size: 12px;
+  line-height: 1.6;
+  top: 0;
+}
+
+.faith-sheet-backdrop {
+  align-items: end;
+  background: rgb(34 33 39 / 24%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px 16px calc(82px + env(safe-area-inset-bottom));
+  position: fixed;
+  z-index: 40;
+}
+
+.faith-verse-sheet,
+.faith-photo-detail {
+  background: #ffffff;
+  border-radius: 16px 16px 12px 12px;
+  box-shadow: 0 18px 50px rgb(34 33 39 / 18%);
+  max-height: min(78svh, 640px);
+  max-width: 430px;
+  overflow: auto;
+  padding: 16px;
+  width: 100%;
+}
+
+.faith-verse-picker {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.faith-verse-picker button {
+  align-items: start;
+  background: #ffffff;
+  border: 1px solid var(--faith-border);
+  border-radius: 12px;
+  color: var(--faith-text);
+  display: grid;
+  grid-template-columns: 22px 22px 1fr;
+  line-height: 1.55;
+  padding: 11px 10px;
+  text-align: left;
+}
+
+.faith-verse-picker button[aria-pressed='true'] {
+  background: var(--faith-selected);
+  border-color: var(--faith-melon);
+}
+
+.faith-verse-picker span {
+  color: var(--faith-primary);
+  display: inline-grid;
+  height: 18px;
+  place-items: center;
+  width: 18px;
+}
+
+.faith-verse-picker svg {
+  height: 17px;
+  width: 17px;
+}
+
+.faith-verse-picker sup {
+  color: var(--faith-primary);
+  font-size: 12px;
+  line-height: 1.7;
+  top: 0;
+}
+
+.faith-verse-picker em {
+  font-style: normal;
+}
+
+.faith-sheet-action {
+  align-items: center;
+  border-top: 1px solid var(--faith-border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.faith-sheet-action span {
+  color: var(--faith-muted);
+  font-size: 13px;
+}
+
+.faith-cross-section {
+  border-top: 1px solid var(--faith-border);
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.faith-photo-slide {
+  display: grid;
+  gap: 8px;
+}
+
+.faith-photo-frame {
+  aspect-ratio: 4 / 5;
+  background: #f8f7f9;
+  border-radius: 10px;
+  margin-inline: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.faith-photo-frame img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.faith-photo-count {
+  background: rgb(34 33 39 / 64%);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 8px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+}
+
+.faith-photo-nav {
+  background: rgb(255 255 255 / 86%);
+  border: 1px solid rgb(229 227 232 / 80%);
+  border-radius: 999px;
+  color: var(--faith-text);
+  display: grid;
+  height: 38px;
+  place-items: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+}
+
+.faith-photo-nav:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.faith-photo-prev {
+  left: 8px;
+}
+
+.faith-photo-next {
+  right: 8px;
+}
+
+.faith-photo-fab {
+  align-items: center;
+  background: var(--faith-primary);
+  border: 0;
+  border-radius: 999px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  box-shadow: 0 10px 24px rgb(134 50 146 / 28%);
+  color: #ffffff;
+  display: inline-flex;
+  height: 52px;
+  justify-content: center;
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  width: 52px;
+  z-index: 25;
+}
+
+.faith-photo-fab svg {
+  height: 23px;
+  width: 23px;
+}
+
+.faith-file-field img[data-fit='contain'] {
+  object-fit: contain;
+}
+
+.faith-file-field img[data-fit='cover'] {
+  object-fit: cover;
+}
+
+.faith-photo-grid {
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: 4px;
+}
+
+.faith-photo-grid button {
+  aspect-ratio: 1;
+  background: #f8f7f9;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.faith-photo-grid img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.faith-photo-detail {
+  align-self: center;
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  max-height: 86svh;
+  position: relative;
+}
+
+.faith-photo-detail > button {
+  background: rgb(255 255 255 / 86%);
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
+.faith-photo-detail img {
+  border-radius: 10px;
+  display: block;
+  max-height: 62svh;
+  object-fit: contain;
+  width: 100%;
+}
+
+.faith-photo-detail time,
+.faith-photo-detail span {
+  color: var(--faith-muted);
+  display: block;
+  font-size: 12px;
+}
+
+.faith-photo-detail p {
+  color: var(--faith-text);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 6px 0;
+}
+
+.faith-expand-row {
+  align-items: stretch;
+  display: grid;
+}
+
+.faith-inline-detail {
+  border-top: 1px solid var(--faith-border);
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 10px;
+}
+
+.faith-inline-detail p {
+  color: var(--faith-text);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0;
+}
+
 @media (min-width: 720px) {
   .app-shell-faith {
     background: #f7f6f8;
@@ -6323,5 +6755,10 @@ select:disabled {
     left: 50%;
     max-width: 430px;
     transform: translateX(-50%);
+  }
+
+  .faith-photo-fab {
+    left: calc(50% + 151px);
+    right: auto;
   }
 }

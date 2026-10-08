@@ -4,6 +4,34 @@
       ".read": true,
       ".write": "auth != null && auth.token.admin === true"
     },
+    "crossPhotos": {
+      ".read": true,
+      "$photoId": {
+        ".write": "auth != null && !data.exists() && newData.child('ownerUid').val() === auth.uid",
+        "prayerCount": {
+          ".write": "auth != null"
+        },
+        "commentCount": {
+          ".write": "auth != null"
+        }
+      }
+    },
+    "crossPhotoComments": {
+      ".read": true,
+      "$photoId": {
+        "$commentId": {
+          ".write": "auth != null && (!data.exists() ? newData.child('authorUid').val() === auth.uid : data.child('authorUid').val() === auth.uid)"
+        }
+      }
+    },
+    "crossPhotoReactions": {
+      ".read": true,
+      "$photoId": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
