@@ -6594,6 +6594,45 @@ select:disabled {
   gap: 8px;
 }
 
+.faith-photo-slide-forward {
+  animation: faith-photo-slide-forward 240ms ease-out both;
+}
+
+.faith-photo-slide-backward {
+  animation: faith-photo-slide-backward 240ms ease-out both;
+}
+
+@keyframes faith-photo-slide-forward {
+  from {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes faith-photo-slide-backward {
+  from {
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faith-photo-slide-forward,
+  .faith-photo-slide-backward {
+    animation: none;
+  }
+}
+
 .faith-photo-frame {
   aspect-ratio: 4 / 5;
   background: #f8f7f9;
