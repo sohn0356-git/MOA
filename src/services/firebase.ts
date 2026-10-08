@@ -1,4 +1,4 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app'
+import { getApps, initializeApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
 import { getDatabase, type Database } from 'firebase/database'
 import { getStorage, type FirebaseStorage } from 'firebase/storage'
@@ -53,7 +53,7 @@ export function getFirebaseApp() {
     throw new Error(configError)
   }
 
-  firebaseApp ??= initializeApp(firebaseConfig)
+  firebaseApp ??= getApps()[0] ?? initializeApp(firebaseConfig)
   return firebaseApp
 }
 
