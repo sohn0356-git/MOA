@@ -166,8 +166,21 @@ function getKstDateKey(value = new Date()) {
   return { dayKey: `${month}${day}`, isoDate: `${year}-${month}-${day}`, year }
 }
 
+function addDaysToKstDateKey(isoDate, days) {
+  const date = new Date(`${isoDate}T12:00:00+09:00`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return getKstDateKey(date)
+}
+
 function sameVersePayload(first, second) {
-  return JSON.stringify(first) === JSON.stringify(second)
+  if (!first || typeof first !== 'object' || !second || typeof second !== 'object') {
+    return false
+  }
+
+  return first.date === second.date
+    && JSON.stringify(first.range) === JSON.stringify(second.range)
+    && first.translation === second.translation
+    && JSON.stringify(first.verses) === JSON.stringify(second.verses)
 }
 
 function decodeHtml(value) {
@@ -398,6 +411,37 @@ async function updateLanguageCache(language, range, getVerses, translation) {
   return true
 }
 
+async function resolveKoreanVersesForCandidate(range, candidate) {
+  const bible = await fetchDurannoBible(candidate.isoDate)
+  const verses = parseBibleVerses(bible.html, range[2], range[3])
+
+  if (!verses.length || verses.some((verse) => !verse.text)) {
+    throw new Error(`Duranno returned empty verses for ${candidate.isoDate}.`)
+  }
+
+  return {
+    ...candidate,
+    sourceUrl: bible.sourceUrl,
+    verses,
+  }
+}
+
+async function resolveTargetVerse(today, range) {
+  const tomorrow = addDaysToKstDateKey(today.isoDate, 1)
+  const candidates = process.env.UPDATE_DATE ? [today] : [today, tomorrow]
+  const errors = []
+
+  for (const candidate of candidates) {
+    try {
+      return await resolveKoreanVersesForCandidate(range, candidate)
+    } catch (error) {
+      errors.push(`${candidate.isoDate}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  throw new Error(`Could not resolve non-empty Duranno verses for current KST candidates. ${errors.join(' | ')}`)
+}
+
 function getServiceAccount() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT
 
@@ -414,15 +458,15 @@ async function main() {
   const databaseURL =
     process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`
   const targetDate = process.env.UPDATE_DATE ? new Date(`${process.env.UPDATE_DATE}T00:00:00+09:00`) : new Date()
-  const { dayKey, isoDate, year } = getKstDateKey(targetDate)
+  const requested = getKstDateKey(targetDate)
+  const runKst = getKstDateKey(new Date())
   const html = await fetchDurannoHome()
   const range = parseTodayQt(html)
-  let koreanSourceUrl = ''
-  let koreanVerses = []
+  const target = await resolveTargetVerse(requested, range)
+  const { dayKey, isoDate, year } = target
+  let koreanVerses = target.verses
+
   await updateLanguageCache('ko', range, async () => {
-    const bible = await fetchDurannoBible(isoDate)
-    koreanSourceUrl = bible.sourceUrl
-    koreanVerses = parseBibleVerses(bible.html, range[2], range[3])
     return koreanVerses
   }, '개역개정')
   if (!koreanVerses.length) {
@@ -446,23 +490,29 @@ async function main() {
     const payload = {
       date: isoDate,
       range,
-      sourceUrl: koreanSourceUrl,
+      sourceUrl: target.sourceUrl,
       translation: '개역개정',
       verses: koreanVerses,
     }
     const verseRef = db.ref(`verse/${year}/${dayKey}`)
     const snapshot = await withTimeout(verseRef.get(), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse read')
+    const existing = snapshot.val()
+
+    if (existing?.date && existing.date > isoDate) {
+      throw new Error(`Refusing to write older verse ${isoDate}; existing date is ${existing.date}.`)
+    }
+
     if (sameVersePayload(snapshot.val(), payload)) {
-      console.log(`Skipped verse/${year}/${dayKey}; content already up to date at ${new Date().toISOString()}`)
+      console.log(`Skipped verse/${year}/${dayKey}; content already up to date at ${new Date().toISOString()}; runKst=${runKst.isoDate}; targetKst=${isoDate}`)
     } else {
       await withTimeout(verseRef.set(payload), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
-      console.log(`Wrote verse/${year}/${dayKey} at ${new Date().toISOString()}`)
+      console.log(`Wrote verse/${year}/${dayKey} at ${new Date().toISOString()}; runKst=${runKst.isoDate}; targetKst=${isoDate}`)
     }
   } finally {
     await deleteApp(app)
   }
 
-  console.log(`Checked verse/${year}/${dayKey} for KST target ${isoDate}: ${JSON.stringify(range)}`)
+  console.log(`Checked verse/${year}/${dayKey}; cron may be delayed; actualRunUtc=${new Date().toISOString()}; runKst=${runKst.isoDate}; targetKst=${isoDate}; range=${JSON.stringify(range)}`)
 }
 
 main().catch((error) => {

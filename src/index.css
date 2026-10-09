@@ -5155,7 +5155,7 @@ select:disabled {
 
 .faith-header {
   align-items: center;
-  background: rgb(255 255 255 / 94%);
+  background: #ffffff;
   border-bottom: 1px solid var(--faith-border);
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 44px;
@@ -5188,7 +5188,7 @@ select:disabled {
 .faith-title h2 {
   color: var(--faith-text);
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
   margin: 0;
 }
@@ -5290,8 +5290,8 @@ select:disabled {
 .faith-question-post h3,
 .faith-detail h3 {
   color: var(--faith-text);
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.3;
   margin: 0;
 }
@@ -6287,8 +6287,8 @@ select:disabled {
 }
 
 .faith-week button[aria-pressed='true'] strong {
-  background: var(--faith-selected);
-  border-radius: 8px;
+  background: var(--faith-melon);
+  border-radius: 999px;
   display: inline-grid;
   min-height: 26px;
   min-width: 26px;
@@ -6325,10 +6325,11 @@ select:disabled {
 }
 
 .faith-bottom-nav button[aria-current='page'] svg {
-  background: var(--faith-selected);
-  border-radius: 10px;
+  background: var(--faith-melon);
+  border-radius: 999px;
   box-sizing: content-box;
-  padding: 4px 9px;
+  color: var(--faith-primary);
+  padding: 4px;
 }
 
 .faith-bottom-nav svg {
@@ -6695,7 +6696,7 @@ select:disabled {
 
 .faith-photo-frame {
   aspect-ratio: 4 / 3;
-  background: #f8f7f9;
+  background: #ffffff;
   border-radius: 10px;
   margin-inline: 0;
   overflow: hidden;
@@ -6951,7 +6952,7 @@ select:disabled {
 
 .faith-photo-frame {
   aspect-ratio: 4 / 3;
-  background: #f6f5f7;
+  background: #ffffff;
   border-radius: 10px;
 }
 
@@ -6965,7 +6966,7 @@ select:disabled {
 }
 
 .faith-photo-frame img {
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .faith-photo-dots {
@@ -6994,8 +6995,12 @@ select:disabled {
 
 .faith-feed-list {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   padding-bottom: 72px;
+}
+
+.faith-feed-sentinel {
+  min-height: 1px;
 }
 
 .faith-more-menu {
@@ -7267,11 +7272,9 @@ select:disabled {
 }
 
 .faith-profile-counts {
-  border-bottom: 1px solid var(--faith-border);
-  border-top: 1px solid var(--faith-border);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  padding: 12px 0;
+  padding: 4px 0 8px;
   text-align: center;
 }
 
@@ -7287,6 +7290,25 @@ select:disabled {
   display: block;
   font-size: 12px;
   margin-top: 3px;
+}
+
+.faith-week-panel {
+  display: grid;
+  gap: 8px;
+  padding: 2px 0 8px;
+}
+
+.faith-week-head {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+}
+
+.faith-week-head strong {
+  color: var(--faith-text);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .faith-panel > .faith-tabs {

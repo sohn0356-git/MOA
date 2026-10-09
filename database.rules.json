@@ -35,7 +35,57 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid",
+        "crossPhotos": {
+          "$photoId": {
+            ".validate": "!newData.exists() || newData.child('ownerUid').val() === auth.uid"
+          }
+        },
+        "crossPhotoComments": {
+          "$photoId": {
+            "$commentId": {
+              ".write": "auth != null && auth.uid === $uid && (!data.exists() ? newData.child('authorUid').val() === auth.uid : data.child('authorUid').val() === auth.uid)"
+            }
+          }
+        },
+        "crossPhotoReactions": {
+          "$photoId": {
+            "$reactionUid": {
+              ".write": "auth != null && auth.uid === $uid && auth.uid === $reactionUid"
+            }
+          }
+        },
+        "prayerRequests": {
+          "$prayerId": {
+            ".validate": "!newData.exists() || newData.child('authorUid').val() === auth.uid"
+          }
+        },
+        "prayerComments": {
+          "$prayerId": {
+            "$commentId": {
+              ".write": "auth != null && auth.uid === $uid && (!data.exists() ? newData.child('authorUid').val() === auth.uid : data.child('authorUid').val() === auth.uid)"
+            }
+          }
+        },
+        "prayerReactions": {
+          "$prayerId": {
+            "$reactionUid": {
+              ".write": "auth != null && auth.uid === $uid && auth.uid === $reactionUid"
+            }
+          }
+        },
+        "faithQuestions": {
+          "$questionId": {
+            ".validate": "!newData.exists() || newData.child('authorUid').val() === auth.uid"
+          }
+        },
+        "questionAnswers": {
+          "$questionId": {
+            "$answerId": {
+              ".write": "auth != null && auth.uid === $uid && (!data.exists() ? newData.child('authorUid').val() === auth.uid : data.child('authorUid').val() === auth.uid)"
+            }
+          }
+        }
       }
     }
   }
