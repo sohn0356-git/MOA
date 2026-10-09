@@ -28,6 +28,7 @@ service firebase.storage {
     match /users/{uid}/photos/{fileName} {
       allow read: if true;
       allow write: if isOwner(uid) && validImage();
+      allow delete: if isOwner(uid);
     }
 
     match /users/{uid}/music/{fileName} {

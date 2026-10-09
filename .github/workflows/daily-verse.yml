@@ -2,7 +2,8 @@ name: Update Daily Meditation Verse
 
 on:
   schedule:
-    - cron: '0 15 * * *'
+    - cron: '*/10 14-15 * * *'
+    - cron: '0 16 * * *'
   workflow_dispatch:
     inputs:
       update_date:
@@ -12,6 +13,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: daily-verse
+  cancel-in-progress: false
 
 jobs:
   update:

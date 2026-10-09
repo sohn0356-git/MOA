@@ -751,11 +751,17 @@ function Avatar({
 
 function AuthorRow({
   avatarUrl,
+  canManage = false,
   name,
+  onDelete,
+  onEdit,
   time,
 }: {
   avatarUrl?: string
+  canManage?: boolean
   name: string
+  onDelete?: () => void
+  onEdit?: () => void
   time?: string
 }) {
   return (
@@ -765,7 +771,15 @@ function AuthorRow({
         <strong>{name}</strong>
         {time ? <time>{time}</time> : null}
       </div>
-      <button aria-label="더보기" className="faith-icon-button" type="button"><Icon name="more" /></button>
+      {canManage ? (
+        <details className="faith-more-menu">
+          <summary aria-label="더보기"><Icon name="more" /></summary>
+          <div>
+            {onEdit ? <button type="button" onClick={onEdit}>수정</button> : null}
+            {onDelete ? <button type="button" onClick={onDelete}>삭제</button> : null}
+          </div>
+        </details>
+      ) : <span aria-hidden="true" />}
     </div>
   )
 }
@@ -949,12 +963,12 @@ function UploadProgress({
 
 export function MeditationApp() {
   const recordListRef = useRef<HTMLDivElement | null>(null)
-  const photoTouchRef = useRef<{ x: number; y: number } | null>(null)
   const [activeTab, setActiveTab] = useState<FaithTab>('feed')
   const [devotionView, setDevotionView] = useState<DevotionView>('read')
   const [feedView, setFeedView] = useState<FeedView>('list')
   const [prayerView, setPrayerView] = useState<PrayerView>('list')
   const [qnaView, setQnaView] = useState<QnaView>('list')
+  const [currentTodayKey, setCurrentTodayKey] = useState(getTodayKey)
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
   const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>('ko')
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
@@ -980,13 +994,15 @@ export function MeditationApp() {
   const [crossFile, setCrossFile] = useState<File | null>(null)
   const [crossPreviewUrl, setCrossPreviewUrl] = useState('')
   const [crossUploadState, setCrossUploadState] = useState<UploadProgressState>(idleUploadState)
+  const [editingPhotoFile, setEditingPhotoFile] = useState<File | null>(null)
+  const [editingPhotoPreviewUrl, setEditingPhotoPreviewUrl] = useState('')
+  const [editingPhotoUploadState, setEditingPhotoUploadState] = useState<UploadProgressState>(idleUploadState)
   const [photoFitMode, setPhotoFitMode] = useState<'cover' | 'contain'>('contain')
   const [photoPositionX, setPhotoPositionX] = useState(50)
   const [photoPositionY, setPhotoPositionY] = useState(50)
   const [isPhotoUploading, setIsPhotoUploading] = useState(false)
   const photoUploadTaskRef = useRef<UploadTask | null>(null)
-  const [activeCrossPhotoIndex, setActiveCrossPhotoIndex] = useState(0)
-  const [photoSlideDirection, setPhotoSlideDirection] = useState<'backward' | 'forward'>('forward')
+  const editingPhotoUploadTaskRef = useRef<UploadTask | null>(null)
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [photoReactionMap, setPhotoReactionMap] = useState<Record<string, boolean>>({})
   const [publicPhotoReactionMap, setPublicPhotoReactionMap] = useState<Record<string, boolean>>({})
@@ -1025,6 +1041,7 @@ export function MeditationApp() {
   const [expandedProfileQuestionId, setExpandedProfileQuestionId] = useState('')
   const [selectedProfilePhotoId, setSelectedProfilePhotoId] = useState('')
   const [selectedFeedPhotoId, setSelectedFeedPhotoId] = useState('')
+  const [editingFeedPhotoId, setEditingFeedPhotoId] = useState('')
   const [editingPhotoCaption, setEditingPhotoCaption] = useState('')
   const [faithProfile, setFaithProfile] = useState<FaithProfile | null>(null)
   const [profileView, setProfileView] = useState<'records' | 'edit'>('records')
@@ -1052,7 +1069,7 @@ export function MeditationApp() {
   const authorAvatarUrl = currentProfile.avatarUrl
   const canSave = Boolean(mind.trim() || apply.trim() || prayerText.trim())
   const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null
-  const todayKey = getTodayKey()
+  const todayKey = currentTodayKey
   const allQuestionTags = useMemo(() => normalizeFaithTags(faithQuestions.flatMap((question) => question.tags)), [faithQuestions])
   const normalizedTagInput = useMemo(() => normalizeFaithTags([questionTagInput])[0] ?? '', [questionTagInput])
   const tagSuggestions = useMemo(
@@ -1091,12 +1108,9 @@ export function MeditationApp() {
       .filter((photo) => isPhotoPublic(photo, nowMs))
       .sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt))
   }, [crossPhotos, currentUser?.uid, nowMs, publicFeedPhotos])
-  const activeCrossPhoto = publicCrossPhotos[Math.min(activeCrossPhotoIndex, Math.max(0, publicCrossPhotos.length - 1))] ?? null
   const selectedProfilePhoto = crossPhotos.find((photo) => photo.id === selectedProfilePhotoId) ?? null
   const selectedFeedPhoto = publicCrossPhotos.find((photo) => (photo.publicId ?? photo.id) === selectedFeedPhotoId) ?? null
-  const activePhotoKey = activeCrossPhoto?.publicId ?? activeCrossPhoto?.id ?? ''
-  const activePhotoComments = activePhotoKey ? (publicPhotoComments[activePhotoKey] ?? photoComments[activePhotoKey] ?? []) : []
-  const activePhotoReacted = activePhotoKey ? Boolean(publicPhotoReactionMap[activePhotoKey] ?? photoReactionMap[activePhotoKey]) : false
+  const editingFeedPhoto = publicCrossPhotos.find((photo) => (photo.publicId ?? photo.id) === editingFeedPhotoId) ?? null
   const selectedPrayer = prayerRequests.find((request) => request.id === selectedPrayerId) ?? null
   const selectedQuestion = faithQuestions.find((question) => question.id === selectedQuestionId) ?? null
   const filteredEntries = useMemo(() => {
@@ -1140,8 +1154,8 @@ export function MeditationApp() {
   const profileAvatarPreview = profileUseDefaultAvatar ? '' : profilePreviewObjectUrl || currentProfile.avatarUrl
 
   useEffect(() => {
-    setEditingPhotoCaption((selectedProfilePhoto ?? selectedFeedPhoto)?.caption ?? '')
-  }, [selectedFeedPhoto?.caption, selectedFeedPhoto?.id, selectedProfilePhoto?.caption, selectedProfilePhoto?.id])
+    setEditingPhotoCaption((selectedProfilePhoto ?? selectedFeedPhoto ?? editingFeedPhoto)?.caption ?? '')
+  }, [editingFeedPhoto?.caption, editingFeedPhoto?.id, selectedFeedPhoto?.caption, selectedFeedPhoto?.id, selectedProfilePhoto?.caption, selectedProfilePhoto?.id])
 
   useEffect(() => {
     return () => {
@@ -1160,13 +1174,38 @@ export function MeditationApp() {
   }, [profilePreviewObjectUrl])
 
   useEffect(() => {
+    return () => {
+      if (editingPhotoPreviewUrl) {
+        URL.revokeObjectURL(editingPhotoPreviewUrl)
+      }
+    }
+  }, [editingPhotoPreviewUrl])
+
+  useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 60 * 1000)
     return () => window.clearInterval(timer)
   }, [])
 
   useEffect(() => {
-    setActiveCrossPhotoIndex((index) => Math.min(index, Math.max(0, publicCrossPhotos.length - 1)))
-  }, [publicCrossPhotos.length])
+    const refreshToday = () => {
+      const nextToday = getTodayKey()
+      setCurrentTodayKey((previousToday) => {
+        if (previousToday !== nextToday) {
+          setSelectedDate((date) => date === previousToday ? nextToday : date)
+        }
+        return nextToday
+      })
+    }
+
+    const timer = window.setInterval(refreshToday, 60 * 1000)
+    window.addEventListener('focus', refreshToday)
+    document.addEventListener('visibilitychange', refreshToday)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', refreshToday)
+      document.removeEventListener('visibilitychange', refreshToday)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isLicenseOpen || licenseText) {
@@ -1465,6 +1504,38 @@ export function MeditationApp() {
     }
   }
 
+  async function handleEditingPhotoFileSelected(file?: File | null) {
+    if (!file) {
+      setEditingPhotoFile(null)
+      setEditingPhotoPreviewUrl('')
+      setEditingPhotoUploadState(idleUploadState)
+      return
+    }
+
+    setEditingPhotoUploadState({ metrics: { originalBytes: file.size }, percent: 0, stage: 'preparing' })
+    setErrorMessage('')
+
+    try {
+      const result = await prepareImageForUpload(file, {
+        filePrefix: 'cross-edit',
+        maxDimension: 1600,
+        quality: 0.8,
+      })
+      setEditingPhotoFile(result.file)
+      setEditingPhotoPreviewUrl(result.previewUrl)
+      setEditingPhotoUploadState({ file: result.file, metrics: result.metrics, percent: 0, stage: 'ready' })
+    } catch (error) {
+      setEditingPhotoFile(null)
+      setEditingPhotoPreviewUrl(URL.createObjectURL(file))
+      setEditingPhotoUploadState({
+        error: error instanceof Error ? error.message : '사진을 준비하지 못했습니다.',
+        metrics: { originalBytes: file.size },
+        percent: 0,
+        stage: 'error',
+      })
+    }
+  }
+
   function cancelPhotoUpload() {
     void photoUploadTaskRef.current?.cancel()
     setCrossUploadState((state) => ({ ...state, percent: 0, stage: 'canceled' }))
@@ -1475,6 +1546,11 @@ export function MeditationApp() {
     void profileUploadTaskRef.current?.cancel()
     setProfileUploadState((state) => ({ ...state, percent: 0, stage: 'canceled' }))
     setIsProfileSaving(false)
+  }
+
+  function cancelEditingPhotoUpload() {
+    void editingPhotoUploadTaskRef.current?.cancel()
+    setEditingPhotoUploadState((state) => ({ ...state, percent: 0, stage: 'canceled' }))
   }
 
   async function updateAuthorSnapshots(displayName: string, avatarUrl: string) {
@@ -1911,15 +1987,56 @@ export function MeditationApp() {
     }
 
     const caption = editingPhotoCaption.trim()
-    const updates: Record<string, string> = {
+    let imageUrl = photo.imageUrl
+    let storagePath = photo.storagePath
+    const previousStoragePath = photo.storagePath
+
+    if (editingPhotoFile) {
+      const extension = editingPhotoFile.type === 'image/webp' ? 'webp' : 'jpg'
+      const path = `users/${currentUser.uid}/photos/cross-edit-${todayKey}-${createLocalId()}.${extension}`
+      const uploadTask = uploadBytesResumable(storageRef(getFirebaseStorage(), path), editingPhotoFile, {
+        cacheControl: 'public,max-age=31536000,immutable',
+        contentType: editingPhotoFile.type,
+      })
+      editingPhotoUploadTaskRef.current = uploadTask
+      setEditingPhotoUploadState((state) => ({ ...state, percent: 0, stage: 'uploading' }))
+      const uploadMetrics = await runResumableUpload(uploadTask, (percent) => {
+        setEditingPhotoUploadState((state) => ({ ...state, percent, stage: 'uploading' }))
+      })
+      setEditingPhotoUploadState((state) => ({ ...state, metrics: { ...state.metrics, ...uploadMetrics }, percent: 100, stage: 'saving' }))
+      const urlStart = performance.now()
+      imageUrl = await getDownloadURL(uploadTask.snapshot.ref)
+      storagePath = path
+      setEditingPhotoUploadState((state) => ({ ...state, metrics: { ...state.metrics, urlMs: performance.now() - urlStart } }))
+    }
+
+    const updates: Record<string, string | number> = {
       [`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/caption`]: caption,
+      [`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/imageUrl`]: imageUrl,
+      [`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/storagePath`]: storagePath,
+      [`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/updatedAt`]: new Date().toISOString(),
+      [`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/updatedAtMs`]: Date.now(),
     }
 
     if (photo.publicId) {
       updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/caption`] = caption
+      updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/imageUrl`] = imageUrl
+      updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/storagePath`] = storagePath
+      updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/updatedAt`] = new Date().toISOString()
+      updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/updatedAtMs`] = Date.now()
     }
 
     await update(ref(getRealtimeDb()), updates)
+    setEditingPhotoUploadState((state) => ({ ...state, percent: 100, stage: 'success' }))
+    setEditingPhotoFile(null)
+    setEditingPhotoPreviewUrl('')
+    setEditingFeedPhotoId('')
+    setSelectedFeedPhotoId('')
+    setSelectedProfilePhotoId('')
+
+    if (editingPhotoFile && previousStoragePath && previousStoragePath !== storagePath) {
+      await deleteObject(storageRef(getFirebaseStorage(), previousStoragePath)).catch(() => undefined)
+    }
   }
 
   async function handlePhotoDelete(photo: CrossPhoto) {
@@ -2197,22 +2314,6 @@ export function MeditationApp() {
     }
   }
 
-  function shiftActivePhoto(delta: number) {
-    setPhotoSlideDirection(delta < 0 ? 'backward' : 'forward')
-    setActiveCrossPhotoIndex((index) => {
-      if (!publicCrossPhotos.length) {
-        return 0
-      }
-
-      return Math.min(publicCrossPhotos.length - 1, Math.max(0, index + delta))
-    })
-  }
-
-  function jumpToPhoto(index: number) {
-    setPhotoSlideDirection(index < activeCrossPhotoIndex ? 'backward' : 'forward')
-    setActiveCrossPhotoIndex(index)
-  }
-
   function renderHeaderTitle() {
     if (activeTab === 'devotion') return '묵상'
     if (activeTab === 'prayer') return '기도'
@@ -2234,6 +2335,20 @@ export function MeditationApp() {
               <Icon name="back" />
             </button>
             <h2>프로필 편집</h2>
+          </div>
+        ) : activeTab === 'prayer' && prayerView === 'detail' ? (
+          <div className="faith-title">
+            <button aria-label="기도 목록으로" className="faith-icon-button" type="button" onClick={() => setPrayerView('list')}>
+              <Icon name="back" />
+            </button>
+            <h2>기도</h2>
+          </div>
+        ) : activeTab === 'qna' && qnaView === 'detail' ? (
+          <div className="faith-title">
+            <button aria-label="질문 목록으로" className="faith-icon-button" type="button" onClick={() => setQnaView('list')}>
+              <Icon name="back" />
+            </button>
+            <h2>질문</h2>
           </div>
         ) : (
           <div className="faith-title">
@@ -2335,68 +2450,56 @@ export function MeditationApp() {
                     </div>
                   </div>
                   <p className="faith-muted">일상에서 만난 십자가를 사진으로 나눠보세요.</p>
-                  {activeCrossPhoto ? (
-                    <article className="faith-photo-slide" key={activeCrossPhoto.id}>
-                      <AuthorRow
-                        avatarUrl={activeCrossPhoto.authorAvatarUrl}
-                        name={activeCrossPhoto.authorName || authorName}
-                        time={formatRelativeTime(activeCrossPhoto.createdAt)}
-                      />
-                      <div
-                        className={`faith-photo-frame faith-photo-frame-${photoSlideDirection}`}
-                        onTouchEnd={(event) => {
-                          const start = photoTouchRef.current
-                          photoTouchRef.current = null
-                          if (!start) return
-                          const touch = event.changedTouches[0]
-                          const deltaX = touch.clientX - start.x
-                          const deltaY = touch.clientY - start.y
-                          if (Math.abs(deltaX) > 42 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
-                            shiftActivePhoto(deltaX < 0 ? 1 : -1)
-                          }
-                        }}
-                        onTouchStart={(event) => {
-                          const touch = event.touches[0]
-                          photoTouchRef.current = { x: touch.clientX, y: touch.clientY }
-                        }}
-                      >
-                        <button aria-label="원본 사진 보기" className="faith-photo-open" type="button" onClick={() => setSelectedFeedPhotoId(activePhotoKey)}>
-                          <img alt={activeCrossPhoto.caption || '오늘의 십자가 사진'} src={activeCrossPhoto.imageUrl} style={{ objectPosition: activeCrossPhoto.objectPosition ?? '50% 50%' }} />
-                        </button>
-                        {publicCrossPhotos.length > 1 ? <span className="faith-photo-count">{activeCrossPhotoIndex + 1} / {publicCrossPhotos.length}</span> : null}
-                      </div>
-                      {publicCrossPhotos.length > 1 ? (
-                        <div className="faith-photo-dots" aria-label="사진 슬라이드 위치">
-                          {publicCrossPhotos.slice(0, 7).map((photo, index) => (
-                            <button
-                              aria-label={`${index + 1}번째 사진 보기`}
-                              aria-pressed={index === activeCrossPhotoIndex}
-                              key={photo.publicId ?? photo.id}
-                              type="button"
-                              onClick={() => jumpToPhoto(index)}
+                  {publicCrossPhotos.length ? (
+                    <div className="faith-feed-list">
+                      {publicCrossPhotos.map((photo) => {
+                        const photoKey = photo.publicId ?? photo.id
+                        const comments = publicPhotoComments[photoKey] ?? photoComments[photoKey] ?? []
+                        const reacted = Boolean(publicPhotoReactionMap[photoKey] ?? photoReactionMap[photoKey])
+
+                        return (
+                          <article className="faith-photo-slide" key={photoKey}>
+                            <AuthorRow
+                              avatarUrl={photo.authorAvatarUrl}
+                              name={photo.authorName || authorName}
+                              time={formatRelativeTime(photo.createdAt)}
+                              canManage={photo.ownerUid === currentUser?.uid}
+                              onDelete={() => void handlePhotoDelete(photo)}
+                              onEdit={() => {
+                                setEditingFeedPhotoId(photoKey)
+                                setEditingPhotoCaption(photo.caption)
+                                setEditingPhotoFile(null)
+                                setEditingPhotoPreviewUrl('')
+                                setEditingPhotoUploadState(idleUploadState)
+                              }}
                             />
-                          ))}
-                        </div>
-                      ) : null}
-                      {activeCrossPhoto.caption ? <p>{activeCrossPhoto.caption}</p> : null}
-                      <ReactionRow
-                        commentCount={activePhotoComments.length || activeCrossPhoto.commentCount || 0}
-                        onComment={() => setExpandedPhotoId((currentId) => currentId === activeCrossPhoto.id ? '' : activeCrossPhoto.id)}
-                        onPrayer={() => void handlePhotoPrayerToggle(activeCrossPhoto)}
-                        prayerCount={activeCrossPhoto.prayerCount ?? 0}
-                        pressed={activePhotoReacted}
-                      />
-                      {expandedPhotoId === activeCrossPhoto.id ? (
-                        <PhotoComments
-                          comments={activePhotoComments}
-                          currentUserId={currentUser?.uid}
-                          draft={photoCommentDrafts[activeCrossPhoto.id] ?? ''}
-                          onDelete={(comment) => void handleDeletePhotoComment(activeCrossPhoto.id, comment)}
-                          onDraftChange={(value) => setPhotoCommentDrafts((drafts) => ({ ...drafts, [activeCrossPhoto.id]: value }))}
-                          onSave={() => void handlePhotoCommentSave(activeCrossPhoto.id)}
-                        />
-                      ) : null}
-                    </article>
+                            <div className="faith-photo-frame">
+                              <button aria-label="원본 사진 보기" className="faith-photo-open" type="button" onClick={() => setSelectedFeedPhotoId(photoKey)}>
+                                <img alt={photo.caption || '오늘의 십자가 사진'} src={photo.imageUrl} style={{ objectPosition: photo.objectPosition ?? '50% 50%' }} />
+                              </button>
+                            </div>
+                            {photo.caption ? <p>{photo.caption}</p> : null}
+                            <ReactionRow
+                              commentCount={comments.length || photo.commentCount || 0}
+                              onComment={() => setExpandedPhotoId((currentId) => currentId === photo.id ? '' : photo.id)}
+                              onPrayer={() => void handlePhotoPrayerToggle(photo)}
+                              prayerCount={photo.prayerCount ?? 0}
+                              pressed={reacted}
+                            />
+                            {expandedPhotoId === photo.id ? (
+                              <PhotoComments
+                                comments={comments}
+                                currentUserId={currentUser?.uid}
+                                draft={photoCommentDrafts[photo.id] ?? ''}
+                                onDelete={(comment) => void handleDeletePhotoComment(photo.id, comment)}
+                                onDraftChange={(value) => setPhotoCommentDrafts((drafts) => ({ ...drafts, [photo.id]: value }))}
+                                onSave={() => void handlePhotoCommentSave(photo.id)}
+                              />
+                            ) : null}
+                          </article>
+                        )
+                      })}
+                    </div>
                   ) : (
                     <EmptyState>오늘의 첫 십자가를 남겨보세요</EmptyState>
                   )}
@@ -2531,7 +2634,6 @@ export function MeditationApp() {
               <section className="faith-panel" aria-labelledby="records-title">
                 <div className="faith-section-head">
                   <h3 id="records-title">날짜별 묵상</h3>
-                  <button className="faith-text-button" type="button" onClick={() => setDevotionView('read')}>말씀</button>
                 </div>
                 <div className="faith-search-row">
                   <label>
@@ -2551,10 +2653,18 @@ export function MeditationApp() {
                         <span>{entry.reference}</span>
                       </button>
                       {entry.apply ? (
-                        <label className="faith-check-row">
-                          <input checked={Boolean(entry.applyDone)} type="checkbox" onChange={(event) => void handleApplyDone(entry, event.target.checked)} />
-                          <span>적용 실천</span>
-                        </label>
+                        <button
+                          aria-pressed={Boolean(entry.applyDone)}
+                          className="faith-apply-check"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            void handleApplyDone(entry, !entry.applyDone)
+                          }}
+                        >
+                          <span><Icon name="check" /></span>
+                          <em>{entry.applyDone ? '실천 완료' : '실천 전'}</em>
+                        </button>
                       ) : null}
                     </article>
                   )) : <EmptyState>{entries.length ? '검색 조건에 맞는 묵상이 없습니다.' : '저장된 묵상이 없습니다.'}</EmptyState>}
@@ -2588,7 +2698,7 @@ export function MeditationApp() {
             {prayerView === 'detail' && selectedPrayer ? (
               <article className="faith-detail">
                 <div className="faith-section-head">
-                  <button className="faith-text-button" type="button" onClick={() => setPrayerView('list')}>뒤로</button>
+                  <span />
                   {selectedPrayer.authorUid === currentUser?.uid ? (
                     <div className="faith-icon-group">
                       <button aria-label="기도 수정" className="faith-icon-button" type="button" onClick={() => startPrayerEdit(selectedPrayer)}><Icon name="edit" /></button>
@@ -2672,7 +2782,7 @@ export function MeditationApp() {
             {qnaView === 'detail' && selectedQuestion ? (
               <article className="faith-detail">
                 <div className="faith-section-head">
-                  <button className="faith-text-button" type="button" onClick={() => setQnaView('list')}>뒤로</button>
+                  <span />
                   {selectedQuestion.authorUid === currentUser?.uid ? (
                     <div className="faith-icon-group">
                       <button aria-label="질문 수정" className="faith-icon-button" type="button" onClick={() => startQuestionEdit(selectedQuestion)}><Icon name="edit" /></button>
@@ -2690,7 +2800,7 @@ export function MeditationApp() {
                     <article key={answer.id}>
                       <Avatar name={answer.authorName} size="comment" src={answer.authorAvatarUrl} />
                       <div>
-                        <div><strong>{answer.authorName}</strong><time>{formatDateTime(answer.createdAt)}</time></div>
+                        <div><strong>{answer.authorName}</strong><time>{formatRelativeTime(answer.createdAt)}</time></div>
                         <p>{answer.body}</p>
                       </div>
                       {answer.authorUid === currentUser?.uid ? (
@@ -2790,7 +2900,7 @@ export function MeditationApp() {
                       }}><h3>{question.title}</h3><Icon name="chevron-right" /></button>
                       <p className="faith-clamp">{question.body}</p>
                       <div className="faith-tags">{question.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
-                      <div className="faith-question-actions"><Icon name="comment" /><span>답변 {question.answerCount ?? 0}</span></div>
+                      <div className="faith-question-actions"><Icon name="comment" /><span>답변 {questionAnswers[question.id]?.length ?? question.answerCount ?? 0}</span></div>
                     </article>
                   )) : <EmptyState>{faithQuestions.length ? '조건에 맞는 질문이 없습니다.' : '아직 올라온 질문이 없습니다.'}</EmptyState>}
                 </div>
@@ -2894,6 +3004,20 @@ export function MeditationApp() {
                           <strong>{getEntryTitle(entry)}</strong>
                           <span>{entry.reference}</span>
                         </button>
+                        {entry.apply ? (
+                          <button
+                            aria-pressed={Boolean(entry.applyDone)}
+                            className="faith-apply-check"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              void handleApplyDone(entry, !entry.applyDone)
+                            }}
+                          >
+                            <span><Icon name="check" /></span>
+                            <em>{entry.applyDone ? '실천 완료' : '실천 전'}</em>
+                          </button>
+                        ) : null}
                       </article>
                     ))}
                     {entries.every((entry) => entry.selectedDate !== selectedDate) ? <EmptyState>선택한 날짜의 기록이 없습니다.</EmptyState> : null}
@@ -2918,26 +3042,14 @@ export function MeditationApp() {
                       <button type="button" onClick={() => setExpandedProfilePrayerId((currentId) => currentId === request.id ? '' : request.id)}>
                         <time>{formatDateTime(request.createdAt)}</time>
                         <strong>{request.title}</strong>
-                        <span>기도 {request.prayerCount ?? 0} · 댓글 {prayerComments[request.id]?.length ?? request.commentCount ?? 0}</span>
                       </button>
                       {expandedProfilePrayerId === request.id ? (
                         <section className="faith-inline-detail">
                           {request.body ? <p>{request.body}</p> : null}
-                          <ReactionRow
-                            commentCount={prayerComments[request.id]?.length ?? request.commentCount ?? 0}
-                            onComment={() => undefined}
-                            onPrayer={() => void handlePrayerToggle(request)}
-                            prayerCount={request.prayerCount ?? 0}
-                            pressed={Boolean(prayerReactionMap[request.id])}
-                          />
-                          <PrayerComments
-                            comments={prayerComments[request.id] ?? []}
-                            currentUserId={currentUser?.uid}
-                            draft={commentDrafts[request.id] ?? ''}
-                            onDelete={(comment) => void handleDeleteComment(request.id, comment)}
-                            onDraftChange={(value) => setCommentDrafts((drafts) => ({ ...drafts, [request.id]: value }))}
-                            onSave={() => void handleCommentSave(request.id)}
-                          />
+                          <div className="faith-detail-actions">
+                            <button className="faith-outline-button" type="button" onClick={() => startPrayerEdit(request)}><Icon name="edit" /> 수정</button>
+                            <button className="faith-danger-button" type="button" onClick={() => void handlePrayerDelete(request)}><Icon name="close" /> 삭제</button>
+                          </div>
                         </section>
                       ) : null}
                     </article>
@@ -2957,7 +3069,10 @@ export function MeditationApp() {
                       {expandedProfileQuestionId === question.id ? (
                         <section className="faith-inline-detail">
                           {question.body ? <p>{question.body}</p> : null}
-                          <p className="faith-inline-empty">답변은 내 기록 안에서 확인할 수 있습니다.</p>
+                          <div className="faith-detail-actions">
+                            <button className="faith-outline-button" type="button" onClick={() => startQuestionEdit(question)}><Icon name="edit" /> 수정</button>
+                            <button className="faith-danger-button" type="button" onClick={() => void handleQuestionDelete(question)}><Icon name="close" /> 삭제</button>
+                          </div>
                         </section>
                       ) : null}
                     </article>
@@ -3075,6 +3190,49 @@ export function MeditationApp() {
               ) : selectedFeedPhoto.caption ? (
                 <p>{selectedFeedPhoto.caption}</p>
               ) : null}
+            </div>
+          </article>
+        </div>
+      ) : null}
+
+      {editingFeedPhoto ? (
+        <div className="faith-sheet-backdrop" role="presentation" onClick={() => setEditingFeedPhotoId('')}>
+          <article
+            aria-label="피드 사진 수정"
+            aria-modal="true"
+            className="faith-photo-detail"
+            role="dialog"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button aria-label="사진 수정 닫기" className="faith-icon-button" type="button" onClick={() => setEditingFeedPhotoId('')}>
+              <Icon name="close" />
+            </button>
+            <img alt={editingFeedPhoto.caption || '십자가 사진'} src={editingPhotoPreviewUrl || editingFeedPhoto.imageUrl} />
+            <div>
+              <time>{formatDateTime(editingFeedPhoto.createdAt)}</time>
+              <label className="faith-file-field faith-file-field-compact">
+                <Icon name="photo" />
+                <span>{editingPhotoFile ? '사진 다시 선택' : '사진 교체'}</span>
+                <input accept="image/jpeg,image/png,image/webp" type="file" onChange={(event) => void handleEditingPhotoFileSelected(event.target.files?.[0] ?? null)} />
+              </label>
+              <label className="faith-field">
+                <span>짧은 문장</span>
+                <textarea rows={3} value={editingPhotoCaption} onChange={(event) => setEditingPhotoCaption(event.target.value)} />
+              </label>
+              <UploadProgress
+                disabled={!editingPhotoFile}
+                onCancel={cancelEditingPhotoUpload}
+                onRetry={() => void handlePhotoCaptionUpdate(editingFeedPhoto)}
+                state={editingPhotoUploadState}
+              />
+              <div className="faith-detail-actions">
+                <button className="faith-outline-button" type="button" onClick={() => void handlePhotoCaptionUpdate(editingFeedPhoto)}>
+                  <Icon name="edit" /> 저장
+                </button>
+                <button className="faith-danger-button" type="button" onClick={() => void handlePhotoDelete(editingFeedPhoto)}>
+                  <Icon name="close" /> 삭제
+                </button>
+              </div>
             </div>
           </article>
         </div>
@@ -3201,11 +3359,12 @@ function PrayerComments({
 }) {
   return (
     <section className="faith-comments" aria-label="댓글">
+      <h4>댓글 {comments.length}</h4>
       {comments.map((comment) => (
         <article key={comment.id}>
           <Avatar name={comment.authorName} size="comment" src={comment.authorAvatarUrl} />
           <div>
-            <div><strong>{comment.authorName}</strong><time>{formatDateTime(comment.createdAt)}</time></div>
+            <div><strong>{comment.authorName}</strong><time>{formatRelativeTime(comment.createdAt)}</time></div>
             <p>{comment.body}</p>
           </div>
           {comment.authorUid === currentUserId ? <button type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
@@ -3243,7 +3402,7 @@ function PhotoComments({
         <article key={comment.id}>
           <Avatar name={comment.authorName} size="comment" src={comment.authorAvatarUrl} />
           <div>
-            <div><strong>{comment.authorName}</strong><time>{formatDateTime(comment.createdAt)}</time></div>
+            <div><strong>{comment.authorName}</strong><time>{formatRelativeTime(comment.createdAt)}</time></div>
             <p>{comment.body}</p>
           </div>
           {comment.authorUid === currentUserId ? <button type="button" onClick={() => onDelete(comment)}>삭제</button> : null}

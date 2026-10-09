@@ -166,6 +166,10 @@ function getKstDateKey(value = new Date()) {
   return { dayKey: `${month}${day}`, isoDate: `${year}-${month}-${day}`, year }
 }
 
+function sameVersePayload(first, second) {
+  return JSON.stringify(first) === JSON.stringify(second)
+}
+
 function decodeHtml(value) {
   return value
     .replaceAll('&nbsp;', ' ')
@@ -439,18 +443,26 @@ async function main() {
 
   try {
     const db = getDatabase()
-    await withTimeout(db.ref(`verse/${year}/${dayKey}`).set({
+    const payload = {
       date: isoDate,
       range,
       sourceUrl: koreanSourceUrl,
       translation: '개역개정',
       verses: koreanVerses,
-    }), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
+    }
+    const verseRef = db.ref(`verse/${year}/${dayKey}`)
+    const snapshot = await withTimeout(verseRef.get(), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse read')
+    if (sameVersePayload(snapshot.val(), payload)) {
+      console.log(`Skipped verse/${year}/${dayKey}; content already up to date at ${new Date().toISOString()}`)
+    } else {
+      await withTimeout(verseRef.set(payload), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
+      console.log(`Wrote verse/${year}/${dayKey} at ${new Date().toISOString()}`)
+    }
   } finally {
     await deleteApp(app)
   }
 
-  console.log(`Updated verse/${year}/${dayKey} for ${isoDate}: ${JSON.stringify(range)}`)
+  console.log(`Checked verse/${year}/${dayKey} for KST target ${isoDate}: ${JSON.stringify(range)}`)
 }
 
 main().catch((error) => {

@@ -7,7 +7,7 @@
     "crossPhotos": {
       ".read": true,
       "$photoId": {
-        ".write": "auth != null && !data.exists() && newData.child('ownerUid').val() === auth.uid",
+        ".write": "auth != null && ((!data.exists() && newData.child('ownerUid').val() === auth.uid) || (data.exists() && data.child('ownerUid').val() === auth.uid && (!newData.exists() || newData.child('ownerUid').val() === auth.uid)))",
         "prayerCount": {
           ".write": "auth != null"
         },
