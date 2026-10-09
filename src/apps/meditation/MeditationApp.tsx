@@ -44,6 +44,7 @@ type ScripturePlan = {
 type FirebaseVerseRange = [unknown, unknown, unknown, unknown?]
 
 type FirebaseVersePayload = {
+  date?: unknown
   range?: FirebaseVerseRange
   sourceUrl?: unknown
   translation?: unknown
@@ -486,6 +487,15 @@ function normalizeFirebaseVerses(value: unknown): Verse[] | null {
   return verses.length ? verses : null
 }
 
+function normalizeFirebaseRange(value: unknown): FirebaseVerseRange | null {
+  if (!Array.isArray(value)) {
+    return null
+  }
+
+  const [book, chapter, start, end] = value
+  return [book, chapter, start, end]
+}
+
 function normalizeLunchPraiseTracks(value: unknown): LunchPraiseTrack[] {
   if (!value || typeof value !== 'object') {
     return []
@@ -613,18 +623,30 @@ async function fetchFirebasePlan(date: string, language: ScriptureLanguage) {
   }
 
   if (Array.isArray(value)) {
-    const range = value[0]
+    const range = normalizeFirebaseRange(value[0])
     const verses = range ? await getScriptureVersesFromCache(language, range) : null
     const translation = scriptureLanguageOptions.find((option) => option.id === language)?.translation
-    return range ? planFromFirebaseRange(date, range, verses, translation) : null
+    const plan = range ? planFromFirebaseRange(date, range, verses, translation) : null
+
+    if (range && !plan) {
+      throw new Error(`${buildReference(String(range[0] ?? ''), Number(range[1]), Number(range[2]), Number(range[3] ?? range[2]))} 본문 캐시가 배포본에 없습니다.`)
+    }
+
+    return plan
   }
 
-  const range = Array.isArray(value.range) ? value.range : null
-  const verses = normalizeFirebaseVerses(value.verses)
+  const range = normalizeFirebaseRange(value.range)
+  const verses = language === 'ko' ? normalizeFirebaseVerses(value.verses) : null
   const translation = typeof value.translation === 'string' ? value.translation : undefined
   const cachedVerses = range ? await getScriptureVersesFromCache(language, range) : null
 
-  return range ? planFromFirebaseRange(date, range, cachedVerses ?? verses, translation) : null
+  const plan = range ? planFromFirebaseRange(date, range, verses ?? cachedVerses, translation) : null
+
+  if (range && !plan) {
+    throw new Error(`${buildReference(String(range[0] ?? ''), Number(range[1]), Number(range[2]), Number(range[3] ?? range[2]))} 본문을 DB와 배포 캐시에서 찾지 못했습니다.`)
+  }
+
+  return plan
 }
 
 function getSelectedVerses(plan: ScripturePlan, selectedVerseNumbers: number[]) {

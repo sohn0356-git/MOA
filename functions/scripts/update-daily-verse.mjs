@@ -212,6 +212,7 @@ async function fetchDurannoBible(isoDate) {
   const buffer = await response.arrayBuffer()
   return {
     html: new TextDecoder('euc-kr').decode(buffer),
+    sourceUrl,
   }
 }
 
@@ -412,10 +413,22 @@ async function main() {
   const { dayKey, isoDate, year } = getKstDateKey(targetDate)
   const html = await fetchDurannoHome()
   const range = parseTodayQt(html)
+  let koreanSourceUrl = ''
+  let koreanVerses = []
   await updateLanguageCache('ko', range, async () => {
     const bible = await fetchDurannoBible(isoDate)
-    return parseBibleVerses(bible.html, range[2], range[3])
+    koreanSourceUrl = bible.sourceUrl
+    koreanVerses = parseBibleVerses(bible.html, range[2], range[3])
+    return koreanVerses
   }, '개역개정')
+  if (!koreanVerses.length) {
+    const cache = await readScriptureBook(range[0], 'ko', '개역개정')
+    const chapterVerses = cache.chapters?.[String(range[1])] ?? {}
+    koreanVerses = Array.from({ length: range[3] - range[2] + 1 }, (_, index) => {
+      const number = range[2] + index
+      return { number, text: chapterVerses[String(number)] }
+    }).filter((verse) => verse.text)
+  }
   await updateLanguageCache('en', range, () => fetchGetBibleVerses('en', range), GETBIBLE_TRANSLATIONS.en.name)
   await updateLanguageCache('ja', range, () => fetchGetBibleVerses('ja', range), GETBIBLE_TRANSLATIONS.ja.name)
 
@@ -426,7 +439,13 @@ async function main() {
 
   try {
     const db = getDatabase()
-    await withTimeout(db.ref(`verse/${year}/${dayKey}`).set([range]), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
+    await withTimeout(db.ref(`verse/${year}/${dayKey}`).set({
+      date: isoDate,
+      range,
+      sourceUrl: koreanSourceUrl,
+      translation: '개역개정',
+      verses: koreanVerses,
+    }), FIREBASE_WRITE_TIMEOUT_MS, 'Firebase verse update')
   } finally {
     await deleteApp(app)
   }
