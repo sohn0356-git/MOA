@@ -26,8 +26,11 @@ type ScriptureLanguage = 'ko' | 'en' | 'ja'
 type PrayerFilter = 'together' | 'mine'
 type QuestionFilter = 'latest' | 'waiting' | 'mine'
 
+type VerseKey = number | string
+
 type Verse = {
-  number: number
+  chapter?: number
+  number: VerseKey
   text: string
 }
 
@@ -41,7 +44,7 @@ type ScripturePlan = {
   verses: Verse[]
 }
 
-type FirebaseVerseRange = [unknown, unknown, unknown, unknown?]
+type FirebaseVerseRange = [unknown, unknown, unknown, unknown?, unknown?]
 
 type FirebaseVersePayload = {
   date?: unknown
@@ -68,7 +71,7 @@ type MeditationEntry = {
   prayer?: string
   reference: string
   selectedDate: string
-  selectedVerseNumbers: number[]
+  selectedVerseNumbers: VerseKey[]
   theme: string
   verseText: string
 }
@@ -507,8 +510,35 @@ function getPlanForDate(date: string) {
   return scripturePlans[Number(seed) % scripturePlans.length]
 }
 
-function buildReference(book: string, chapter: number, start: number, end: number) {
-  return `${book} ${chapter}:${start === end ? start : `${start}-${end}`}`
+function getRangeParts(range: FirebaseVerseRange) {
+  const [bookValue, chapterValue, startValue, endOrChapterValue, endVerseValue] = range
+  const book = typeof bookValue === 'string' ? bookValue : ''
+  const startChapter = Number(chapterValue)
+  const startVerse = Number(startValue)
+  const endChapter = endVerseValue === undefined ? startChapter : Number(endOrChapterValue)
+  const endVerse = endVerseValue === undefined ? Number(endOrChapterValue ?? startValue) : Number(endVerseValue)
+
+  if (!book || !Number.isFinite(startChapter) || !Number.isFinite(startVerse) || !Number.isFinite(endChapter) || !Number.isFinite(endVerse)) {
+    return null
+  }
+
+  return { book, endChapter, endVerse, startChapter, startVerse }
+}
+
+function buildReference(book: string, startChapter: number, startVerse: number, endChapter: number, endVerse: number) {
+  if (startChapter === endChapter) {
+    return `${book} ${startChapter}:${startVerse === endVerse ? startVerse : `${startVerse}-${endVerse}`}`
+  }
+
+  return `${book} ${startChapter}:${startVerse}-${endChapter}:${endVerse}`
+}
+
+function getVerseKey(chapter: number, verseNumber: number, startChapter: number, endChapter: number): VerseKey {
+  return startChapter === endChapter ? verseNumber : `${chapter}:${verseNumber}`
+}
+
+function getVerseDisplayNumber(verse: Verse) {
+  return String(verse.number)
 }
 
 function normalizeFirebaseVerses(value: unknown): Verse[] | null {
@@ -523,9 +553,22 @@ function normalizeFirebaseVerses(value: unknown): Verse[] | null {
       }
 
       const verse = item as Record<string, unknown>
-      const number = Number(verse.number)
+      const rawNumber = verse.number
+      const number = typeof rawNumber === 'string' ? rawNumber.trim() : Number(rawNumber)
+      const chapter = Number(verse.chapter)
       const text = typeof verse.text === 'string' ? verse.text.trim() : ''
-      return Number.isFinite(number) && text ? { number, text } : null
+      const validNumber = typeof number === 'string' ? number.length > 0 : Number.isFinite(number)
+      if (!validNumber || !text) {
+        return null
+      }
+
+      const normalizedVerse: Verse = { number, text }
+
+      if (Number.isFinite(chapter)) {
+        normalizedVerse.chapter = chapter
+      }
+
+      return normalizedVerse
     })
     .filter((item): item is Verse => item !== null)
 
@@ -537,8 +580,8 @@ function normalizeFirebaseRange(value: unknown): FirebaseVerseRange | null {
     return null
   }
 
-  const [book, chapter, start, end] = value
-  return [book, chapter, start, end]
+  const [book, chapter, start, endOrChapter, endVerse] = value
+  return endVerse === undefined ? [book, chapter, start, endOrChapter] : [book, chapter, start, endOrChapter, endVerse]
 }
 
 function normalizeLunchPraiseTracks(value: unknown): LunchPraiseTrack[] {
@@ -597,50 +640,61 @@ async function loadScriptureBook(language: ScriptureLanguage, book: string) {
 }
 
 async function getScriptureVersesFromCache(language: ScriptureLanguage, range: FirebaseVerseRange) {
-  const [bookValue, chapterValue, startValue, endValue] = range
-  const book = typeof bookValue === 'string' ? bookValue : ''
-  const chapter = Number(chapterValue)
-  const start = Number(startValue)
-  const end = Number(endValue ?? startValue)
+  const parts = getRangeParts(range)
 
-  if (!book || !Number.isFinite(chapter) || !Number.isFinite(start) || !Number.isFinite(end)) {
+  if (!parts) {
     return null
   }
 
+  const { book, endChapter, endVerse, startChapter, startVerse } = parts
   const cache = await loadScriptureBook(language, book)
-  const chapterVerses = cache?.chapters?.[String(chapter)]
-
-  if (!chapterVerses) {
-    return null
-  }
-
   const verses: Verse[] = []
 
-  for (let verseNumber = start; verseNumber <= end; verseNumber += 1) {
-    const text = chapterVerses[String(verseNumber)]
+  for (let chapter = startChapter; chapter <= endChapter; chapter += 1) {
+    const chapterVerses = cache?.chapters?.[String(chapter)]
 
-    if (!text) {
+    if (!chapterVerses) {
       return null
     }
 
-    verses.push({ number: verseNumber, text })
+    const verseNumbers = Object.keys(chapterVerses)
+      .map(Number)
+      .filter(Number.isFinite)
+      .sort((first, second) => first - second)
+    const from = chapter === startChapter ? startVerse : verseNumbers[0]
+    const to = chapter === endChapter ? endVerse : verseNumbers[verseNumbers.length - 1]
+
+    if (!Number.isFinite(from) || !Number.isFinite(to)) {
+      return null
+    }
+
+    for (let verseNumber = from; verseNumber <= to; verseNumber += 1) {
+      const text = chapterVerses[String(verseNumber)]
+
+      if (!text) {
+        return null
+      }
+
+      verses.push({
+        chapter,
+        number: getVerseKey(chapter, verseNumber, startChapter, endChapter),
+        text,
+      })
+    }
   }
 
   return verses
 }
 
 function planFromFirebaseRange(date: string, range: FirebaseVerseRange, remoteVerses?: Verse[] | null, translation?: string) {
-  const [bookValue, chapterValue, startValue, endValue] = range
-  const book = typeof bookValue === 'string' ? bookValue : ''
-  const chapter = Number(chapterValue)
-  const start = Number(startValue)
-  const end = Number(endValue ?? startValue)
+  const parts = getRangeParts(range)
 
-  if (!book || !Number.isFinite(chapter) || !Number.isFinite(start) || !Number.isFinite(end)) {
+  if (!parts) {
     return null
   }
 
-  const reference = buildReference(book, chapter, start, end)
+  const { book, endChapter, endVerse, startChapter, startVerse } = parts
+  const reference = buildReference(book, startChapter, startVerse, endChapter, endVerse)
   const verses = remoteVerses ?? knownPassageText[reference] ?? null
 
   if (!verses?.length) {
@@ -674,7 +728,9 @@ async function fetchFirebasePlan(date: string, language: ScriptureLanguage) {
     const plan = range ? planFromFirebaseRange(date, range, verses, translation) : null
 
     if (range && !plan) {
-      throw new Error(`${buildReference(String(range[0] ?? ''), Number(range[1]), Number(range[2]), Number(range[3] ?? range[2]))} 본문 캐시가 배포본에 없습니다.`)
+      const parts = getRangeParts(range)
+      const reference = parts ? buildReference(parts.book, parts.startChapter, parts.startVerse, parts.endChapter, parts.endVerse) : '선택한'
+      throw new Error(`${reference} 본문 캐시가 배포본에 없습니다.`)
     }
 
     return plan
@@ -688,18 +744,20 @@ async function fetchFirebasePlan(date: string, language: ScriptureLanguage) {
   const plan = range ? planFromFirebaseRange(date, range, verses ?? cachedVerses, translation) : null
 
   if (range && !plan) {
-    throw new Error(`${buildReference(String(range[0] ?? ''), Number(range[1]), Number(range[2]), Number(range[3] ?? range[2]))} 본문을 DB와 배포 캐시에서 찾지 못했습니다.`)
+    const parts = getRangeParts(range)
+    const reference = parts ? buildReference(parts.book, parts.startChapter, parts.startVerse, parts.endChapter, parts.endVerse) : '선택한'
+    throw new Error(`${reference} 본문을 DB와 배포 캐시에서 찾지 못했습니다.`)
   }
 
   return plan
 }
 
-function getSelectedVerses(plan: ScripturePlan, selectedVerseNumbers: number[]) {
+function getSelectedVerses(plan: ScripturePlan, selectedVerseNumbers: VerseKey[]) {
   const selectedSet = new Set(selectedVerseNumbers)
   return selectedVerseNumbers.length ? plan.verses.filter((verse) => selectedSet.has(verse.number)) : []
 }
 
-function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: number[]) {
+function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: VerseKey[]) {
   const verses = getSelectedVerses(plan, selectedVerseNumbers)
   return verses.map((verse) => verse.text).join(' ')
 }
@@ -1027,7 +1085,7 @@ export function MeditationApp() {
   const [currentTodayKey, setCurrentTodayKey] = useState(getTodayKey)
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
   const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>('ko')
-  const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
+  const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<VerseKey[]>([])
   const [isVerseSheetOpen, setIsVerseSheetOpen] = useState(false)
   const [isDateSheetOpen, setIsDateSheetOpen] = useState(false)
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false)
@@ -1750,11 +1808,11 @@ export function MeditationApp() {
     }
   }
 
-  function toggleVerse(verseNumber: number) {
+  function toggleVerse(verseNumber: VerseKey) {
     setSelectedVerseNumbers((currentNumbers) =>
       currentNumbers.includes(verseNumber)
         ? currentNumbers.filter((number) => number !== verseNumber)
-        : [...currentNumbers, verseNumber].sort((first, second) => first - second),
+        : [...currentNumbers, verseNumber],
     )
   }
 
@@ -2727,7 +2785,7 @@ export function MeditationApp() {
                         type="button"
                         onClick={() => toggleVerse(verse.number)}
                       >
-                        <sup>{verse.number}</sup>
+                        <sup>{getVerseDisplayNumber(verse)}</sup>
                         <span>{verse.text}</span>
                       </button>
                     ))
@@ -2756,7 +2814,7 @@ export function MeditationApp() {
                       {selectedVerses.length ? (
                         <div className="faith-selected-verses">
                           {selectedVerses.map((verse) => (
-                            <p key={verse.number}><sup>{verse.number}</sup>{verse.text}</p>
+                            <p key={verse.number}><sup>{getVerseDisplayNumber(verse)}</sup>{verse.text}</p>
                           ))}
                         </div>
                       ) : (
@@ -3341,7 +3399,7 @@ export function MeditationApp() {
                 return (
                   <button aria-pressed={selected} key={verse.number} type="button" onClick={() => toggleVerse(verse.number)}>
                     <span>{selected ? <Icon name="check" /> : null}</span>
-                    <sup>{verse.number}</sup>
+                    <sup>{getVerseDisplayNumber(verse)}</sup>
                     <em>{verse.text}</em>
                   </button>
                 )

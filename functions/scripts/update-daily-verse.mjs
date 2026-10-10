@@ -253,19 +253,55 @@ function parseTodayQt(html) {
   const spanMatch = source.match(/^\s*([^<]+?)\s*<em[^>]*>[\s\S]*?<\/em>\s*<em[^>]*>([\s\S]*?)<\/em>/)
   const book = stripTags(spanMatch?.[1] ?? '').trim()
   const chapterAndVerses = stripTags(spanMatch?.[2] ?? source)
-  const rangeMatch = chapterAndVerses.match(/(\d+)\s*:\s*(\d+)\s*(?:[-~–]\s*(\d+))?/)
+  const rangeMatch = chapterAndVerses.match(/(\d+)\s*:\s*(\d+)\s*(?:[-~–]\s*(?:(\d+)\s*:\s*)?(\d+))?/)
   const chapter = Number(rangeMatch?.[1])
   const startVerse = Number(rangeMatch?.[2])
-  const endVerse = Number(rangeMatch?.[3] ?? rangeMatch?.[2])
+  const endChapter = Number(rangeMatch?.[3] ?? rangeMatch?.[1])
+  const endVerse = Number(rangeMatch?.[4] ?? rangeMatch?.[2])
 
-  if (!book || !Number.isFinite(chapter) || !Number.isFinite(startVerse) || !Number.isFinite(endVerse)) {
+  if (!book || !Number.isFinite(chapter) || !Number.isFinite(startVerse) || !Number.isFinite(endChapter) || !Number.isFinite(endVerse)) {
     throw new Error(`Could not parse Duranno QT reference from "${stripTags(source)}".`)
   }
 
-  return [book, chapter, startVerse, endVerse]
+  return chapter === endChapter ? [book, chapter, startVerse, endVerse] : [book, chapter, startVerse, endChapter, endVerse]
 }
 
-function parseBibleVerses(html, startVerse, endVerse) {
+function getRangeParts(range) {
+  const [book, startChapter, startVerse, endOrChapter, endVerseValue] = range
+  const endChapter = endVerseValue === undefined ? startChapter : endOrChapter
+  const endVerse = endVerseValue === undefined ? endOrChapter : endVerseValue
+  return {
+    book,
+    endChapter: Number(endChapter),
+    endVerse: Number(endVerse),
+    startChapter: Number(startChapter),
+    startVerse: Number(startVerse),
+  }
+}
+
+function getVerseKey(chapter, verseNumber, startChapter, endChapter) {
+  return startChapter === endChapter ? verseNumber : `${chapter}:${verseNumber}`
+}
+
+function expectedVerseCountFromRows(rows, parts) {
+  return rows.filter((verse) => {
+    if (verse.chapter < parts.startChapter || verse.chapter > parts.endChapter) {
+      return false
+    }
+
+    if (verse.chapter === parts.startChapter && verse.number < parts.startVerse) {
+      return false
+    }
+
+    if (verse.chapter === parts.endChapter && verse.number > parts.endVerse) {
+      return false
+    }
+
+    return true
+  }).length
+}
+
+function parseBibleVerses(html, range) {
   const bibleMatch = html.match(/<div class=["']bible["'][^>]*>([\s\S]*?)<\/div>\s*<div class=["']amen/)
   const bibleHtml = bibleMatch?.[1]
 
@@ -273,22 +309,53 @@ function parseBibleVerses(html, startVerse, endVerse) {
     throw new Error('Could not find the Duranno Bible text section.')
   }
 
-  const verses = []
+  const parts = getRangeParts(range)
+  const rows = []
   const rowPattern = /<tr>\s*<th[^>]*>\s*(\d+)\s*<\/th>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<\/tr>/g
+  let currentChapter = parts.startChapter
+  let previousNumber = 0
 
   for (const match of bibleHtml.matchAll(rowPattern)) {
     const number = Number(match[1])
 
-    if (number >= startVerse && number <= endVerse) {
-      verses.push({
-        number,
-        text: stripTags(match[2]),
-      })
+    if (number < previousNumber) {
+      currentChapter += 1
     }
+
+    previousNumber = number
+    rows.push({
+      chapter: currentChapter,
+      number,
+      text: stripTags(match[2]),
+    })
   }
 
-  if (verses.length !== endVerse - startVerse + 1) {
-    throw new Error(`Expected ${endVerse - startVerse + 1} Bible verses, parsed ${verses.length}.`)
+  const verses = rows
+    .filter((verse) => {
+      if (verse.chapter < parts.startChapter || verse.chapter > parts.endChapter) {
+        return false
+      }
+
+      if (verse.chapter === parts.startChapter && verse.number < parts.startVerse) {
+        return false
+      }
+
+      if (verse.chapter === parts.endChapter && verse.number > parts.endVerse) {
+        return false
+      }
+
+      return true
+    })
+    .map((verse) => ({
+      chapter: verse.chapter,
+      number: getVerseKey(verse.chapter, verse.number, parts.startChapter, parts.endChapter),
+      text: verse.text,
+    }))
+
+  const expected = expectedVerseCountFromRows(rows, parts)
+
+  if (!expected || verses.length !== expected) {
+    throw new Error(`Expected ${expected || 'non-empty'} Bible verses, parsed ${verses.length}.`)
   }
 
   return verses
@@ -324,16 +391,23 @@ async function readScriptureBook(book, language = 'ko', translation = '개역개
 }
 
 function hasCachedVerses(cache, range) {
-  const [, chapter, startVerse, endVerse] = range
-  const chapterVerses = cache.chapters?.[String(chapter)]
+  const parts = getRangeParts(range)
 
-  if (!chapterVerses) {
-    return false
-  }
+  for (let chapter = parts.startChapter; chapter <= parts.endChapter; chapter += 1) {
+    const chapterVerses = cache.chapters?.[String(chapter)]
 
-  for (let verseNumber = startVerse; verseNumber <= endVerse; verseNumber += 1) {
-    if (!chapterVerses[String(verseNumber)]) {
+    if (!chapterVerses) {
       return false
+    }
+
+    const verseNumbers = Object.keys(chapterVerses).map(Number).filter(Number.isFinite).sort((first, second) => first - second)
+    const from = chapter === parts.startChapter ? parts.startVerse : verseNumbers[0]
+    const to = chapter === parts.endChapter ? parts.endVerse : verseNumbers[verseNumbers.length - 1]
+
+    for (let verseNumber = from; verseNumber <= to; verseNumber += 1) {
+      if (!chapterVerses[String(verseNumber)]) {
+        return false
+      }
     }
   }
 
@@ -341,18 +415,20 @@ function hasCachedVerses(cache, range) {
 }
 
 async function mergeScriptureCache(language, range, verses, translation) {
-  const [book, chapter] = range
-  const chapterKey = String(chapter)
+  const [book] = range
   const cache = await readScriptureBook(book, language, translation)
 
   cache.translation = translation
   cache.language = language
   cache.book = book
   cache.chapters ??= {}
-  cache.chapters[chapterKey] ??= {}
 
   for (const verse of verses) {
-    cache.chapters[chapterKey][String(verse.number)] = verse.text
+    const chapter = verse.chapter ?? getRangeParts(range).startChapter
+    const verseNumber = String(verse.number).includes(':') ? String(verse.number).split(':')[1] : String(verse.number)
+    const chapterKey = String(chapter)
+    cache.chapters[chapterKey] ??= {}
+    cache.chapters[chapterKey][verseNumber] = verse.text
   }
 
   await mkdir(resolve(SCRIPTURE_CACHE_ROOT, language), { recursive: true })
@@ -360,7 +436,8 @@ async function mergeScriptureCache(language, range, verses, translation) {
 }
 
 async function fetchGetBibleVerses(language, range) {
-  const [book, chapter, startVerse, endVerse] = range
+  const [book] = range
+  const parts = getRangeParts(range)
   const translation = GETBIBLE_TRANSLATIONS[language]
   const bookName = GETBIBLE_BOOK_NAMES[book]
 
@@ -378,21 +455,30 @@ async function fetchGetBibleVerses(language, range) {
 
   const data = await response.json()
   const sourceBook = data.books?.find((item) => item.name === bookName)
-  const sourceChapter = sourceBook?.chapters?.find((item) => Number(item.chapter) === chapter)
+  const verses = []
 
-  if (!sourceChapter) {
-    throw new Error(`Could not find ${bookName} ${chapter} in ${translation.key}.`)
+  for (let chapter = parts.startChapter; chapter <= parts.endChapter; chapter += 1) {
+    const sourceChapter = sourceBook?.chapters?.find((item) => Number(item.chapter) === chapter)
+
+    if (!sourceChapter) {
+      throw new Error(`Could not find ${bookName} ${chapter} in ${translation.key}.`)
+    }
+
+    const verseNumbers = sourceChapter.verses.map((verse) => Number(verse.verse)).filter(Number.isFinite)
+    const from = chapter === parts.startChapter ? parts.startVerse : Math.min(...verseNumbers)
+    const to = chapter === parts.endChapter ? parts.endVerse : Math.max(...verseNumbers)
+
+    verses.push(...sourceChapter.verses
+      .filter((verse) => Number(verse.verse) >= from && Number(verse.verse) <= to)
+      .map((verse) => ({
+        chapter,
+        number: getVerseKey(chapter, Number(verse.verse), parts.startChapter, parts.endChapter),
+        text: String(verse.text ?? '').replace(/\s+/g, ' ').trim(),
+      })))
   }
 
-  const verses = sourceChapter.verses
-    .filter((verse) => Number(verse.verse) >= startVerse && Number(verse.verse) <= endVerse)
-    .map((verse) => ({
-      number: Number(verse.verse),
-      text: String(verse.text ?? '').replace(/\s+/g, ' ').trim(),
-    }))
-
-  if (verses.length !== endVerse - startVerse + 1) {
-    throw new Error(`Expected ${endVerse - startVerse + 1} ${language} verses, parsed ${verses.length}.`)
+  if (!verses.length) {
+    throw new Error(`Expected non-empty ${language} verses, parsed ${verses.length}.`)
   }
 
   return verses
@@ -413,7 +499,7 @@ async function updateLanguageCache(language, range, getVerses, translation) {
 
 async function resolveKoreanVersesForCandidate(range, candidate) {
   const bible = await fetchDurannoBible(candidate.isoDate)
-  const verses = parseBibleVerses(bible.html, range[2], range[3])
+  const verses = parseBibleVerses(bible.html, range)
 
   if (!verses.length || verses.some((verse) => !verse.text)) {
     throw new Error(`Duranno returned empty verses for ${candidate.isoDate}.`)
