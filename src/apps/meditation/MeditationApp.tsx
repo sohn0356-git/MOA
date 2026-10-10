@@ -833,6 +833,15 @@ function Icon({ name, label, className }: { name: FaithIconName; label?: string;
   return <FaithIcon className={className ?? 'faith-icon'} label={label} name={name} spriteUrl={spriteUrl} />
 }
 
+function FaithBrandMark() {
+  return (
+    <svg aria-hidden="true" className="faith-brand-mark" viewBox="0 0 256 256">
+      <path d="M104 60c-14-2-29 6-33 23L47 174c-5 18 3 27 20 27h30c13 0 17-6 18-18l5-105c1-10-5-17-16-18Z" />
+      <path d="M152 60c14-2 29 6 33 23l24 91c5 18-3 27-20 27h-30c-13 0-17-6-18-18l-5-105c-1-10 5-17 16-18Z" />
+    </svg>
+  )
+}
+
 function EmptyState({ children }: { children: string }) {
   return <p className="faith-empty">{children}</p>
 }
@@ -1009,6 +1018,7 @@ function UploadProgress({
 export function MeditationApp() {
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
+  const questionTagInputRef = useRef<HTMLInputElement | null>(null)
   const [activeTab, setActiveTab] = useState<FaithTab>('feed')
   const [devotionView, setDevotionView] = useState<DevotionView>('read')
   const [feedView, setFeedView] = useState<FeedView>('list')
@@ -1019,7 +1029,9 @@ export function MeditationApp() {
   const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>('ko')
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<number[]>([])
   const [isVerseSheetOpen, setIsVerseSheetOpen] = useState(false)
-  const [fontScale, setFontScale] = useState(1)
+  const [isDateSheetOpen, setIsDateSheetOpen] = useState(false)
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false)
+  const [fontScale, setFontScale] = useState(() => Number(window.localStorage.getItem('moa.faith.fontScale') ?? 1) || 1)
   const [remotePlan, setRemotePlan] = useState<ScripturePlan | null>(null)
   const [isPlanLoading, setIsPlanLoading] = useState(false)
   const [planError, setPlanError] = useState('')
@@ -1080,7 +1092,6 @@ export function MeditationApp() {
   const [qnaSearch, setQnaSearch] = useState('')
   const [qnaTagFilter, setQnaTagFilter] = useState('')
   const [isComposingTag, setIsComposingTag] = useState(false)
-  const [suggestionIndex, setSuggestionIndex] = useState(0)
   const [lunchPraiseTracks, setLunchPraiseTracks] = useState<LunchPraiseTrack[]>([])
   const [isTrackLoading, setIsTrackLoading] = useState(true)
   const [profileRecordTab, setProfileRecordTab] = useState<ProfileRecordTab>('devotion')
@@ -1118,20 +1129,10 @@ export function MeditationApp() {
   const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null
   const todayKey = currentTodayKey
   const allQuestionTags = useMemo(() => normalizeFaithTags(faithQuestions.flatMap((question) => question.tags)), [faithQuestions])
-  const normalizedTagInput = useMemo(() => normalizeFaithTags([questionTagInput])[0] ?? '', [questionTagInput])
   const tagSuggestions = useMemo(
     () => getTagSuggestions(allQuestionTags, questionTagInput, selectedQuestionTags),
     [allQuestionTags, questionTagInput, selectedQuestionTags],
   )
-  const tagOptions = useMemo(() => {
-    const options = [...tagSuggestions]
-
-    if (normalizedTagInput && !selectedQuestionTags.includes(normalizedTagInput) && !options.includes(normalizedTagInput)) {
-      options.push(normalizedTagInput)
-    }
-
-    return options
-  }, [normalizedTagInput, selectedQuestionTags, tagSuggestions])
   const relatedQuestions = useMemo(
     () => getRelatedQuestions(faithQuestions, '', selectedQuestionTags).slice(0, 4),
     [faithQuestions, selectedQuestionTags],
@@ -1199,6 +1200,16 @@ export function MeditationApp() {
   }, [selectedDate, weekDateKeys])
   const lunchPraise = lunchPraiseTracks[0]
   const lunchPraiseEmbedUrl = lunchPraise ? getYouTubeEmbedUrl(lunchPraise.videoId || lunchPraise.youtubeUrl) : null
+  const selectedDateLabel = useMemo(() => {
+    const date = new Date(`${selectedDate}T00:00:00+09:00`)
+    if (Number.isNaN(date.getTime())) return selectedDate
+    return new Intl.DateTimeFormat('ko-KR', {
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'Asia/Seoul',
+      weekday: 'short',
+    }).format(date).replace(/요일$/, '')
+  }, [selectedDate])
   const photoPreviewUrl = crossPreviewUrl
   const profileAvatarPreview = profileUseDefaultAvatar ? '' : profilePreviewObjectUrl || currentProfile.avatarUrl
 
@@ -1234,6 +1245,10 @@ export function MeditationApp() {
     const timer = window.setInterval(() => setNowMs(Date.now()), 60 * 1000)
     return () => window.clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem('moa.faith.fontScale', String(fontScale))
+  }, [fontScale])
 
   useEffect(() => {
     setVisibleFeedCount(8)
@@ -2295,6 +2310,8 @@ export function MeditationApp() {
     }
 
     const tags = normalizeFaithTags([...selectedQuestionTags, ...extractHashTags(questionTagInput)])
+    setSelectedQuestionTags(tags)
+    setQuestionTagInput('')
 
     if (editingQuestionId) {
       await update(ref(getRealtimeDb(), `${getUserFaithQuestionsPath(currentUser.uid)}/${editingQuestionId}`), {
@@ -2410,10 +2427,19 @@ export function MeditationApp() {
     })
   }
 
-  function addQuestionTag(tag: string) {
-    setSelectedQuestionTags((currentTags) => normalizeFaithTags([...currentTags, tag]))
+  function addQuestionTag(tag: string, options?: { keepFocus?: boolean }) {
+    const normalizedTag = normalizeFaithTags([tag])[0]
+
+    if (!normalizedTag) {
+      setQuestionTagInput('')
+      return
+    }
+
+    setSelectedQuestionTags((currentTags) => normalizeFaithTags([...currentTags, normalizedTag]))
     setQuestionTagInput('')
-    setSuggestionIndex(0)
+    if (options?.keepFocus) {
+      window.requestAnimationFrame(() => questionTagInputRef.current?.focus())
+    }
   }
 
   function handleTagKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -2421,15 +2447,9 @@ export function MeditationApp() {
       return
     }
 
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'Enter') {
       event.preventDefault()
-      setSuggestionIndex((currentIndex) => Math.min(Math.max(0, tagOptions.length - 1), currentIndex + 1))
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      setSuggestionIndex((currentIndex) => Math.max(0, currentIndex - 1))
-    } else if (event.key === 'Enter') {
-      event.preventDefault()
-      addQuestionTag(tagOptions[suggestionIndex] ?? questionTagInput)
+      addQuestionTag(questionTagInput, { keepFocus: true })
     } else if (event.key === 'Escape') {
       setQuestionTagInput('')
     }
@@ -2447,8 +2467,15 @@ export function MeditationApp() {
       <header className="faith-header">
         {activeTab === 'feed' || (activeTab === 'qna' && qnaView === 'list') ? (
           <div className="faith-title faith-title-brand">
-            <Icon name="brand-app" />
+            <FaithBrandMark />
             <h2>MOA Faith</h2>
+          </div>
+        ) : activeTab === 'qna' && qnaView === 'write' ? (
+          <div className="faith-title">
+            <button aria-label="질문 목록으로" className="faith-icon-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>
+              <Icon name="back" />
+            </button>
+            <h2>{editingQuestionId ? '질문 수정' : '질문 작성'}</h2>
           </div>
         ) : profileView === 'edit' ? (
           <div className="faith-title">
@@ -2476,7 +2503,9 @@ export function MeditationApp() {
             <h2>{renderHeaderTitle()}</h2>
           </div>
         )}
-        {profileView === 'edit' ? (
+        {activeTab === 'qna' && qnaView === 'write' ? (
+          <button className="faith-text-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>취소</button>
+        ) : profileView === 'edit' ? (
           <button className="faith-text-button" disabled={isProfileSaving} type="button" onClick={() => void handleProfileSave()}>
             {isProfileSaving ? '저장 중' : '저장'}
           </button>
@@ -2637,12 +2666,16 @@ export function MeditationApp() {
 
         {activeTab === 'devotion' ? (
           <section className="faith-stack">
-            <div className="faith-controls">
-              <label className="faith-date">
+            <div className="faith-devotion-top">
+              <div className="faith-date-line">
                 <Icon name="calendar" />
-                <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
-              </label>
-              <div className="faith-tabs" role="tablist" aria-label="묵상 보기">
+                <button aria-label={`날짜 선택, 현재 ${selectedDateLabel}`} type="button" onClick={() => setIsDateSheetOpen(true)}>
+                  <span>{selectedDateLabel}</span>
+                  <Icon name="chevron-right" />
+                </button>
+                {selectedDate !== todayKey ? <button className="faith-text-button" type="button" onClick={() => setSelectedDate(todayKey)}>오늘</button> : null}
+              </div>
+              <div className="faith-underline-tabs" role="tablist" aria-label="묵상 보기">
                 <button aria-selected={devotionView !== 'records'} role="tab" type="button" onClick={() => setDevotionView('read')}>말씀</button>
                 <button aria-selected={devotionView === 'records'} role="tab" type="button" onClick={() => setDevotionView('records')}>내 묵상</button>
               </div>
@@ -2650,26 +2683,36 @@ export function MeditationApp() {
 
             {devotionView === 'read' ? (
               <section className="faith-reading" aria-labelledby="scripture-title">
-                <div className="faith-section-head">
+                <div className="faith-scripture-head">
                   <div>
                     <h3 id="scripture-title">{plan.reference}</h3>
                     <p>{plan.title}</p>
                   </div>
-                </div>
-                <div className="faith-tool-row">
-                  <button aria-label="글자 크기 줄이기" className="faith-icon-button" type="button" onClick={() => setFontScale((value) => Math.max(0.9, value - 0.05))}>
-                    <Icon name="font-size" />
-                  </button>
-                  <button aria-label="글자 크기 키우기" className="faith-icon-button" type="button" onClick={() => setFontScale((value) => Math.min(1.15, value + 0.05))}>
-                    <Icon name="plus" />
-                  </button>
-                </div>
-                <div className="faith-language-row" aria-label="말씀 언어">
-                  {scriptureLanguageOptions.map((option) => (
-                    <button aria-pressed={scriptureLanguage === option.id} key={option.id} title={option.translation} type="button" onClick={() => setScriptureLanguage(option.id)}>
-                      {option.label}
+                  <div className="faith-reading-tools">
+                    <button aria-label="글자 크기" className="faith-tool-button" type="button" onClick={() => setFontScale((value) => value >= 1.15 ? 0.95 : Math.min(1.15, value + 0.05))}>
+                      <Icon name="font-size" />
                     </button>
-                  ))}
+                    <div className="faith-language-menu">
+                      <button aria-expanded={isLanguageMenuOpen} type="button" onClick={() => setIsLanguageMenuOpen((open) => !open)}>
+                        {scriptureLanguageOptions.find((option) => option.id === scriptureLanguage)?.label ?? '한국어'} ▾
+                      </button>
+                      {isLanguageMenuOpen ? (
+                        <div role="menu">
+                          {scriptureLanguageOptions.map((option) => (
+                            <button aria-checked={scriptureLanguage === option.id} key={option.id} role="menuitemradio" title={option.translation} type="button" onClick={() => {
+                              setScriptureLanguage(option.id)
+                              setIsLanguageMenuOpen(false)
+                            }}>
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    <button className="faith-text-button" type="button" onClick={startWriting}>
+                      묵상 쓰기
+                    </button>
+                  </div>
                 </div>
                 {planError ? <p className="faith-alert faith-alert-error">{planError}</p> : null}
                 <div className="faith-verse-list" style={{ fontSize: `${17 * fontScale}px` }}>
@@ -2691,7 +2734,6 @@ export function MeditationApp() {
                   )}
                 </div>
                 <p className="faith-question-line">{plan.question}</p>
-                <button className="faith-primary" type="button" onClick={startWriting}>묵상 작성</button>
               </section>
             ) : null}
 
@@ -2951,25 +2993,22 @@ export function MeditationApp() {
                 </section>
               </article>
             ) : qnaView === 'write' ? (
-              <section className="faith-panel">
-                <div className="faith-section-head">
-                  <h3>{editingQuestionId ? '질문 수정' : '질문 작성'}</h3>
-                  <button className="faith-text-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>취소</button>
-                </div>
-                <label className="faith-field"><span>제목</span><input value={questionTitle} onChange={(event) => setQuestionTitle(event.target.value)} /></label>
-                <label className="faith-field"><span>내용</span><textarea rows={7} value={questionBody} onChange={(event) => setQuestionBody(event.target.value)} /></label>
+              <section className="faith-panel faith-qna-compose">
+                <label className="faith-field"><span>제목</span><input placeholder="궁금한 내용을 한 줄로 적어주세요" value={questionTitle} onChange={(event) => setQuestionTitle(event.target.value)} /></label>
+                <label className="faith-field"><span>내용</span><textarea placeholder="질문의 상황을 조금 더 알려주세요" rows={6} value={questionBody} onChange={(event) => setQuestionBody(event.target.value)} /></label>
                 <div className="faith-tag-editor">
+                  <span className="faith-label">해시태그</span>
                   <div className="faith-tags">
                     {selectedQuestionTags.map((tag) => (
-                      <button className="faith-tag-chip is-selected" key={tag} type="button" onClick={() => setSelectedQuestionTags((tags) => tags.filter((item) => item !== tag))}>
-                        <span>#{tag}</span>
+                      <button aria-label={`#${tag} 삭제`} className="faith-tag-chip is-selected" key={tag} type="button" onClick={() => setSelectedQuestionTags((tags) => tags.filter((item) => item !== tag))}>
+                        #{tag}
                         <Icon name="close" />
                       </button>
                     ))}
                   </div>
                   <label className="faith-field">
-                    <span>해시태그</span>
                     <input
+                      ref={questionTagInputRef}
                       autoComplete="off"
                       placeholder="# 없이 입력"
                       value={questionTagInput}
@@ -2979,11 +3018,12 @@ export function MeditationApp() {
                       onKeyDown={handleTagKeyDown}
                     />
                   </label>
-                  {questionTagInput || tagOptions.length ? (
+                  <p className="faith-helper">입력 후 Enter로 태그를 추가하세요</p>
+                  {tagSuggestions.length ? (
                     <div className="faith-suggestions" role="listbox">
-                      {tagOptions.map((tag, index) => (
-                        <button aria-selected={index === suggestionIndex} key={tag} role="option" type="button" onClick={() => addQuestionTag(tag)}>
-                          #{tag}{tag === normalizedTagInput && !allQuestionTags.includes(tag) ? ' 추가' : ''}
+                      {tagSuggestions.map((tag) => (
+                        <button key={tag} role="option" type="button" onClick={() => addQuestionTag(tag, { keepFocus: true })}>
+                          #{tag}
                         </button>
                       ))}
                     </div>
@@ -3220,6 +3260,62 @@ export function MeditationApp() {
         ) : null}
       </main>
 
+      {isDateSheetOpen ? (
+        <div className="faith-sheet-backdrop" role="presentation" onClick={() => setIsDateSheetOpen(false)}>
+          <section
+            aria-labelledby="date-sheet-title"
+            aria-modal="true"
+            className="faith-date-sheet"
+            role="dialog"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="faith-section-head">
+              <div>
+                <h3 id="date-sheet-title">날짜 선택</h3>
+                <p>{weekMonthLabel}</p>
+              </div>
+              <button aria-label="날짜 선택 닫기" className="faith-icon-button" type="button" onClick={() => setIsDateSheetOpen(false)}>
+                <Icon name="close" />
+              </button>
+            </div>
+            <div className="faith-week-head">
+              <button aria-label="이전 주" className="faith-icon-button" type="button" onClick={() => setSelectedDate(addDaysToKstDateKey(selectedDate, -7))}>
+                <Icon name="back" />
+              </button>
+              <strong>{weekMonthLabel}</strong>
+              <button aria-label="다음 주" className="faith-icon-button" type="button" onClick={() => setSelectedDate(addDaysToKstDateKey(selectedDate, 7))}>
+                <Icon name="chevron-right" />
+              </button>
+            </div>
+            <div className="faith-week faith-week-picker">
+              {weekDateKeys.map((dateKey) => {
+                const parts = getKstDateParts(dateKey)
+                return (
+                  <button
+                    aria-current={dateKey === todayKey ? 'date' : undefined}
+                    aria-pressed={dateKey === selectedDate}
+                    key={dateKey}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDate(dateKey)
+                      setIsDateSheetOpen(false)
+                    }}
+                  >
+                    <span>{parts.weekday}</span>
+                    <strong>{parts.day}</strong>
+                    <em>{dateKey === todayKey ? '오늘' : ''}</em>
+                  </button>
+                )
+              })}
+            </div>
+            <label className="faith-field faith-date-native">
+              <span>먼 날짜 선택</span>
+              <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
+            </label>
+          </section>
+        </div>
+      ) : null}
+
       {isVerseSheetOpen ? (
         <div className="faith-sheet-backdrop" role="presentation" onClick={() => setIsVerseSheetOpen(false)}>
           <section
@@ -3441,14 +3537,16 @@ export function MeditationApp() {
         </div>
       ) : null}
 
-      <nav className="faith-bottom-nav" aria-label="MOA Faith">
-        {tabs.map((tab) => (
-          <button aria-current={activeTab === tab.id ? 'page' : undefined} key={tab.id} type="button" onClick={() => handleTabChange(tab.id)}>
-            <Icon name={tab.icon} />
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </nav>
+      {activeTab === 'qna' && qnaView === 'write' ? null : (
+        <nav className="faith-bottom-nav" aria-label="MOA Faith">
+          {tabs.map((tab) => (
+            <button aria-current={activeTab === tab.id ? 'page' : undefined} key={tab.id} type="button" onClick={() => handleTabChange(tab.id)}>
+              <Icon name={tab.icon} />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </section>
   )
 }
