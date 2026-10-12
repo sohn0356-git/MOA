@@ -467,7 +467,11 @@ function formatShortDateLabel(value: string) {
 }
 
 function getEntryTitle(entry: MeditationEntry) {
-  return entry.mind.trim().split('\n')[0] || entry.apply.trim().split('\n')[0] || entry.reference
+  return getEntryDevotionText(entry).split('\n')[0] || entry.reference
+}
+
+function getEntryDevotionText(entry: MeditationEntry) {
+  return [entry.mind, entry.apply, entry.prayer].map((value) => value?.trim() ?? '').filter(Boolean).join('\n\n')
 }
 
 function getQuestionTitle(question: FaithQuestion) {
@@ -1094,8 +1098,6 @@ export function MeditationApp() {
   const [isPlanLoading, setIsPlanLoading] = useState(false)
   const [planError, setPlanError] = useState('')
   const [mind, setMind] = useState('')
-  const [apply, setApply] = useState('')
-  const [prayerText, setPrayerText] = useState('')
   const [audience, setAudience] = useState<Audience>('private')
   const [bookmarked, setBookmarked] = useState(false)
   const [entries, setEntries] = useState<MeditationEntry[]>(loadLocalEntries)
@@ -1183,7 +1185,7 @@ export function MeditationApp() {
   const currentProfile = faithProfile ?? getDefaultProfile(currentUser)
   const authorName = currentProfile.displayName
   const authorAvatarUrl = currentProfile.avatarUrl
-  const canSave = Boolean(mind.trim() || apply.trim() || prayerText.trim())
+  const canSave = Boolean(mind.trim())
   const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null
   const todayKey = currentTodayKey
   const allQuestionTags = useMemo(() => normalizeFaithTags(faithQuestions.flatMap((question) => question.tags)), [faithQuestions])
@@ -1818,8 +1820,6 @@ export function MeditationApp() {
 
   function startWriting() {
     setMind('')
-    setApply('')
-    setPrayerText('')
     setAudience('private')
     setBookmarked(false)
     setDevotionView('write')
@@ -1829,9 +1829,7 @@ export function MeditationApp() {
     setSelectedEntryId(entry.id)
     setSelectedDate(entry.selectedDate)
     setSelectedVerseNumbers(entry.selectedVerseNumbers)
-    setMind(entry.mind)
-    setApply(entry.apply)
-    setPrayerText(entry.prayer ?? '')
+    setMind(getEntryDevotionText(entry))
     setAudience(entry.audience)
     setBookmarked(Boolean(entry.bookmarked))
     setDevotionView('edit')
@@ -1844,13 +1842,13 @@ export function MeditationApp() {
 
     const entry: MeditationEntry = {
       id: createLocalId(),
-      apply: apply.trim(),
+      apply: '',
       applyDone: false,
       audience,
       bookmarked,
       createdAt: new Date().toISOString(),
       mind: mind.trim(),
-      prayer: prayerText.trim(),
+      prayer: '',
       reference: plan.reference,
       selectedDate,
       selectedVerseNumbers,
@@ -1878,8 +1876,6 @@ export function MeditationApp() {
       }
 
       setMind('')
-      setApply('')
-      setPrayerText('')
       setSelectedEntryId(savedEntry.id)
       setDevotionView('detail')
       setStatusMessage('묵상을 저장했습니다.')
@@ -1897,11 +1893,11 @@ export function MeditationApp() {
 
     const updatedEntry: MeditationEntry = {
       ...selectedEntry,
-      apply: apply.trim(),
+      apply: '',
       audience,
       bookmarked,
       mind: mind.trim(),
-      prayer: prayerText.trim(),
+      prayer: '',
       selectedVerseNumbers,
       verseText: selectedVerseNumbers.length ? selectedVerseText : selectedEntry.verseText,
     }
@@ -1950,14 +1946,6 @@ export function MeditationApp() {
 
     setDevotionView('records')
     setSelectedEntryId('')
-  }
-
-  async function handleApplyDone(entry: MeditationEntry, applyDone: boolean) {
-    if (currentUser && syncState === 'synced') {
-      await update(ref(getRealtimeDb(), `${getUserEntriesPath(currentUser.uid)}/${entry.id}`), { applyDone })
-    } else {
-      setEntries((currentEntries) => currentEntries.map((item) => item.id === entry.id ? { ...item, applyDone } : item))
-    }
   }
 
   async function handlePhotoUpload() {
@@ -2831,16 +2819,11 @@ export function MeditationApp() {
                   )}
                 </section>
                 <label className="faith-field">
-                  <span>오늘의 적용</span>
-                  <textarea rows={4} value={apply} onChange={(event) => setApply(event.target.value)} />
-                </label>
-                <label className="faith-field">
-                  <span>나의 기도</span>
-                  <textarea rows={4} value={prayerText} onChange={(event) => setPrayerText(event.target.value)} />
-                </label>
-                <label className="faith-field">
-                  <span>묵상 메모</span>
-                  <textarea rows={6} value={mind} onChange={(event) => setMind(event.target.value)} />
+                  <span>오늘의 묵상</span>
+                  <div className="faith-textarea-wrap">
+                    <textarea rows={8} value={mind} onChange={(event) => setMind(event.target.value)} />
+                    <em aria-live="polite">{mind.length}자</em>
+                  </div>
                 </label>
                 <div className="faith-segment" aria-label="공개 범위">
                   {(['private', 'public', 'group'] as Audience[]).map((item) => (
@@ -2875,20 +2858,6 @@ export function MeditationApp() {
                         <strong>{getEntryTitle(entry)}</strong>
                         <span>{entry.reference}</span>
                       </button>
-                      {entry.apply ? (
-                        <button
-                          aria-pressed={Boolean(entry.applyDone)}
-                          className="faith-apply-check"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            void handleApplyDone(entry, !entry.applyDone)
-                          }}
-                        >
-                          <span><Icon name="check" /></span>
-                          <em>{entry.applyDone ? '실천 완료' : '실천 전'}</em>
-                        </button>
-                      ) : null}
                     </article>
                   )) : <EmptyState>{entries.length ? '검색 조건에 맞는 묵상이 없습니다.' : '저장된 묵상이 없습니다.'}</EmptyState>}
                 </div>
@@ -2908,9 +2877,7 @@ export function MeditationApp() {
                 <h3>{getEntryTitle(selectedEntry)}</h3>
                 <p className="faith-muted">{selectedEntry.reference} · {getAudienceLabel(selectedEntry.audience)}</p>
                 <blockquote>{selectedEntry.verseText}</blockquote>
-                {selectedEntry.apply ? <section><h4>오늘의 적용</h4><p>{selectedEntry.apply}</p></section> : null}
-                {selectedEntry.prayer ? <section><h4>나의 기도</h4><p>{selectedEntry.prayer}</p></section> : null}
-                {selectedEntry.mind ? <section><h4>묵상 메모</h4><p>{selectedEntry.mind}</p></section> : null}
+                {getEntryDevotionText(selectedEntry) ? <section><h4>오늘의 묵상</h4><p>{getEntryDevotionText(selectedEntry)}</p></section> : null}
               </article>
             ) : null}
           </section>
@@ -3236,20 +3203,6 @@ export function MeditationApp() {
                           <strong>{getEntryTitle(entry)}</strong>
                           <span>{entry.reference}</span>
                         </button>
-                        {entry.apply ? (
-                          <button
-                            aria-pressed={Boolean(entry.applyDone)}
-                            className="faith-apply-check"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              void handleApplyDone(entry, !entry.applyDone)
-                            }}
-                          >
-                            <span><Icon name="check" /></span>
-                            <em>{entry.applyDone ? '실천 완료' : '실천 전'}</em>
-                          </button>
-                        ) : null}
                       </article>
                     ))}
                     {entries.every((entry) => entry.selectedDate !== selectedDate) ? <EmptyState>{`${formatShortDateLabel(selectedDate)}에는 묵상 기록이 없어요`}</EmptyState> : null}

@@ -5386,6 +5386,26 @@ select:disabled {
   resize: vertical;
 }
 
+.faith-textarea-wrap {
+  position: relative;
+}
+
+.faith-textarea-wrap textarea {
+  display: block;
+  padding-bottom: 34px;
+}
+
+.faith-textarea-wrap em {
+  bottom: 10px;
+  color: rgb(78 70 86 / 45%);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  pointer-events: none;
+  position: absolute;
+  right: 13px;
+}
+
 .faith-tabs,
 .faith-segment,
 .faith-language-row {
@@ -6412,6 +6432,10 @@ select:disabled {
   min-height: 96px;
   padding: 12px 13px;
   resize: vertical;
+}
+
+.faith-textarea-wrap textarea {
+  padding-bottom: 34px;
 }
 
 .faith-comment-composer {
