@@ -1,7 +1,5 @@
 import {
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -124,24 +122,8 @@ function userDoc(uid: string) {
 }
 
 export async function registerWithProfile(input: RegisterInput) {
-  const username = normalizeUsername(input.username)
-  if (username.length < 3) {
-    throw new Error('Username must contain at least 3 letters, numbers, or underscores.')
-  }
-
-  const { auth, functions } = requireFirebase()
-  const credential = await createUserWithEmailAndPassword(auth, input.email, input.password)
-  await updateProfile(credential.user, { displayName: input.displayName })
-  await sendEmailVerification(credential.user)
-
-  const createUserProfile = httpsCallable(functions, 'createUserProfile')
-  await createUserProfile({
-    username,
-    displayName: input.displayName.trim() || username,
-    photoURL: defaultAvatar,
-  })
-
-  return credential.user
+  void input
+  throw new Error('회원가입은 Google 로그인으로만 가능합니다.')
 }
 
 export async function createCurrentUserProfile(input: {

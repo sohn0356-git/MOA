@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { HttpsError, onCall } from 'firebase-functions/v2/https'
 
@@ -7,6 +8,13 @@ initializeApp()
 const db = getFirestore()
 const welcomeStars = 300
 const visitWindowMs = 1000 * 60 * 60 * 6
+const aiAccounts = {
+  'ai-daniel': { displayName: 'AI 다니엘', email: 'ai.daniel@moa-ai.app' },
+  'ai-lydia': { displayName: 'AI 루디아', email: 'ai.lydia@moa-ai.app' },
+  'ai-john': { displayName: 'AI 요한', email: 'ai.john@moa-ai.app' },
+  'ai-esther': { displayName: 'AI 에스더', email: 'ai.esther@moa-ai.app' },
+  'ai-paul': { displayName: 'AI 바울', email: 'ai.paul@moa-ai.app' },
+} as const
 
 function assertAuth(uid?: string) {
   if (!uid) {
@@ -30,6 +38,38 @@ function friendshipId(a: string, b: string) {
 function todayKey(date = new Date()) {
   return date.toISOString().slice(0, 10)
 }
+
+export const createAiLoginToken = onCall(async (request) => {
+  const accountId = String(request.data?.accountId ?? '')
+  const account = aiAccounts[accountId as keyof typeof aiAccounts]
+
+  if (!account) {
+    throw new HttpsError('invalid-argument', 'Invalid AI account.')
+  }
+
+  const auth = getAuth()
+
+  try {
+    await auth.getUser(accountId)
+  } catch (error) {
+    if (typeof error === 'object' && error && 'code' in error && error.code !== 'auth/user-not-found') {
+      throw error
+    }
+
+    await auth.createUser({
+      disabled: false,
+      displayName: account.displayName,
+      email: account.email,
+      emailVerified: true,
+      uid: accountId,
+    })
+    await auth.setCustomUserClaims(accountId, { aiAccount: true })
+  }
+
+  return {
+    token: await auth.createCustomToken(accountId, { aiAccount: true }),
+  }
+})
 
 export const createUserProfile = onCall(async (request) => {
   const uid = assertAuth(request.auth?.uid)

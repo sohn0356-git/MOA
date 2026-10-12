@@ -2,18 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { FirebaseError } from 'firebase/app'
 import {
   GoogleAuthProvider,
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  signInWithEmailAndPassword,
+  signInWithCustomToken,
   signInWithRedirect,
   signInWithPopup,
   signOut,
-  updateProfile,
   type User,
 } from 'firebase/auth'
+import { httpsCallable } from 'firebase/functions'
 import {
   getFirebaseAuth,
   getFirebaseConfigError,
+  getFirebaseFunctions,
 } from '../services/firebase'
 
 function getAuthErrorMessage(error: unknown) {
@@ -37,12 +37,8 @@ function getAuthErrorMessage(error: unknown) {
       return 'Firebase API key가 올바르지 않습니다. 배포 환경 변수와 Firebase Web app 설정을 확인하세요.'
     }
 
-    if (error.code === 'auth/email-already-in-use') {
-      return '이미 등록된 AI 계정입니다. 다시 로그인을 시도하세요.'
-    }
-
-    if (error.code === 'auth/operation-not-allowed') {
-      return 'Firebase Authentication에서 이메일/비밀번호 로그인을 활성화해야 AI 계정 로그인을 사용할 수 있습니다.'
+    if (error.code === 'auth/custom-token-mismatch') {
+      return 'AI 로그인 토큰의 Firebase 프로젝트가 현재 앱 설정과 다릅니다.'
     }
   }
 
@@ -113,26 +109,15 @@ export function useAuth() {
     }
   }
 
-  async function signInWithAiAccount(email: string, password: string, displayName: string) {
+  async function signInWithAiAccount(accountId: string) {
     setIsAuthMutating(true)
     setAuthError(null)
 
     try {
       const auth = getFirebaseAuth()
-
-      try {
-        const credential = await signInWithEmailAndPassword(auth, email, password)
-        if (!credential.user.displayName) {
-          await updateProfile(credential.user, { displayName })
-        }
-      } catch (signInError) {
-        if (!(signInError instanceof FirebaseError) || !['auth/user-not-found', 'auth/invalid-credential'].includes(signInError.code)) {
-          throw signInError
-        }
-
-        const credential = await createUserWithEmailAndPassword(auth, email, password)
-        await updateProfile(credential.user, { displayName })
-      }
+      const createAiLoginToken = httpsCallable<{ accountId: string }, { token: string }>(getFirebaseFunctions(), 'createAiLoginToken')
+      const result = await createAiLoginToken({ accountId })
+      await signInWithCustomToken(auth, result.data.token)
     } catch (error) {
       setAuthError(getAuthErrorMessage(error))
       throw error

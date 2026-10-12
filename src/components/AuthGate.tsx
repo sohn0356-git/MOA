@@ -2,11 +2,11 @@ import type { ReactNode } from 'react'
 import type { User } from 'firebase/auth'
 
 export const aiLoginAccounts = [
-  { displayName: 'AI 다니엘', email: 'ai.daniel@moa-ai.app', password: 'MoaAi!2026-01' },
-  { displayName: 'AI 루디아', email: 'ai.lydia@moa-ai.app', password: 'MoaAi!2026-02' },
-  { displayName: 'AI 요한', email: 'ai.john@moa-ai.app', password: 'MoaAi!2026-03' },
-  { displayName: 'AI 에스더', email: 'ai.esther@moa-ai.app', password: 'MoaAi!2026-04' },
-  { displayName: 'AI 바울', email: 'ai.paul@moa-ai.app', password: 'MoaAi!2026-05' },
+  { accountId: 'ai-daniel', displayName: 'AI 다니엘', email: 'ai.daniel@moa-ai.app' },
+  { accountId: 'ai-lydia', displayName: 'AI 루디아', email: 'ai.lydia@moa-ai.app' },
+  { accountId: 'ai-john', displayName: 'AI 요한', email: 'ai.john@moa-ai.app' },
+  { accountId: 'ai-esther', displayName: 'AI 에스더', email: 'ai.esther@moa-ai.app' },
+  { accountId: 'ai-paul', displayName: 'AI 바울', email: 'ai.paul@moa-ai.app' },
 ] as const
 
 type AuthGateProps = {
@@ -14,7 +14,7 @@ type AuthGateProps = {
   children: ReactNode
   isAuthLoading: boolean
   isAuthMutating: boolean
-  onAiSignIn: (email: string, password: string, displayName: string) => Promise<void>
+  onAiSignIn: (accountId: string) => Promise<void>
   onSignIn: () => Promise<void>
   user: User | null
 }
@@ -82,7 +82,7 @@ export function AuthGate({
               disabled={isAuthMutating || isMissingLocalConfig(authError)}
               key={account.email}
               type="button"
-              onClick={() => void onAiSignIn(account.email, account.password, account.displayName)}
+              onClick={() => void onAiSignIn(account.accountId)}
             >
               <span>{account.displayName}</span>
               <small>AI 로그인</small>
