@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { FirebaseError } from 'firebase/app'
 import {
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithRedirect,
   signInWithPopup,
   signOut,
+  updateProfile,
   type User,
 } from 'firebase/auth'
 import {
@@ -32,6 +35,14 @@ function getAuthErrorMessage(error: unknown) {
 
     if (error.code === 'auth/api-key-not-valid') {
       return 'Firebase API key가 올바르지 않습니다. 배포 환경 변수와 Firebase Web app 설정을 확인하세요.'
+    }
+
+    if (error.code === 'auth/email-already-in-use') {
+      return '이미 등록된 AI 계정입니다. 다시 로그인을 시도하세요.'
+    }
+
+    if (error.code === 'auth/operation-not-allowed') {
+      return 'Firebase Authentication에서 이메일/비밀번호 로그인을 활성화해야 AI 계정 로그인을 사용할 수 있습니다.'
     }
   }
 
@@ -102,6 +113,34 @@ export function useAuth() {
     }
   }
 
+  async function signInWithAiAccount(email: string, password: string, displayName: string) {
+    setIsAuthMutating(true)
+    setAuthError(null)
+
+    try {
+      const auth = getFirebaseAuth()
+
+      try {
+        const credential = await signInWithEmailAndPassword(auth, email, password)
+        if (!credential.user.displayName) {
+          await updateProfile(credential.user, { displayName })
+        }
+      } catch (signInError) {
+        if (!(signInError instanceof FirebaseError) || !['auth/user-not-found', 'auth/invalid-credential'].includes(signInError.code)) {
+          throw signInError
+        }
+
+        const credential = await createUserWithEmailAndPassword(auth, email, password)
+        await updateProfile(credential.user, { displayName })
+      }
+    } catch (error) {
+      setAuthError(getAuthErrorMessage(error))
+      throw error
+    } finally {
+      setIsAuthMutating(false)
+    }
+  }
+
   async function signOutUser() {
     setIsAuthMutating(true)
     setAuthError(null)
@@ -120,6 +159,7 @@ export function useAuth() {
     authError,
     isAuthLoading,
     isAuthMutating,
+    signInWithAiAccount,
     signInWithGoogle,
     signOutUser,
     user,

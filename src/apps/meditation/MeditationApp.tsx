@@ -63,6 +63,9 @@ type MeditationEntry = {
   id: string
   apply: string
   applyDone?: boolean
+  authorAvatarUrl?: string
+  authorName?: string
+  authorUid?: string
   audience: Audience
   bookmarked?: boolean
   createdAt: string
@@ -336,6 +339,14 @@ const tabs: Array<{ id: FaithTab; icon: FaithIconName; label: string }> = [
   { id: 'profile', icon: 'user', label: '내 기록' },
 ]
 const DAY_MS = 24 * 60 * 60 * 1000
+const AI_MODE_STORAGE_KEY = 'moa.faith.aiMode'
+const aiAuthors = [
+  { displayName: 'AI 다니엘', uid: 'ai-daniel' },
+  { displayName: 'AI 루디아', uid: 'ai-lydia' },
+  { displayName: 'AI 요한', uid: 'ai-john' },
+  { displayName: 'AI 에스더', uid: 'ai-esther' },
+  { displayName: 'AI 바울', uid: 'ai-paul' },
+] as const
 
 function getTodayKey() {
   return getKstDateKey()
@@ -467,11 +478,7 @@ function formatShortDateLabel(value: string) {
 }
 
 function getEntryTitle(entry: MeditationEntry) {
-  return getEntryDevotionText(entry).split('\n')[0] || entry.reference
-}
-
-function getEntryDevotionText(entry: MeditationEntry) {
-  return [entry.mind, entry.apply, entry.prayer].map((value) => value?.trim() ?? '').filter(Boolean).join('\n\n')
+  return entry.mind.trim().split('\n')[0] || entry.apply.trim().split('\n')[0] || entry.reference
 }
 
 function getQuestionTitle(question: FaithQuestion) {
@@ -840,6 +847,76 @@ function getDefaultProfile(user: ReturnType<typeof getFirebaseAuth>['currentUser
   }
 }
 
+function getAiDevotionEntries(date: string, plan: ScripturePlan): MeditationEntry[] {
+  return aiAuthors.map((author, index) => ({
+    id: `ai-entry-${date}-${author.uid}`,
+    apply: [
+      '오늘 만나는 한 사람에게 먼저 안부를 묻기',
+      '결정하기 전 짧게 기도하고 기록하기',
+      '미뤄둔 감사 한 가지를 직접 표현하기',
+      '걱정을 적고 맡기는 기도로 바꾸기',
+      '말씀 한 문장을 잠금화면 메모로 남기기',
+    ][index],
+    applyDone: false,
+    audience: 'public',
+    authorName: author.displayName,
+    authorUid: author.uid,
+    createdAt: new Date(`${date}T0${Math.min(index + 6, 9)}:20:00+09:00`).toISOString(),
+    mind: [
+      '성전은 하루에 세워지지 않았지만, 다윗은 오늘 할 수 있는 준비를 아끼지 않았습니다. 내게 맡겨진 작은 순종도 다음 세대를 위한 재료가 될 수 있음을 봅니다.',
+      '하나님이 허락하신 평안은 멈춤이 아니라 다음 순종을 가능하게 하는 힘입니다. 오늘은 조급함보다 준비의 마음을 택하겠습니다.',
+      '말씀 앞에서 내 역할과 한계를 구분하게 됩니다. 내가 직접 완성하지 못해도 하나님은 이어서 세우십니다.',
+      '다윗의 준비는 보이지 않는 헌신이었습니다. 사람의 인정이 없어도 하나님 앞에서 충분한 하루를 살고 싶습니다.',
+      '강하고 담대하라는 말씀이 결과보다 동행에 근거한다는 점이 남습니다. 오늘의 불안을 하나씩 하나님께 맡깁니다.',
+    ][index],
+    prayer: '주님, 오늘 제게 맡겨진 자리에서 조용하지만 실제적인 순종을 하게 해주세요.',
+    reference: plan.reference,
+    selectedDate: date,
+    selectedVerseNumbers: plan.verses[index % Math.max(plan.verses.length, 1)] ? [plan.verses[index % plan.verses.length].number] : [],
+    theme: `AI 묵상 · ${plan.theme}`,
+    verseText: plan.verses[index % Math.max(plan.verses.length, 1)]?.text ?? '',
+  }))
+}
+
+function getAiPrayerRequests(date: string): PrayerRequest[] {
+  return aiAuthors.map((author, index) => ({
+    id: `ai-prayer-${date}-${author.uid}`,
+    authorName: author.displayName,
+    authorUid: author.uid,
+    body: [
+      '오늘 말씀을 읽는 사람들이 부담보다 초대의 마음으로 하루를 시작하도록 함께 기도해 주세요.',
+      '각자의 자리에서 미뤄둔 화해와 연락을 시작할 용기를 위해 기도합니다.',
+      '불안한 마음을 혼자 붙들지 않고 하나님께 맡기는 하루가 되도록 기도해 주세요.',
+      '가정과 일터에서 말이 부드러워지고 판단보다 경청이 먼저 나오도록 기도합니다.',
+      '작은 순종을 가볍게 여기지 않고 꾸준히 이어가도록 함께 기도해 주세요.',
+    ][index],
+    commentCount: 0,
+    createdAt: new Date(`${date}T1${index}:10:00+09:00`).toISOString(),
+    isAnswered: false,
+    prayerCount: 12 - index,
+    title: ['말씀으로 시작하는 하루', '화해를 시작할 용기', '불안을 맡기는 기도', '부드러운 말과 경청', '작은 순종의 지속'][index],
+  }))
+}
+
+function getAiFaithQuestions(date: string): FaithQuestion[] {
+  return aiAuthors.map((author, index) => ({
+    id: `ai-question-${date}-${author.uid}`,
+    answerCount: index % 2,
+    authorName: author.displayName,
+    authorUid: author.uid,
+    body: [
+      '하나님이 맡기신 준비와 내가 집착하는 통제는 어떻게 구분할 수 있을까요?',
+      '매일 묵상이 의무처럼 느껴질 때 다시 마음을 회복하는 방법이 궁금합니다.',
+      '기도 응답이 늦어질 때 믿음으로 기다린다는 것은 실제로 어떤 모습일까요?',
+      '공동체 안에서 조언과 판단의 경계는 어디에 있다고 보시나요?',
+      '적용을 작게 정하는 것이 믿음의 소극적인 태도는 아닐까요?',
+    ][index],
+    createdAt: new Date(`${date}T1${index}:40:00+09:00`).toISOString(),
+    tags: [['순종', '준비'], ['묵상', '회복'], ['기도', '기다림'], ['공동체', '분별'], ['적용', '습관']][index],
+    title: ['준비와 통제의 차이', '묵상이 의무처럼 느껴질 때', '기다림의 실제 모습', '조언과 판단의 경계', '작은 적용도 충분할까요'][index],
+  }))
+}
+
 function Avatar({
   name,
   size = 'post',
@@ -1098,6 +1175,8 @@ export function MeditationApp() {
   const [isPlanLoading, setIsPlanLoading] = useState(false)
   const [planError, setPlanError] = useState('')
   const [mind, setMind] = useState('')
+  const [apply, setApply] = useState('')
+  const [prayerText, setPrayerText] = useState('')
   const [audience, setAudience] = useState<Audience>('private')
   const [bookmarked, setBookmarked] = useState(false)
   const [entries, setEntries] = useState<MeditationEntry[]>(loadLocalEntries)
@@ -1174,28 +1253,41 @@ export function MeditationApp() {
   const [isLicenseOpen, setIsLicenseOpen] = useState(false)
   const [licenseText, setLicenseText] = useState('')
   const [isProfileSaving, setIsProfileSaving] = useState(false)
+  const [isAiMode, setIsAiMode] = useState(() => window.localStorage.getItem(AI_MODE_STORAGE_KEY) === 'true')
   const profileUploadTaskRef = useRef<UploadTask | null>(null)
   const [profileError, setProfileError] = useState('')
   const [syncState, setSyncState] = useState<'local' | 'syncing' | 'synced' | 'error'>('local')
   const [errorMessage, setErrorMessage] = useState('')
   const plan = useMemo(() => remotePlan ?? getPlanForDate(selectedDate), [remotePlan, selectedDate])
+  const aiDevotionEntries = useMemo(() => getAiDevotionEntries(selectedDate, plan), [plan, selectedDate])
+  const aiPrayerRequests = useMemo(() => getAiPrayerRequests(selectedDate), [selectedDate])
+  const aiFaithQuestions = useMemo(() => getAiFaithQuestions(selectedDate), [selectedDate])
+  const visibleEntries = useMemo(() => (
+    isAiMode ? [...entries, ...aiDevotionEntries].sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt)) : entries
+  ), [aiDevotionEntries, entries, isAiMode])
+  const visiblePrayerRequests = useMemo(() => (
+    isAiMode ? [...prayerRequests, ...aiPrayerRequests].sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt)) : prayerRequests
+  ), [aiPrayerRequests, isAiMode, prayerRequests])
+  const visibleFaithQuestions = useMemo(() => (
+    isAiMode ? [...faithQuestions, ...aiFaithQuestions].sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt)) : faithQuestions
+  ), [aiFaithQuestions, faithQuestions, isAiMode])
   const selectedVerses = useMemo(() => getSelectedVerses(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
   const selectedVerseText = useMemo(() => getSelectedVerseText(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
   const currentUser = getFirebaseAuth().currentUser
   const currentProfile = faithProfile ?? getDefaultProfile(currentUser)
   const authorName = currentProfile.displayName
   const authorAvatarUrl = currentProfile.avatarUrl
-  const canSave = Boolean(mind.trim())
-  const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null
+  const canSave = Boolean(mind.trim() || apply.trim() || prayerText.trim())
+  const selectedEntry = visibleEntries.find((entry) => entry.id === selectedEntryId) ?? null
   const todayKey = currentTodayKey
-  const allQuestionTags = useMemo(() => normalizeFaithTags(faithQuestions.flatMap((question) => question.tags)), [faithQuestions])
+  const allQuestionTags = useMemo(() => normalizeFaithTags(visibleFaithQuestions.flatMap((question) => question.tags)), [visibleFaithQuestions])
   const tagSuggestions = useMemo(
     () => getTagSuggestions(allQuestionTags, questionTagInput, selectedQuestionTags),
     [allQuestionTags, questionTagInput, selectedQuestionTags],
   )
   const relatedQuestions = useMemo(
-    () => getRelatedQuestions(faithQuestions, '', selectedQuestionTags).slice(0, 4),
-    [faithQuestions, selectedQuestionTags],
+    () => getRelatedQuestions(visibleFaithQuestions, '', selectedQuestionTags).slice(0, 4),
+    [selectedQuestionTags, visibleFaithQuestions],
   )
   const publicCrossPhotos = useMemo(() => {
     const photosByPublicKey = new Map<string, CrossPhoto>()
@@ -1223,21 +1315,21 @@ export function MeditationApp() {
   const selectedProfilePhoto = crossPhotos.find((photo) => photo.id === selectedProfilePhotoId) ?? null
   const selectedFeedPhoto = publicCrossPhotos.find((photo) => (photo.publicId ?? photo.id) === selectedFeedPhotoId) ?? null
   const editingFeedPhoto = publicCrossPhotos.find((photo) => (photo.publicId ?? photo.id) === editingFeedPhotoId) ?? null
-  const selectedPrayer = prayerRequests.find((request) => request.id === selectedPrayerId) ?? null
-  const selectedQuestion = faithQuestions.find((question) => question.id === selectedQuestionId) ?? null
+  const selectedPrayer = visiblePrayerRequests.find((request) => request.id === selectedPrayerId) ?? null
+  const selectedQuestion = visibleFaithQuestions.find((question) => question.id === selectedQuestionId) ?? null
   const selectedQuestionAnswers = selectedQuestion ? (questionAnswers[selectedQuestion.id] ?? []) : []
   const filteredEntries = useMemo(() => {
     const query = searchTerm.trim().toLowerCase()
 
-    return entries.filter((entry) => {
+    return visibleEntries.filter((entry) => {
       const searchable = `${entry.reference} ${entry.theme} ${entry.verseText} ${entry.mind} ${entry.apply} ${entry.prayer ?? ''}`.toLowerCase()
       return (!query || searchable.includes(query)) && (!filterBookmarked || entry.bookmarked)
     })
-  }, [entries, filterBookmarked, searchTerm])
+  }, [filterBookmarked, searchTerm, visibleEntries])
   const filteredQuestions = useMemo(() => {
     const query = qnaSearch.trim().toLowerCase()
 
-    return faithQuestions.filter((question) => {
+    return visibleFaithQuestions.filter((question) => {
       const matchesQuery = !query || `${question.title} ${question.body} ${question.tags.join(' ')}`.toLowerCase().includes(query)
       const matchesTag = !qnaTagFilter || question.tags.includes(qnaTagFilter)
       const matchesMode =
@@ -1246,10 +1338,10 @@ export function MeditationApp() {
         (questionFilter === 'mine' && question.authorUid === currentUser?.uid)
       return matchesQuery && matchesTag && matchesMode
     })
-  }, [currentUser?.uid, faithQuestions, qnaSearch, qnaTagFilter, questionFilter])
+  }, [currentUser?.uid, qnaSearch, qnaTagFilter, questionFilter, visibleFaithQuestions])
   const filteredPrayerRequests = useMemo(() => (
-    prayerRequests.filter((request) => prayerFilter === 'together' || request.authorUid === currentUser?.uid)
-  ), [currentUser?.uid, prayerFilter, prayerRequests])
+    visiblePrayerRequests.filter((request) => prayerFilter === 'together' || request.authorUid === currentUser?.uid)
+  ), [currentUser?.uid, prayerFilter, visiblePrayerRequests])
   const weekDateKeys = useMemo(() => {
     const startDateKey = getWeekStartDateKey(selectedDate)
     return Array.from({ length: 7 }).map((_, index) => addDaysToKstDateKey(startDateKey, index))
@@ -1309,6 +1401,10 @@ export function MeditationApp() {
   useEffect(() => {
     window.localStorage.setItem('moa.faith.fontScale', String(fontScale))
   }, [fontScale])
+
+  useEffect(() => {
+    window.localStorage.setItem(AI_MODE_STORAGE_KEY, String(isAiMode))
+  }, [isAiMode])
 
   useEffect(() => {
     setVisibleFeedCount(8)
@@ -1820,16 +1916,24 @@ export function MeditationApp() {
 
   function startWriting() {
     setMind('')
+    setApply('')
+    setPrayerText('')
     setAudience('private')
     setBookmarked(false)
     setDevotionView('write')
   }
 
   function startEdit(entry: MeditationEntry) {
+    if (entry.authorUid && entry.authorUid !== currentUser?.uid) {
+      return
+    }
+
     setSelectedEntryId(entry.id)
     setSelectedDate(entry.selectedDate)
     setSelectedVerseNumbers(entry.selectedVerseNumbers)
-    setMind(getEntryDevotionText(entry))
+    setMind(entry.mind)
+    setApply(entry.apply)
+    setPrayerText(entry.prayer ?? '')
     setAudience(entry.audience)
     setBookmarked(Boolean(entry.bookmarked))
     setDevotionView('edit')
@@ -1842,13 +1946,16 @@ export function MeditationApp() {
 
     const entry: MeditationEntry = {
       id: createLocalId(),
-      apply: '',
+      apply: apply.trim(),
       applyDone: false,
+      authorAvatarUrl,
+      authorName,
+      authorUid: currentUser?.uid,
       audience,
       bookmarked,
       createdAt: new Date().toISOString(),
       mind: mind.trim(),
-      prayer: '',
+      prayer: prayerText.trim(),
       reference: plan.reference,
       selectedDate,
       selectedVerseNumbers,
@@ -1876,6 +1983,8 @@ export function MeditationApp() {
       }
 
       setMind('')
+      setApply('')
+      setPrayerText('')
       setSelectedEntryId(savedEntry.id)
       setDevotionView('detail')
       setStatusMessage('묵상을 저장했습니다.')
@@ -1893,11 +2002,11 @@ export function MeditationApp() {
 
     const updatedEntry: MeditationEntry = {
       ...selectedEntry,
-      apply: '',
+      apply: apply.trim(),
       audience,
       bookmarked,
       mind: mind.trim(),
-      prayer: '',
+      prayer: prayerText.trim(),
       selectedVerseNumbers,
       verseText: selectedVerseNumbers.length ? selectedVerseText : selectedEntry.verseText,
     }
@@ -1934,6 +2043,10 @@ export function MeditationApp() {
   }
 
   async function handleDeleteEntry(entry: MeditationEntry) {
+    if (entry.authorUid && entry.authorUid !== currentUser?.uid) {
+      return
+    }
+
     if (!window.confirm(`${formatDateLabel(entry.selectedDate)}의 묵상 기록을 삭제할까요?`)) {
       return
     }
@@ -1946,6 +2059,14 @@ export function MeditationApp() {
 
     setDevotionView('records')
     setSelectedEntryId('')
+  }
+
+  async function handleApplyDone(entry: MeditationEntry, applyDone: boolean) {
+    if (currentUser && syncState === 'synced') {
+      await update(ref(getRealtimeDb(), `${getUserEntriesPath(currentUser.uid)}/${entry.id}`), { applyDone })
+    } else {
+      setEntries((currentEntries) => currentEntries.map((item) => item.id === entry.id ? { ...item, applyDone } : item))
+    }
   }
 
   async function handlePhotoUpload() {
@@ -2555,17 +2676,31 @@ export function MeditationApp() {
           <button className="faith-text-button" disabled={isProfileSaving} type="button" onClick={() => void handleProfileSave()}>
             {isProfileSaving ? '저장 중' : '저장'}
           </button>
-        ) : activeTab === 'profile' ? (
-          <button aria-label="설정" className="faith-icon-button" type="button" onClick={() => setIsSettingsSheetOpen(true)}>
-            <Icon name="settings" />
-          </button>
         ) : (
-          <button aria-label="내 기록 보기" className="faith-avatar-button" type="button" onClick={() => {
-            setActiveTab('profile')
-            setProfileView('records')
-          }}>
-            <Avatar name={authorName} size="header" src={authorAvatarUrl} />
-          </button>
+          <div className="faith-header-actions">
+            <button
+              aria-label={isAiMode ? 'AI 모드 끄기' : 'AI 모드 켜기'}
+              aria-pressed={isAiMode}
+              className="faith-ai-toggle"
+              title={isAiMode ? 'AI 모드 끄기' : 'AI 모드 켜기'}
+              type="button"
+              onClick={() => setIsAiMode((enabled) => !enabled)}
+            >
+              <span>AI</span>
+            </button>
+            {activeTab === 'profile' ? (
+              <button aria-label="설정" className="faith-icon-button" type="button" onClick={() => setIsSettingsSheetOpen(true)}>
+                <Icon name="settings" />
+              </button>
+            ) : (
+              <button aria-label="내 기록 보기" className="faith-avatar-button" type="button" onClick={() => {
+                setActiveTab('profile')
+                setProfileView('records')
+              }}>
+                <Avatar name={authorName} size="header" src={authorAvatarUrl} />
+              </button>
+            )}
+          </div>
         )}
       </header>
 
@@ -2819,11 +2954,16 @@ export function MeditationApp() {
                   )}
                 </section>
                 <label className="faith-field">
-                  <span>오늘의 묵상</span>
-                  <div className="faith-textarea-wrap">
-                    <textarea rows={8} value={mind} onChange={(event) => setMind(event.target.value)} />
-                    <em aria-live="polite">{mind.length}자</em>
-                  </div>
+                  <span>오늘의 적용</span>
+                  <textarea rows={4} value={apply} onChange={(event) => setApply(event.target.value)} />
+                </label>
+                <label className="faith-field">
+                  <span>나의 기도</span>
+                  <textarea rows={4} value={prayerText} onChange={(event) => setPrayerText(event.target.value)} />
+                </label>
+                <label className="faith-field">
+                  <span>묵상 메모</span>
+                  <textarea rows={6} value={mind} onChange={(event) => setMind(event.target.value)} />
                 </label>
                 <div className="faith-segment" aria-label="공개 범위">
                   {(['private', 'public', 'group'] as Audience[]).map((item) => (
@@ -2856,10 +2996,24 @@ export function MeditationApp() {
                       }}>
                         <time>{formatDateLabel(entry.selectedDate)}</time>
                         <strong>{getEntryTitle(entry)}</strong>
-                        <span>{entry.reference}</span>
+                        <span>{entry.reference}{entry.authorName ? ` · ${entry.authorName}` : ''}</span>
                       </button>
+                      {entry.apply && (!entry.authorUid || entry.authorUid === currentUser?.uid) ? (
+                        <button
+                          aria-pressed={Boolean(entry.applyDone)}
+                          className="faith-apply-check"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            void handleApplyDone(entry, !entry.applyDone)
+                          }}
+                        >
+                          <span><Icon name="check" /></span>
+                          <em>{entry.applyDone ? '실천 완료' : '실천 전'}</em>
+                        </button>
+                      ) : null}
                     </article>
-                  )) : <EmptyState>{entries.length ? '검색 조건에 맞는 묵상이 없습니다.' : '저장된 묵상이 없습니다.'}</EmptyState>}
+                  )) : <EmptyState>{visibleEntries.length ? '검색 조건에 맞는 묵상이 없습니다.' : '저장된 묵상이 없습니다.'}</EmptyState>}
                 </div>
               </section>
             ) : null}
@@ -2868,16 +3022,20 @@ export function MeditationApp() {
               <article className="faith-detail">
                 <div className="faith-section-head">
                   <button className="faith-text-button" type="button" onClick={() => setDevotionView('records')}>목록</button>
-                  <div className="faith-icon-group">
-                    <button aria-label="묵상 수정" className="faith-icon-button" type="button" onClick={() => startEdit(selectedEntry)}><Icon name="edit" /></button>
-                    <button aria-label="묵상 삭제" className="faith-icon-button" type="button" onClick={() => void handleDeleteEntry(selectedEntry)}><Icon name="close" /></button>
-                  </div>
+                  {(!selectedEntry.authorUid || selectedEntry.authorUid === currentUser?.uid) ? (
+                    <div className="faith-icon-group">
+                      <button aria-label="묵상 수정" className="faith-icon-button" type="button" onClick={() => startEdit(selectedEntry)}><Icon name="edit" /></button>
+                      <button aria-label="묵상 삭제" className="faith-icon-button" type="button" onClick={() => void handleDeleteEntry(selectedEntry)}><Icon name="close" /></button>
+                    </div>
+                  ) : <span />}
                 </div>
                 <time>{formatDateLabel(selectedEntry.selectedDate)}</time>
                 <h3>{getEntryTitle(selectedEntry)}</h3>
-                <p className="faith-muted">{selectedEntry.reference} · {getAudienceLabel(selectedEntry.audience)}</p>
+                <p className="faith-muted">{selectedEntry.reference} · {selectedEntry.authorName ?? authorName} · {getAudienceLabel(selectedEntry.audience)}</p>
                 <blockquote>{selectedEntry.verseText}</blockquote>
-                {getEntryDevotionText(selectedEntry) ? <section><h4>오늘의 묵상</h4><p>{getEntryDevotionText(selectedEntry)}</p></section> : null}
+                {selectedEntry.apply ? <section><h4>오늘의 적용</h4><p>{selectedEntry.apply}</p></section> : null}
+                {selectedEntry.prayer ? <section><h4>나의 기도</h4><p>{selectedEntry.prayer}</p></section> : null}
+                {selectedEntry.mind ? <section><h4>묵상 메모</h4><p>{selectedEntry.mind}</p></section> : null}
               </article>
             ) : null}
           </section>
@@ -3094,7 +3252,7 @@ export function MeditationApp() {
                       <div className="faith-tags">{question.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
                       <div className="faith-question-actions"><Icon name="comment" /><span>답변 {questionAnswers[question.id]?.length ?? 0}</span></div>
                     </article>
-                  )) : <EmptyState>{faithQuestions.length ? '조건에 맞는 질문이 없습니다.' : '아직 올라온 질문이 없습니다.'}</EmptyState>}
+                  )) : <EmptyState>{visibleFaithQuestions.length ? '조건에 맞는 질문이 없습니다.' : '아직 올라온 질문이 없습니다.'}</EmptyState>}
                 </div>
                 <button aria-label="질문 작성" className="faith-write-fab" type="button" onClick={() => setQnaView('write')}>
                   <Icon name="edit" />
@@ -3203,6 +3361,20 @@ export function MeditationApp() {
                           <strong>{getEntryTitle(entry)}</strong>
                           <span>{entry.reference}</span>
                         </button>
+                        {entry.apply ? (
+                          <button
+                            aria-pressed={Boolean(entry.applyDone)}
+                            className="faith-apply-check"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              void handleApplyDone(entry, !entry.applyDone)
+                            }}
+                          >
+                            <span><Icon name="check" /></span>
+                            <em>{entry.applyDone ? '실천 완료' : '실천 전'}</em>
+                          </button>
+                        ) : null}
                       </article>
                     ))}
                     {entries.every((entry) => entry.selectedDate !== selectedDate) ? <EmptyState>{`${formatShortDateLabel(selectedDate)}에는 묵상 기록이 없어요`}</EmptyState> : null}

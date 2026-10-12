@@ -1,11 +1,20 @@
 import type { ReactNode } from 'react'
 import type { User } from 'firebase/auth'
 
+export const aiLoginAccounts = [
+  { displayName: 'AI 다니엘', email: 'ai.daniel@moa-ai.app', password: 'MoaAi!2026-01' },
+  { displayName: 'AI 루디아', email: 'ai.lydia@moa-ai.app', password: 'MoaAi!2026-02' },
+  { displayName: 'AI 요한', email: 'ai.john@moa-ai.app', password: 'MoaAi!2026-03' },
+  { displayName: 'AI 에스더', email: 'ai.esther@moa-ai.app', password: 'MoaAi!2026-04' },
+  { displayName: 'AI 바울', email: 'ai.paul@moa-ai.app', password: 'MoaAi!2026-05' },
+] as const
+
 type AuthGateProps = {
   authError: string | null
   children: ReactNode
   isAuthLoading: boolean
   isAuthMutating: boolean
+  onAiSignIn: (email: string, password: string, displayName: string) => Promise<void>
   onSignIn: () => Promise<void>
   user: User | null
 }
@@ -19,6 +28,7 @@ export function AuthGate({
   children,
   isAuthLoading,
   isAuthMutating,
+  onAiSignIn,
   onSignIn,
   user,
 }: AuthGateProps) {
@@ -65,6 +75,20 @@ export function AuthGate({
           </svg>
           <span>{isAuthMutating ? '로그인 중' : 'Google로 로그인 / 회원가입'}</span>
         </button>
+        <div className="ai-login-list" aria-label="AI 계정 로그인">
+          {aiLoginAccounts.map((account) => (
+            <button
+              className="ai-login-button"
+              disabled={isAuthMutating || isMissingLocalConfig(authError)}
+              key={account.email}
+              type="button"
+              onClick={() => void onAiSignIn(account.email, account.password, account.displayName)}
+            >
+              <span>{account.displayName}</span>
+              <small>AI 로그인</small>
+            </button>
+          ))}
+        </div>
       </section>
     </main>
   )
