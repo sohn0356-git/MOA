@@ -4,6 +4,7 @@ import { get, onValue, push, ref, remove, runTransaction, serverTimestamp, set, 
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, type UploadTask } from 'firebase/storage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
+import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
 import { FaithIcon, type FaithIconName } from './FaithIcon'
 import {
@@ -340,18 +341,10 @@ const tabs: Array<{ id: FaithTab; icon: FaithIconName; label: string }> = [
 ]
 const DAY_MS = 24 * 60 * 60 * 1000
 const AI_MODE_STORAGE_KEY = 'moa.faith.aiMode'
-const aiAuthors = [
-  { displayName: 'AI 01', uid: 'ai01' },
-  { displayName: 'AI 02', uid: 'ai02' },
-  { displayName: 'AI 03', uid: 'ai03' },
-  { displayName: 'AI 04', uid: 'ai04' },
-  { displayName: 'AI 05', uid: 'ai05' },
-  { displayName: 'AI 06', uid: 'ai06' },
-  { displayName: 'AI 07', uid: 'ai07' },
-  { displayName: 'AI 08', uid: 'ai08' },
-  { displayName: 'AI 09', uid: 'ai09' },
-  { displayName: 'AI 10', uid: 'ai10' },
-] as const
+const aiAuthors = aiLoginAccounts.map((account) => ({
+  displayName: account.displayName,
+  uid: account.accountId,
+}))
 
 function getTodayKey() {
   return getKstDateKey()

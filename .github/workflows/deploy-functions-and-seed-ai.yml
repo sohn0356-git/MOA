@@ -1,4 +1,4 @@
-name: Deploy Functions and Seed AI Accounts
+name: Seed AI Accounts
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  deploy-and-seed:
+  seed:
     environment:
       name: github-pages
     runs-on: ubuntu-latest
@@ -26,22 +26,6 @@ jobs:
       - name: Install function dependencies
         run: npm ci
         working-directory: functions
-
-      - name: Build functions
-        run: npm run build
-        working-directory: functions
-
-      - name: Write service account
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
-
-      - name: Deploy functions
-        env:
-          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx firebase-tools@latest deploy --only functions --project "$FIREBASE_PROJECT_ID" --non-interactive
 
       - name: Seed AI accounts
         env:

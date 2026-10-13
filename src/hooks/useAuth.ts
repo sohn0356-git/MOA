@@ -3,18 +3,17 @@ import { FirebaseError } from 'firebase/app'
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithCustomToken,
+  signInWithEmailAndPassword,
   signInWithRedirect,
   signInWithPopup,
   signOut,
   type User,
 } from 'firebase/auth'
-import { httpsCallable } from 'firebase/functions'
 import {
   getFirebaseAuth,
   getFirebaseConfigError,
-  getFirebaseFunctions,
 } from '../services/firebase'
+import { aiLoginAccounts } from '../data/aiAccounts'
 
 function getAuthErrorMessage(error: unknown) {
   if (error instanceof FirebaseError) {
@@ -39,6 +38,10 @@ function getAuthErrorMessage(error: unknown) {
 
     if (error.code === 'auth/custom-token-mismatch') {
       return 'AI 로그인 토큰의 Firebase 프로젝트가 현재 앱 설정과 다릅니다.'
+    }
+
+    if (['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password'].includes(error.code)) {
+      return 'AI 계정을 찾을 수 없거나 비밀번호가 맞지 않습니다. Firebase Authentication에 AI 계정이 생성됐는지 확인하세요.'
     }
   }
 
@@ -115,9 +118,13 @@ export function useAuth() {
 
     try {
       const auth = getFirebaseAuth()
-      const createAiLoginToken = httpsCallable<{ accountId: string }, { token: string }>(getFirebaseFunctions(), 'createAiLoginToken')
-      const result = await createAiLoginToken({ accountId })
-      await signInWithCustomToken(auth, result.data.token)
+      const account = aiLoginAccounts.find((item) => item.accountId === accountId)
+
+      if (!account) {
+        throw new Error('Invalid AI account.')
+      }
+
+      await signInWithEmailAndPassword(auth, account.email, account.password)
     } catch (error) {
       setAuthError(getAuthErrorMessage(error))
       throw error
