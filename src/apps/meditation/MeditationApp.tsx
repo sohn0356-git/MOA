@@ -341,11 +341,16 @@ const tabs: Array<{ id: FaithTab; icon: FaithIconName; label: string }> = [
 const DAY_MS = 24 * 60 * 60 * 1000
 const AI_MODE_STORAGE_KEY = 'moa.faith.aiMode'
 const aiAuthors = [
-  { displayName: 'AI 다니엘', uid: 'ai-daniel' },
-  { displayName: 'AI 루디아', uid: 'ai-lydia' },
-  { displayName: 'AI 요한', uid: 'ai-john' },
-  { displayName: 'AI 에스더', uid: 'ai-esther' },
-  { displayName: 'AI 바울', uid: 'ai-paul' },
+  { displayName: 'AI 01', uid: 'ai01' },
+  { displayName: 'AI 02', uid: 'ai02' },
+  { displayName: 'AI 03', uid: 'ai03' },
+  { displayName: 'AI 04', uid: 'ai04' },
+  { displayName: 'AI 05', uid: 'ai05' },
+  { displayName: 'AI 06', uid: 'ai06' },
+  { displayName: 'AI 07', uid: 'ai07' },
+  { displayName: 'AI 08', uid: 'ai08' },
+  { displayName: 'AI 09', uid: 'ai09' },
+  { displayName: 'AI 10', uid: 'ai10' },
 ] as const
 
 function getTodayKey() {

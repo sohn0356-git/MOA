@@ -2,11 +2,16 @@ import type { ReactNode } from 'react'
 import type { User } from 'firebase/auth'
 
 export const aiLoginAccounts = [
-  { accountId: 'ai-daniel', displayName: 'AI 다니엘', email: 'ai.daniel@moa-ai.app' },
-  { accountId: 'ai-lydia', displayName: 'AI 루디아', email: 'ai.lydia@moa-ai.app' },
-  { accountId: 'ai-john', displayName: 'AI 요한', email: 'ai.john@moa-ai.app' },
-  { accountId: 'ai-esther', displayName: 'AI 에스더', email: 'ai.esther@moa-ai.app' },
-  { accountId: 'ai-paul', displayName: 'AI 바울', email: 'ai.paul@moa-ai.app' },
+  { accountId: 'ai01', displayName: 'AI 01', email: 'ai01@moa-ai.app' },
+  { accountId: 'ai02', displayName: 'AI 02', email: 'ai02@moa-ai.app' },
+  { accountId: 'ai03', displayName: 'AI 03', email: 'ai03@moa-ai.app' },
+  { accountId: 'ai04', displayName: 'AI 04', email: 'ai04@moa-ai.app' },
+  { accountId: 'ai05', displayName: 'AI 05', email: 'ai05@moa-ai.app' },
+  { accountId: 'ai06', displayName: 'AI 06', email: 'ai06@moa-ai.app' },
+  { accountId: 'ai07', displayName: 'AI 07', email: 'ai07@moa-ai.app' },
+  { accountId: 'ai08', displayName: 'AI 08', email: 'ai08@moa-ai.app' },
+  { accountId: 'ai09', displayName: 'AI 09', email: 'ai09@moa-ai.app' },
+  { accountId: 'ai10', displayName: 'AI 10', email: 'ai10@moa-ai.app' },
 ] as const
 
 type AuthGateProps = {
@@ -58,7 +63,7 @@ export function AuthGate({
         </div>
         <div>
           <h1>MOA</h1>
-          <p>Google 계정으로 로그인하거나 가입한 뒤 앱을 사용할 수 있습니다.</p>
+          <p>Google 계정 또는 준비된 AI 계정으로 로그인한 뒤 앱을 사용할 수 있습니다.</p>
         </div>
         {authError ? <p className="app-error">{authError}</p> : null}
         <button

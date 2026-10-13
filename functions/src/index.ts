@@ -9,11 +9,16 @@ const db = getFirestore()
 const welcomeStars = 300
 const visitWindowMs = 1000 * 60 * 60 * 6
 const aiAccounts = {
-  'ai-daniel': { displayName: 'AI 다니엘', email: 'ai.daniel@moa-ai.app' },
-  'ai-lydia': { displayName: 'AI 루디아', email: 'ai.lydia@moa-ai.app' },
-  'ai-john': { displayName: 'AI 요한', email: 'ai.john@moa-ai.app' },
-  'ai-esther': { displayName: 'AI 에스더', email: 'ai.esther@moa-ai.app' },
-  'ai-paul': { displayName: 'AI 바울', email: 'ai.paul@moa-ai.app' },
+  ai01: { displayName: 'AI 01', email: 'ai01@moa-ai.app', password: 'MoaAi!2026-01' },
+  ai02: { displayName: 'AI 02', email: 'ai02@moa-ai.app', password: 'MoaAi!2026-02' },
+  ai03: { displayName: 'AI 03', email: 'ai03@moa-ai.app', password: 'MoaAi!2026-03' },
+  ai04: { displayName: 'AI 04', email: 'ai04@moa-ai.app', password: 'MoaAi!2026-04' },
+  ai05: { displayName: 'AI 05', email: 'ai05@moa-ai.app', password: 'MoaAi!2026-05' },
+  ai06: { displayName: 'AI 06', email: 'ai06@moa-ai.app', password: 'MoaAi!2026-06' },
+  ai07: { displayName: 'AI 07', email: 'ai07@moa-ai.app', password: 'MoaAi!2026-07' },
+  ai08: { displayName: 'AI 08', email: 'ai08@moa-ai.app', password: 'MoaAi!2026-08' },
+  ai09: { displayName: 'AI 09', email: 'ai09@moa-ai.app', password: 'MoaAi!2026-09' },
+  ai10: { displayName: 'AI 10', email: 'ai10@moa-ai.app', password: 'MoaAi!2026-10' },
 } as const
 
 function assertAuth(uid?: string) {
@@ -51,6 +56,14 @@ export const createAiLoginToken = onCall(async (request) => {
 
   try {
     await auth.getUser(accountId)
+    await auth.updateUser(accountId, {
+      disabled: false,
+      displayName: account.displayName,
+      email: account.email,
+      emailVerified: true,
+      password: account.password,
+    })
+    await auth.setCustomUserClaims(accountId, { aiAccount: true })
   } catch (error) {
     if (typeof error === 'object' && error && 'code' in error && error.code !== 'auth/user-not-found') {
       throw error
@@ -61,6 +74,7 @@ export const createAiLoginToken = onCall(async (request) => {
       displayName: account.displayName,
       email: account.email,
       emailVerified: true,
+      password: account.password,
       uid: accountId,
     })
     await auth.setCustomUserClaims(accountId, { aiAccount: true })
