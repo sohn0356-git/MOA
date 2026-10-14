@@ -66,7 +66,43 @@ async function seedAiAccounts() {
   }
 }
 
-seedAiAccounts().catch((error) => {
+async function verifyAiAccountLogins() {
+  const apiKey = process.env.FIREBASE_API_KEY
+
+  if (!apiKey) {
+    throw new Error('Missing FIREBASE_API_KEY secret.')
+  }
+
+  for (const account of aiAccounts) {
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: account.email,
+        password: account.password,
+        returnSecureToken: true,
+      }),
+    })
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(`Failed to verify ${account.email}: ${data.error?.message ?? response.status}`)
+    }
+
+    if (data.localId !== account.uid || data.email !== account.email) {
+      throw new Error(`Verified account mismatch for ${account.email}.`)
+    }
+
+    console.log(`verified login ${account.uid} ${account.email}`)
+  }
+}
+
+async function main() {
+  await seedAiAccounts()
+  await verifyAiAccountLogins()
+}
+
+main().catch((error) => {
   console.error(error)
   process.exitCode = 1
 })

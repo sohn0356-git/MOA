@@ -32,6 +32,45 @@
         }
       }
     },
+    "suggestions": {
+      ".read": "auth != null",
+      "$suggestionId": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorUid').val() === auth.uid && newData.child('isCompleted').val() === false) || (data.exists() && newData.exists() && data.child('authorUid').val() === newData.child('authorUid').val() && data.child('authorName').val() === newData.child('authorName').val() && data.child('title').val() === newData.child('title').val() && data.child('body').val() === newData.child('body').val() && data.child('createdAt').val() === newData.child('createdAt').val()))",
+        "authorUid": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "authorName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "title": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "body": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1200"
+        },
+        "isCompleted": {
+          ".validate": "newData.isBoolean()"
+        },
+        "completedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "completedByUid": {
+          ".validate": "newData.isString()"
+        },
+        "completedByName": {
+          ".validate": "newData.isString() && newData.val().length <= 80"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

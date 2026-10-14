@@ -8,6 +8,8 @@ import { MusicApp } from './music/MusicApp'
 import { MusicIcon } from './music/MusicIcon'
 import { SampleApp } from './sample/SampleApp'
 import { SampleIcon } from './sample/SampleIcon'
+import { SuggestionsApp } from './suggestions/SuggestionsApp'
+import { SuggestionsIcon } from './suggestions/SuggestionsIcon'
 import { TimerApp } from './timer/TimerApp'
 import { TimerIcon } from './timer/TimerIcon'
 import type { AppMeta } from '../types/app'
@@ -44,6 +46,14 @@ export const appRegistry: AppMeta[] = [
     icon: MusicIcon,
     route: '#/music',
     component: MusicApp,
+  },
+  {
+    id: 'suggestions',
+    name: '건의함',
+    description: '모두가 공유하는 건의 글과 완료 상태를 관리합니다.',
+    icon: SuggestionsIcon,
+    route: '#/suggestions',
+    component: SuggestionsApp,
   },
   {
     id: 'timer',
