@@ -479,6 +479,10 @@ function getEntryTitle(entry: MeditationEntry) {
   return entry.mind.trim().split('\n')[0] || entry.apply.trim().split('\n')[0] || entry.reference
 }
 
+function getCharacterCount(value: string) {
+  return Array.from(value).length
+}
+
 function getQuestionTitle(question: FaithQuestion) {
   return question.title.trim() || question.body.trim().split('\n')[0] || '신앙 질문'
 }
@@ -1275,7 +1279,8 @@ export function MeditationApp() {
   const currentProfile = faithProfile ?? getDefaultProfile(currentUser)
   const authorName = currentProfile.displayName
   const authorAvatarUrl = currentProfile.avatarUrl
-  const canSave = Boolean(mind.trim() || apply.trim() || prayerText.trim())
+  const canSave = devotionView === 'edit' ? Boolean(mind.trim() || apply.trim() || prayerText.trim()) : Boolean(mind.trim())
+  const mindCharacterCount = getCharacterCount(mind)
   const selectedEntry = visibleEntries.find((entry) => entry.id === selectedEntryId) ?? null
   const todayKey = currentTodayKey
   const allQuestionTags = useMemo(() => normalizeFaithTags(visibleFaithQuestions.flatMap((question) => question.tags)), [visibleFaithQuestions])
@@ -2952,16 +2957,11 @@ export function MeditationApp() {
                   )}
                 </section>
                 <label className="faith-field">
-                  <span>오늘의 적용</span>
-                  <textarea rows={4} value={apply} onChange={(event) => setApply(event.target.value)} />
-                </label>
-                <label className="faith-field">
-                  <span>나의 기도</span>
-                  <textarea rows={4} value={prayerText} onChange={(event) => setPrayerText(event.target.value)} />
-                </label>
-                <label className="faith-field">
                   <span>묵상 메모</span>
-                  <textarea rows={6} value={mind} onChange={(event) => setMind(event.target.value)} />
+                  <div className="faith-textarea-wrap">
+                    <textarea rows={6} value={mind} onChange={(event) => setMind(event.target.value)} />
+                    <em aria-live="polite">{mindCharacterCount.toLocaleString('ko-KR')}자</em>
+                  </div>
                 </label>
                 <div className="faith-segment" aria-label="공개 범위">
                   {(['private', 'public', 'group'] as Audience[]).map((item) => (
