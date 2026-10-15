@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "firebase:emulators": "firebase emulators:start",
-    "functions:build": "npm --prefix functions run build"
+    "functions:build": "npm --prefix functions run build",
+    "test:faith-startup": "node scripts/test-faith-startup.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.0",
@@ -43,3 +44,4 @@
     "vitest": "^5.0.2"
   }
 }
+

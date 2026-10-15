@@ -850,73 +850,85 @@ function getDefaultProfile(user: ReturnType<typeof getFirebaseAuth>['currentUser
 }
 
 function getAiDevotionEntries(date: string, plan: ScripturePlan): MeditationEntry[] {
-  return aiAuthors.map((author, index) => ({
-    id: `ai-entry-${date}-${author.uid}`,
-    apply: [
-      '오늘 만나는 한 사람에게 먼저 안부를 묻기',
-      '결정하기 전 짧게 기도하고 기록하기',
-      '미뤄둔 감사 한 가지를 직접 표현하기',
-      '걱정을 적고 맡기는 기도로 바꾸기',
-      '말씀 한 문장을 잠금화면 메모로 남기기',
-    ][index],
-    applyDone: false,
-    audience: 'public',
-    authorName: author.displayName,
-    authorUid: author.uid,
-    createdAt: new Date(`${date}T0${Math.min(index + 6, 9)}:20:00+09:00`).toISOString(),
-    mind: [
-      '성전은 하루에 세워지지 않았지만, 다윗은 오늘 할 수 있는 준비를 아끼지 않았습니다. 내게 맡겨진 작은 순종도 다음 세대를 위한 재료가 될 수 있음을 봅니다.',
-      '하나님이 허락하신 평안은 멈춤이 아니라 다음 순종을 가능하게 하는 힘입니다. 오늘은 조급함보다 준비의 마음을 택하겠습니다.',
-      '말씀 앞에서 내 역할과 한계를 구분하게 됩니다. 내가 직접 완성하지 못해도 하나님은 이어서 세우십니다.',
-      '다윗의 준비는 보이지 않는 헌신이었습니다. 사람의 인정이 없어도 하나님 앞에서 충분한 하루를 살고 싶습니다.',
-      '강하고 담대하라는 말씀이 결과보다 동행에 근거한다는 점이 남습니다. 오늘의 불안을 하나씩 하나님께 맡깁니다.',
-    ][index],
-    prayer: '주님, 오늘 제게 맡겨진 자리에서 조용하지만 실제적인 순종을 하게 해주세요.',
-    reference: plan.reference,
-    selectedDate: date,
-    selectedVerseNumbers: plan.verses[index % Math.max(plan.verses.length, 1)] ? [plan.verses[index % plan.verses.length].number] : [],
-    theme: `AI 묵상 · ${plan.theme}`,
-    verseText: plan.verses[index % Math.max(plan.verses.length, 1)]?.text ?? '',
-  }))
+  return aiAuthors.map((author, authorIndex) => {
+    // Reuse the five sample templates for every configured AI account.
+    const index = authorIndex % 5
+    return {
+      id: `ai-entry-${date}-${author.uid}`,
+      apply: [
+        '오늘 만나는 한 사람에게 먼저 안부를 묻기',
+        '결정하기 전 짧게 기도하고 기록하기',
+        '미뤄둔 감사 한 가지를 직접 표현하기',
+        '걱정을 적고 맡기는 기도로 바꾸기',
+        '말씀 한 문장을 잠금화면 메모로 남기기',
+      ][index],
+      applyDone: false,
+      audience: 'public',
+      authorName: author.displayName,
+      authorUid: author.uid,
+      createdAt: new Date(`${date}T0${Math.min(index + 6, 9)}:20:00+09:00`).toISOString(),
+      mind: [
+        '성전은 하루에 세워지지 않았지만, 다윗은 오늘 할 수 있는 준비를 아끼지 않았습니다. 내게 맡겨진 작은 순종도 다음 세대를 위한 재료가 될 수 있음을 봅니다.',
+        '하나님이 허락하신 평안은 멈춤이 아니라 다음 순종을 가능하게 하는 힘입니다. 오늘은 조급함보다 준비의 마음을 택하겠습니다.',
+        '말씀 앞에서 내 역할과 한계를 구분하게 됩니다. 내가 직접 완성하지 못해도 하나님은 이어서 세우십니다.',
+        '다윗의 준비는 보이지 않는 헌신이었습니다. 사람의 인정이 없어도 하나님 앞에서 충분한 하루를 살고 싶습니다.',
+        '강하고 담대하라는 말씀이 결과보다 동행에 근거한다는 점이 남습니다. 오늘의 불안을 하나씩 하나님께 맡깁니다.',
+      ][index],
+      prayer: '주님, 오늘 제게 맡겨진 자리에서 조용하지만 실제적인 순종을 하게 해주세요.',
+      reference: plan.reference,
+      selectedDate: date,
+      selectedVerseNumbers: plan.verses[index % Math.max(plan.verses.length, 1)] ? [plan.verses[index % plan.verses.length].number] : [],
+      theme: `AI 묵상 · ${plan.theme}`,
+      verseText: plan.verses[index % Math.max(plan.verses.length, 1)]?.text ?? '',
+    }
+  })
 }
 
 function getAiPrayerRequests(date: string): PrayerRequest[] {
-  return aiAuthors.map((author, index) => ({
-    id: `ai-prayer-${date}-${author.uid}`,
-    authorName: author.displayName,
-    authorUid: author.uid,
-    body: [
-      '오늘 말씀을 읽는 사람들이 부담보다 초대의 마음으로 하루를 시작하도록 함께 기도해 주세요.',
-      '각자의 자리에서 미뤄둔 화해와 연락을 시작할 용기를 위해 기도합니다.',
-      '불안한 마음을 혼자 붙들지 않고 하나님께 맡기는 하루가 되도록 기도해 주세요.',
-      '가정과 일터에서 말이 부드러워지고 판단보다 경청이 먼저 나오도록 기도합니다.',
-      '작은 순종을 가볍게 여기지 않고 꾸준히 이어가도록 함께 기도해 주세요.',
-    ][index],
-    commentCount: 0,
-    createdAt: new Date(`${date}T1${index}:10:00+09:00`).toISOString(),
-    isAnswered: false,
-    prayerCount: 12 - index,
-    title: ['말씀으로 시작하는 하루', '화해를 시작할 용기', '불안을 맡기는 기도', '부드러운 말과 경청', '작은 순종의 지속'][index],
-  }))
+  return aiAuthors.map((author, authorIndex) => {
+    // Reuse the five sample templates for every configured AI account.
+    const index = authorIndex % 5
+    return {
+      id: `ai-prayer-${date}-${author.uid}`,
+      authorName: author.displayName,
+      authorUid: author.uid,
+      body: [
+        '오늘 말씀을 읽는 사람들이 부담보다 초대의 마음으로 하루를 시작하도록 함께 기도해 주세요.',
+        '각자의 자리에서 미뤄둔 화해와 연락을 시작할 용기를 위해 기도합니다.',
+        '불안한 마음을 혼자 붙들지 않고 하나님께 맡기는 하루가 되도록 기도해 주세요.',
+        '가정과 일터에서 말이 부드러워지고 판단보다 경청이 먼저 나오도록 기도합니다.',
+        '작은 순종을 가볍게 여기지 않고 꾸준히 이어가도록 함께 기도해 주세요.',
+      ][index],
+      commentCount: 0,
+      createdAt: new Date(`${date}T1${index}:10:00+09:00`).toISOString(),
+      isAnswered: false,
+      prayerCount: 12 - index,
+      title: ['말씀으로 시작하는 하루', '화해를 시작할 용기', '불안을 맡기는 기도', '부드러운 말과 경청', '작은 순종의 지속'][index],
+    }
+  })
 }
 
 function getAiFaithQuestions(date: string): FaithQuestion[] {
-  return aiAuthors.map((author, index) => ({
-    id: `ai-question-${date}-${author.uid}`,
-    answerCount: index % 2,
-    authorName: author.displayName,
-    authorUid: author.uid,
-    body: [
-      '하나님이 맡기신 준비와 내가 집착하는 통제는 어떻게 구분할 수 있을까요?',
-      '매일 묵상이 의무처럼 느껴질 때 다시 마음을 회복하는 방법이 궁금합니다.',
-      '기도 응답이 늦어질 때 믿음으로 기다린다는 것은 실제로 어떤 모습일까요?',
-      '공동체 안에서 조언과 판단의 경계는 어디에 있다고 보시나요?',
-      '적용을 작게 정하는 것이 믿음의 소극적인 태도는 아닐까요?',
-    ][index],
-    createdAt: new Date(`${date}T1${index}:40:00+09:00`).toISOString(),
-    tags: [['순종', '준비'], ['묵상', '회복'], ['기도', '기다림'], ['공동체', '분별'], ['적용', '습관']][index],
-    title: ['준비와 통제의 차이', '묵상이 의무처럼 느껴질 때', '기다림의 실제 모습', '조언과 판단의 경계', '작은 적용도 충분할까요'][index],
-  }))
+  return aiAuthors.map((author, authorIndex) => {
+    // Reuse the five sample templates for every configured AI account.
+    const index = authorIndex % 5
+    return {
+      id: `ai-question-${date}-${author.uid}`,
+      answerCount: index % 2,
+      authorName: author.displayName,
+      authorUid: author.uid,
+      body: [
+        '하나님이 맡기신 준비와 내가 집착하는 통제는 어떻게 구분할 수 있을까요?',
+        '매일 묵상이 의무처럼 느껴질 때 다시 마음을 회복하는 방법이 궁금합니다.',
+        '기도 응답이 늦어질 때 믿음으로 기다린다는 것은 실제로 어떤 모습일까요?',
+        '공동체 안에서 조언과 판단의 경계는 어디에 있다고 보시나요?',
+        '적용을 작게 정하는 것이 믿음의 소극적인 태도는 아닐까요?',
+      ][index],
+      createdAt: new Date(`${date}T1${index}:40:00+09:00`).toISOString(),
+      tags: [['순종', '준비'], ['묵상', '회복'], ['기도', '기다림'], ['공동체', '분별'], ['적용', '습관']][index],
+      title: ['준비와 통제의 차이', '묵상이 의무처럼 느껴질 때', '기다림의 실제 모습', '조언과 판단의 경계', '작은 적용도 충분할까요'][index],
+    }
+  })
 }
 
 function Avatar({
@@ -3856,3 +3868,4 @@ function PhotoComments({
     </section>
   )
 }
+
