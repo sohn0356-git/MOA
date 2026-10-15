@@ -13,6 +13,7 @@ export function AppShell() {
     isAuthLoading,
     isAuthMutating,
     signInWithAiAccount,
+    signInWithEmail,
     signInWithGoogle,
     signOutUser,
     user,
@@ -49,6 +50,7 @@ export function AppShell() {
         isAuthMutating={isAuthMutating}
         user={user}
         onAiSignIn={signInWithAiAccount}
+        onEmailSignIn={signInWithEmail}
         onSignIn={signInWithGoogle}
       >
         <main className={`app-shell app-shell-subapp ${activeApp.id === 'mini-room' ? 'app-shell-minihome' : ''} ${activeApp.id === 'meditation' ? 'app-shell-faith' : ''}`}>
@@ -71,6 +73,7 @@ export function AppShell() {
       isAuthMutating={isAuthMutating}
       user={user}
       onAiSignIn={signInWithAiAccount}
+        onEmailSignIn={signInWithEmail}
       onSignIn={signInWithGoogle}
     >
       <main className="app-shell">
@@ -110,3 +113,4 @@ export function AppShell() {
     </AuthGate>
   )
 }
+

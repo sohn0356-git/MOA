@@ -41,7 +41,7 @@ function getAuthErrorMessage(error: unknown) {
     }
 
     if (['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password'].includes(error.code)) {
-      return 'AI 계정을 찾을 수 없거나 비밀번호가 맞지 않습니다. Firebase Authentication에 AI 계정이 생성됐는지 확인하세요.'
+      return '이메일 또는 비밀번호가 맞지 않습니다. 입력한 계정 정보를 확인해 주세요.'
     }
   }
 
@@ -112,6 +112,19 @@ export function useAuth() {
     }
   }
 
+  async function signInWithEmail(email: string, password: string) {
+    setIsAuthMutating(true)
+    setAuthError(null)
+    try {
+      await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password)
+    } catch (error) {
+      setAuthError(getAuthErrorMessage(error))
+      throw error
+    } finally {
+      setIsAuthMutating(false)
+    }
+  }
+
   async function signInWithAiAccount(accountId: string) {
     setIsAuthMutating(true)
     setAuthError(null)
@@ -152,8 +165,10 @@ export function useAuth() {
     isAuthLoading,
     isAuthMutating,
     signInWithAiAccount,
+    signInWithEmail,
     signInWithGoogle,
     signOutUser,
     user,
   }
 }
+

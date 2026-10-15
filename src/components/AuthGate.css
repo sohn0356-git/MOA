@@ -1,0 +1,60 @@
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgb(17 24 39 / 5%);
+}
+
+.auth-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-tabs button[aria-selected='true'] {
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-email-form { display: grid; gap: 12px; }
+.auth-email-form p { margin: 0 0 4px; }
+.auth-email-form label { font-size: 13px; font-weight: 700; }
+.auth-email-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 12px;
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 16px;
+}
+.auth-email-submit {
+  min-height: 44px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.auth-email-submit:disabled { cursor: not-allowed; }
+.auth-quick-accounts { margin-top: 20px; }
+.auth-quick-accounts summary { margin-bottom: 12px; color: var(--text-muted); font-size: 13px; cursor: pointer; }
+.auth-tabs button:focus-visible,
+.auth-email-form input:focus-visible,
+.auth-email-submit:focus-visible {
+  outline: 3px solid rgb(0 122 255 / 30%);
+  outline-offset: 2px;
+}
+.auth-panel [role='tabpanel'] > .google-login-button { width: 100%; }
