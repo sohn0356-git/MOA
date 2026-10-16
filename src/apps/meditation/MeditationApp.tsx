@@ -4,6 +4,7 @@ import { get, onValue, push, ref, remove, runTransaction, serverTimestamp, set, 
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, type UploadTask } from 'firebase/storage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
+import './QuestionAnswers.css'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
 import { FaithIcon, type FaithIconName } from './FaithIcon'
@@ -345,6 +346,7 @@ const aiAuthors = aiLoginAccounts.map((account) => ({
   displayName: account.displayName,
   uid: account.accountId,
 }))
+const aiAuthorIds = new Set<string>(aiAuthors.map((author) => author.uid))
 
 function getTodayKey() {
   return getKstDateKey()
@@ -3159,10 +3161,10 @@ export function MeditationApp() {
                     <p className="faith-inline-empty">저장된 답변 수와 목록을 동기화했습니다.</p>
                   ) : null}
                   {selectedQuestionAnswers.length ? selectedQuestionAnswers.map((answer) => (
-                    <article key={answer.id}>
+                    <article className={aiAuthorIds.has(answer.authorUid) ? 'faith-ai-answer' : undefined} key={answer.id}>
                       <Avatar name={answer.authorName} size="comment" src={answer.authorAvatarUrl} />
                       <div>
-                        <div><strong>{answer.authorName}</strong><time>{formatRelativeTime(answer.createdAt)}</time></div>
+                        <div className="faith-answer-author">\n                          <strong>{answer.authorName}</strong>\n                          {aiAuthorIds.has(answer.authorUid) ? <span className="faith-ai-answer-badge">✦ AI 답변</span> : null}\n                          <time>{formatRelativeTime(answer.createdAt)}</time>\n                        </div>
                         <p>{answer.body}</p>
                       </div>
                       {answer.authorUid === currentUser?.uid ? (
