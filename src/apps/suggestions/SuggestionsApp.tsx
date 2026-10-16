@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import './SuggestionsApp.css'
 import { get, onValue, push, ref, update, type DataSnapshot } from 'firebase/database'
 import { getFirebaseAuth, getFirebaseConfigError, getRealtimeDb } from '../../services/firebase'
 
@@ -93,7 +94,7 @@ function getDisplayName() {
   return user?.displayName || user?.email?.split('@')[0] || 'MOA 사용자'
 }
 
-export function SuggestionsApp() {
+export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}) {
   const configError = useMemo(() => getFirebaseConfigError(), [])
   const currentUser = getFirebaseAuth().currentUser
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
@@ -196,9 +197,9 @@ export function SuggestionsApp() {
   const doneCount = suggestions.length - openCount
 
   return (
-    <section className="sub-app utility-app suggestions-app">
+    <section className={`sub-app utility-app suggestions-app ${embedded ? 'suggestions-app-embedded' : ''}`}>
       <header className="utility-header">
-        <button
+        {!embedded ? <button
           aria-label="Back to apps"
           className="nav-icon-button"
           type="button"
@@ -207,9 +208,9 @@ export function SuggestionsApp() {
           <svg viewBox="0 0 24 24" role="presentation" focusable="false">
             <path d="M15.7 5.3a1 1 0 0 1 0 1.4L10.4 12l5.3 5.3a1 1 0 0 1-1.4 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.4 0Z" />
           </svg>
-        </button>
+        </button> : null}
         <div>
-          <h2>건의함</h2>
+          <h2>{embedded ? '앱 개선' : '건의함'}</h2>
           <p>모두가 볼 수 있는 건의 글을 남기고 완료 여부를 확인합니다.</p>
         </div>
       </header>

@@ -5,6 +5,7 @@ import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
 import './QuestionAnswers.css'
+import { SuggestionsApp } from '../suggestions/SuggestionsApp'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
 import { FaithIcon, type FaithIconName } from './FaithIcon'
@@ -26,7 +27,7 @@ type PrayerView = 'list' | 'write' | 'detail'
 type QnaView = 'list' | 'write' | 'detail'
 type ScriptureLanguage = 'ko' | 'en' | 'ja'
 type PrayerFilter = 'together' | 'mine'
-type QuestionFilter = 'latest' | 'waiting' | 'mine'
+type QuestionFilter = 'latest' | 'waiting' | 'mine' | 'improvements'
 
 type VerseKey = number | string
 
@@ -3232,6 +3233,14 @@ export function MeditationApp() {
               </section>
             ) : (
               <>
+                <div className="faith-underline-tabs" role="tablist" aria-label="질문 필터">
+                  <button aria-selected={questionFilter === 'latest'} role="tab" type="button" onClick={() => setQuestionFilter('latest')}>최신</button>
+                  <button aria-selected={questionFilter === 'waiting'} role="tab" type="button" onClick={() => setQuestionFilter('waiting')}>답변 기다리는 질문</button>
+                  <button aria-selected={questionFilter === 'mine'} role="tab" type="button" onClick={() => setQuestionFilter('mine')}>내 질문</button>
+                  <button aria-selected={questionFilter === 'improvements'} role="tab" type="button" onClick={() => setQuestionFilter('improvements')}>앱 개선</button>
+                </div>
+                {questionFilter === 'improvements' ? <SuggestionsApp embedded /> : (
+                  <>
                 <div className="faith-qna-search">
                   <Icon name="search" />
                   <input placeholder="질문이나 #태그 검색" value={qnaSearch} onChange={(event) => setQnaSearch(event.target.value)} />
@@ -3243,11 +3252,7 @@ export function MeditationApp() {
                   <button className="faith-tag-chip" aria-pressed={!qnaTagFilter} type="button" onClick={() => setQnaTagFilter('')}>전체</button>
                   {allQuestionTags.map((tag) => <button className="faith-tag-chip" aria-pressed={qnaTagFilter === tag} key={tag} type="button" onClick={() => setQnaTagFilter((current) => current === tag ? '' : tag)}>#{tag}</button>)}
                 </div>
-                <div className="faith-underline-tabs" role="tablist" aria-label="질문 필터">
-                  <button aria-selected={questionFilter === 'latest'} role="tab" type="button" onClick={() => setQuestionFilter('latest')}>최신</button>
-                  <button aria-selected={questionFilter === 'waiting'} role="tab" type="button" onClick={() => setQuestionFilter('waiting')}>답변 기다리는 질문</button>
-                  <button aria-selected={questionFilter === 'mine'} role="tab" type="button" onClick={() => setQuestionFilter('mine')}>내 질문</button>
-                </div>
+
                 <div className="faith-list">
                   {filteredQuestions.length ? filteredQuestions.map((question) => (
                     <article className="faith-question-post" key={question.id}>
@@ -3269,6 +3274,8 @@ export function MeditationApp() {
                 <button aria-label="질문 작성" className="faith-write-fab" type="button" onClick={() => setQnaView('write')}>
                   <Icon name="edit" />
                 </button>
+                  </>
+                )}
               </>
             )}
           </section>
