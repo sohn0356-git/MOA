@@ -129,8 +129,10 @@ export function AuthGate({
               {isAuthMutating || isSubmitting ? '로그인 중…' : '이메일로 로그인'}
             </button>
           </form>
-          <details className="auth-quick-accounts">
-            <summary>AI 계정 빠른 로그인</summary>
+
+        </div>
+        <section aria-label="AI 계정 빠른 로그인">
+          <p>AI 계정 바로 로그인</p>
         <div className="ai-login-list" aria-label="AI 계정 로그인">
           {aiLoginAccounts.map((account) => (
             <button
@@ -145,8 +147,7 @@ export function AuthGate({
             </button>
           ))}
         </div>
-          </details>
-        </div>
+        </section>
       </section>
     </main>
   )
