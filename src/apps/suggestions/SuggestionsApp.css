@@ -1,2 +1,11 @@
 .suggestions-app.suggestions-app-embedded { min-height: 0; padding: 0; }
 .suggestions-app-embedded .utility-header h2 { font-size: 22px; }
+
+.suggestion-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.suggestion-summary button, .suggestion-sort select {
+  min-height: 40px; border: 1px solid var(--stroke); border-radius: 999px;
+  padding: 7px 11px; color: var(--text); background: var(--surface-strong); font: inherit; cursor: pointer;
+}
+.suggestion-summary button[aria-pressed='true'] { background: #e4efff; color: #0056b3; border-color: #80b8ff; font-weight: 800; }
+.suggestion-sort { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.suggestion-summary button:focus-visible, .suggestion-sort select:focus-visible { outline: 3px solid #80b8ff; outline-offset: 2px; }

@@ -1,0 +1,40 @@
+name: Sync App Improvement Requests
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/improvements.json
+      - functions/scripts/sync-improvements.mjs
+      - .github/workflows/sync-improvements.yml
+  workflow_run:
+    workflows: ["Deploy to GitHub Pages"]
+    types: [completed]
+permissions:
+  contents: read
+concurrency:
+  group: sync-improvements
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.event_name == 'push' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push')
+    environment:
+      name: github-pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+        working-directory: functions
+      - name: Register requests and check verified improvements
+        run: node scripts/sync-improvements.mjs
+        working-directory: functions
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VERIFIED_DEPLOY: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}

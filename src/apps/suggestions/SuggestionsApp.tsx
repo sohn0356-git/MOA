@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import './SuggestionsApp.css'
+import { selectSuggestions, type SuggestionFilter, type SuggestionOrder } from './suggestionFilters'
 import { get, onValue, push, ref, update, type DataSnapshot } from 'firebase/database'
 import { getFirebaseAuth, getFirebaseConfigError, getRealtimeDb } from '../../services/firebase'
 
@@ -103,6 +104,9 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
   const [error, setError] = useState<string | null>(configError)
   const [isLoading, setIsLoading] = useState(!configError)
   const [isMutating, setIsMutating] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<SuggestionFilter>('all')
+  const [sortOrder, setSortOrder] = useState<SuggestionOrder>('newest')
+  const visibleSuggestions = useMemo(() => selectSuggestions(suggestions, statusFilter, sortOrder), [suggestions, statusFilter, sortOrder])
 
   useEffect(() => {
     if (configError) {
@@ -244,18 +248,27 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
       </form>
 
       <section className="suggestion-board" aria-label="건의 목록">
-        <div className="suggestion-summary">
-          <strong>전체 {suggestions.length}</strong>
-          <span>미완료 {openCount}</span>
-          <span>완료 {doneCount}</span>
+        <div className="suggestion-controls">
+          <div className="suggestion-summary" role="group" aria-label="개선 상태 필터">
+            <button type="button" aria-pressed={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>전체 {suggestions.length}</button>
+            <button type="button" aria-pressed={statusFilter === 'open'} onClick={() => setStatusFilter('open')}>미완료 {openCount}</button>
+            <button type="button" aria-pressed={statusFilter === 'done'} onClick={() => setStatusFilter('done')}>완료 {doneCount}</button>
+          </div>
+          <label className="suggestion-sort">
+            정렬
+            <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SuggestionOrder)}>
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된 순</option>
+            </select>
+          </label>
         </div>
 
         {error ? <p className="app-error">{error}</p> : null}
         {isLoading ? <p className="suggestion-empty">건의함을 불러오는 중입니다.</p> : null}
-        {!isLoading && suggestions.length === 0 ? <p className="suggestion-empty">아직 등록된 건의가 없습니다.</p> : null}
+        {!isLoading && visibleSuggestions.length === 0 ? <p className="suggestion-empty">{suggestions.length ? '선택한 상태의 건의가 없습니다.' : '아직 등록된 건의가 없습니다.'}</p> : null}
 
         <div className="suggestion-list">
-          {suggestions.map((suggestion) => (
+          {visibleSuggestions.map((suggestion) => (
             <article
               className={`suggestion-item ${suggestion.isCompleted ? 'suggestion-item-complete' : ''}`}
               key={suggestion.id}
