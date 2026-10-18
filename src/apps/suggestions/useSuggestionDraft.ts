@@ -86,6 +86,7 @@ export function useSuggestionDraft(uid: string) {
       try { localStorage.setItem(draftStorageKey(uid), 'null') }
       catch { error = '등록은 완료됐지만 이 브라우저의 초안을 지우지 못했습니다. 남은 초안은 다시 등록하지 말고 버려 주세요.' }
     }
+    if (latest.current.uid !== uid) return
     const next = { ...latest.current, title: '', body: '', savedAt: null, candidate: null, unsaved: false, error }
     latest.current = next; setState(next)
   }

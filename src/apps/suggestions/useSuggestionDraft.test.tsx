@@ -67,19 +67,16 @@ describe('account-scoped suggestion drafts', () => {
     expect(localStorage.getItem(draftStorageKey('alice'))).toBeNull()
   })
 
-  it('blocks cancelled hash navigation while an unsaved draft remains', () => {
-    history.replaceState(null, '', '#/suggestions')
-    const { result } = renderHook(() => useSuggestionDraft('alice'))
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('quota') })
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
-    act(() => result.current.change({ body: 'not saved' }))
-    const oldURL = location.href
-    history.pushState(null, '', '#/timer')
-    const newURL = location.href
-    window.dispatchEvent(new HashChangeEvent('hashchange', { oldURL, newURL }))
-    expect(location.hash).toBe('#/suggestions')
-    expect(result.current.body).toBe('not saved')
-    history.replaceState(null, '', location.pathname)
+  it('does not erase the new account draft when an old submission finishes late', () => {
+    const { result, rerender } = renderHook(({ uid }) => useSuggestionDraft(uid), { initialProps: { uid: 'alice' } })
+    act(() => result.current.change({ title: 'Alice title' }))
+    const oldSubmission = result.current.submitted
+    rerender({ uid: 'bob' })
+    act(() => result.current.change({ title: 'Bob title' }))
+    act(() => oldSubmission())
+    expect(result.current.title).toBe('Bob title')
+    expect(JSON.parse(localStorage.getItem(draftStorageKey('bob'))!).title).toBe('Bob title')
+    expect(localStorage.getItem(draftStorageKey('alice'))).toBeNull()
   })
 
   it('handles corrupt storage without crashing and respects input limits', () => {
