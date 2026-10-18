@@ -1,3 +1,5 @@
+import { AiCityApp } from './ai-city/AiCityApp'
+import { AiCityIcon } from './ai-city/AiCityIcon'
 import { DoListApp } from './do-list/DoListApp'
 import { DoListIcon } from './do-list/DoListIcon'
 import { MeditationApp } from './meditation/MeditationApp'
@@ -15,6 +17,14 @@ import { TimerIcon } from './timer/TimerIcon'
 import type { AppMeta } from '../types/app'
 
 export const appRegistry: AppMeta[] = [
+  {
+    id: 'ai-city',
+    name: 'Ai city',
+    description: 'Ai city의 새로운 공간에 오신 것을 환영합니다.',
+    icon: AiCityIcon,
+    route: '#/ai-city',
+    component: AiCityApp,
+  },
   {
     id: 'do-list',
     name: 'Do List',
