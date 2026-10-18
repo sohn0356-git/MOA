@@ -1,0 +1,27 @@
+name: Review Ai city requests
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/review-ai-city.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    environment:
+      name: github-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read public Ai city posts
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          const response = await fetch('https://' + process.env.FIREBASE_PROJECT_ID + '-default-rtdb.firebaseio.com/aiCity/posts.json')
+          if (!response.ok) throw new Error('Public board read failed: ' + response.status)
+          const posts = await response.json()
+          for (const [id, post] of Object.entries(posts || {})) {
+            console.log('CITY_POST=' + JSON.stringify({ id, ...post }))
+          }
+          console.log('CITY_POST_COUNT=' + Object.keys(posts || {}).length)
+          JS
