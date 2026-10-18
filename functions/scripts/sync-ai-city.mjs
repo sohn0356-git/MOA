@@ -19,6 +19,12 @@ try {
       continue
     }
     const postRef = db.ref('aiCity/posts/' + entry.id)
+    const original = (await postRef.once('value')).val()
+    if (!original || original.body !== entry.body || original.kind !== entry.kind || original.accountId !== entry.accountId) {
+      failures++
+      console.log(JSON.stringify({ id: entry.id, outcome: original ? 'not-marked: source content changed' : 'not-marked: source missing' }))
+      continue
+    }
     const result = await postRef.transaction(current => {
       if (!current || current.body !== entry.body || current.kind !== entry.kind || current.accountId !== entry.accountId) return
       return {
