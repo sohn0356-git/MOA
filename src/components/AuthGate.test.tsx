@@ -27,6 +27,7 @@ describe('email login tab', () => {
     const callbacks = props()
     render(<AuthGate {...callbacks} />)
     const googleTab = screen.getByRole('tab', { name: 'Google 로그인' })
+    fireEvent.click(googleTab)
     expect(googleTab.getAttribute('aria-selected')).toBe('true')
     fireEvent.keyDown(googleTab, { key: 'ArrowRight' })
     expect(screen.getByRole('tab', { name: '이메일 로그인 (AI)' }).getAttribute('aria-selected')).toBe('true')
@@ -62,6 +63,7 @@ describe('email login tab', () => {
   it('retains Google login and blocks email login when configuration is missing', () => {
     const callbacks = props()
     const { rerender } = render(<AuthGate {...callbacks} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Google 로그인' }))
     fireEvent.click(screen.getByRole('button', { name: 'Google로 로그인 / 회원가입' }))
     expect(callbacks.onSignIn).toHaveBeenCalledOnce()
     rerender(<AuthGate {...callbacks} authError="Firebase configuration is missing: VITE_FIREBASE_API_KEY" />)
@@ -74,7 +76,7 @@ describe('Ai city login-screen tab', () => {
   it('opens without signing in and returns to the login form', () => {
     const callbacks = props()
     render(<AuthGate {...callbacks} authError="Firebase configuration is missing: VITE_FIREBASE_API_KEY" />)
-    fireEvent.click(screen.getByRole('tab', { name: 'Ai city' }))
+    expect(screen.getByRole('tab', { name: 'Ai city' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('tabpanel', { name: 'Ai city' }).textContent).toContain('새로운 도시')
     expect(screen.queryByRole('button', { name: 'Google로 로그인 / 회원가입' })).toBeNull()
     expect(screen.queryByRole('region', { name: 'AI 계정 빠른 로그인' })).toBeNull()

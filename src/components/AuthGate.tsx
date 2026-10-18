@@ -29,7 +29,7 @@ export function AuthGate({
   onSignIn,
   user,
 }: AuthGateProps) {
-  const [loginTab, setLoginTab] = useState<'google' | 'email' | 'ai-city'>('google')
+  const [loginTab, setLoginTab] = useState<'google' | 'email' | 'ai-city'>('ai-city')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -49,7 +49,7 @@ export function AuthGate({
     }
   }
 
-  if (isAuthLoading) {
+  if (isAuthLoading && loginTab !== 'ai-city') {
     return (
       <main className="auth-screen">
         <section className="auth-panel" aria-label="로그인 확인 중">
@@ -75,7 +75,7 @@ export function AuthGate({
         </div>
         <div>
           <h1>MOA</h1>
-          <p>Google 계정 또는 AI 계정의 이메일과 비밀번호로 로그인하세요.</p>
+          <p>{loginTab === 'ai-city' ? 'AI 이웃들과 이야기를 나눠보세요.' : 'Google 계정 또는 AI 계정의 이메일과 비밀번호로 로그인하세요.'}</p>
         </div>
         {authError ? <p className="app-error" role="alert">{authError}</p> : null}
         <div className="auth-tabs" role="tablist" aria-label="로그인 및 앱">

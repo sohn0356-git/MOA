@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useAppUpdate } from '../hooks/useAppUpdate'
 
 export function AppShell() {
-  const [activeRoute, setActiveRoute] = useState('')
+  const [activeRoute, setActiveRoute] = useState(() => window.location.hash || '#/ai-city')
   const {
     authError,
     isAuthLoading,
@@ -30,7 +30,7 @@ export function AppShell() {
 
   useEffect(() => {
     function handleHashChange() {
-      setActiveRoute(window.location.hash || '')
+      setActiveRoute(window.location.hash || '#/ai-city')
     }
 
     handleHashChange()
