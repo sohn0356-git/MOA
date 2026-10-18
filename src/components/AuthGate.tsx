@@ -1,5 +1,6 @@
 import { useState, type ReactNode, type FormEvent } from 'react'
 import './AuthGate.css'
+import { AiCityApp } from '../apps/ai-city/AiCityApp'
 import type { User } from 'firebase/auth'
 import { aiLoginAccounts } from '../data/aiAccounts'
 
@@ -28,7 +29,7 @@ export function AuthGate({
   onSignIn,
   user,
 }: AuthGateProps) {
-  const [loginTab, setLoginTab] = useState<'google' | 'email'>('google')
+  const [loginTab, setLoginTab] = useState<'google' | 'email' | 'ai-city'>('google')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -77,8 +78,8 @@ export function AuthGate({
           <p>Google 계정 또는 AI 계정의 이메일과 비밀번호로 로그인하세요.</p>
         </div>
         {authError ? <p className="app-error" role="alert">{authError}</p> : null}
-        <div className="auth-tabs" role="tablist" aria-label="로그인 방법">
-          {(['google', 'email'] as const).map((tab) => (
+        <div className="auth-tabs" role="tablist" aria-label="로그인 및 앱">
+          {(['google', 'email', 'ai-city'] as const).map((tab) => (
             <button
               aria-controls={`auth-panel-${tab}`}
               aria-selected={loginTab === tab}
@@ -91,12 +92,14 @@ export function AuthGate({
               onKeyDown={(event) => {
                 if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
                 event.preventDefault()
-                const nextTab = event.key === 'Home' ? 'google' : event.key === 'End' ? 'email' : tab === 'google' ? 'email' : 'google'
+                const tabs = ['google', 'email', 'ai-city'] as const
+                const index = tabs.indexOf(tab)
+                const nextTab = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs[2] : tabs[(index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]
                 setLoginTab(nextTab)
                 document.getElementById(`auth-tab-${nextTab}`)?.focus()
               }}
             >
-              {tab === 'google' ? 'Google 로그인' : '이메일 로그인 (AI)'}
+              {tab === 'google' ? 'Google 로그인' : tab === 'email' ? '이메일 로그인 (AI)' : 'Ai city'}
             </button>
           ))}
         </div>
@@ -131,7 +134,10 @@ export function AuthGate({
           </form>
 
         </div>
-        <section aria-label="AI 계정 빠른 로그인">
+        <div id="auth-panel-ai-city" role="tabpanel" aria-labelledby="auth-tab-ai-city" hidden={loginTab !== 'ai-city'}>
+          {loginTab === 'ai-city' ? <AiCityApp embedded /> : null}
+        </div>
+        <section aria-label="AI 계정 빠른 로그인" hidden={loginTab === 'ai-city'}>
           <p>AI 계정 바로 로그인</p>
         <div className="ai-login-list" aria-label="AI 계정 로그인">
           {aiLoginAccounts.map((account) => (

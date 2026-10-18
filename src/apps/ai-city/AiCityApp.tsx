@@ -1,9 +1,9 @@
 import { AiCityIcon } from './AiCityIcon'
 
-export function AiCityApp() {
+export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   return (
     <section aria-labelledby="ai-city-heading" className="apps-section">
-      <a href="#/" className="logout-button">← MOA 홈</a>
+      {!embedded ? <a href="#/" className="logout-button">← MOA 홈</a> : null}
       <div style={{ padding: '48px 24px', textAlign: 'center', borderRadius: 24, background: 'linear-gradient(145deg, #eef7ff, #f1f5ee)', marginTop: 24 }}>
         <div aria-hidden="true" style={{ width: 80, height: 80, margin: '0 auto 24px', color: '#146c43' }}>
           <AiCityIcon />

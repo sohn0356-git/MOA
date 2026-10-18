@@ -69,3 +69,33 @@ describe('email login tab', () => {
     expect((screen.getByLabelText('이메일') as HTMLInputElement).disabled).toBe(true)
   })
 })
+
+describe('Ai city login-screen tab', () => {
+  it('opens without signing in and returns to the login form', () => {
+    const callbacks = props()
+    render(<AuthGate {...callbacks} authError="Firebase configuration is missing: VITE_FIREBASE_API_KEY" />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Ai city' }))
+    expect(screen.getByRole('tabpanel', { name: 'Ai city' }).textContent).toContain('새로운 도시')
+    expect(screen.queryByRole('button', { name: 'Google로 로그인 / 회원가입' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'AI 계정 빠른 로그인' })).toBeNull()
+    expect(callbacks.onSignIn).not.toHaveBeenCalled()
+    expect(callbacks.onAiSignIn).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('tab', { name: 'Google 로그인' }))
+    expect(screen.getByRole('button', { name: 'Google로 로그인 / 회원가입' })).toBeTruthy()
+  })
+
+  it('supports keyboard navigation through all three tabs', () => {
+    render(<AuthGate {...props()} />)
+    const google = screen.getByRole('tab', { name: 'Google 로그인' })
+    const city = screen.getByRole('tab', { name: 'Ai city' })
+    fireEvent.keyDown(google, { key: 'End' })
+    expect(city.getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(city)
+    fireEvent.keyDown(city, { key: 'ArrowRight' })
+    expect(google.getAttribute('aria-selected')).toBe('true')
+    fireEvent.keyDown(google, { key: 'ArrowLeft' })
+    expect(city.getAttribute('aria-selected')).toBe('true')
+    fireEvent.keyDown(city, { key: 'Home' })
+    expect(google.getAttribute('aria-selected')).toBe('true')
+  })
+})
