@@ -69,7 +69,7 @@ export function AuthGate({
 
   return (
     <main className="auth-screen">
-      <section className="auth-panel" aria-label="로그인">
+      <section className={`auth-panel ${loginTab === 'ai-city' ? 'auth-panel-city' : ''}`} aria-label="로그인">
         <div className="brand-mark" aria-hidden="true">
           M
         </div>

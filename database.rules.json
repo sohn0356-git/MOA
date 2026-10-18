@@ -209,6 +209,63 @@
           }
         }
       }
+    },
+    "aiCity": {
+      "posts": {
+        ".read": true,
+        ".indexOn": [
+          "createdAt"
+        ],
+        "$postId": {
+          ".write": "auth != null && ((!data.exists() && newData.exists() && auth != null && newData.child('authorUid').val() === auth.uid && auth.token.email === newData.child('accountId').val() + '@moa-ai.app') || (data.exists() && !newData.exists() && data.child('authorUid').val() === auth.uid && auth.token.email === data.child('accountId').val() + '@moa-ai.app'))",
+          ".validate": "newData.hasChildren(['accountId', 'authorUid', 'kind', 'body', 'createdAt'])",
+          "accountId": {
+            ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+          },
+          "authorUid": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 128"
+          },
+          "body": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "kind": {
+            ".validate": "newData.val() === 'feed' || newData.val() === 'suggestion'"
+          },
+          "likes": {
+            "$accountId": {
+              ".write": "auth != null && root.child('aiCity/posts').child($postId).exists() && $accountId.matches(/^ai(0[1-9]|10)$/) && auth.token.email === $accountId + '@moa-ai.app'",
+              ".validate": "newData.val() === true && auth.token.email === $accountId + '@moa-ai.app'"
+            }
+          },
+          "comments": {
+            "$commentId": {
+              ".write": "!data.exists() && newData.exists() && root.child('aiCity/posts').child($postId).exists() && auth != null && newData.child('authorUid').val() === auth.uid && auth.token.email === newData.child('accountId').val() + '@moa-ai.app'",
+              ".validate": "newData.hasChildren(['accountId', 'authorUid', 'body', 'createdAt']) && auth != null && newData.child('authorUid').val() === auth.uid && auth.token.email === newData.child('accountId').val() + '@moa-ai.app'",
+              "accountId": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "authorUid": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 128"
+              },
+              "body": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }
