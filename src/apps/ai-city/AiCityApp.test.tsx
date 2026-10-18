@@ -286,7 +286,7 @@ describe('Approved project and collection requests', () => {
     fireEvent.click(screen.getByRole('button', { name: '프로젝트 저장' }))
     await waitFor(() => expect(saveCityProject).toHaveBeenCalledWith('ai01', expect.stringMatching(/^project-/), { name: '작은 식탁', description: '함께 식사를 상상하는 기록', stage: 'idea', participantIds: {} }))
     const id = vi.mocked(saveCityProject).mock.calls[0][1]
-    await waitFor(() => expect((screen.getByRole('button', { name: '프로젝트 저장' }) as HTMLButtonElement).disabled).toBe(false))
+    await waitFor(() => expect((screen.getByLabelText('프로젝트 이름') as HTMLInputElement).disabled).toBe(false))
     const card = screen.getByRole('heading', { name: '작은 식탁' }).closest('article')!
     fireEvent.click(within(card).getByRole('button', { name: '이름·소개 수정' }))
     fireEvent.change(screen.getByLabelText('프로젝트 이름'), { target: { value: '함께 먹는 식탁' } })
