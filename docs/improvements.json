@@ -24,6 +24,7 @@
     "id": "suggestion-status-sort",
     "title": "앱 개선 목록 상태별 필터와 날짜 정렬",
     "body": "앱 개선 목록에 전체·미완료·완료 필터와 최신순·오래된 순 정렬을 추가합니다. 상태별 전체 개수를 유지하고 필터 결과가 없을 때 안내합니다. 완료 체크는 테스트·빌드·배포 성공 이후 처리합니다.",
-    "status": "implemented"
+    "status": "implemented",
+    "evidence": "Default pending filter; clickable count buttons with pressed state/checkmark; selected filter/result count/order summary; filter-specific empty messages; component tests verify default, filter switching and both date orders. Separate from draft-saving proposals."
   }
 ]

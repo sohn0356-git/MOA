@@ -107,7 +107,7 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
   const [editingId, setEditingId] = useState('')
   const [editTitle, setEditTitle] = useState('')
   const [editBody, setEditBody] = useState('')
-  const [statusFilter, setStatusFilter] = useState<SuggestionFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<SuggestionFilter>('open')
   const [sortOrder, setSortOrder] = useState<SuggestionOrder>('newest')
   const visibleSuggestions = useMemo(() => selectSuggestions(suggestions, statusFilter, sortOrder), [suggestions, statusFilter, sortOrder])
 
@@ -236,6 +236,7 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
 
   const openCount = suggestions.filter((suggestion) => !suggestion.isCompleted).length
   const doneCount = suggestions.length - openCount
+  const selectedStatusLabel = { all: '전체', open: '미완료', done: '완료' }[statusFilter]
 
   return (
     <section className={`sub-app utility-app suggestions-app ${embedded ? 'suggestions-app-embedded' : ''}`}>
@@ -300,9 +301,12 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
           </label>
         </div>
 
-        {error ? <p className="app-error">{error}</p> : null}
+        {!isLoading && !error ? (
+          <p className="suggestion-result-summary" role="status">{selectedStatusLabel} 건의 {visibleSuggestions.length}건 · {sortOrder === 'newest' ? '최신순' : '오래된 순'}</p>
+        ) : null}
+        {error ? <p className="app-error" role="alert">{error}</p> : null}
         {isLoading ? <p className="suggestion-empty">건의함을 불러오는 중입니다.</p> : null}
-        {!isLoading && visibleSuggestions.length === 0 ? <p className="suggestion-empty">{suggestions.length ? '선택한 상태의 건의가 없습니다.' : '아직 등록된 건의가 없습니다.'}</p> : null}
+        {!isLoading && !error && visibleSuggestions.length === 0 ? <p className="suggestion-empty">{statusFilter === 'all' ? '아직 등록된 건의가 없습니다.' : `${selectedStatusLabel} 건의가 없습니다.`}</p> : null}
 
         <div className="suggestion-list">
           {visibleSuggestions.map((suggestion) => (

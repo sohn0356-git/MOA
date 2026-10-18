@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { SuggestionsApp } from './SuggestionsApp'
 
-const mocks = vi.hoisted(() => ({ update: vi.fn(), remove: vi.fn() }))
+const mocks = vi.hoisted(() => ({ update: vi.fn(), remove: vi.fn(), empty: false }))
 vi.mock('../../services/firebase', () => ({
   getFirebaseAuth: () => ({ currentUser: { uid: 'alice', displayName: 'Alice' } }),
   getFirebaseConfigError: () => null,
@@ -12,7 +12,7 @@ vi.mock('../../services/firebase', () => ({
 vi.mock('firebase/database', () => ({
   ref: (_db: unknown, path: string) => path,
   onValue: (_ref: unknown, callback: (value: { val: () => unknown }) => void) => {
-    callback({ val: () => ({
+    callback({ val: () => mocks.empty ? null : ({
       a: { authorUid: 'alice', authorName: 'Alice', title: '내 의견', body: '내 내용', createdAt: 1, isCompleted: true, completedAt: 10, completedByUid: 'bob', completedByName: 'Bob' },
       b: { authorUid: 'bob', authorName: 'Bob', title: '다른 의견', body: '다른 내용', createdAt: 2, isCompleted: false },
     }) })
@@ -21,13 +21,18 @@ vi.mock('firebase/database', () => ({
   update: mocks.update, remove: mocks.remove, push: vi.fn(), get: vi.fn(),
 }))
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
-beforeEach(() => { mocks.update.mockReset().mockResolvedValue(undefined); mocks.remove.mockReset().mockResolvedValue(undefined) })
+beforeEach(() => { mocks.empty = false; mocks.update.mockReset().mockResolvedValue(undefined); mocks.remove.mockReset().mockResolvedValue(undefined) })
+
+function renderOwnerBoard() {
+  render(<SuggestionsApp embedded />)
+  fireEvent.click(screen.getByRole('button', { name: /^전체 / }))
+}
 
 function ownerCard() { return screen.getByText('내 의견').closest('article')! }
 
 describe('suggestion owner actions', () => {
   it('shows edit and delete only on the author’s own item and preserves completion on save', async () => {
-    render(<SuggestionsApp embedded />)
+    renderOwnerBoard()
     const own = within(ownerCard())
     const other = within(screen.getByText('다른 의견').closest('article')!)
     expect(other.queryByRole('button', { name: '수정' })).toBeNull()
@@ -68,5 +73,36 @@ describe('suggestion owner actions', () => {
     fireEvent.submit(screen.getByRole('form', { name: '개선 의견 수정' }))
     await waitFor(() => expect(screen.getByText(/의견을 수정하지 못했습니다/)).toBeTruthy())
     expect(screen.getByRole('form', { name: '개선 의견 수정' })).toBeTruthy()
+  })
+})
+
+describe('visible suggestion filters', () => {
+  it('starts with pending items and exposes the selected state and result count', () => {
+    render(<SuggestionsApp embedded />)
+    expect(screen.getByRole('button', { name: /^미완료 / }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByText('내 의견')).toBeNull()
+    expect(screen.getByText('다른 의견')).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toBe('미완료 건의 1건 · 최신순')
+    fireEvent.click(screen.getByRole('button', { name: /^완료 / }))
+    expect(screen.queryByText('다른 의견')).toBeNull()
+    expect(screen.getByText('내 의견')).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toBe('완료 건의 1건 · 최신순')
+    fireEvent.click(screen.getByRole('button', { name: /^전체 / }))
+    expect(screen.getByRole('status').textContent).toBe('전체 건의 2건 · 최신순')
+    expect(screen.getAllByRole('heading', { level: 3 }).map(item => item.textContent)).toEqual(['다른 의견', '내 의견'])
+    fireEvent.change(screen.getByLabelText('정렬'), { target: { value: 'oldest' } })
+    expect(screen.getAllByRole('heading', { level: 3 }).map(item => item.textContent)).toEqual(['내 의견', '다른 의견'])
+    expect(screen.getByRole('status').textContent).toBe('전체 건의 2건 · 오래된 순')
+  })
+
+  it('uses the selected filter in empty messages', () => {
+    mocks.empty = true
+    render(<SuggestionsApp embedded />)
+    expect(screen.getByText('미완료 건의가 없습니다.')).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toBe('미완료 건의 0건 · 최신순')
+    fireEvent.click(screen.getByRole('button', { name: /^완료 / }))
+    expect(screen.getByText('완료 건의가 없습니다.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^전체 / }))
+    expect(screen.getByText('아직 등록된 건의가 없습니다.')).toBeTruthy()
   })
 })
