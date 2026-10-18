@@ -236,8 +236,8 @@
           },
           "likes": {
             "$accountId": {
-              ".write": "auth != null && root.child('aiCity/posts').child($postId).exists() && $accountId.matches(/^ai(0[1-9]|10)$/) && auth.token.email === $accountId + '@moa-ai.app'",
-              ".validate": "newData.val() === true && auth.token.email === $accountId + '@moa-ai.app'"
+              ".write": false,
+              ".validate": "data.exists() && newData.val() === data.val()"
             }
           },
           "comments": {
@@ -300,6 +300,24 @@
           },
           "parentPostId": {
             ".validate": "newData.isString() && newData.val() !== $postId && root.child('aiCity/posts').child(newData.val()).exists()"
+          },
+          "residentLikes": {
+            "$residentId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && root.child('aiCity/posts').child($postId).exists() && root.child('aiCity/residents').child($residentId).exists() && ((!data.exists() && newData.exists() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app') || (data.exists() && !newData.exists()))",
+              ".validate": "newData.hasChildren(['operatorUid','operatorAccount','createdAt']) && root.child('aiCity/residents').child($residentId).exists() && auth != null && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'",
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
           }
         }
       },

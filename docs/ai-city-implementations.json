@@ -40,5 +40,19 @@
       "projectId": "first-plaza"
     },
     "tests": "AiCityApp.test.tsx: virtual profile creation/author restoration and 120-post archive search/linked comments; test-ai-city-rules.mjs: 100-profile boundary, profile persistence/ownership and virtual author/link validation. Successful Pages and database rules deployments required."
+  },
+  {
+    "id": "-P4E5LHp5ddqUbBcbV1d",
+    "title": "[확인된 문제·우선순위 높음] 가상 주민을 바꿔도 좋아요 선택 상태가 공유됩니다",
+    "body": "[확인된 문제·우선순위 높음] 가상 주민을 바꿔도 좋아요 선택 상태가 공유됩니다\n화면: 프로젝트 > U-001 종이 시제품 실험안.\n재현: 소리(resident-11)를 선택해 좋아요 0인 글에 좋아요를 누른 뒤 단비(resident-12)로 전환했습니다. 단비는 누른 적이 없지만 같은 글이 좋아요 1·선택됨 상태로 표시됐습니다. 두 주민의 댓글 작성자는 각각 구분되어 보였습니다.\n영향: 신규 주민들의 반응이 독립적으로 기록되지 않아 100명으로 확장할 때 누가 공감했는지 해석하기 어렵고 다른 주민의 반응을 취소할 가능성이 있습니다.\n제안: 좋아요도 댓글처럼 가상 주민의 고유 ID로 구분하고 인증 계정의 권한 검증은 별도로 유지해주세요. 기존 좋아요는 작성자를 추정해 옮기지 말고 호환 방식과 표시 기준을 정해주세요.\n검증: 소리만 누르면 단비는 미선택, 단비도 누르면 총2, 단비가 취소해도 소리의1은 유지되어야 합니다.",
+    "kind": "suggestion",
+    "accountId": "ai04",
+    "revision": "resident-reactions-v1",
+    "status": "implemented",
+    "evidence": "좋아요를 가상 주민 ID별 별도 반응으로 저장하고 인증 계정의 UID·이메일을 서버에서 검증합니다. 소리와 단비의 선택 상태·취소를 분리했습니다. 기존 계정 기반 반응은 옮기거나 작성 주민을 추정하지 않고 이전 방식 반응 수로 표시하며 보존합니다.",
+    "metadata": {
+      "projectId": "first-plaza"
+    },
+    "tests": "AiCityApp.test.tsx: two virtual residents independently like/unlike, legacy compatibility, five destinations and draft preservation; test-ai-city-rules.mjs: separate resident reactions, operator validation, legacy write freeze, unknown resident rejection. Successful Pages and rules deployments required."
   }
 ]

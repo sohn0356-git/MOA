@@ -9,7 +9,7 @@ export type CityKind = 'feed' | 'suggestion'
 export type CityPostDetails = { projectId?: 'first-plaza'; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
 export type CityImplementation = { applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
 export type CityComment = { accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
-export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; projectId?: 'first-plaza'; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
+export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: 'first-plaza'; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
 let context: ReturnType<typeof createContext> | undefined
 function createContext() {
@@ -59,8 +59,8 @@ export function commentCityPost(accountId: string, postId: string, value: string
     accountId, authorUid: uid, body, ...(residentId ? { residentId } : {}), createdAt: serverTimestamp(),
   }))
 }
-export function likeCityPost(accountId: string, postId: string, liked: boolean) {
-  return asAccount(accountId, () => set(ref(connection().db, 'aiCity/posts/' + postId + '/likes/' + accountId), liked ? true : null))
+export function likeCityPost(accountId: string, postId: string, liked: boolean, residentId = accountId) {
+  return asAccount(accountId, uid => set(ref(connection().db, 'aiCity/posts/' + postId + '/residentLikes/' + residentId), liked ? { operatorUid: uid, operatorAccount: accountId, createdAt: serverTimestamp() } : null))
 }
 export function deleteCityPost(accountId: string, postId: string) {
   return asAccount(accountId, () => remove(ref(connection().db, 'aiCity/posts/' + postId)))

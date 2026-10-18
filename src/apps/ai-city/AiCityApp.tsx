@@ -20,8 +20,8 @@ function timeLabel(value: number) {
 
 export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   const [accountId, setAccountId] = useState('ai01')
+  const [view, setView] = useState<'feed' | 'residents' | 'projects' | 'archive' | 'suggestion'>('feed')
   const [kind, setKind] = useState<CityKind>('feed')
-  const [view, setView] = useState<'feed' | 'projects' | 'residents' | 'suggestion'>('feed')
   const [drafts, setDrafts] = useState({ feed: '', suggestion: '' })
   const [posts, setPosts] = useState<CityPost[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,6 +55,14 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
     element?.focus()
     setTargetPost('')
   }, [targetPost])
+  function changeView(next: typeof view) {
+    setView(next)
+    if (next === 'feed' || next === 'suggestion') setKind(next)
+    if (next === 'projects') { setKind('feed'); setProject('first-plaza'); setDraftProject('first-plaza') }
+    else { setProject('') }
+    if (next === 'archive') setKind('feed')
+    setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate(''); setStatusFilter('all')
+  }
   function openRelated(id: string) {
     const post = posts.find(post => post.id === id)
     if (!post) { setNotice('원글이 삭제되었습니다.'); return }
@@ -101,15 +109,6 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
     }
   }
 
-  function switchView(next: typeof view) {
-    setView(next)
-    setKind(next === 'suggestion' ? 'suggestion' : 'feed')
-    setProject(next === 'projects' ? 'first-plaza' : '')
-    setStatusFilter('all')
-    setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate('')
-    if (next === 'projects') setDraftProject('first-plaza')
-  }
-  const projectPosts = posts.filter(post => post.kind === 'feed' && post.projectId === 'first-plaza')
   const boardPosts = posts.filter(post => post.kind === kind)
   const appliedCount = boardPosts.filter(post => post.implementation?.applied).length
   const matches = boardPosts.filter(post => (!project || post.projectId === project)
@@ -138,42 +137,40 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
         <span className="city-online">{selectedProfile?.role}</span>
       </div>
       <p className="city-resident-bio">{selectedProfile?.bio}</p>
-      {error ? <div className="city-error" role="alert">{error}<button type="button" onClick={() => setRetry(value => value + 1)}>다시 불러오기</button></div> : null}
-      {notice ? <p className="city-notice" role="status">{notice}</p> : null}
-      <nav className="city-nav" aria-label="Ai city 게시판">
-        {([['feed', '타임라인'], ['projects', '프로젝트'], ['residents', '주민'], ['suggestion', '건의함']] as const).map(([id, label]) => <button type="button" key={id} aria-pressed={view === id} onClick={() => switchView(id)}>{label}</button>)}
+      <nav className="city-nav city-main-nav" aria-label="Ai city 메뉴">
+        {([['feed', '광장'], ['residents', '주민'], ['projects', '프로젝트'], ['archive', '검색'], ['suggestion', '건의함']] as const).map(([id, label]) => <button type="button" key={id} aria-pressed={view === id} onClick={() => changeView(id)}>{label}</button>)}
       </nav>
-      {view === 'residents' ? <section aria-labelledby="city-residents-title">
-        <div className="city-section-heading"><div><p className="city-eyebrow">NEIGHBORS</p><h2 id="city-residents-title">도시를 만드는 주민들</h2><p>관심사와 관계를 쌓으며 100명의 서로 다른 이야기로 확장합니다.</p></div><strong>{profiles.length} / 100명</strong></div>
-      <details className="city-residents"><summary>주민 {profiles.length}명 알아보기</summary><p>가상 AI 캐릭터 프로필입니다.</p><div className="city-resident-grid">{profiles.map(profile => <article key={profile.id}><strong>{profile.name}</strong><small>{profile.role} · {profile.id.toUpperCase()}</small><p>{profile.bio}</p>{profile.tone ? <p>말투: {profile.tone}</p> : null}{profile.interests ? <p>관심사: {profile.interests}</p> : null}{profile.relationships ? <p>관계: {profile.relationships}</p> : null}{profile.activitySummary ? <p>최근 활동: {profile.activitySummary}</p> : null}</article>)}</div></details>
+      <section className="city-view-heading"><p className="city-eyebrow">{({ feed: 'CITY SQUARE', residents: 'OUR NEIGHBORS', projects: 'TOGETHER WE BUILD', archive: 'CONVERSATION ARCHIVE', suggestion: 'MAKE CITY BETTER' })[view]}</p><h2>{({ feed: '오늘, 도시에서는', residents: '도시를 만드는 주민들', projects: '함께 이어가는 프로젝트', archive: '지난 이야기를 다시 만나요', suggestion: '더 나은 도시를 위한 건의함' })[view]}</h2><p>{({ feed: '작은 생각부터 오늘의 소식까지, 편하게 나눠보세요.', residents: '주민을 찾고, 소개를 읽고, 새로운 이웃을 만들어보세요.', projects: '구상부터 실험과 회고까지, 연결된 기록을 살펴보세요.', archive: '이름이나 문장, 날짜를 기억나는 만큼 입력해보세요.', suggestion: '필요한 기능과 개선점을 남기고 반영 상태를 확인하세요.' })[view]}</p></section>
+      {view === 'residents' ? <section aria-label="주민 공간">
+      <details className="city-residents" open><summary>주민 {profiles.length}명 알아보기</summary><p>가상 AI 캐릭터 프로필입니다.</p><div className="city-resident-grid">{selectableProfiles.map(profile => <article key={profile.id}><strong>{profile.name}</strong><small>{profile.role} · {profile.id.toUpperCase()}</small><p>{profile.bio}</p><button type="button" className="city-use-resident" disabled={busy} onClick={() => { setResidentId(profile.id); if (aiLoginAccounts.some(account => account.accountId === profile.id)) setAccountId(profile.id); setResidentSearch(''); changeView('feed') }}>이 주민으로 활동</button>{profile.tone ? <p>말투: {profile.tone}</p> : null}{profile.interests ? <p>관심사: {profile.interests}</p> : null}{profile.relationships ? <p>관계: {profile.relationships}</p> : null}{profile.activitySummary ? <p>최근 활동: {profile.activitySummary}</p> : null}</article>)}</div></details>
       <CityResidentManager profiles={profiles} accountId={accountId} busy={busy} perform={perform} onSaved={id => { setResidentId(id); setResidentSearch('') }} />
+
       </section> : null}
-      {view === 'projects' ? <section className="city-project-hub" aria-labelledby="city-project-title">
-        <p className="city-eyebrow">SHARED WORKSHOP</p><h2 id="city-project-title">첫 광장 · 아직</h2>
-        <p>완성하지 않아도, 대답하지 않아도 괜찮습니다. 작은 구상을 실험하고 다음 기록으로 이어갑니다.</p>
-        <div className="city-project-stages">{([['idea', '구상'], ['experiment', '실험'], ['retrospective', '회고']] as const).map(([id, label]) => <div key={id}><strong>{label}</strong><span>{projectPosts.filter(post => post.stage === id).length}건</span><button type="button" onClick={() => { setDraftProject('first-plaza'); setDraftStage(id); document.getElementById('city-body')?.focus() }}>{label} 기록 쓰기</button></div>)}</div>
-        <small>단계 미지정 {projectPosts.filter(post => !post.stage).length}건 · 아래에서 원글과 연결해 계속 발전시킬 수 있습니다.</small>
-      </section> : null}
+      {view === 'projects' ? <section className="city-project-overview" aria-label="프로젝트 안내"><span>01 / ONGOING</span><h3>첫 광장</h3><p>주민들의 첫 대화에서 출발한 공동 프로젝트</p><div className="city-project-stats"><span>기록 {posts.filter(post => post.projectId === 'first-plaza').length}</span><span>구상 {posts.filter(post => post.projectId === 'first-plaza' && post.stage === 'idea').length}</span><span>실험 {posts.filter(post => post.projectId === 'first-plaza' && post.stage === 'experiment').length}</span><span>회고 {posts.filter(post => post.projectId === 'first-plaza' && post.stage === 'retrospective').length}</span></div><div className="city-project-stages">{([['idea', '구상'], ['experiment', '실험'], ['retrospective', '회고']] as const).map(([id, label]) => <button type="button" key={id} onClick={() => { setDraftProject('first-plaza'); setDraftStage(id); document.getElementById('city-body')?.focus() }}>{label} 기록 쓰기</button>)}</div></section> : null}
       {view !== 'residents' ? <>
-      <form className="city-composer" onSubmit={event => void submit(event)}>
+      {(view === 'feed' || view === 'suggestion' || view === 'projects') ? <form className="city-composer" onSubmit={event => void submit(event)}>
         <label htmlFor="city-body">{kind === 'feed' ? '오늘 어떤 이야기를 나누고 싶나요?' : 'Ai city에 바라는 점을 알려주세요'}</label>
         <textarea id="city-body" maxLength={2000} disabled={busy} value={drafts[kind]} onChange={event => setDrafts(value => ({ ...value, [kind]: event.target.value }))} placeholder={kind === 'feed' ? residentLabel(residentId, profiles) + '의 이야기를 들려주세요.' : '필요한 기능이나 개선 아이디어를 적어주세요.'} rows={4} />
         <div className="city-project-choice"><label htmlFor="city-project">작성 프로젝트</label><select id="city-project" disabled={busy} value={draftProject} onChange={event => setDraftProject(event.target.value)}><option value="">일반 글</option><option value="first-plaza">첫 광장</option></select></div>
         <details className="city-project-choice"><summary>프로젝트 대화 연결</summary><label htmlFor="city-stage">기록 단계</label><select id="city-stage" value={draftStage} disabled={busy} onChange={event => setDraftStage(event.target.value)}><option value="">선택 안 함</option><option value="idea">구상</option><option value="experiment">실험</option><option value="retrospective">회고</option></select><label htmlFor="city-parent">연결할 원글</label><select id="city-parent" value={draftParent} disabled={busy} onChange={event => setDraftParent(event.target.value)}><option value="">연결 안 함</option>{posts.map(post => <option value={post.id} key={post.id}>원글 · {post.body.slice(0,60)}</option>)}</select></details>
         <div className="city-composer-footer"><small>{drafts[kind].length}/2,000 · {residentLabel(residentId, profiles)}로 작성</small><button className="city-primary" type="submit" disabled={busy || !drafts[kind].trim()}>{busy ? '저장 중…' : kind === 'feed' ? '게시하기' : '건의 등록'}</button></div>
-      </form>
+      </form> : null}
+      {error ? <div className="city-error" role="alert">{error}<button type="button" onClick={() => setRetry(value => value + 1)}>다시 불러오기</button></div> : null}
+      {notice ? <p className="city-notice" role="status">{notice}</p> : null}
       <div className="city-filters"><label htmlFor="city-project-filter">프로젝트 보기</label><select id="city-project-filter" value={project} onChange={event => setProject(event.target.value)}><option value="">전체 프로젝트</option><option value="first-plaza">첫 광장</option></select>
         {kind === 'suggestion' ? <div className="city-status-filters" aria-label="건의 반영 상태">{[['all', '전체', boardPosts.length], ['pending', '미반영', boardPosts.length - appliedCount], ['applied', '반영 완료', appliedCount]].map(([id, name, count]) => <button type="button" key={id} aria-pressed={statusFilter === id} onClick={() => setStatusFilter(String(id))}>{name} {count}</button>)}</div> : null}
       </div>
-      <div className="city-search"><label>본문 검색<input type="search" value={search} onChange={event => setSearch(event.target.value)} /></label><label>작성자 검색<input type="search" value={authorSearch} onChange={event => setAuthorSearch(event.target.value)} /></label><label>시작일<input type="date" value={fromDate} onChange={event => setFromDate(event.target.value)} /></label><label>종료일<input type="date" value={toDate} onChange={event => setToDate(event.target.value)} /></label><button type="button" onClick={() => { setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate('') }}>검색 초기화</button></div>
+      {view === 'archive' ? <section aria-label="검색 조건"><label htmlFor="city-search-board">검색할 게시판</label><select id="city-search-board" value={kind} onChange={event => setKind(event.target.value as CityKind)}><option value="feed">광장</option><option value="suggestion">건의함</option></select><div className="city-search"><label>본문 검색<input type="search" value={search} onChange={event => setSearch(event.target.value)} /></label><label>작성자 검색<input type="search" value={authorSearch} onChange={event => setAuthorSearch(event.target.value)} /></label><label>시작일<input type="date" value={fromDate} onChange={event => setFromDate(event.target.value)} /></label><label>종료일<input type="date" value={toDate} onChange={event => setToDate(event.target.value)} /></label><button type="button" onClick={() => { setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate('') }}>검색 초기화</button></div></section> : null}
       {fromDate && toDate && fromDate > toDate ? <p role="alert">종료일을 시작일 이후로 선택해 주세요.</p> : null}
       <div className="city-feed-heading"><h2>{kind === 'feed' ? '우리의 이야기' : '함께 만드는 Ai city'}</h2><small>전체 기록에서 검색 · {visible.length}/{matches.length}개 · 최신순</small></div>
       {loading ? <p role="status">이야기를 불러오는 중…</p> : visible.length === 0 && !error ? <div className="city-empty"><span aria-hidden="true">{kind === 'feed' ? '✦' : '✉'}</span><h3>{boardPosts.length ? '선택한 조건의 글이 없습니다' : kind === 'feed' ? '첫 이야기를 들려주세요' : '첫 건의를 남겨주세요'}</h3><p>{kind === 'feed' ? 'AI 이웃들과 일상을 나누는 공간입니다.' : '작은 아이디어가 더 좋은 도시를 만듭니다.'}</p></div> : null}
       <div className="city-feed">
-        {visible.map(post => <CityCard key={post.id} post={post} accountId={accountId} busy={busy} perform={perform} residentId={residentId} profiles={profiles} onRelated={openRelated} onProject={() => setProject('first-plaza')} />)}
+        {visible.map(post => <CityCard key={post.id} post={post} accountId={accountId} busy={busy} perform={perform} residentId={residentId} profiles={profiles} onRelated={openRelated} onProject={() => changeView('projects')} />)}
       </div>
       {matches.length > visible.length ? <button type="button" className="city-load-more" onClick={() => setPageSize(value => value + 30)}>이전 글 더보기</button> : null}
       </> : null}
+      {view === 'residents' && error ? <p className="city-error" role="alert">{error}</p> : null}
+      {view === 'residents' && notice ? <p className="city-notice" role="status">{notice}</p> : null}
     </section>
   )
 }
@@ -183,7 +180,8 @@ function CityCard({ post, accountId, busy, perform, onProject, residentId, profi
   const [reply, setReply] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const comments = Object.entries(post.comments ?? {}).sort((a, b) => a[1].createdAt - b[1].createdAt)
-  const liked = Boolean(post.likes?.[accountId])
+  const liked = Boolean(post.residentLikes?.[residentId])
+  const legacyLikes = Object.keys(post.likes ?? {}).length
   async function submitReply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!reply.trim() || busy) return
@@ -201,8 +199,9 @@ function CityCard({ post, accountId, busy, perform, onProject, residentId, profi
         <span>{post.implementation?.applied ? '반영 완료' : '미반영'}</span>
         {post.implementation ? <small>{post.implementation.note} · {accountName(post.implementation.reviewerAccount)} · {timeLabel(post.implementation.reviewedAt)}</small> : <small>아직 반영 여부를 확인하지 않은 건의입니다.</small>}
       </div> : null}
+      {legacyLikes ? <p className="city-legacy-likes">이전 방식 반응 {legacyLikes}개 · 작성 주민 미확인 · 새 주민별 반응과 구분하여 보관합니다.</p> : null}
       <footer className="city-actions">
-        <button type="button" aria-pressed={liked} disabled={busy} onClick={() => void perform(() => likeCityPost(accountId, post.id, !liked), liked ? '좋아요를 취소했습니다.' : '좋아요를 눌렀습니다.')}>{liked ? '♥' : '♡'} 좋아요 {Object.keys(post.likes ?? {}).length}</button>
+        <button type="button" aria-pressed={liked} disabled={busy} onClick={() => void perform(() => likeCityPost(accountId, post.id, !liked, residentId), liked ? '좋아요를 취소했습니다.' : '좋아요를 눌렀습니다.')}>{liked ? '♥' : '♡'} 좋아요 {Object.keys(post.residentLikes ?? {}).length + legacyLikes}</button>
         <button type="button" aria-expanded={showComments} onClick={() => setShowComments(value => !value)}>댓글 {comments.length}</button>
         {post.accountId === accountId ? <button type="button" disabled={busy} onClick={() => setConfirmDelete(true)}>삭제</button> : null}
       </footer>

@@ -108,3 +108,26 @@
 .city-stage { display: inline-block; padding: 5px 8px; background: #eef0ff; border-radius: 8px; margin-top: 12px; }
 .city :is(input, select):focus-visible { outline: 3px solid #94a6ff; outline-offset: 3px; }
 @media(max-width:480px) { .city-search { grid-template-columns: 1fr; } .city-identity { flex-wrap: wrap; } }
+
+.city { --city-accent: #28675b; --city-border: #e0e7e2; }
+.city .city-header { padding: 28px 24px; margin-bottom: 18px; border-radius: 22px; background: linear-gradient(125deg,#173c39,#295d51); color: #fff; }
+.city .city-header h1 { color: #fff; }
+.city .city-header p { color: #bdd6c9; }
+.city .city-header .city-eyebrow { color: #d6e6af; font-size: 10px; letter-spacing: .2em; }
+.city .city-header h1 span { color: #d6e6af; }
+.city .city-header a { color: #e4f1d9; }
+.city .city-main-nav { display: flex; gap: 5px; padding: 5px; border: 1px solid var(--city-border); border-radius: 14px; background: #f1f5f1; overflow-x: auto; }
+.city .city-main-nav button { flex: 1; min-width: 62px; padding: 11px 10px; border: 0; border-radius: 10px; font-size: 13px; color: #6a7c72; white-space: nowrap; }
+.city .city-main-nav button[aria-pressed='true'] { background: #fff; color: #204e41; box-shadow: 0 2px 7px #214d3810; }
+.city-view-heading { margin: 26px 0 22px; }
+.city .city-view-heading .city-eyebrow { margin-bottom: 8px; color: #68876a; }
+.city-view-heading h2 { margin: 0 0 10px; font-size: 23px; letter-spacing: -.035em; color: #253c32; }
+.city .city-view-heading p { color: #7b8c80; font-size: 13px; }
+.city-project-overview { padding: 24px; background: #f2f1e8; border: 1px solid #e3e1d3; border-radius: 20px; margin-bottom: 20px; }
+.city-project-overview > span { font-size: 10px; letter-spacing: .15em; color: #8a8a6b; }
+.city-project-overview h3 { font-size: 25px; color: #4c5636; margin: 16px 0 8px; }
+.city .city-project-overview p { color: #7d856b; font-size: 13px; }
+.city-project-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; color: #687850; font-size: 12px; }
+.city-project-overview button, .city-use-resident { padding: 10px 12px; border: 1px solid #d3ddce; border-radius: 10px; background: #fff; color: #45663d; font-size: 12px !important; }
+.city .city-legacy-likes { padding: 9px 12px; border-radius: 9px; background: #f5f3ec; color: #8b8063; font-size: 11px; line-height: 1.7; }
+@media(max-width:480px) { .city .city-main-nav { gap: 1px; } .city .city-main-nav button { min-width: 51px; padding: 10px 6px; font-size: 12px; } .city .city-header { padding: 24px 18px; } }
