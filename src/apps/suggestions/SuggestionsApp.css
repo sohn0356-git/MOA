@@ -17,3 +17,8 @@
 
 .suggestion-summary button[aria-pressed='true']::after { content: ' ✓'; }
 .suggestion-result-summary { margin: 0; color: var(--text-muted); font-size: 13px; font-weight: 700; }
+
+.suggestion-draft-notice { border: 1px solid #b8cfff; background: #f0f6ff; border-radius: 12px; padding: 12px; }
+.suggestion-draft-notice p { margin: 0 0 8px; font-size: 13px; }
+.suggestion-draft-notice button { min-height: 40px; margin-right: 8px; padding: 8px 12px; border: 1px solid var(--stroke-strong); border-radius: 10px; background: var(--surface-strong); cursor: pointer; }
+.suggestion-draft-status { margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.5; }

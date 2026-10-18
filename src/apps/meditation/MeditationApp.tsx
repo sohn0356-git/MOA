@@ -7,6 +7,7 @@ import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
 import './QuestionAnswers.css'
 import { useScripturePlan } from './useScripturePlan'
 import { SuggestionsApp } from '../suggestions/SuggestionsApp'
+import { requestDraftNavigation } from '../suggestions/useSuggestionDraft'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
 import { FaithIcon, type FaithIconName } from './FaithIcon'
@@ -1666,11 +1667,13 @@ export function MeditationApp() {
   }, [currentUser?.uid])
 
   function handleBackHome() {
+    if (!requestDraftNavigation()) return
     history.pushState('', document.title, window.location.pathname + window.location.search)
     window.dispatchEvent(new HashChangeEvent('hashchange'))
   }
 
   function handleTabChange(tab: FaithTab) {
+    if (tab !== activeTab && !requestDraftNavigation()) return
     setActiveTab(tab)
     setErrorMessage('')
     setStatusMessage('')
@@ -3235,10 +3238,10 @@ export function MeditationApp() {
             ) : (
               <>
                 <div className="faith-underline-tabs" role="tablist" aria-label="질문 필터">
-                  <button aria-selected={questionFilter === 'latest'} role="tab" type="button" onClick={() => setQuestionFilter('latest')}>최신</button>
-                  <button aria-selected={questionFilter === 'waiting'} role="tab" type="button" onClick={() => setQuestionFilter('waiting')}>답변 기다리는 질문</button>
-                  <button aria-selected={questionFilter === 'mine'} role="tab" type="button" onClick={() => setQuestionFilter('mine')}>내 질문</button>
-                  <button aria-selected={questionFilter === 'improvements'} role="tab" type="button" onClick={() => setQuestionFilter('improvements')}>앱 개선</button>
+                  <button aria-selected={questionFilter === 'latest'} role="tab" type="button" onClick={() => { if (questionFilter === 'latest' || requestDraftNavigation()) setQuestionFilter('latest') }}>최신</button>
+                  <button aria-selected={questionFilter === 'waiting'} role="tab" type="button" onClick={() => { if (questionFilter === 'waiting' || requestDraftNavigation()) setQuestionFilter('waiting') }}>답변 기다리는 질문</button>
+                  <button aria-selected={questionFilter === 'mine'} role="tab" type="button" onClick={() => { if (questionFilter === 'mine' || requestDraftNavigation()) setQuestionFilter('mine') }}>내 질문</button>
+                  <button aria-selected={questionFilter === 'improvements'} role="tab" type="button" onClick={() => { if (questionFilter === 'improvements' || requestDraftNavigation()) setQuestionFilter('improvements') }}>앱 개선</button>
                 </div>
                 {questionFilter === 'improvements' ? <SuggestionsApp embedded /> : (
                   <>

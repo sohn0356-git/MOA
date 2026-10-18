@@ -21,7 +21,7 @@ vi.mock('firebase/database', () => ({
   update: mocks.update, remove: mocks.remove, push: vi.fn(), get: vi.fn(),
 }))
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
-beforeEach(() => { mocks.empty = false; mocks.update.mockReset().mockResolvedValue(undefined); mocks.remove.mockReset().mockResolvedValue(undefined) })
+beforeEach(() => { localStorage.clear(); mocks.empty = false; mocks.update.mockReset().mockResolvedValue(undefined); mocks.remove.mockReset().mockResolvedValue(undefined) })
 
 function renderOwnerBoard() {
   render(<SuggestionsApp embedded />)
@@ -104,5 +104,42 @@ describe('visible suggestion filters', () => {
     expect(screen.getByText('완료 건의가 없습니다.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /^전체 / }))
     expect(screen.getByText('아직 등록된 건의가 없습니다.')).toBeTruthy()
+  })
+})
+
+describe('suggestion draft composer', () => {
+  it('offers continue or discard for an existing draft without posting automatically', () => {
+    localStorage.setItem('moa.suggestions.draft.v1:alice', JSON.stringify({ title: '복원 제목', body: '복원 내용', savedAt: 1000 }))
+    render(<SuggestionsApp embedded />)
+    expect(screen.getByRole('button', { name: '이어 쓰기' })).toBeTruthy()
+    expect(mocks.update).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '이어 쓰기' }))
+    const form = within(screen.getByRole('form', { name: '건의 작성' }))
+    expect((form.getByLabelText('제목') as HTMLInputElement).value).toBe('복원 제목')
+    expect((form.getByLabelText('내용') as HTMLTextAreaElement).value).toBe('복원 내용')
+    expect(screen.getByText(/초안 저장됨/)).toBeTruthy()
+  })
+
+  it('removes the draft and clears the form only after successful registration', async () => {
+    render(<SuggestionsApp embedded />)
+    const form = screen.getByRole('form', { name: '건의 작성' })
+    fireEvent.change(within(form).getByLabelText('제목'), { target: { value: '새 건의' } })
+    fireEvent.change(within(form).getByLabelText('내용'), { target: { value: '새 내용' } })
+    expect(localStorage.getItem('moa.suggestions.draft.v1:alice')).not.toBeNull()
+    fireEvent.submit(form)
+    await waitFor(() => expect(localStorage.getItem('moa.suggestions.draft.v1:alice')).toBeNull())
+    expect((within(form).getByLabelText('제목') as HTMLInputElement).value).toBe('')
+  })
+
+  it('keeps the draft after registration fails', async () => {
+    mocks.update.mockRejectedValueOnce(new Error('offline'))
+    render(<SuggestionsApp embedded />)
+    const form = screen.getByRole('form', { name: '건의 작성' })
+    fireEvent.change(within(form).getByLabelText('제목'), { target: { value: '새 건의' } })
+    fireEvent.change(within(form).getByLabelText('내용'), { target: { value: '새 내용' } })
+    fireEvent.submit(form)
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('offline'))
+    expect(localStorage.getItem('moa.suggestions.draft.v1:alice')).not.toBeNull()
+    expect((within(form).getByLabelText('제목') as HTMLInputElement).value).toBe('새 건의')
   })
 })

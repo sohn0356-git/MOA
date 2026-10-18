@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react'
 import './SuggestionsApp.css'
+import { requestDraftNavigation, useSuggestionDraft } from './useSuggestionDraft'
 import { selectSuggestions, type SuggestionFilter, type SuggestionOrder } from './suggestionFilters'
 import { get, onValue, push, ref, remove, update, type DataSnapshot } from 'firebase/database'
 import { getFirebaseAuth, getFirebaseConfigError, getRealtimeDb } from '../../services/firebase'
@@ -36,6 +37,7 @@ const TITLE_MAX_LENGTH = 80
 const BODY_MAX_LENGTH = 1200
 
 function handleBackHome() {
+  if (!requestDraftNavigation()) return
   history.pushState('', document.title, window.location.pathname + window.location.search)
   window.dispatchEvent(new HashChangeEvent('hashchange'))
 }
@@ -99,8 +101,9 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
   const configError = useMemo(() => getFirebaseConfigError(), [])
   const currentUser = getFirebaseAuth().currentUser
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
+  const draft = useSuggestionDraft(currentUser?.uid || '')
+  const { title, body } = draft
+  const createLock = useRef(false)
   const [error, setError] = useState<string | null>(configError)
   const [isLoading, setIsLoading] = useState(!configError)
   const [isMutating, setIsMutating] = useState(false)
@@ -137,13 +140,14 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
     const nextTitle = title.trim()
     const nextBody = body.trim()
 
-    if (!currentUser || !nextTitle || !nextBody) {
+    if (createLock.current || draft.candidate || !currentUser || !nextTitle || !nextBody) {
       return
     }
 
     setIsMutating(true)
     setError(null)
 
+    createLock.current = true
     try {
       const now = Date.now()
       const suggestionRef = push(ref(getRealtimeDb(), SUGGESTIONS_PATH))
@@ -159,11 +163,11 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
         title: nextTitle.slice(0, TITLE_MAX_LENGTH),
         updatedAt: now,
       })
-      setTitle('')
-      setBody('')
+      draft.submitted()
     } catch (mutationError) {
       setError(mutationError instanceof Error ? mutationError.message : '건의 등록에 실패했습니다.')
     } finally {
+      createLock.current = false
       setIsMutating(false)
     }
   }
@@ -257,12 +261,20 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
         </div>
       </header>
 
-      <form className="utility-panel suggestion-composer" onSubmit={(event) => void handleCreateSuggestion(event)}>
+      <form aria-label="건의 작성" className="utility-panel suggestion-composer" onSubmit={(event) => void handleCreateSuggestion(event)}>
+        {draft.candidate ? (
+          <section className="suggestion-draft-notice" aria-label="저장된 초안">
+            <p>저장된 초안이 있습니다. {formatDateTime(draft.candidate.savedAt)}</p>
+            <button type="button" onClick={draft.resume}>이어 쓰기</button>
+            <button type="button" onClick={draft.discard}>초안 버리기</button>
+          </section>
+        ) : null}
         <label className="field-label">
           <span>제목</span>
           <input
             maxLength={TITLE_MAX_LENGTH}
-            onChange={(event) => setTitle(event.target.value)}
+            disabled={isMutating || !!draft.candidate}
+            onChange={(event) => draft.change({ title: event.target.value })}
             placeholder="개선이 필요한 부분을 짧게 적어주세요."
             value={title}
           />
@@ -271,15 +283,20 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
           <span>내용</span>
           <textarea
             maxLength={BODY_MAX_LENGTH}
-            onChange={(event) => setBody(event.target.value)}
+            disabled={isMutating || !!draft.candidate}
+            onChange={(event) => draft.change({ body: event.target.value })}
             placeholder="상황, 원하는 결과, 참고할 내용을 함께 적어주세요."
             rows={5}
             value={body}
           />
         </label>
+        <p className="suggestion-draft-status" aria-live="polite">
+          {draft.error || (draft.savedAt ? `초안 저장됨 · ${formatDateTime(draft.savedAt)} · 이 브라우저에 저장` : '작성 중인 내용은 이 브라우저에 자동 저장됩니다.')}
+        </p>
+        {draft.unsaved ? <button type="button" onClick={draft.retrySave}>초안 저장 다시 시도</button> : null}
         <div className="suggestion-composer-footer">
           <span>{body.trim().length}/{BODY_MAX_LENGTH}자</span>
-          <button disabled={isMutating || !title.trim() || !body.trim()} type="submit">
+          <button disabled={isMutating || !!draft.candidate || !title.trim() || !body.trim()} type="submit">
             등록
           </button>
         </div>
