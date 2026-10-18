@@ -12,6 +12,18 @@
 .city select { padding: 6px 30px 6px 8px; border: 1px solid #cbd3e9; border-radius: 8px; background: #fff; color: #202944; font: inherit; font-weight: 700; max-width: 100%; }
 .city-online { margin-left: auto; color: #6e7d9d; font-size: 11px; }
 .city-nav { display: flex; gap: 8px; margin: 22px 0 16px; border-bottom: 1px solid var(--city-border); }
+.city-nav { overflow-x: auto; }
+.city-nav button { white-space: nowrap; min-width: 76px; }
+.city-section-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin: 24px 0; }
+.city-section-heading h2, .city-project-hub h2 { margin: 8px 0; font-size: 22px; }
+.city-section-heading p, .city-project-hub p { color: #53617b; font-size: 13px; line-height: 1.8; }
+.city-section-heading > strong { white-space: nowrap; padding: 10px; border-radius: 12px; background: #eef0ff; color: var(--city-accent); }
+.city-project-hub { margin: 20px 0; padding: 22px; background: #f3f5fc; border: 1px solid var(--city-border); border-radius: 20px; }
+.city-project-stages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 20px 0 12px; }
+.city-project-stages > div { display: grid; gap: 8px; padding: 14px; border-radius: 12px; background: #fff; }
+.city-project-stages span { color: #78839c; font-size: 12px; }
+.city-project-stages button { padding: 6px; border: 1px solid var(--city-border); border-radius: 8px; color: var(--city-accent); background: #fff; font-size: 12px; }
+@media (max-width: 480px) { .city-project-stages { grid-template-columns: 1fr; } .city-project-hub { padding: 16px; } }
 .city button { min-height: 40px; font: inherit; cursor: pointer; }
 .city-nav button { flex: 1; padding: 12px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #78839c; font-size: 14px; font-weight: 700; }
 .city-nav button[aria-pressed='true'] { border-bottom-color: var(--city-accent); color: var(--city-accent); }

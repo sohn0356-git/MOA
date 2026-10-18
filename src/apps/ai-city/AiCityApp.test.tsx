@@ -113,8 +113,10 @@ describe('Suggestion-only implementation tracking', () => {
       return () => {}
     })
     render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '주민' }))
     fireEvent.click(screen.getByText('주민 10명 알아보기'))
     expect(screen.getByText(/공동 창작 ·/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '타임라인' }))
     fireEvent.click(screen.getByRole('button', { name: '#첫 광장' }))
     expect(screen.queryByText('일반 글 본문')).toBeNull()
     expect(screen.getByText('프로젝트 글')).toBeTruthy()
@@ -149,6 +151,7 @@ describe('Approved resident management and archive search requests', () => {
   })
   it('provides all requested profile fields and adds a profile without making an auth account', async () => {
     render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '주민' }))
     fireEvent.click(screen.getByText('주민 추가·관리 (10/100)'))
     for (const [label, value] of [['주민 이름', '은솔'], ['역할', '기록자'], ['한 줄 소개', '새 이웃'], ['말투', '차분하게'], ['관심사', '식물'], ['기존 관계', '나래의 이웃'], ['최근 활동 요약', '첫 방문']]) {
       fireEvent.change(screen.getByLabelText(label), { target: { value } })
@@ -175,5 +178,37 @@ describe('Approved resident management and archive search requests', () => {
     const article = document.getElementById('city-post-archive-119')!
     fireEvent.click(within(article).getByRole('button', { name: '댓글 1' }))
     expect(screen.getByText('오래된 댓글')).toBeTruthy()
+  })
+})
+
+
+describe('Independent city spaces', () => {
+  it('keeps suggestions available, preserves drafts and starts a staged project record', async () => {
+    vi.mocked(subscribeCity).mockImplementation(callback => {
+      callback([
+        { id: 'experiment', accountId: 'ai04', authorUid: 'u4', kind: 'feed', projectId: 'first-plaza', stage: 'experiment', body: '작은 실험 기록', createdAt: 1000 },
+        { id: 'ordinary', accountId: 'ai02', authorUid: 'u2', kind: 'feed', body: '별개의 일상', createdAt: 2000 },
+        { id: 'request', accountId: 'ai03', authorUid: 'u3', kind: 'suggestion', body: '유지해야 할 건의', createdAt: 3000 },
+      ])
+      return () => {}
+    })
+    render(<AiCityApp />)
+    fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'), { target: { value: '이어 쓸 초안' } })
+    fireEvent.click(screen.getByRole('button', { name: '주민' }))
+    expect(screen.queryByLabelText('오늘 어떤 이야기를 나누고 싶나요?')).toBeNull()
+    expect(screen.getByRole('heading', { name: '도시를 만드는 주민들' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    expect(screen.getByText('작은 실험 기록')).toBeTruthy()
+    expect(screen.queryByText('별개의 일상')).toBeNull()
+    expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('이어 쓸 초안')
+    fireEvent.click(screen.getByRole('button', { name: '회고 기록 쓰기' }))
+    expect((screen.getByLabelText('기록 단계') as HTMLSelectElement).value).toBe('retrospective')
+    fireEvent.click(screen.getByRole('button', { name: '게시하기' }))
+    await waitFor(() => expect(publishCityPost).toHaveBeenCalledWith('ai01', 'feed', '이어 쓸 초안', { projectId: 'first-plaza', stage: 'retrospective' }))
+    fireEvent.click(screen.getByRole('button', { name: '건의함' }))
+    expect(screen.getByText('유지해야 할 건의')).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: '반영 완료' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '타임라인' }))
+    expect(screen.getByText('별개의 일상')).toBeTruthy()
   })
 })
