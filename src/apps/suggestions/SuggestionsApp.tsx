@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import './SuggestionsApp.css'
 import { selectSuggestions, type SuggestionFilter, type SuggestionOrder } from './suggestionFilters'
-import { get, onValue, push, ref, update, type DataSnapshot } from 'firebase/database'
+import { get, onValue, push, ref, remove, update, type DataSnapshot } from 'firebase/database'
 import { getFirebaseAuth, getFirebaseConfigError, getRealtimeDb } from '../../services/firebase'
 
 type Suggestion = {
@@ -104,6 +104,9 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
   const [error, setError] = useState<string | null>(configError)
   const [isLoading, setIsLoading] = useState(!configError)
   const [isMutating, setIsMutating] = useState(false)
+  const [editingId, setEditingId] = useState('')
+  const [editTitle, setEditTitle] = useState('')
+  const [editBody, setEditBody] = useState('')
   const [statusFilter, setStatusFilter] = useState<SuggestionFilter>('all')
   const [sortOrder, setSortOrder] = useState<SuggestionOrder>('newest')
   const visibleSuggestions = useMemo(() => selectSuggestions(suggestions, statusFilter, sortOrder), [suggestions, statusFilter, sortOrder])
@@ -197,6 +200,40 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
     }
   }
 
+  async function handleEditSuggestion(event: FormEvent<HTMLFormElement>, suggestion: Suggestion) {
+    event.preventDefault()
+    if (isMutating || !currentUser || suggestion.authorUid !== currentUser.uid || !editTitle.trim() || !editBody.trim()) return
+    setIsMutating(true)
+    setError(null)
+    try {
+      await update(ref(getRealtimeDb(), `${SUGGESTIONS_PATH}/${suggestion.id}`), {
+        title: editTitle.trim().slice(0, TITLE_MAX_LENGTH),
+        body: editBody.trim().slice(0, BODY_MAX_LENGTH),
+        updatedAt: Date.now(),
+      })
+      setEditingId('')
+    } catch {
+      setError('의견을 수정하지 못했습니다. 권한과 연결 상태를 확인하고 다시 시도해 주세요.')
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function handleDeleteSuggestion(suggestion: Suggestion) {
+    if (isMutating || !currentUser || suggestion.authorUid !== currentUser.uid) return
+    if (!window.confirm('이 개선 의견을 삭제할까요? 삭제한 의견은 복구할 수 없습니다.')) return
+    setIsMutating(true)
+    setError(null)
+    try {
+      await remove(ref(getRealtimeDb(), `${SUGGESTIONS_PATH}/${suggestion.id}`))
+      if (editingId === suggestion.id) setEditingId('')
+    } catch {
+      setError('의견을 삭제하지 못했습니다. 권한과 연결 상태를 확인하고 다시 시도해 주세요.')
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
   const openCount = suggestions.filter((suggestion) => !suggestion.isCompleted).length
   const doneCount = suggestions.length - openCount
 
@@ -283,8 +320,24 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
                 <span>{suggestion.isCompleted ? '완료' : '미완료'}</span>
               </label>
               <div className="suggestion-content">
-                <h3>{suggestion.title}</h3>
-                <p>{suggestion.body}</p>
+                {editingId === suggestion.id ? (
+                  <form className="suggestion-edit-form" aria-label="개선 의견 수정" onSubmit={(event) => void handleEditSuggestion(event, suggestion)}>
+                    <label>제목<input required maxLength={TITLE_MAX_LENGTH} value={editTitle} disabled={isMutating} onChange={(event) => setEditTitle(event.target.value)} /></label>
+                    <label>내용<textarea required rows={4} maxLength={BODY_MAX_LENGTH} value={editBody} disabled={isMutating} onChange={(event) => setEditBody(event.target.value)} /></label>
+                    <div className="suggestion-edit-actions">
+                      <button type="submit" disabled={isMutating || !editTitle.trim() || !editBody.trim()}>저장</button>
+                      <button type="button" disabled={isMutating} onClick={() => setEditingId('')}>취소</button>
+                    </div>
+                  </form>
+                ) : (
+                  <><h3>{suggestion.title}</h3><p>{suggestion.body}</p></>
+                )}
+                {suggestion.authorUid === currentUser?.uid && editingId !== suggestion.id ? (
+                  <div className="suggestion-edit-actions">
+                    <button type="button" disabled={isMutating} onClick={() => { setEditingId(suggestion.id); setEditTitle(suggestion.title); setEditBody(suggestion.body); setError(null) }}>수정</button>
+                    <button type="button" disabled={isMutating} onClick={() => void handleDeleteSuggestion(suggestion)}>삭제</button>
+                  </div>
+                ) : null}
                 <footer>
                   <span>{suggestion.authorName}</span>
                   <time>{formatDateTime(suggestion.createdAt)}</time>

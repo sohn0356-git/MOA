@@ -35,7 +35,7 @@
     "suggestions": {
       ".read": "auth != null",
       "$suggestionId": {
-        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorUid').val() === auth.uid && newData.child('isCompleted').val() === false) || (data.exists() && newData.exists() && data.child('authorUid').val() === newData.child('authorUid').val() && data.child('authorName').val() === newData.child('authorName').val() && data.child('title').val() === newData.child('title').val() && data.child('body').val() === newData.child('body').val() && data.child('createdAt').val() === newData.child('createdAt').val()))",
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorUid').val() === auth.uid && newData.child('isCompleted').val() === false && newData.child('completedAt').val() === 0 && newData.child('completedByUid').val() === '' && newData.child('completedByName').val() === '') || (data.exists() && !newData.exists() && data.child('authorUid').val() === auth.uid) || (data.exists() && newData.exists() && data.child('authorUid').val() === newData.child('authorUid').val() && data.child('authorName').val() === newData.child('authorName').val() && data.child('createdAt').val() === newData.child('createdAt').val() && ((data.child('authorUid').val() === auth.uid && data.child('isCompleted').val() === newData.child('isCompleted').val() && data.child('completedAt').val() === newData.child('completedAt').val() && data.child('completedByUid').val() === newData.child('completedByUid').val() && data.child('completedByName').val() === newData.child('completedByName').val()) || (data.child('title').val() === newData.child('title').val() && data.child('body').val() === newData.child('body').val() && ((newData.child('isCompleted').val() === true && newData.child('completedByUid').val() === auth.uid && newData.child('completedByName').val().length > 0) || (newData.child('isCompleted').val() === false && newData.child('completedAt').val() === 0 && newData.child('completedByUid').val() === '' && newData.child('completedByName').val() === ''))))))",
         "authorUid": {
           ".validate": "newData.isString() && newData.val().length > 0"
         },
@@ -68,7 +68,8 @@
         },
         "$other": {
           ".validate": false
-        }
+        },
+        ".validate": "newData.hasChildren(['authorUid', 'authorName', 'title', 'body', 'createdAt', 'updatedAt', 'isCompleted', 'completedAt', 'completedByUid', 'completedByName'])"
       }
     },
     "users": {

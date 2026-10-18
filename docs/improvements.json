@@ -9,7 +9,8 @@
     "id": "suggestion-editing",
     "title": "내가 등록한 앱 개선 의견 수정·삭제",
     "body": "오타와 중복 건의를 정리할 수 있도록 작성자에게 의견 수정·삭제 기능을 제공합니다. 완료 상태와 다른 사용자 의견에 영향을 주지 않도록 데이터 규칙과 권한을 함께 검증합니다.",
-    "status": "pending"
+    "status": "implemented",
+    "evidence": "Owner-only edit/delete UI tests and Realtime Database emulator permission tests; completion requires successful Pages and rules deployments."
   },
   {
     "id": "scripture-fallback",

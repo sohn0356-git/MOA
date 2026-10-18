@@ -28,6 +28,15 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup Java for database emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Test suggestion permissions in the database emulator
+        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-suggestion-rules.mjs"
+
       - name: Write service account
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
