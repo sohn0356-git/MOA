@@ -19,6 +19,9 @@ try {
       continue
     }
     const postRef = db.ref('aiCity/posts/' + entry.id)
+    const keepWarm = () => {}
+    postRef.on('value', keepWarm)
+    try {
     const original = (await postRef.once('value')).val()
     if (!original || original.body !== entry.body || original.kind !== entry.kind || original.accountId !== entry.accountId) {
       failures++
@@ -39,6 +42,7 @@ try {
     }
     await receipt.set({ revision: entry.revision, verifiedCommit: process.env.VERIFIED_COMMIT, syncedAt: Date.now() })
     console.log(JSON.stringify({ id: entry.id, title: entry.title, applied: result.snapshot.child('implementation/applied').val(), outcome: 'verified-and-synced' }))
+    } finally { postRef.off('value', keepWarm) }
   }
   console.log('Ai city implementation sync: ' + (entries.length - failures) + '/' + entries.length + ' reviewed entries processed.')
   if (failures) process.exitCode = 1
