@@ -53,10 +53,43 @@ await check('idea/implementation', 'DELETE', undefined, 'ai02', 401)
 await check('missing/implementation', 'PUT', implementation, 'ai02', 401)
 await check('project', 'PUT', { ...post, projectId: 'first-plaza' })
 await check('badproject', 'PUT', { ...post, projectId: 'anything' }, 'ai01', 401)
-for (const [field, value] of Object.entries({ space: 'quiet', stage: 'idea', parentPostId: 'one', reflection: 'a', openQuestion: 'b', gameRound: 1 })) {
+for (const [field, value] of Object.entries({ space: 'quiet', reflection: 'a', openQuestion: 'b', gameRound: 1 })) {
   await check('removed-' + field, 'PUT', { ...post, [field]: value }, 'ai01', 401)
 }
 await check('project', 'DELETE', undefined)
+
+
+async function profileCheck(id, method, data, expected = 200, account = 'ai01') {
+  const url = new URL(base + '/aiCity/residents/' + id + '.json')
+  url.searchParams.set('ns', 'demo-moa-default-rtdb')
+  if (account) url.searchParams.set('auth', token(account + '-uid', account + '@moa-ai.app'))
+  const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, ...(data === undefined ? {} : { body: JSON.stringify(data) }) })
+  assert.equal(res.status, expected, method + ' resident ' + id + ': ' + await res.text())
+}
+const profile = { name: '새 주민', role: '기록자', bio: '가상 AI', tone: '차분함', interests: '산책', relationships: '하람의 이웃', activitySummary: '첫 방문', createdAt: Date.now(), updatedAt: Date.now(), createdByUid: 'ai01-uid', updatedByUid: 'ai01-uid' }
+await profileCheck('resident-11', 'PUT', profile)
+await profileCheck('resident-11', 'GET', undefined, 200, null)
+await profileCheck('resident-11', 'PATCH', { name: '수정한 주민', updatedAt: Date.now() })
+await profileCheck('resident-11', 'PATCH', { createdAt: 1 }, 401)
+await profileCheck('resident-11', 'DELETE', undefined, 401)
+await profileCheck('resident-12', 'PUT', profile, 401, null)
+await profileCheck('resident-12', 'PUT', profile, 401, 'human')
+await profileCheck('resident-12', 'PUT', { ...profile, name: 'x'.repeat(41) }, 401)
+await profileCheck('resident-12', 'PUT', { ...profile, password: 'not-allowed' }, 401)
+await profileCheck('resident-101', 'PUT', profile, 401)
+await profileCheck('resident-1', 'PUT', profile, 401)
+for (let i = 1; i <= 10; i++) await profileCheck('ai' + String(i).padStart(2, '0'), 'PUT', profile)
+await Promise.all(Array.from({ length: 89 }, (_, i) => profileCheck('resident-' + (i + 12), 'PUT', profile)))
+await profileCheck('resident-999', 'PUT', profile, 401)
+await check('virtual', 'PUT', { ...post, residentId: 'resident-11', projectId: 'first-plaza', stage: 'idea' })
+await check('virtual/comments/c1', 'PUT', { accountId: 'ai01', authorUid: 'ai01-uid', residentId: 'resident-11', body: '가상 주민 댓글', createdAt: Date.now() })
+await check('badresident', 'PUT', { ...post, residentId: 'missing' }, 'ai01', 401)
+await check('virtual/comments/fake', 'PUT', { accountId: 'ai01', authorUid: 'ai01-uid', residentId: 'missing', body: '잘못된 주민', createdAt: Date.now() }, 'ai01', 401)
+await check('linked', 'PUT', { ...post, stage: 'retrospective', parentPostId: 'virtual' })
+await check('badparent', 'PUT', { ...post, parentPostId: 'missing' }, 'ai01', 401)
+await check('badstage', 'PUT', { ...post, stage: 'other' }, 'ai01', 401)
+await check('linked', 'DELETE', undefined)
+await check('virtual', 'DELETE', undefined)
 
 await check('one', 'DELETE', undefined, 'ai02', 401)
 await check('one', 'DELETE', undefined)

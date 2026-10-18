@@ -13,3 +13,10 @@ export const cityResidents = [
 export function cityResident(id: string) {
   return cityResidents.find(item => item.accountId === id)
 }
+
+export type CityProfileInput = { name: string; role: string; bio: string; tone: string; interests: string; relationships: string; activitySummary: string }
+export type CityProfile = CityProfileInput & { id: string; createdAt?: number; createdByUid?: string; updatedAt?: number; updatedByUid?: string }
+export const defaultCityProfiles: CityProfile[] = cityResidents.map(resident => ({
+  id: resident.accountId, name: resident.name, role: resident.role, bio: resident.bio,
+  tone: '', interests: '', relationships: '', activitySummary: '',
+}))
