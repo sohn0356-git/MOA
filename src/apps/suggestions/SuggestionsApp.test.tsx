@@ -49,7 +49,7 @@ describe('suggestion owner actions', () => {
   })
 
   it('cancels editing without saving', () => {
-    render(<SuggestionsApp embedded />)
+    renderOwnerBoard()
     fireEvent.click(within(ownerCard()).getByRole('button', { name: '수정' }))
     fireEvent.click(screen.getByRole('button', { name: '취소' }))
     expect(screen.queryByRole('form', { name: '개선 의견 수정' })).toBeNull()
@@ -58,7 +58,7 @@ describe('suggestion owner actions', () => {
 
   it('requires delete confirmation and deletes only the selected item', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    render(<SuggestionsApp embedded />)
+    renderOwnerBoard()
     fireEvent.click(within(ownerCard()).getByRole('button', { name: '삭제' }))
     expect(mocks.remove).not.toHaveBeenCalled()
     confirm.mockReturnValue(true)
@@ -68,7 +68,7 @@ describe('suggestion owner actions', () => {
 
   it('keeps the edit form for retry when saving fails', async () => {
     mocks.update.mockRejectedValueOnce(new Error('permission denied'))
-    render(<SuggestionsApp embedded />)
+    renderOwnerBoard()
     fireEvent.click(within(ownerCard()).getByRole('button', { name: '수정' }))
     fireEvent.submit(screen.getByRole('form', { name: '개선 의견 수정' }))
     await waitFor(() => expect(screen.getByText(/의견을 수정하지 못했습니다/)).toBeTruthy())
