@@ -127,6 +127,88 @@
           }
         }
       }
+    },
+    "faithQuestions": {
+      ".read": "auth != null",
+      ".indexOn": [
+        "createdAtMs"
+      ],
+      "$questionId": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorUid').val() === auth.uid) || (data.exists() && data.child('authorUid').val() === auth.uid && ((!newData.exists() && !newData.parent().parent().child('faithQuestionAnswers').child($questionId).exists()) || (newData.exists() && data.child('authorUid').val() === newData.child('authorUid').val() && data.child('createdAt').val() === newData.child('createdAt').val() && data.child('createdAtMs').val() === newData.child('createdAtMs').val()))))",
+        ".validate": "newData.hasChildren([\"authorUid\",\"authorName\",\"title\",\"body\",\"createdAt\"])",
+        "authorUid": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+        },
+        "authorName": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 200"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 4096"
+        },
+        "title": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 200"
+        },
+        "body": {
+          ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 20000"
+        },
+        "createdAt": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+        },
+        "createdAtMs": {
+          ".validate": "newData.isNumber()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+        },
+        "updatedAtMs": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "tags": {
+          "$tag": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+          }
+        }
+      }
+    },
+    "faithQuestionAnswers": {
+      ".read": "auth != null",
+      "$questionId": {
+        ".write": "auth != null && root.child('faithQuestions').child($questionId).child('authorUid').val() === auth.uid && !newData.exists() && !newData.parent().parent().child('faithQuestions').child($questionId).exists()",
+        "$answerId": {
+          ".write": "auth != null && root.child('faithQuestions').child($questionId).exists() && ((!data.exists() && newData.exists() && newData.child('authorUid').val() === auth.uid) || (data.exists() && data.child('authorUid').val() === auth.uid && (!newData.exists() || (data.child('authorUid').val() === newData.child('authorUid').val() && data.child('createdAt').val() === newData.child('createdAt').val() && data.child('createdAtMs').val() === newData.child('createdAtMs').val()))))",
+          ".validate": "newData.hasChildren([\"authorUid\",\"authorName\",\"body\",\"createdAt\"])",
+          "authorUid": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "authorName": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 200"
+          },
+          "authorAvatarUrl": {
+            ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 4096"
+          },
+          "body": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20000"
+          },
+          "createdAt": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "createdAtMs": {
+            ".validate": "newData.isNumber()"
+          },
+          "updatedAt": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "updatedAtMs": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }

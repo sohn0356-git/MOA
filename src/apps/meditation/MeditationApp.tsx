@@ -155,6 +155,7 @@ type PrayerRequest = {
 }
 
 type FaithQuestion = {
+  legacyId?: string
   id: string
   answerCount?: number
   authorAvatarUrl?: string
@@ -815,6 +816,18 @@ function getUserQuestionAnswersPath(userId: string, questionId: string) {
   return `users/${userId}/questionAnswers/${questionId}`
 }
 
+function getQuestionPath(question: FaithQuestion) {
+  return question.legacyId
+    ? `${getUserFaithQuestionsPath(question.authorUid || '')}/${question.legacyId}`
+    : `faithQuestions/${question.id}`
+}
+
+function getQuestionAnswersPath(question: FaithQuestion) {
+  return question.legacyId
+    ? getUserQuestionAnswersPath(question.authorUid || '', question.legacyId)
+    : `faithQuestionAnswers/${question.id}`
+}
+
 function getUserCrossPhotoCommentsPath(userId: string, photoId: string) {
   return `users/${userId}/crossPhotoComments/${photoId}`
 }
@@ -1233,14 +1246,21 @@ export function MeditationApp() {
   const [prayerBody, setPrayerBody] = useState('')
   const [editingPrayerId, setEditingPrayerId] = useState('')
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({})
-  const [faithQuestions, setFaithQuestions] = useState<FaithQuestion[]>([])
+  const [publicFaithQuestions, setPublicFaithQuestions] = useState<FaithQuestion[]>([])
+  const [legacyFaithQuestions, setLegacyFaithQuestions] = useState<FaithQuestion[]>([])
   const [questionFilter, setQuestionFilter] = useState<QuestionFilter>('latest')
   const [questionTitle, setQuestionTitle] = useState('')
   const [questionBody, setQuestionBody] = useState('')
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [questionTagInput, setQuestionTagInput] = useState('')
   const [selectedQuestionTags, setSelectedQuestionTags] = useState<string[]>([])
-  const [questionAnswers, setQuestionAnswers] = useState<Record<string, QuestionAnswer[]>>({})
+  const [publicQuestionAnswers, setPublicQuestionAnswers] = useState<Record<string, QuestionAnswer[]>>({})
+  const [legacyQuestionAnswers, setLegacyQuestionAnswers] = useState<Record<string, QuestionAnswer[]>>({})
+  const questionAnswers = useMemo(() => ({ ...publicQuestionAnswers, ...legacyQuestionAnswers }), [publicQuestionAnswers, legacyQuestionAnswers])
+  const faithQuestions = useMemo(() => [...publicFaithQuestions, ...legacyFaithQuestions].map(question => ({
+    ...question, answerCount: questionAnswers[question.id]?.length ?? 0,
+  })), [publicFaithQuestions, legacyFaithQuestions, questionAnswers])
+  const [isQuestionMutating, setIsQuestionMutating] = useState(false)
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
   const [editingAnswer, setEditingAnswer] = useState<{ answerId: string; questionId: string } | null>(null)
   const [selectedQuestionId, setSelectedQuestionId] = useState('')
@@ -1347,6 +1367,7 @@ export function MeditationApp() {
     const query = qnaSearch.trim().toLowerCase()
 
     return visibleFaithQuestions.filter((question) => {
+      if (question.legacyId && questionFilter !== 'mine') return false
       const matchesQuery = !query || `${question.title} ${question.body} ${question.tags.join(' ')}`.toLowerCase().includes(query)
       const matchesTag = !qnaTagFilter || question.tags.includes(qnaTagFilter)
       const matchesMode =
@@ -1509,7 +1530,10 @@ export function MeditationApp() {
       setPhotoReactionMap({})
       setPhotoComments({})
       setPrayerRequests([])
-      setFaithQuestions([])
+      setLegacyFaithQuestions([])
+      setPublicFaithQuestions([])
+      setPublicQuestionAnswers({})
+      setLegacyQuestionAnswers({})
       setFaithProfile(null)
       return undefined
     }
@@ -1559,19 +1583,38 @@ export function MeditationApp() {
       onValue(ref(db, getUserFaithQuestionsPath(currentUser.uid)), (snapshot) => {
         const questions = mapList<FaithQuestion>(snapshot.val()).map((question) => ({
           ...question,
+          legacyId: question.id,
+          id: `legacy_${question.id}`,
+          authorUid: currentUser.uid,
           tags: normalizeFaithTags(question.tags ?? []),
         }))
-        setFaithQuestions(questions)
+        setLegacyFaithQuestions(questions)
       }),
       onValue(ref(db, `users/${currentUser.uid}/questionAnswers`), (snapshot) => {
         const value = snapshot.val() as Record<string, Record<string, Omit<QuestionAnswer, 'id'>>> | null
-        setQuestionAnswers(
-          Object.fromEntries(Object.entries(value ?? {}).map(([questionId, items]) => [questionId, mapList<QuestionAnswer>(items)])),
+        setLegacyQuestionAnswers(
+          Object.fromEntries(Object.entries(value ?? {}).map(([questionId, items]) => [`legacy_${questionId}`, mapList<QuestionAnswer>(items)])),
         )
       }),
     ]
 
     return () => subscriptions.forEach((unsubscribe) => unsubscribe())
+  }, [currentUser])
+
+  useEffect(() => {
+    if (!currentUser) return
+    const db = getRealtimeDb()
+    const onError = () => setErrorMessage('공개 질문 게시판을 불러오지 못했습니다. 연결 상태를 확인해 주세요.')
+    const stopQuestions = onValue(ref(db, 'faithQuestions'), snapshot => {
+      setPublicFaithQuestions(mapList<FaithQuestion>(snapshot.val()).map(question => ({
+        ...question, tags: normalizeFaithTags(question.tags ?? []),
+      })))
+    }, onError)
+    const stopAnswers = onValue(ref(db, 'faithQuestionAnswers'), snapshot => {
+      const value = snapshot.val() as Record<string, Record<string, Omit<QuestionAnswer, 'id'>>> | null
+      setPublicQuestionAnswers(Object.fromEntries(Object.entries(value ?? {}).map(([id, answers]) => [id, mapList<QuestionAnswer>(answers)])))
+    }, onError)
+    return () => { stopQuestions(); stopAnswers() }
   }, [currentUser])
 
   useEffect(() => {
@@ -1812,8 +1855,8 @@ export function MeditationApp() {
 
     faithQuestions.forEach((question) => {
       if (question.authorUid === currentUser.uid || !question.authorUid) {
-        updates[`${getUserFaithQuestionsPath(currentUser.uid)}/${question.id}/authorName`] = displayName
-        updates[`${getUserFaithQuestionsPath(currentUser.uid)}/${question.id}/authorAvatarUrl`] = avatarUrl
+        updates[`${getQuestionPath(question)}/authorName`] = displayName
+        updates[`${getQuestionPath(question)}/authorAvatarUrl`] = avatarUrl
       }
     })
 
@@ -1829,8 +1872,8 @@ export function MeditationApp() {
     Object.entries(questionAnswers).forEach(([questionId, answers]) => {
       answers.forEach((answer) => {
         if (answer.authorUid === currentUser.uid) {
-          updates[`${getUserQuestionAnswersPath(currentUser.uid, questionId)}/${answer.id}/authorName`] = displayName
-          updates[`${getUserQuestionAnswersPath(currentUser.uid, questionId)}/${answer.id}/authorAvatarUrl`] = avatarUrl
+          updates[`${questionId.startsWith('legacy_') ? getUserQuestionAnswersPath(currentUser.uid, questionId.slice(7)) : 'faithQuestionAnswers/' + questionId}/${answer.id}/authorName`] = displayName
+          updates[`${questionId.startsWith('legacy_') ? getUserQuestionAnswersPath(currentUser.uid, questionId.slice(7)) : 'faithQuestionAnswers/' + questionId}/${answer.id}/authorAvatarUrl`] = avatarUrl
         }
       })
     })
@@ -2460,105 +2503,84 @@ export function MeditationApp() {
     })
   }
 
+  async function runQuestionMutation(action: () => Promise<void>) {
+    if (isQuestionMutating) return
+    setIsQuestionMutating(true)
+    setErrorMessage('')
+    try { await action() }
+    catch { setErrorMessage('질문·답변을 저장하지 못했습니다. 작성 권한과 연결 상태를 확인해 주세요.') }
+    finally { setIsQuestionMutating(false) }
+  }
+
   async function handleQuestionSave() {
-    if (!currentUser || (!questionTitle.trim() && !questionBody.trim())) {
-      return
-    }
-
-    const tags = normalizeFaithTags([...selectedQuestionTags, ...extractHashTags(questionTagInput)])
-    setSelectedQuestionTags(tags)
-    setQuestionTagInput('')
-
-    if (editingQuestionId) {
-      await update(ref(getRealtimeDb(), `${getUserFaithQuestionsPath(currentUser.uid)}/${editingQuestionId}`), {
-        body: questionBody.trim(),
-        tags,
-        title: questionTitle.trim() || '신앙 질문',
-        updatedAt: new Date().toISOString(),
-        updatedAtMs: serverTimestamp(),
-      })
+    if (!currentUser || (!questionTitle.trim() && !questionBody.trim())) return
+    await runQuestionMutation(async () => {
+      const tags = normalizeFaithTags([...selectedQuestionTags, ...extractHashTags(questionTagInput)])
+      if (editingQuestionId) {
+        const question = faithQuestions.find(item => item.id === editingQuestionId)
+        if (!question || question.authorUid !== currentUser.uid) throw new Error('Not the question author')
+        await update(ref(getRealtimeDb(), getQuestionPath(question)), {
+          body: questionBody.trim(), tags, title: questionTitle.trim() || '신앙 질문',
+          updatedAt: new Date().toISOString(), updatedAtMs: serverTimestamp(),
+        })
+      } else {
+        await set(push(ref(getRealtimeDb(), 'faithQuestions')), {
+          authorAvatarUrl, authorName, authorUid: currentUser.uid,
+          body: questionBody.trim(), createdAt: new Date().toISOString(), createdAtMs: serverTimestamp(),
+          tags, title: questionTitle.trim() || '신앙 질문',
+        })
+      }
+      setQnaView(editingQuestionId ? 'detail' : 'list')
       setEditingQuestionId('')
-      setQuestionTitle('')
-      setQuestionBody('')
-      setQuestionTagInput('')
-      setSelectedQuestionTags([])
-      setQnaView('detail')
-      return
-    }
-
-    const questionRef = push(ref(getRealtimeDb(), getUserFaithQuestionsPath(currentUser.uid)))
-
-    await set(questionRef, {
-      answerCount: 0,
-      authorAvatarUrl,
-      authorName,
-      authorUid: currentUser.uid,
-      body: questionBody.trim(),
-      createdAt: new Date().toISOString(),
-      createdAtMs: serverTimestamp(),
-      tags,
-      title: questionTitle.trim() || '신앙 질문',
+      setQuestionTitle(''); setQuestionBody(''); setQuestionTagInput(''); setSelectedQuestionTags([])
     })
-    setQuestionTitle('')
-    setQuestionBody('')
-    setQuestionTagInput('')
-    setSelectedQuestionTags([])
-    setQnaView('list')
   }
 
   function startQuestionEdit(question: FaithQuestion) {
     if (question.authorUid !== currentUser?.uid) return
     setEditingQuestionId(question.id)
-    setQuestionTitle(question.title)
-    setQuestionBody(question.body)
-    setSelectedQuestionTags(question.tags)
-    setQuestionTagInput('')
-    setQnaView('write')
+    setQuestionTitle(question.title); setQuestionBody(question.body)
+    setSelectedQuestionTags(question.tags); setQuestionTagInput(''); setQnaView('write')
   }
 
   async function handleQuestionDelete(question: FaithQuestion) {
-    if (!currentUser || question.authorUid !== currentUser.uid || !window.confirm('질문을 삭제할까요?')) return
-    await remove(ref(getRealtimeDb(), `${getUserFaithQuestionsPath(currentUser.uid)}/${question.id}`))
-    await remove(ref(getRealtimeDb(), getUserQuestionAnswersPath(currentUser.uid, question.id)))
-    setSelectedQuestionId('')
-    setQnaView('list')
+    if (!currentUser || question.authorUid !== currentUser.uid || !window.confirm('질문과 답변을 모두 삭제할까요?')) return
+    await runQuestionMutation(async () => {
+      await update(ref(getRealtimeDb()), {
+        [getQuestionPath(question)]: null, [getQuestionAnswersPath(question)]: null,
+      })
+      setSelectedQuestionId(''); setQnaView('list')
+    })
   }
 
   async function handleAnswerSave(question: FaithQuestion) {
     if (!currentUser) return
     const body = (answerDrafts[question.id] ?? '').trim()
     if (!body) return
-
-    if (editingAnswer?.questionId === question.id) {
-      await update(ref(getRealtimeDb(), `${getUserQuestionAnswersPath(currentUser.uid, question.id)}/${editingAnswer.answerId}`), {
-        body,
-        updatedAt: new Date().toISOString(),
-        updatedAtMs: serverTimestamp(),
-      })
-      setEditingAnswer(null)
-    } else {
-      const answerRef = push(ref(getRealtimeDb(), getUserQuestionAnswersPath(currentUser.uid, question.id)))
-      await set(answerRef, {
-        authorAvatarUrl,
-        authorName,
-        authorUid: currentUser.uid,
-        body,
-        createdAt: new Date().toISOString(),
-        createdAtMs: serverTimestamp(),
-      })
-      await runTransaction(ref(getRealtimeDb(), `${getUserFaithQuestionsPath(currentUser.uid)}/${question.id}/answerCount`), (currentValue) =>
-        Number(currentValue ?? 0) + 1,
-      )
-    }
-    setAnswerDrafts((drafts) => ({ ...drafts, [question.id]: '' }))
+    await runQuestionMutation(async () => {
+      const path = getQuestionAnswersPath(question)
+      if (editingAnswer?.questionId === question.id) {
+        const answer = questionAnswers[question.id]?.find(item => item.id === editingAnswer.answerId)
+        if (!answer || answer.authorUid !== currentUser.uid) throw new Error('Not the answer author')
+        await update(ref(getRealtimeDb(), `${path}/${answer.id}`), {
+          body, updatedAt: new Date().toISOString(), updatedAtMs: serverTimestamp(),
+        })
+        setEditingAnswer(null)
+      } else {
+        await set(push(ref(getRealtimeDb(), path)), {
+          authorAvatarUrl, authorName, authorUid: currentUser.uid, body,
+          createdAt: new Date().toISOString(), createdAtMs: serverTimestamp(),
+        })
+      }
+      setAnswerDrafts(drafts => ({ ...drafts, [question.id]: '' }))
+    })
   }
 
   async function handleAnswerDelete(question: FaithQuestion, answer: QuestionAnswer) {
     if (!currentUser || answer.authorUid !== currentUser.uid || !window.confirm('답변을 삭제할까요?')) return
-    await remove(ref(getRealtimeDb(), `${getUserQuestionAnswersPath(currentUser.uid, question.id)}/${answer.id}`))
-    await runTransaction(ref(getRealtimeDb(), `${getUserFaithQuestionsPath(currentUser.uid)}/${question.id}/answerCount`), (currentValue) =>
-      Math.max(0, Number(currentValue ?? 0) - 1),
-    )
+    await runQuestionMutation(async () => {
+      await remove(ref(getRealtimeDb(), `${getQuestionAnswersPath(question)}/${answer.id}`))
+    })
   }
 
   async function handlePhotoCommentUpdate(photoId: string, comment: CrossPhotoComment) {
@@ -3162,12 +3184,13 @@ export function MeditationApp() {
                       <span>답변</span>
                       <input placeholder="답변을 남겨주세요" value={answerDrafts[selectedQuestion.id] ?? ''} onChange={(event) => setAnswerDrafts((drafts) => ({ ...drafts, [selectedQuestion.id]: event.target.value }))} />
                     </label>
-                    <button aria-label="답변 등록" type="button" onClick={() => void handleAnswerSave(selectedQuestion)}><Icon name="send" /></button>
+                    <button aria-label="답변 등록" disabled={isQuestionMutating || selectedQuestion.id.startsWith('ai-question-')} type="button" onClick={() => void handleAnswerSave(selectedQuestion)}><Icon name="send" /></button>
                   </div>
                 </section>
               </article>
             ) : qnaView === 'write' ? (
               <section className="faith-panel faith-qna-compose">
+                <p className="faith-helper">{faithQuestions.find(item => item.id === editingQuestionId)?.legacyId ? '기존 비공개 질문을 수정합니다. 다른 사용자에게 공개되지 않습니다.' : '새 질문과 답변은 로그인한 모든 사용자가 볼 수 있습니다.'}</p>
                 <label className="faith-field"><span>제목</span><input placeholder="궁금한 내용을 한 줄로 적어주세요" value={questionTitle} onChange={(event) => setQuestionTitle(event.target.value)} /></label>
                 <label className="faith-field"><span>내용</span><textarea placeholder="질문의 상황을 조금 더 알려주세요" rows={6} value={questionBody} onChange={(event) => setQuestionBody(event.target.value)} /></label>
                 <div className="faith-tag-editor">
@@ -3207,7 +3230,7 @@ export function MeditationApp() {
                   <h4>같은 태그 질문</h4>
                   {relatedQuestions.length ? relatedQuestions.map((question) => <p key={question.id}>{question.title}</p>) : <p className="faith-inline-empty">같은 태그의 기존 질문이 없습니다.</p>}
                 </section>
-                <button className="faith-primary" disabled={!currentUser || (!questionTitle.trim() && !questionBody.trim())} type="button" onClick={() => void handleQuestionSave()}>{editingQuestionId ? '수정 저장' : '질문 올리기'}</button>
+                <button className="faith-primary" disabled={isQuestionMutating || !currentUser || (!questionTitle.trim() && !questionBody.trim())} type="button" onClick={() => void handleQuestionSave()}>{editingQuestionId ? '수정 저장' : '질문 올리기'}</button>
               </section>
             ) : (
               <>
@@ -3243,6 +3266,7 @@ export function MeditationApp() {
                         setSelectedQuestionId(question.id)
                         setQnaView('detail')
                       }}><h3>{question.title}</h3><Icon name="chevron-right" /></button>
+                      {question.legacyId ? <small>이전 비공개 질문 · 나만 보기</small> : null}
                       <p className="faith-clamp">{question.body}</p>
                       <div className="faith-tags">{question.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
                       <div className="faith-question-actions"><Icon name="comment" /><span>답변 {questionAnswers[question.id]?.length ?? 0}</span></div>

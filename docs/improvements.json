@@ -3,7 +3,8 @@
     "id": "question-sharing",
     "title": "질문을 다른 사용자와 함께 볼 수 있도록 공유 범위 개선",
     "body": "현재 질문과 답변은 users/{uid} 아래에서 본인 데이터만 조회합니다. 공개 질문 게시판을 마련하고, 작성자 권한과 다른 사용자의 답변 권한을 검증해 계정 간 질문·답변이 가능하도록 개선합니다.",
-    "status": "pending"
+    "status": "implemented",
+    "evidence": "Two-account RTDB emulator tests for public reads, question/answer ownership, atomic deletion and private legacy isolation; successful Pages and rules deployments required."
   },
   {
     "id": "suggestion-editing",

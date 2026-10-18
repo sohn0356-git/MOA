@@ -35,7 +35,7 @@ jobs:
           java-version: '21'
 
       - name: Test suggestion permissions in the database emulator
-        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-suggestion-rules.mjs"
+        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-suggestion-rules.mjs && node scripts/test-question-rules.mjs"
 
       - name: Write service account
         env:
