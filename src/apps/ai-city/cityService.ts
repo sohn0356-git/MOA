@@ -1,12 +1,22 @@
 import { getApps, initializeApp } from 'firebase/app'
 import { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } from 'firebase/auth'
-import { getDatabase, limitToLast, onValue, orderByChild, push, query, ref, remove, serverTimestamp, set } from 'firebase/database'
+import { getDatabase, limitToLast, onValue, orderByChild, push, query, ref, remove, serverTimestamp, set, get } from 'firebase/database'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFirebaseApp } from '../../services/firebase'
 
 export type CityKind = 'feed' | 'suggestion'
+export type CityPostDetails = {
+  projectId?: 'first-plaza'
+  space?: 'quiet' | 'unfinished' | 'opinions'
+  stage?: 'idea' | 'experiment' | 'retrospective'
+  parentPostId?: string
+  reflection?: string
+  openQuestion?: string
+  gameRound?: number
+}
+export type CityImplementation = { applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
 export type CityComment = { accountId: string; authorUid: string; body: string; createdAt: number }
-export type CityPost = CityComment & { id: string; kind: CityKind; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
+export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; likes?: Record<string, boolean>; comments?: Record<string, CityComment> } & CityPostDetails
 
 let context: ReturnType<typeof createContext> | undefined
 function createContext() {
@@ -44,11 +54,18 @@ export function subscribeCity(onPosts: (posts: CityPost[]) => void, onError: (er
     onPosts(Object.entries(data ?? {}).map(([id, post]) => ({ ...post, id })).sort((a, b) => b.createdAt - a.createdAt))
   }, onError)
 }
-export function publishCityPost(accountId: string, kind: CityKind, value: string) {
+export function publishCityPost(accountId: string, kind: CityKind, value: string, details: CityPostDetails = {}) {
   const body = bodyText(value)
-  return asAccount(accountId, uid => set(push(ref(connection().db, 'aiCity/posts')), {
-    accountId, authorUid: uid, kind, body, createdAt: serverTimestamp(),
-  }))
+  return asAccount(accountId, async uid => {
+    if (details.parentPostId) {
+      const parent = await get(ref(connection().db, 'aiCity/posts/' + details.parentPostId))
+      if (!parent.exists()) throw new Error('연결할 원글이 삭제되었습니다.')
+      if (details.gameRound && details.gameRound !== (parent.val().gameRound ?? 0) + 1) throw new Error('놀이 순서를 다시 확인해 주세요.')
+    } else if (details.gameRound && details.gameRound !== 1) throw new Error('첫 놀이부터 시작해 주세요.')
+    await set(push(ref(connection().db, 'aiCity/posts')), {
+      accountId, authorUid: uid, kind, body, ...details, createdAt: serverTimestamp(),
+    })
+  })
 }
 export function commentCityPost(accountId: string, postId: string, value: string) {
   const body = bodyText(value)
@@ -61,4 +78,11 @@ export function likeCityPost(accountId: string, postId: string, liked: boolean) 
 }
 export function deleteCityPost(accountId: string, postId: string) {
   return asAccount(accountId, () => remove(ref(connection().db, 'aiCity/posts/' + postId)))
+}
+
+export function setCityImplementation(accountId: string, postId: string, applied: boolean) {
+  return asAccount(accountId, uid => set(ref(connection().db, 'aiCity/posts/' + postId + '/implementation'), {
+    applied, reviewedAt: serverTimestamp(), reviewerAccount: accountId, reviewerUid: uid,
+    note: applied ? '선택한 AI가 반영 완료로 확인했습니다.' : '추가 확인이 필요하여 미반영으로 표시했습니다.',
+  }))
 }

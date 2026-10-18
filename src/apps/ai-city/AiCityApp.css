@@ -58,3 +58,51 @@
   .city-composer-footer { align-items: end; }
   .city-composer-footer small { max-width: 50%; line-height: 1.6; }
 }
+
+.city { --city-accent: #24665e; --city-border: #dddfd9; }
+.city-header, .city-plaza { background: #f5f4ef; }
+.city-header { border-radius: 18px; padding: 20px !important; margin-bottom: 16px; }
+.city .city-resident-bio { font-size: 13px; color: #536961; margin: 10px 0 16px; }
+.city-residents { padding: 12px 0; font-size: 13px; }
+.city summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.city-resident-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0; }
+.city-resident-grid article { padding: 14px; border: 1px solid var(--city-border); border-radius: 12px; background: #fff; }
+.city-resident-grid small { display: block; margin-top: 5px; }
+.city .city-resident-grid p { color: #536961; font-size: 12px; }
+.city-plaza { padding: 20px; border-radius: 18px; border: 1px solid var(--city-border); margin: 10px 0 18px; }
+.city-plaza h2 { font-size: 18px; line-height: 1.6; color: #244a43; }
+.city .city-plaza p { font-size: 13px; color: #536961; }
+.city-plaza > small { display: block; line-height: 1.6; }
+.city-participation { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.city-participation button, .city-plaza details button, .city-status-filters button, .city-filters > button, .city-post-options > button { padding: 8px 12px; border: 1px solid var(--city-border); border-radius: 10px; background: #fff; color: #52665e; font-size: 12px; }
+.city button[aria-pressed='true'] { color: #24665e; }
+.city-status-filters button[aria-pressed='true'], .city-participation button[aria-pressed='true'] { background: #e0eee7; border-color: #97baaa; }
+.city-space-sketch { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 140px; padding: 18px; margin: 18px 0; border: 1px dashed #a5bbb0; border-radius: 20px; color: #567c71; font-size: 12px; }
+.city-space-sketch > div { flex: 1; padding: 24px 12px; border: 1px dotted #b9c7bc; border-radius: 50%; text-align: center; }
+.city-space-sketch > span { max-width: 65px; line-height: 1.8; }
+.city-spaces { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 18px 0; }
+.city-spaces button { border: 1px solid var(--city-border); padding: 12px; border-radius: 12px; text-align: left; background: #fff; color: #536961; }
+.city-spaces button[aria-pressed='true'] { border-color: #24665e; background: #e5f0e8; }
+.city-spaces strong, .city-spaces small { display: block; line-height: 1.6; }
+.city-spaces strong { font-size: 12px; margin-bottom: 6px; }
+.city-post-options { margin: 14px 0; }
+.city-post-options label { display: block; margin: 14px 0 6px; }
+.city-post-options select { width: 100%; }
+.city .city-link-notice, .city .city-reading { padding: 12px; border-radius: 10px; background: #eef4ef; color: #34665a; font-size: 12px; }
+.city-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 22px 0 10px; }
+.city-status-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.city-post-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; }
+.city-post-tags button, .city-post-tags span { padding: 4px 8px; border: 0; border-radius: 8px; background: #edf2ee; color: #4b7969; font-size: 11px; }
+.city-related { border: 0; background: transparent; padding: 0; color: #24665e; font-size: 12px !important; }
+.city .city-reflection { font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.city-implementation { padding: 12px; margin: 14px 0; background: #f6f7f8; border: 1px solid #e1e4e8; border-radius: 12px; }
+.city-implementation.is-applied { background: #edf6ee; border-color: #bbd5c2; }
+.city-implementation label { display: inline-flex; align-items: center; gap: 8px; }
+.city-implementation input { accent-color: #24665e; width: 18px; height: 18px; }
+.city-implementation > span { float: right; font-size: 11px; color: #6f7d73; }
+.city-implementation > small { display: block; line-height: 1.7; margin-top: 6px; overflow-wrap: anywhere; }
+.city-actions { flex-wrap: wrap; }
+.city-actions button:last-child:nth-child(3) { margin-left: 0; }
+@media (max-width:480px) { .city-spaces { grid-template-columns: 1fr; } .city-space-sketch { padding: 12px; gap: 6px; } .city-plaza { padding: 15px; } }
+
+.city-author-role { display: block; margin-top: 3px; }

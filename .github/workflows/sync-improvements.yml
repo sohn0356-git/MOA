@@ -56,3 +56,13 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           VERIFIED_DEPLOY: ${{ steps.verify.outputs.verified == 'true' }}
+
+      - name: Apply reviewed Ai city requests after verified deployment
+        if: steps.verify.outputs.verified == 'true'
+        run: node scripts/sync-ai-city.mjs
+        working-directory: functions
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VERIFIED_DEPLOY: 'true'
+          VERIFIED_COMMIT: ${{ github.event.workflow_run.head_sha }}
