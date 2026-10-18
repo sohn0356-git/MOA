@@ -5,6 +5,7 @@ import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
 import './QuestionAnswers.css'
+import { useScripturePlan } from './useScripturePlan'
 import { SuggestionsApp } from '../suggestions/SuggestionsApp'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
@@ -1188,9 +1189,7 @@ export function MeditationApp() {
   const [isDateSheetOpen, setIsDateSheetOpen] = useState(false)
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false)
   const [fontScale, setFontScale] = useState(() => Number(window.localStorage.getItem('moa.faith.fontScale') ?? 1) || 1)
-  const [remotePlan, setRemotePlan] = useState<ScripturePlan | null>(null)
-  const [isPlanLoading, setIsPlanLoading] = useState(false)
-  const [planError, setPlanError] = useState('')
+  const { remotePlan, isLoading: isPlanLoading, error: planError, isFallback: isFallbackPlan, retry: retryPlan } = useScripturePlan(selectedDate, scriptureLanguage, fetchFirebasePlan)
   const [mind, setMind] = useState('')
   const [apply, setApply] = useState('')
   const [prayerText, setPrayerText] = useState('')
@@ -1479,36 +1478,8 @@ export function MeditationApp() {
 
   useEffect(() => {
     setSelectedVerseNumbers([])
-    setRemotePlan(null)
-    setPlanError('')
   }, [selectedDate, scriptureLanguage])
 
-  useEffect(() => {
-    let active = true
-
-    setIsPlanLoading(true)
-    setPlanError('')
-    void fetchFirebasePlan(selectedDate, scriptureLanguage)
-      .then((nextPlan) => {
-        if (active) {
-          setRemotePlan(nextPlan)
-        }
-      })
-      .catch((error) => {
-        if (active) {
-          setPlanError(error instanceof Error ? error.message : '말씀을 불러오지 못했습니다.')
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setIsPlanLoading(false)
-        }
-      })
-
-    return () => {
-      active = false
-    }
-  }, [selectedDate, scriptureLanguage])
 
   useEffect(() => {
     if (!currentUser) {
@@ -2913,7 +2884,14 @@ export function MeditationApp() {
                     </button>
                   </div>
                 </div>
-                {planError ? <p className="faith-alert faith-alert-error">{planError}</p> : null}
+                {isFallbackPlan ? (
+                  <div className="faith-alert faith-alert-error" role="status">
+                    <strong>예시 대체 본문</strong>
+                    <p>{selectedDate} · {scriptureLanguageOptions.find(option => option.id === scriptureLanguage)?.label} 말씀을 확인하지 못해 한국어 예시 본문을 표시합니다.</p>
+                    <p>{planError}</p>
+                    <button className="faith-text-button" type="button" disabled={isPlanLoading} onClick={() => { setSelectedVerseNumbers([]); retryPlan() }}>선택한 날짜 말씀 다시 불러오기</button>
+                  </div>
+                ) : null}
                 <div className="faith-verse-list" style={{ fontSize: `${17 * fontScale}px` }}>
                   {isPlanLoading ? (
                     <EmptyState>말씀을 불러오고 있습니다.</EmptyState>

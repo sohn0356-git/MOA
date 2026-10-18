@@ -15,7 +15,8 @@
     "id": "scripture-fallback",
     "title": "말씀 조회 실패 시 대체 말씀과 재시도 명확히 안내",
     "body": "선택한 날짜의 말씀을 불러오지 못하면 예시 본문이 표시될 수 있습니다. 대체 본문임을 명확히 알리고 원래 날짜의 말씀을 다시 조회하는 버튼을 제공해 혼동을 줄입니다.",
-    "status": "pending"
+    "status": "implemented",
+    "evidence": "useScripturePlan retry/missing/error/stale-response tests; successful Pages build and deployment required before checking complete."
   },
   {
     "id": "suggestion-status-sort",
