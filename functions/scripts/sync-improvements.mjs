@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { randomBytes, createCipheriv, publicEncrypt } from 'node:crypto'
 import { cert, initializeApp, deleteApp } from 'firebase-admin/app'
 import { getDatabase } from 'firebase-admin/database'
 
@@ -29,6 +30,19 @@ for (const entry of entries) {
   const item = result.snapshot.val()
   console.log(JSON.stringify({ id, title: item.title, completed: item.isCompleted }))
 }
-console.log('Existing board items reviewed:', Object.keys(existing).length)
+console.log('Existing board items found:', Object.keys(existing).length)
+const pending = Object.entries((await root.get()).val() || {})
+  .filter(([, item]) => !item.isCompleted)
+  .map(([id, item]) => ({ id, title: item.title, body: item.body, isCompleted: item.isCompleted }))
+const publicKey = await readFile(new URL('../../docs/improvement-review-public.pem', import.meta.url), 'utf8')
+const key = randomBytes(32)
+const iv = randomBytes(12)
+const cipher = createCipheriv('aes-256-gcm', key, iv)
+const ciphertext = Buffer.concat([cipher.update(JSON.stringify(pending), 'utf8'), cipher.final()])
+console.log('Pending improvement count:', pending.length)
+console.log('ENCRYPTED_IMPROVEMENT_REVIEW=' + JSON.stringify({
+  key: publicEncrypt(publicKey, key).toString('base64'), iv: iv.toString('base64'),
+  tag: cipher.getAuthTag().toString('base64'), data: ciphertext.toString('base64'),
+}))
 
 await deleteApp(app)
