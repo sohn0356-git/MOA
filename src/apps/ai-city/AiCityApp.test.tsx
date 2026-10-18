@@ -3,13 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { defaultCityProfiles } from './cityResidents'
 import { AiCityApp } from './AiCityApp'
-import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile } from './cityService'
+import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject } from './cityService'
 vi.mock('./cityService', () => ({
-  subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(),
+  subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
 }))
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(subscribeCityProjects).mockImplementation(callback => { callback([defaultCityProject]); return () => {} })
+  vi.mocked(subscribeCityWorks).mockImplementation(callback => { callback([]); return () => {} })
+  vi.mocked(saveCityProject).mockResolvedValue(undefined)
+  vi.mocked(saveCityWork).mockResolvedValue(undefined)
+  vi.mocked(removeCityWork).mockResolvedValue(undefined)
+  vi.mocked(moveCityPostProject).mockResolvedValue(undefined)
   vi.mocked(subscribeCityProfiles).mockImplementation(callback => { callback(defaultCityProfiles); return () => {} })
   vi.mocked(saveCityProfile).mockResolvedValue(undefined)
   vi.mocked(subscribeCity).mockImplementation(callback => {
@@ -177,7 +183,7 @@ describe('Approved resident management and archive search requests', () => {
     fireEvent.click(screen.getByRole('button', { name: '연결된 원글 보기' }))
     await waitFor(() => expect(document.activeElement?.id).toBe('city-post-archive-119'))
     const article = document.getElementById('city-post-archive-119')!
-    fireEvent.click(within(article).getByRole('button', { name: '댓글 1' }))
+    expect(within(article).getByRole('button', { name: '댓글 1' }).getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByText('오래된 댓글')).toBeTruthy()
   })
 })
@@ -264,5 +270,63 @@ describe('Resident-specific reactions and city navigation', () => {
     expect(screen.getByRole('button', { name: '건의 등록' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '광장' }))
     expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('탭을 바꿔도 남는 초안')
+  })
+})
+
+describe('Approved project and collection requests', () => {
+  it('creates and renames a stable project without reclassifying old posts', async () => {
+    let emit: Parameters<typeof subscribeCityProjects>[0] = () => {}
+    vi.mocked(subscribeCityProjects).mockImplementation(callback => { emit = callback; callback([defaultCityProject]); return () => {} })
+    vi.mocked(saveCityProject).mockImplementation(async (_account, id, input) => { emit([defaultCityProject, { ...input, id }]) })
+    render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    fireEvent.click(screen.getByText('새 프로젝트 만들기'))
+    fireEvent.change(screen.getByLabelText('프로젝트 이름'), { target: { value: '작은 식탁' } })
+    fireEvent.change(screen.getByLabelText('프로젝트 소개'), { target: { value: '함께 식사를 상상하는 기록' } })
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트 저장' }))
+    await waitFor(() => expect(saveCityProject).toHaveBeenCalledWith('ai01', expect.stringMatching(/^project-/), { name: '작은 식탁', description: '함께 식사를 상상하는 기록', stage: 'idea', participantIds: {} }))
+    const id = vi.mocked(saveCityProject).mock.calls[0][1]
+    await waitFor(() => expect((screen.getByRole('button', { name: '프로젝트 저장' }) as HTMLButtonElement).disabled).toBe(false))
+    const card = screen.getByRole('heading', { name: '작은 식탁' }).closest('article')!
+    fireEvent.click(within(card).getByRole('button', { name: '이름·소개 수정' }))
+    fireEvent.change(screen.getByLabelText('프로젝트 이름'), { target: { value: '함께 먹는 식탁' } })
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트 저장' }))
+    await waitFor(() => expect(saveCityProject).toHaveBeenLastCalledWith('ai01', id, { name: '함께 먹는 식탁', description: '함께 식사를 상상하는 기록', stage: 'idea', participantIds: {} }))
+    expect(moveCityPostProject).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '광장' }))
+    expect(screen.getByText('도시의 첫 이야기')).toBeTruthy()
+  })
+  it('reads two linked works in order and returns to the original comments', async () => {
+    vi.mocked(subscribeCity).mockImplementation(callback => { callback([
+      { id: 'story1', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '종이배 이야기 첫 원문', createdAt: 1000, comments: { c: { accountId: 'ai02', authorUid: 'u2', body: '원글의 댓글을 유지', createdAt: 1500 } } },
+      { id: 'story2', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '종이배 이야기 둘째 원문', createdAt: 2000 },
+    ]); return () => {} })
+    vi.mocked(subscribeCityWorks).mockImplementation(callback => { callback([
+      { id: 'work-story1', sourcePostId: 'story1', title: '종이배 1편', type: 'text', status: 'draft', order: 1, ownerUid: 'u1', createdAt: 1000, updatedAt: 1000 },
+      { id: 'work-story2', sourcePostId: 'story2', title: '종이배 2편', type: 'text', status: 'finished', order: 2, ownerUid: 'u1', createdAt: 2000, updatedAt: 2000 },
+    ]); return () => {} })
+    render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '작품집' }))
+    expect(screen.getByText('종이배 이야기 첫 원문')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '다음 작품' }))
+    expect(screen.getByText('종이배 이야기 둘째 원문')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '이전 작품' }))
+    fireEvent.click(screen.getByRole('button', { name: '원글·댓글로 돌아가기' }))
+    await waitFor(() => expect(screen.getByText('원글의 댓글을 유지')).toBeTruthy())
+    expect(screen.getByText('종이배 이야기 첫 원문')).toBeTruthy()
+    expect(publishCityPost).not.toHaveBeenCalled()
+  })
+  it('registers only metadata for the chosen original work and exposes no image type', async () => {
+    vi.mocked(subscribeCity).mockImplementation(callback => { callback([{ id: 'own', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '내 설계 원문', createdAt: 1000 }]); return () => {} })
+    render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '작품집' }))
+    fireEvent.click(screen.getByText('내 글을 작품집에 연결·수정'))
+    fireEvent.change(screen.getByLabelText('작품 원글'), { target: { value: 'own' } })
+    fireEvent.change(screen.getByLabelText('작품 제목'), { target: { value: '식탁 설계 노트' } })
+    fireEvent.change(screen.getByLabelText('작품 종류'), { target: { value: 'design-note' } })
+    fireEvent.click(screen.getByRole('button', { name: '작품집 저장' }))
+    await waitFor(() => expect(saveCityWork).toHaveBeenCalledWith('ai01', { sourcePostId: 'own', title: '식탁 설계 노트', type: 'design-note', status: 'draft', order: 1 }))
+    expect(within(screen.getByLabelText('작품 종류')).queryByRole('option', { name: '이미지' })).toBeNull()
+    expect(publishCityPost).not.toHaveBeenCalled()
   })
 })

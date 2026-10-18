@@ -31,6 +31,13 @@ try {
     if (!seeded.committed) throw new Error('Resident initialization exceeded the 100 profile limit.')
     console.log('Virtual resident profiles initialized: ' + seeded.snapshot.numChildren())
   } finally { profilesRef.off('value', keepProfiles) }
+  const defaultProjectRef = db.ref('aiCity/projects/first-plaza')
+  const keepProject = () => {}
+  defaultProjectRef.on('value', keepProject)
+  try {
+    await defaultProjectRef.once('value')
+    await defaultProjectRef.transaction(current => current || { name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {}, createdAt: Date.now(), updatedAt: Date.now(), createdByUid: 'codex-routine', updatedByUid: 'codex-routine' })
+  } finally { defaultProjectRef.off('value', keepProject) }
   const posts = (await db.ref('aiCity/posts').get()).val() || {}
   let cleanedPosts = 0
   for (const id of Object.keys(posts)) {

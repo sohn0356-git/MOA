@@ -6,10 +6,10 @@ import { defaultCityProfiles, type CityProfile, type CityProfileInput } from './
 import { getFirebaseApp } from '../../services/firebase'
 
 export type CityKind = 'feed' | 'suggestion'
-export type CityPostDetails = { projectId?: 'first-plaza'; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
+export type CityPostDetails = { projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
 export type CityImplementation = { applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
 export type CityComment = { accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
-export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: 'first-plaza'; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
+export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
 let context: ReturnType<typeof createContext> | undefined
 function createContext() {
@@ -103,4 +103,44 @@ export function saveCityProfile(accountId: string, profileId: string, input: Cit
       if (!result.committed) throw new Error('다른 사용자가 먼저 등록했습니다. 주민 목록을 새로 확인해 주세요.')
     } else { await set(target, value) }
   })
+}
+
+export type CityProjectInput = { name: string; description: string; stage: 'idea' | 'experiment' | 'retrospective'; participantIds: Record<string, boolean> }
+export type CityProject = CityProjectInput & { id: string; createdAt?: number; createdByUid?: string; updatedAt?: number; updatedByUid?: string }
+export type CityWorkInput = { sourcePostId: string; title: string; type: 'text' | 'design-note'; status: 'draft' | 'finished'; order: number }
+export type CityWork = CityWorkInput & { id: string; ownerUid: string; createdAt: number; updatedAt: number }
+export const defaultCityProject: CityProject = { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} }
+export function subscribeCityProjects(callback: (projects: CityProject[]) => void, onError: (error: Error) => void) {
+  return onValue(ref(connection().db, 'aiCity/projects'), snapshot => {
+    const projects = new Map([[defaultCityProject.id, defaultCityProject]])
+    for (const [id, value] of Object.entries(snapshot.val() ?? {})) projects.set(id, { ...(value as CityProject), id })
+    callback([...projects.values()])
+  }, onError)
+}
+export function subscribeCityWorks(callback: (works: CityWork[]) => void, onError: (error: Error) => void) {
+  return onValue(ref(connection().db, 'aiCity/works'), snapshot => {
+    callback(Object.entries(snapshot.val() ?? {}).map(([id, value]) => ({ ...(value as CityWork), id })).sort((a, b) => a.order - b.order || a.createdAt - b.createdAt))
+  }, onError)
+}
+export function saveCityProject(accountId: string, projectId: string, input: CityProjectInput) {
+  return asAccount(accountId, async uid => {
+    const target = ref(connection().db, 'aiCity/projects/' + projectId)
+    const current = (await get(target)).val() as CityProject | null
+    await set(target, { ...input, name: input.name.trim(), createdAt: current?.createdAt ?? serverTimestamp(), createdByUid: current?.createdByUid ?? uid, updatedAt: serverTimestamp(), updatedByUid: uid })
+  })
+}
+export function moveCityPostProject(accountId: string, postId: string, projectId: string) {
+  return asAccount(accountId, () => set(ref(connection().db, 'aiCity/posts/' + postId + '/projectId'), projectId || null))
+}
+export function saveCityWork(accountId: string, input: CityWorkInput) {
+  return asAccount(accountId, async uid => {
+    const post = (await get(ref(connection().db, 'aiCity/posts/' + input.sourcePostId))).val() as CityPost | null
+    if (!post || post.authorUid !== uid) throw new Error('본인이 작성한 글만 작품집에 연결할 수 있습니다.')
+    const target = ref(connection().db, 'aiCity/works/work-' + input.sourcePostId)
+    const current = (await get(target)).val() as CityWork | null
+    await set(target, { ...input, title: input.title.trim(), ownerUid: uid, createdAt: current?.createdAt ?? serverTimestamp(), updatedAt: serverTimestamp() })
+  })
+}
+export function removeCityWork(accountId: string, workId: string) {
+  return asAccount(accountId, () => remove(ref(connection().db, 'aiCity/works/' + workId)))
 }

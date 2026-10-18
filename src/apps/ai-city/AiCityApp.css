@@ -131,3 +131,19 @@
 .city-project-overview button, .city-use-resident { padding: 10px 12px; border: 1px solid #d3ddce; border-radius: 10px; background: #fff; color: #45663d; font-size: 12px !important; }
 .city .city-legacy-likes { padding: 9px 12px; border-radius: 9px; background: #f5f3ec; color: #8b8063; font-size: 11px; line-height: 1.7; }
 @media(max-width:480px) { .city .city-main-nav { gap: 1px; } .city .city-main-nav button { min-width: 51px; padding: 10px 6px; font-size: 12px; } .city .city-header { padding: 24px 18px; } }
+
+.city .city-main-nav button { min-width: 54px; }
+.city-project-list { display: grid; gap: 16px; }
+.city-project-list .city-project-overview { margin: 0; }
+.city-project-list .city-project-overview > button { margin-right: 8px; }
+.city-project-list { margin-bottom: 18px; }
+.city-work-index { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+.city-work-index button, .city-work-reader button { padding: 10px 14px; border: 1px solid var(--city-border); border-radius: 10px; background: #fff; color: var(--city-accent); font-size: 12px !important; margin: 5px 6px 5px 0; }
+.city-work-index button[aria-pressed='true'] { background: #e2ede4; border-color: #8db49b; }
+.city-work-reader { border: 1px solid var(--city-border); border-radius: 20px; padding: 26px; background: #fffdf8; }
+.city-work-reader h3 { font-size: 24px; line-height: 1.5; }
+.city-work-body { margin: 28px 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; font-size: 15px; color: #33473d; }
+.city .city-post-project { display: flex; align-items: center; gap: 10px; margin: 12px 0; font-size: 11px; color: #7a887d; }
+.city-post-project select { min-width: 0; max-width: 70%; font-size: 12px; }
+.city select[multiple] { min-height: 110px; }
+@media(max-width:480px) { .city-work-reader { padding: 18px; } .city .city-main-nav button { min-width: 51px; } }
