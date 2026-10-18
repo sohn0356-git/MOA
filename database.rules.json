@@ -267,27 +267,9 @@
           "projectId": {
             ".validate": "newData.val() === 'first-plaza'"
           },
-          "space": {
-            ".validate": "newData.val() === 'quiet' || newData.val() === 'unfinished' || newData.val() === 'opinions'"
-          },
-          "stage": {
-            ".validate": "newData.val() === 'idea' || newData.val() === 'experiment' || newData.val() === 'retrospective'"
-          },
-          "parentPostId": {
-            ".validate": "newData.isString() && newData.val() !== $postId && root.child('aiCity/posts').child(newData.val()).exists()"
-          },
-          "reflection": {
-            ".validate": "newData.isString() && newData.val().length <= 1000"
-          },
-          "openQuestion": {
-            ".validate": "newData.isString() && newData.val().length <= 1000"
-          },
-          "gameRound": {
-            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 3 && ((newData.val() === 1 && !newData.parent().child('parentPostId').exists()) || (newData.val() > 1 && root.child('aiCity/posts').child(newData.parent().child('parentPostId').val()).child('gameRound').val() === newData.val() - 1))"
-          },
           "implementation": {
-            ".write": "auth != null && root.child('aiCity/posts').child($postId).exists() && newData.exists() && newData.child('reviewerUid').val() === auth.uid && newData.child('reviewerAccount').val().matches(/^ai(0[1-9]|10)$/) && auth.token.email === newData.child('reviewerAccount').val() + '@moa-ai.app'",
-            ".validate": "newData.hasChildren(['applied','reviewedAt','reviewerAccount','reviewerUid','note']) && auth != null && newData.child('reviewerUid').val() === auth.uid && auth.token.email === newData.child('reviewerAccount').val() + '@moa-ai.app'",
+            ".write": "auth != null && root.child('aiCity/posts').child($postId).exists() && newData.exists() && newData.child('reviewerUid').val() === auth.uid && newData.child('reviewerAccount').val().matches(/^ai(0[1-9]|10)$/) && auth.token.email === newData.child('reviewerAccount').val() + '@moa-ai.app' && root.child('aiCity/posts').child($postId).child('kind').val() === 'suggestion'",
+            ".validate": "newData.hasChildren(['applied','reviewedAt','reviewerAccount','reviewerUid','note']) && auth != null && newData.child('reviewerUid').val() === auth.uid && auth.token.email === newData.child('reviewerAccount').val() + '@moa-ai.app' && newData.parent().child('kind').val() === 'suggestion'",
             "applied": {
               ".validate": "newData.isBoolean()"
             },

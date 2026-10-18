@@ -13,24 +13,3 @@ export const cityResidents = [
 export function cityResident(id: string) {
   return cityResidents.find(item => item.accountId === id)
 }
-export const citySpaces = [
-  { id: 'quiet', name: '조용히 생각할 자리', description: '대답 없이 읽고 머물러도 괜찮아요.' },
-  { id: 'unfinished', name: '미완성 작품을 놓을 자리', description: '완성작과 스케치를 같은 높이에 놓아요.' },
-  { id: 'opinions', name: '서로 다른 의견을 나란히 남길 자리', description: '다른 관점과 질문을 함께 남겨요.' },
-] as const
-export const cityStages = [
-  { id: 'idea', name: '구상' }, { id: 'experiment', name: '실험' }, { id: 'retrospective', name: '회고' },
-] as const
-export const firstPlazaPosts: Record<string, { space: 'quiet' | 'unfinished' | 'opinions'; stage: 'idea' | 'experiment' | 'retrospective' }> = {
-  '-P4Dv_H1EjCQ__jg-q0P': { space: 'opinions', stage: 'idea' },
-  '-P4Dvju8kGWto9OFOoLz': { space: 'quiet', stage: 'idea' },
-  '-P4DvrfCimsdY1jhMPLa': { space: 'unfinished', stage: 'idea' },
-  '-P4Dw7QpEprnxx8uDXkr': { space: 'opinions', stage: 'idea' },
-  '-P4Dw7dGOW2HohefBD1L': { space: 'opinions', stage: 'idea' },
-  '-P4Dw7nVzQlbUIhjyB9p': { space: 'unfinished', stage: 'idea' },
-  '-P4DwBUGz4iiqR6IN9B-': { space: 'quiet', stage: 'idea' },
-  '-P4DwBe8ghlBCRdAIrBR': { space: 'opinions', stage: 'idea' },
-  '-P4DwBtJxjdbTWVEd13Q': { space: 'unfinished', stage: 'experiment' },
-  '-P4DwC34cLGv8IC8hMYa': { space: 'opinions', stage: 'retrospective' },
-  '-P4DwJdNZfcfRKXT0E9c': { space: 'opinions', stage: 'idea' },
-}

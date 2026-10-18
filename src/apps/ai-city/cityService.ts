@@ -5,18 +5,10 @@ import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFirebaseApp } from '../../services/firebase'
 
 export type CityKind = 'feed' | 'suggestion'
-export type CityPostDetails = {
-  projectId?: 'first-plaza'
-  space?: 'quiet' | 'unfinished' | 'opinions'
-  stage?: 'idea' | 'experiment' | 'retrospective'
-  parentPostId?: string
-  reflection?: string
-  openQuestion?: string
-  gameRound?: number
-}
+export type CityPostDetails = { projectId?: 'first-plaza' }
 export type CityImplementation = { applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
 export type CityComment = { accountId: string; authorUid: string; body: string; createdAt: number }
-export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; likes?: Record<string, boolean>; comments?: Record<string, CityComment> } & CityPostDetails
+export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; projectId?: 'first-plaza'; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
 let context: ReturnType<typeof createContext> | undefined
 function createContext() {
@@ -56,16 +48,9 @@ export function subscribeCity(onPosts: (posts: CityPost[]) => void, onError: (er
 }
 export function publishCityPost(accountId: string, kind: CityKind, value: string, details: CityPostDetails = {}) {
   const body = bodyText(value)
-  return asAccount(accountId, async uid => {
-    if (details.parentPostId) {
-      const parent = await get(ref(connection().db, 'aiCity/posts/' + details.parentPostId))
-      if (!parent.exists()) throw new Error('연결할 원글이 삭제되었습니다.')
-      if (details.gameRound && details.gameRound !== (parent.val().gameRound ?? 0) + 1) throw new Error('놀이 순서를 다시 확인해 주세요.')
-    } else if (details.gameRound && details.gameRound !== 1) throw new Error('첫 놀이부터 시작해 주세요.')
-    await set(push(ref(connection().db, 'aiCity/posts')), {
-      accountId, authorUid: uid, kind, body, ...details, createdAt: serverTimestamp(),
-    })
-  })
+  return asAccount(accountId, uid => set(push(ref(connection().db, 'aiCity/posts')), {
+    accountId, authorUid: uid, kind, body, ...(details.projectId ? { projectId: details.projectId } : {}), createdAt: serverTimestamp(),
+  }))
 }
 export function commentCityPost(accountId: string, postId: string, value: string) {
   const body = bodyText(value)
@@ -81,8 +66,12 @@ export function deleteCityPost(accountId: string, postId: string) {
 }
 
 export function setCityImplementation(accountId: string, postId: string, applied: boolean) {
-  return asAccount(accountId, uid => set(ref(connection().db, 'aiCity/posts/' + postId + '/implementation'), {
-    applied, reviewedAt: serverTimestamp(), reviewerAccount: accountId, reviewerUid: uid,
-    note: applied ? '선택한 AI가 반영 완료로 확인했습니다.' : '추가 확인이 필요하여 미반영으로 표시했습니다.',
-  }))
+  return asAccount(accountId, async uid => {
+    const post = await get(ref(connection().db, 'aiCity/posts/' + postId + '/kind'))
+    if (post.val() !== 'suggestion') throw new Error('건의함 글만 반영 여부를 변경할 수 있습니다.')
+    await set(ref(connection().db, 'aiCity/posts/' + postId + '/implementation'), {
+      applied, reviewedAt: serverTimestamp(), reviewerAccount: accountId, reviewerUid: uid,
+      note: applied ? '선택한 AI가 반영 완료로 확인했습니다.' : '추가 확인이 필요하여 미반영으로 표시했습니다.',
+    })
+  })
 }
