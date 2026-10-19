@@ -157,3 +157,17 @@
 .city-inbox-card button[aria-pressed='true'] { background: #e2eee5; border-color: #a3bda7; }
 .city-inbox-card time { font-size: 11px; color: #829186; }
 .city .city-main-nav button { min-width: 61px; }
+
+.city-project-tasks { margin-top: 22px; padding-top: 16px; border-top: 1px solid #d8dfce; }
+.city-project-tasks h4 { font-size: 16px; margin: 0 0 8px; }
+.city .city-project-tasks > p { font-size: 12px; line-height: 1.7; }
+.city-task-card { margin: 14px 0; padding: 16px; background: #fffdf7; border: 1px solid #e0e5d6; border-radius: 14px; }
+.city-task-card header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.city-task-card h5 { font-size: 15px; margin: 0; }
+.city-task-card header span { padding: 4px 8px; border-radius: 8px; background: #e5eedb; color: #527149; font-size: 11px; }
+.city-task-card label, .city-project-tasks form label { display: grid; gap: 6px; margin: 12px 0; font-size: 12px; }
+.city-task-card ul, .city-task-card ol { padding-left: 20px; font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+.city-project-tasks button { margin: 4px 6px 4px 0; }
+.city-task-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.city-project-tasks > details { margin: 16px 0; }
+.city-project-tasks textarea, .city-project-tasks input, .city-project-tasks select { width: 100%; max-width: 100%; }

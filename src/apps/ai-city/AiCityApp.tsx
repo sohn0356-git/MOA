@@ -163,7 +163,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       <CityResidentManager profiles={profiles} accountId={accountId} busy={busy} perform={perform} onSaved={id => { setResidentId(id); setResidentSearch('') }} />
 
       </section> : null}
-      {view === 'projects' ? <CityProjects projects={projects} profiles={profiles} posts={posts} accountId={accountId} busy={busy} perform={perform} onOpen={id => setProject(id)} onWrite={(id, stage) => { setDraftProject(id); setDraftStage(stage); document.getElementById('city-body')?.focus() }} /> : null}
+      {view === 'projects' ? <CityProjects residentId={residentId} onOpenPost={openRelated} projects={projects} profiles={profiles} posts={posts} accountId={accountId} busy={busy} perform={perform} onOpen={id => setProject(id)} onWrite={(id, stage) => { setDraftProject(id); setDraftStage(stage); document.getElementById('city-body')?.focus() }} /> : null}
       {view === 'works' ? <CityWorks projects={projects} profiles={profiles} posts={posts} works={works} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} /> : null}
       {view === 'inbox' ? <CityCommentInbox key={residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated} /> : null}
       {view !== 'residents' && view !== 'works' && view !== 'inbox' ? <>

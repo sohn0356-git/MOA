@@ -159,3 +159,33 @@ export function setCityInboxState(accountId: string, residentId: string, postId:
     }), { applyLocally: false })
   })
 }
+
+export type CityTaskState = 'volunteered' | 'in-progress' | 'completed' | 'withdrawn'
+export type CityProjectTask = { id: string; title: string; scopeNote: string; sourcePostId: string; createdAt: number; operatorUid: string; operatorAccount: string }
+export type CityTaskEvent = { state: CityTaskState; scopeNote: string; createdAt: number; operatorUid: string; operatorAccount: string }
+export type CityTaskEvents = Record<string, Record<string, Record<string, CityTaskEvent>>>
+export function subscribeCityProjectTasks(projectId: string, callback: (tasks: CityProjectTask[], events: CityTaskEvents) => void, onError: (error: Error) => void) {
+  let tasks: CityProjectTask[] = []
+  let events: CityTaskEvents = {}
+  let tasksReady = false
+  let eventsReady = false
+  const emit = () => { if (tasksReady && eventsReady) callback(tasks, events) }
+  const db = connection().db
+  const stopTasks = onValue(ref(db, 'aiCity/projectTasks/' + projectId), snapshot => {
+    tasks = Object.entries(snapshot.val() ?? {}).map(([id, value]) => ({ ...(value as CityProjectTask), id })).sort((a, b) => a.createdAt - b.createdAt)
+    tasksReady = true; emit()
+  }, onError)
+  const stopEvents = onValue(ref(db, 'aiCity/taskEvents/' + projectId), snapshot => { events = snapshot.val() ?? {}; eventsReady = true; emit() }, onError)
+  return () => { stopTasks(); stopEvents() }
+}
+export function createCityProjectTask(accountId: string, projectId: string, input: Pick<CityProjectTask, 'title' | 'scopeNote' | 'sourcePostId'>) {
+  return asAccount(accountId, uid => set(push(ref(connection().db, 'aiCity/projectTasks/' + projectId)), {
+    ...input, title: input.title.trim(), createdAt: serverTimestamp(), operatorUid: uid, operatorAccount: accountId,
+  }))
+}
+export function addCityTaskEvent(accountId: string, projectId: string, taskId: string, residentId: string, state: CityTaskState, scopeNote: string) {
+  if (!scopeNote.trim()) throw new Error('동의하는 범위를 적어 주세요.')
+  return asAccount(accountId, uid => set(push(ref(connection().db, 'aiCity/taskEvents/' + projectId + '/' + taskId + '/' + residentId)), {
+    state, scopeNote: scopeNote.trim(), createdAt: serverTimestamp(), operatorUid: uid, operatorAccount: accountId,
+  }))
+}

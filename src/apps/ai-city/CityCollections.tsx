@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { saveCityProject, saveCityWork, removeCityWork, type CityProject, type CityProjectInput, type CityPost, type CityWork } from './cityService'
+import { CityProjectTasks } from './CityProjectTasks'
 import { type CityProfile } from './cityResidents'
 type Perform = (action: () => Promise<void>, message: string) => Promise<boolean>
 const stages = [['idea', '구상'], ['experiment', '실험'], ['retrospective', '회고']] as const
-export function CityProjects({ projects, profiles, posts, accountId, busy, perform, onOpen, onWrite }: { projects: CityProject[]; profiles: CityProfile[]; posts: CityPost[]; accountId: string; busy: boolean; perform: Perform; onOpen: (id: string) => void; onWrite: (id: string, stage: CityProjectInput['stage']) => void }) {
+export function CityProjects({ projects, profiles, posts, accountId, residentId, busy, perform, onOpen, onOpenPost, onWrite }: { projects: CityProject[]; profiles: CityProfile[]; posts: CityPost[]; accountId: string; residentId: string; busy: boolean; perform: Perform; onOpen: (id: string) => void; onOpenPost: (id: string) => void; onWrite: (id: string, stage: CityProjectInput['stage']) => void }) {
   const [editing, setEditing] = useState('')
   const [input, setInput] = useState<CityProjectInput>({ name: '', description: '', stage: 'idea', participantIds: {} })
   function edit(project: CityProject) { setEditing(project.id); setInput({ name: project.name, description: project.description, stage: project.stage, participantIds: project.participantIds ?? {} }); document.getElementById('city-project-manager')?.scrollIntoView?.({ behavior: 'smooth' }) }
@@ -13,7 +14,7 @@ export function CityProjects({ projects, profiles, posts, accountId, busy, perfo
     if (await perform(() => saveCityProject(accountId, id, input), '프로젝트를 저장했습니다. 기존 글의 연결은 유지됩니다.')) { setEditing(''); setInput({ name: '', description: '', stage: 'idea', participantIds: {} }) }
   }
   return <section aria-label="프로젝트 관리"><div className="city-project-list">
-    {projects.map(project => <article className="city-project-overview" key={project.id}><small>PROJECT · {project.id}</small><h3>{project.name}</h3><p>{project.description}</p><p>{stages.find(([id]) => id === project.stage)?.[1]} · 연결 글 {posts.filter(post => post.projectId === project.id).length}개</p><p>참여 주민: {Object.keys(project.participantIds ?? {}).map(id => profiles.find(profile => profile.id === id)?.name ?? id).join(', ') || '아직 지정하지 않았습니다.'}</p><button type="button" onClick={() => onOpen(project.id)}>이 프로젝트 글 보기</button><button type="button" onClick={() => edit(project)}>이름·소개 수정</button><div className="city-project-stages">{stages.map(([id, label]) => <button key={id} type="button" onClick={() => onWrite(project.id, id)}>{label} 기록 쓰기</button>)}</div></article>)}
+    {projects.map(project => <article className="city-project-overview" key={project.id}><small>PROJECT · {project.id}</small><h3>{project.name}</h3><p>{project.description}</p><p>{stages.find(([id]) => id === project.stage)?.[1]} · 연결 글 {posts.filter(post => post.projectId === project.id).length}개</p><p>참여 주민: {Object.keys(project.participantIds ?? {}).map(id => profiles.find(profile => profile.id === id)?.name ?? id).join(', ') || '아직 지정하지 않았습니다.'}</p><button type="button" onClick={() => onOpen(project.id)}>이 프로젝트 글 보기</button><button type="button" onClick={() => edit(project)}>이름·소개 수정</button><div className="city-project-stages">{stages.map(([id, label]) => <button key={id} type="button" onClick={() => onWrite(project.id, id)}>{label} 기록 쓰기</button>)}</div><CityProjectTasks projectId={project.id} residentId={residentId} accountId={accountId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={onOpenPost} /></article>)}
     </div>
     <details id="city-project-manager" className="city-resident-manager" open={Boolean(editing) || undefined}><summary>{editing ? '프로젝트 수정' : '새 프로젝트 만들기'}</summary><p>시작 아이디어: 작은 식탁 · 물건의 두 번째 쓰임 · 종이배 이야기. 이름은 직접 정하고 글은 작성자가 선택해서 연결합니다.</p>
       <form aria-label="프로젝트 편집" onSubmit={event => void submit(event)}>

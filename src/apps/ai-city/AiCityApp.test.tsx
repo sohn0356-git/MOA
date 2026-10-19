@@ -3,13 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { defaultCityProfiles } from './cityResidents'
 import { AiCityApp } from './AiCityApp'
-import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState } from './cityService'
+import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState, subscribeCityProjectTasks, createCityProjectTask, addCityTaskEvent } from './cityService'
 vi.mock('./cityService', () => ({
-  subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
+  subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), subscribeCityProjectTasks: vi.fn(), createCityProjectTask: vi.fn(), addCityTaskEvent: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
 }))
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(subscribeCityProjectTasks).mockImplementation((_id, callback) => { callback([], {}); return () => {} })
+  vi.mocked(createCityProjectTask).mockResolvedValue(undefined)
+  vi.mocked(addCityTaskEvent).mockResolvedValue(undefined)
   localStorage.clear()
   vi.mocked(subscribeCityInbox).mockImplementation((_id, callback) => { callback({}); return () => {} })
   vi.mocked(setCityInboxState).mockResolvedValue(undefined)
@@ -399,5 +402,65 @@ describe('Project lookup and per-resident comment inbox requests', () => {
     expect(screen.getByRole('button', { name: '안 읽음 0' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '이어감 1' })).toBeTruthy()
     expect(setCityInboxState).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('Explicit scoped volunteering for each project task', () => {
+  it('keeps separate consent, preserves it after reopening/switching residents and records withdrawal without reassignment', async () => {
+    const resident = { ...defaultCityProfiles[0], id: 'resident-11', name: '결' }
+    vi.mocked(subscribeCityProfiles).mockImplementation(callback => { callback([...defaultCityProfiles, resident]); return () => {} })
+    vi.mocked(subscribeCityProjects).mockImplementation(callback => { callback([{ ...defaultCityProject, participantIds: { 'resident-11': true, ai01: true } }]); return () => {} })
+    const tasks = ['수선 구상', '잔 정리'].map((title, i) => ({ id: 'task-' + i, title, scopeNote: '이 일만 별도로 모집합니다.', sourcePostId: '', createdAt: 1000 + i, operatorUid: 'u1', operatorAccount: 'ai01' }))
+    const events: Parameters<Parameters<typeof subscribeCityProjectTasks>[1]>[1] = {}
+    let emit: Parameters<typeof subscribeCityProjectTasks>[1] = () => {}
+    let sequence = 0
+    vi.mocked(subscribeCityProjectTasks).mockImplementation((_id, callback) => { emit = callback; callback(tasks, events); return () => {} })
+    vi.mocked(addCityTaskEvent).mockImplementation(async (_operator, _project, task, residentId, state, scopeNote) => {
+      events[task] ??= {}; events[task][residentId] ??= {}
+      events[task][residentId]['event-' + (++sequence)] = { state, scopeNote, createdAt: 2000 + sequence, operatorUid: 'u1', operatorAccount: 'ai01' }
+      emit(tasks, { ...events })
+    })
+    let view = render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    let repair = screen.getByRole('article', { name: '수선 구상' })
+    expect(within(repair).getByText('모집 중')).toBeTruthy()
+    expect(within(screen.getByRole('article', { name: '잔 정리' })).getByText('모집 중')).toBeTruthy()
+    expect(addCityTaskEvent).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'resident-11' } })
+    fireEvent.change(within(repair).getByLabelText('수선 구상 동의 범위'), { target: { value: '한 번의 수선 구상만 검토하며 잔 정리는 맡지 않습니다.' } })
+    fireEvent.click(within(repair).getByRole('button', { name: '이 일에 자원하기' }))
+    await waitFor(() => expect(addCityTaskEvent).toHaveBeenCalledWith('ai01', 'first-plaza', 'task-0', 'resident-11', 'volunteered', '한 번의 수선 구상만 검토하며 잔 정리는 맡지 않습니다.'))
+    await waitFor(() => expect((screen.getByLabelText('활동할 AI 선택') as HTMLSelectElement).disabled).toBe(false))
+    expect(within(screen.getByRole('article', { name: '잔 정리' })).getByText('모집 중')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'ai07' } })
+    expect((within(repair).getByLabelText('수선 구상 동의 범위') as HTMLTextAreaElement).value).toBe('')
+    expect(within(repair).getByRole('button', { name: '이 일에 자원하기' })).toBeTruthy()
+    view.unmount()
+    view = render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'resident-11' } })
+    repair = screen.getByRole('article', { name: '수선 구상' })
+    expect((within(repair).getByLabelText('수선 구상 동의 범위') as HTMLTextAreaElement).value).toContain('잔 정리는 맡지 않습니다')
+    fireEvent.click(within(repair).getByRole('button', { name: '자원 철회' }))
+    await waitFor(() => expect(addCityTaskEvent).toHaveBeenLastCalledWith('ai01', 'first-plaza', 'task-0', 'resident-11', 'withdrawn', expect.any(String)))
+    await waitFor(() => expect(within(repair).getByText('모집 중')).toBeTruthy())
+    expect(within(repair).getByText('동의·철회 이력 (2)')).toBeTruthy()
+    expect(events['task-0']['resident-11']['event-1'].state).toBe('volunteered')
+    expect(events['task-0']['resident-11']['event-2'].state).toBe('withdrawn')
+    expect(events['task-1']).toBeUndefined()
+    expect(within(screen.getByRole('article', { name: '잔 정리' })).getByText('모집 중')).toBeTruthy()
+    view.unmount()
+  })
+  it('creates only the requested task and keeps the evidence source without assigning participants', async () => {
+    vi.mocked(subscribeCity).mockImplementation(callback => { callback([{ id: 'evidence', projectId: 'first-plaza', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '範囲を相談した原文', createdAt: 1000 }]); return () => {} })
+    render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    fireEvent.click(screen.getByText('자원할 일 추가'))
+    fireEvent.change(screen.getByLabelText('할 일'), { target: { value: '천 말리기' } })
+    fireEvent.change(screen.getByLabelText('범위 안내'), { target: { value: '今回の一回だけ' } })
+    fireEvent.change(screen.getByLabelText('근거 원글'), { target: { value: 'evidence' } })
+    fireEvent.click(screen.getByRole('button', { name: '일 등록' }))
+    await waitFor(() => expect(createCityProjectTask).toHaveBeenCalledWith('ai01', 'first-plaza', { title: '천 말리기', scopeNote: '今回の一回だけ', sourcePostId: 'evidence' }))
+    expect(addCityTaskEvent).not.toHaveBeenCalled()
   })
 })

@@ -460,6 +460,67 @@
             }
           }
         }
+      },
+      "projectTasks": {
+        ".read": true,
+        "$projectId": {
+          "$taskId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/projects').child($projectId).exists()",
+            ".validate": "newData.hasChildren(['title','scopeNote','sourcePostId','createdAt','operatorUid','operatorAccount'])",
+            "title": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+            },
+            "scopeNote": {
+              ".validate": "newData.isString() && newData.val().length <= 1000"
+            },
+            "sourcePostId": {
+              ".validate": "newData.isString() && (newData.val() === '' || (root.child('aiCity/posts').child(newData.val()).exists() && root.child('aiCity/posts').child(newData.val()).child('projectId').val() === $projectId))"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/) && auth.token.email === newData.val() + '@moa-ai.app'"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "taskEvents": {
+        ".read": true,
+        "$projectId": {
+          "$taskId": {
+            "$residentId": {
+              "$eventId": {
+                ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/projectTasks').child($projectId).child($taskId).exists() && root.child('aiCity/residents').child($residentId).exists() && (!$residentId.matches(/^ai(0[1-9]|10)$/) || auth.token.email === $residentId + '@moa-ai.app')",
+                ".validate": "newData.hasChildren(['state','scopeNote','createdAt','operatorUid','operatorAccount'])",
+                "state": {
+                  ".validate": "newData.val() === 'volunteered' || newData.val() === 'in-progress' || newData.val() === 'completed' || newData.val() === 'withdrawn'"
+                },
+                "scopeNote": {
+                  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+                },
+                "createdAt": {
+                  ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+                },
+                "operatorUid": {
+                  ".validate": "newData.isString() && newData.val() === auth.uid"
+                },
+                "operatorAccount": {
+                  ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/) && auth.token.email === newData.val() + '@moa-ai.app'"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
