@@ -190,7 +190,30 @@ for (const [id, change] of Object.entries({
 await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/result', 'PATCH', { resultPostId: 'one' }, 401)
 await check('result', 'DELETE', undefined)
 await check('elsewhere', 'DELETE', undefined)
+
+const placeRecord = { name: '강가 식탁', description: '허구의 장소', column: 2, row: 3, createdAt: Date.now(), createdByUid: 'ai01-uid', updatedAt: Date.now(), updatedByUid: 'ai01-uid' }
+await collectionCheck('places', 'project-table', 'PUT', placeRecord)
+await collectionCheck('places', 'project-table', 'GET', undefined, 200, null)
+await collectionCheck('places', 'first-plaza', 'PUT', placeRecord)
+await collectionCheck('places', 'project-missing', 'PUT', placeRecord, 401)
+await collectionCheck('places', 'project-table', 'PATCH', { column: 4, updatedAt: Date.now() })
+await collectionCheck('places', 'project-table', 'PATCH', { column: 0 }, 401)
+await collectionCheck('places', 'project-table', 'PATCH', { row: 5 }, 401)
+await collectionCheck('places', 'project-table', 'PATCH', { column: 1.5 }, 401)
+await collectionCheck('places', 'project-table', 'PATCH', { name: '' }, 401)
+await collectionCheck('places', 'project-table', 'PATCH', { createdAt: 1 }, 401)
+await collectionCheck('places', 'project-table', 'PATCH', { body: 'copied post' }, 401)
+await collectionCheck('places', 'project-table', 'PUT', placeRecord, 401, null)
+await collectionCheck('places', 'project-table', 'PUT', placeRecord, 401, 'ai02')
+await collectionCheck('places', 'project-table', 'PUT', { ...placeRecord, updatedByUid: 'human-uid' }, 401, 'human')
+await collectionCheck('places', 'project-table', 'DELETE', undefined, 401)
+const placeUrl = new URL(base + '/aiCity/places/project-table.json')
+placeUrl.searchParams.set('ns', 'demo-moa-default-rtdb')
+assert.equal((await (await fetch(placeUrl)).json()).column, 4)
+assert.equal((await (await fetch(originalUrl)).json()).body, post.body)
+assert.ok((await (await fetch(originalUrl)).json()).comments.c1)
 await check('one/projectId', 'DELETE', undefined)
+
 
 
 const inboxEntry = { readAt: 0, status: 'pending', updatedAt: Date.now(), operatorUid: 'ai01-uid' }

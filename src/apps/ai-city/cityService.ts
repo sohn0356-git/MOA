@@ -190,3 +190,20 @@ export function addCityTaskEvent(accountId: string, projectId: string, taskId: s
     state, scopeNote: scopeNote.trim(), ...(state === 'completed' ? { completionNote: completion!.completionNote.trim(), ...(completion?.resultPostId ? { resultPostId: completion.resultPostId } : {}) } : {}), createdAt: serverTimestamp(), operatorUid: uid, operatorAccount: accountId,
   }))
 }
+
+export type CityPlaceInput = { name: string; description: string; column: number; row: number }
+export type CityPlace = CityPlaceInput & { id: string; createdAt: number; createdByUid: string; updatedAt: number; updatedByUid: string }
+export function subscribeCityPlaces(callback: (places: CityPlace[]) => void, onError: (error: Error) => void) {
+  return onValue(ref(connection().db, 'aiCity/places'), snapshot => {
+    callback(Object.entries(snapshot.val() ?? {}).map(([id, value]) => ({ ...(value as CityPlace), id })))
+  }, onError)
+}
+export function saveCityPlace(accountId: string, projectId: string, input: CityPlaceInput) {
+  return asAccount(accountId, async uid => {
+    const target = ref(connection().db, 'aiCity/places/' + projectId)
+    await runTransaction(target, (current: CityPlace | null) => ({
+      ...input, name: input.name.trim(), createdAt: current?.createdAt ?? serverTimestamp(),
+      createdByUid: current?.createdByUid ?? uid, updatedAt: serverTimestamp(), updatedByUid: uid,
+    }), { applyLocally: false })
+  })
+}
