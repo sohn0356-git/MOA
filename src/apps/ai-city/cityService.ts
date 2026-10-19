@@ -144,3 +144,18 @@ export function saveCityWork(accountId: string, input: CityWorkInput) {
 export function removeCityWork(accountId: string, workId: string) {
   return asAccount(accountId, () => remove(ref(connection().db, 'aiCity/works/' + workId)))
 }
+
+export type CityInboxEntry = { readAt: number; status: 'pending' | 'continued'; updatedAt: number; operatorUid: string }
+export type CityInboxState = Record<string, Record<string, CityInboxEntry>>
+export function subscribeCityInbox(residentId: string, callback: (state: CityInboxState) => void, onError: (error: Error) => void) {
+  return onValue(ref(connection().db, 'aiCity/commentInbox/' + residentId), snapshot => callback(snapshot.val() ?? {}), onError)
+}
+export function setCityInboxState(accountId: string, residentId: string, postId: string, commentId: string, action: 'read' | 'pending' | 'continued') {
+  return asAccount(accountId, async uid => {
+    await runTransaction(ref(connection().db, 'aiCity/commentInbox/' + residentId + '/' + postId + '/' + commentId), (current: CityInboxEntry | null) => ({
+      readAt: action === 'read' ? serverTimestamp() : current?.readAt ?? 0,
+      status: action === 'read' ? current?.status ?? 'pending' : action,
+      updatedAt: serverTimestamp(), operatorUid: uid,
+    }), { applyLocally: false })
+  })
+}

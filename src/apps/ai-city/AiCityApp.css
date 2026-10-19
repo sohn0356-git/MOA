@@ -147,3 +147,13 @@
 .city-post-project select { min-width: 0; max-width: 70%; font-size: 12px; }
 .city select[multiple] { min-height: 110px; }
 @media(max-width:480px) { .city-work-reader { padding: 18px; } .city .city-main-nav button { min-width: 51px; } }
+
+.city-inbox > p { color: #718376; font-size: 13px; line-height: 1.7; }
+.city-inbox-card { padding: 20px; margin: 14px 0; border: 1px solid var(--city-border); border-radius: 16px; background: #fff; }
+.city-inbox-card h3 { font-size: 15px; line-height: 1.6; margin: 0 0 10px; overflow-wrap: anywhere; }
+.city .city-inbox-card p { font-size: 13px; color: #5b7062; }
+.city .city-inbox-preview { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
+.city-inbox-card button { margin: 10px 6px 0 0; padding: 8px 12px; border: 1px solid var(--city-border); border-radius: 9px; background: #f9fbf8; color: var(--city-accent); font-size: 12px !important; }
+.city-inbox-card button[aria-pressed='true'] { background: #e2eee5; border-color: #a3bda7; }
+.city-inbox-card time { font-size: 11px; color: #829186; }
+.city .city-main-nav button { min-width: 61px; }

@@ -434,6 +434,32 @@
             ".validate": false
           }
         }
+      },
+      "commentInbox": {
+        ".read": true,
+        "$residentId": {
+          "$postId": {
+            "$commentId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.exists() && root.child('aiCity/posts').child($postId).child('authorUid').val() === auth.uid && root.child('aiCity/posts').child($postId).child('comments').child($commentId).exists() && ((root.child('aiCity/posts').child($postId).child('residentId').exists() && root.child('aiCity/posts').child($postId).child('residentId').val() === $residentId) || (!root.child('aiCity/posts').child($postId).child('residentId').exists() && root.child('aiCity/posts').child($postId).child('accountId').val() === $residentId))",
+              ".validate": "newData.hasChildren(['readAt','status','updatedAt','operatorUid'])",
+              "readAt": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+              },
+              "status": {
+                ".validate": "newData.val() === 'pending' || newData.val() === 'continued'"
+              },
+              "updatedAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
       }
     }
   }

@@ -3,13 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { defaultCityProfiles } from './cityResidents'
 import { AiCityApp } from './AiCityApp'
-import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject } from './cityService'
+import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState } from './cityService'
 vi.mock('./cityService', () => ({
-  subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
+  subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
 }))
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
+  vi.mocked(subscribeCityInbox).mockImplementation((_id, callback) => { callback({}); return () => {} })
+  vi.mocked(setCityInboxState).mockResolvedValue(undefined)
   vi.mocked(subscribeCityProjects).mockImplementation(callback => { callback([defaultCityProject]); return () => {} })
   vi.mocked(subscribeCityWorks).mockImplementation(callback => { callback([]); return () => {} })
   vi.mocked(saveCityProject).mockResolvedValue(undefined)
@@ -328,5 +331,73 @@ describe('Approved project and collection requests', () => {
     await waitFor(() => expect(saveCityWork).toHaveBeenCalledWith('ai01', { sourcePostId: 'own', title: '식탁 설계 노트', type: 'design-note', status: 'draft', order: 1 }))
     expect(within(screen.getByLabelText('작품 종류')).queryByRole('option', { name: '이미지' })).toBeNull()
     expect(publishCityPost).not.toHaveBeenCalled()
+  })
+})
+
+describe('Project lookup and per-resident comment inbox requests', () => {
+  it('shares stored project options, preserves selection on rename/revisit and clears only missing project IDs', async () => {
+    let projects = [defaultCityProject, { ...defaultCityProject, id: 'project-table', name: '작은 식탁' }]
+    let emit: Parameters<typeof subscribeCityProjects>[0] = () => {}
+    vi.mocked(subscribeCityProjects).mockImplementation(callback => { emit = callback; callback(projects); return () => {} })
+    vi.mocked(subscribeCity).mockImplementation(callback => { callback([
+      { id: 'table', kind: 'feed', accountId: 'ai01', authorUid: 'u1', projectId: 'project-table', body: '식탁 프로젝트 기록', createdAt: 1000, comments: { c: { accountId: 'ai02', authorUid: 'u2', body: '유지된 댓글', createdAt: 1000 } } },
+      { id: 'ordinary', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '일반 기록', createdAt: 2000 },
+    ]); return () => {} })
+    const view = render(<AiCityApp />)
+    expect(within(screen.getByLabelText('프로젝트 보기')).getByRole('option', { name: '작은 식탁' })).toBeTruthy()
+    expect(within(screen.getByLabelText('작성 프로젝트')).getByRole('option', { name: '작은 식탁' })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('프로젝트 보기'), { target: { value: 'project-table' } })
+    expect(screen.queryByText('일반 기록')).toBeNull()
+    projects = [defaultCityProject, { ...defaultCityProject, id: 'project-table', name: '함께 먹는 식탁' }]
+    const { act } = await import('@testing-library/react')
+    act(() => emit(projects))
+    expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe('project-table')
+    expect(within(screen.getByLabelText('프로젝트 보기')).getByRole('option', { name: '함께 먹는 식탁' })).toBeTruthy()
+    view.unmount()
+    render(<AiCityApp />)
+    expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe('project-table')
+    fireEvent.click(screen.getByRole('button', { name: '댓글 1' }))
+    expect(screen.getByText('유지된 댓글')).toBeTruthy()
+    act(() => emit([defaultCityProject]))
+    await waitFor(() => expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe(''))
+  })
+  it('keeps each resident inbox independent and reading does not resolve the reply state', async () => {
+    const virtual = { ...defaultCityProfiles[0], id: 'resident-11', name: '소리' }
+    vi.mocked(subscribeCityProfiles).mockImplementation(callback => { callback([...defaultCityProfiles, virtual]); return () => {} })
+    vi.mocked(subscribeCity).mockImplementation(callback => { callback([
+      { id: 'doyun', kind: 'feed', accountId: 'ai04', authorUid: 'u4', body: '도윤의 검토 부탁', createdAt: 1000, comments: { request: { accountId: 'ai01', authorUid: 'u1', residentId: 'resident-11', body: '도윤에게 소리가 보낸 검토 요청', createdAt: 2000 } } },
+      { id: 'sori', kind: 'feed', accountId: 'ai01', authorUid: 'u1', residentId: 'resident-11', body: '소리의 기록', createdAt: 1000, comments: { reply: { accountId: 'ai04', authorUid: 'u4', body: '소리에게 온 별도의 댓글', createdAt: 2500 } } },
+    ]); return () => {} })
+    const states: Record<string, Record<string, Record<string, { readAt: number; status: 'pending' | 'continued'; updatedAt: number; operatorUid: string }>>> = {}
+    const emitters: Record<string, Parameters<typeof subscribeCityInbox>[1]> = {}
+    vi.mocked(subscribeCityInbox).mockImplementation((id, callback) => { emitters[id] = callback; callback(states[id] ?? {}); return () => { delete emitters[id] } })
+    vi.mocked(setCityInboxState).mockImplementation(async (_account, resident, post, comment, action) => {
+      const old = states[resident]?.[post]?.[comment]
+      states[resident] = { ...states[resident], [post]: { ...states[resident]?.[post], [comment]: { readAt: action === 'read' ? 5000 : old?.readAt ?? 0, status: action === 'read' ? old?.status ?? 'pending' : action, updatedAt: 5000, operatorUid: 'test' } } }
+      emitters[resident]?.(states[resident])
+    })
+    render(<AiCityApp />)
+    fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'ai04' } })
+    fireEvent.click(screen.getByRole('button', { name: '받은 댓글' }))
+    expect(screen.getByText('도윤에게 소리가 보낸 검토 요청')).toBeTruthy()
+    expect(screen.queryByText('소리에게 온 별도의 댓글')).toBeNull()
+    expect(setCityInboxState).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '이어감으로 표시' }))
+    await waitFor(() => expect(setCityInboxState).toHaveBeenCalledWith('ai04', 'ai04', 'doyun', 'request', 'continued'))
+    await waitFor(() => expect((screen.getByRole('button', { name: '원글 댓글 열기' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: '원글 댓글 열기' }))
+    await waitFor(() => expect(document.activeElement?.id).toBe('city-comment-doyun-request'))
+    expect(states.ai04.doyun.request.status).toBe('continued')
+    expect(states.ai04.doyun.request.readAt).toBe(5000)
+    fireEvent.click(screen.getByRole('button', { name: '받은 댓글' }))
+    fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'resident-11' } })
+    expect(screen.getByText('소리에게 온 별도의 댓글')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '안 읽음 1' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '답변 대기 1' })).toBeTruthy()
+    expect(states['resident-11']).toBeUndefined()
+    fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'ai04' } })
+    expect(screen.getByRole('button', { name: '안 읽음 0' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '이어감 1' })).toBeTruthy()
+    expect(setCityInboxState).toHaveBeenCalledTimes(2)
   })
 })
