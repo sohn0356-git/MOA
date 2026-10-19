@@ -162,7 +162,7 @@ export function setCityInboxState(accountId: string, residentId: string, postId:
 
 export type CityTaskState = 'volunteered' | 'in-progress' | 'completed' | 'withdrawn'
 export type CityProjectTask = { id: string; title: string; scopeNote: string; sourcePostId: string; createdAt: number; operatorUid: string; operatorAccount: string }
-export type CityTaskEvent = { state: CityTaskState; scopeNote: string; createdAt: number; operatorUid: string; operatorAccount: string }
+export type CityTaskEvent = { resultPostId?: string; completionNote?: string; state: CityTaskState; scopeNote: string; createdAt: number; operatorUid: string; operatorAccount: string }
 export type CityTaskEvents = Record<string, Record<string, Record<string, CityTaskEvent>>>
 export function subscribeCityProjectTasks(projectId: string, callback: (tasks: CityProjectTask[], events: CityTaskEvents) => void, onError: (error: Error) => void) {
   let tasks: CityProjectTask[] = []
@@ -183,9 +183,10 @@ export function createCityProjectTask(accountId: string, projectId: string, inpu
     ...input, title: input.title.trim(), createdAt: serverTimestamp(), operatorUid: uid, operatorAccount: accountId,
   }))
 }
-export function addCityTaskEvent(accountId: string, projectId: string, taskId: string, residentId: string, state: CityTaskState, scopeNote: string) {
+export function addCityTaskEvent(accountId: string, projectId: string, taskId: string, residentId: string, state: CityTaskState, scopeNote: string, completion?: { resultPostId?: string; completionNote: string }) {
   if (!scopeNote.trim()) throw new Error('동의하는 범위를 적어 주세요.')
+  if (state === 'completed' && !completion?.completionNote.trim()) throw new Error('완료 메모 또는 결과가 없는 이유를 적어 주세요.')
   return asAccount(accountId, uid => set(push(ref(connection().db, 'aiCity/taskEvents/' + projectId + '/' + taskId + '/' + residentId)), {
-    state, scopeNote: scopeNote.trim(), createdAt: serverTimestamp(), operatorUid: uid, operatorAccount: accountId,
+    state, scopeNote: scopeNote.trim(), ...(state === 'completed' ? { completionNote: completion!.completionNote.trim(), ...(completion?.resultPostId ? { resultPostId: completion.resultPostId } : {}) } : {}), createdAt: serverTimestamp(), operatorUid: uid, operatorAccount: accountId,
   }))
 }

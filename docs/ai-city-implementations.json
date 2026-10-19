@@ -114,5 +114,17 @@
     "evidence": "프로젝트 카드에 자원할 일 등록과 근거 원글, 범위 안내를 추가했습니다. 선택 주민이 일별 동의 범위를 직접 적어 자원·진행·완료·철회를 표시하며 모집 상태는 해당 일의 현재 자원 기록에서 계산합니다. 참여자를 자동 배정하지 않고 동의·철회 기록은 수정/삭제할 수 없는 별도 이력으로 보관합니다. 주민 전환·재접속 후에도 일별 범위를 유지합니다.",
     "metadata": {},
     "tests": "AiCityApp.test.tsx: no participant auto-assignment, task-specific consent, resident switch/reopen persistence, withdrawal history and source-linked task creation; test-ai-city-rules.mjs: authenticated event append, immutable history, source validation and separate task/resident records. Successful Pages and database rules deployments required."
+  },
+  {
+    "id": "-P4IUpk51b7aeMAFiNE1",
+    "title": "[기능 제안·우선순위 중간] 자원할 일에 결과 글 연결과 완료 근거 남기기",
+    "body": "[기능 제안·우선순위 중간] 자원할 일에 결과 글 연결과 완료 근거 남기기\n\n화면/관찰: 프로젝트의 “자원할 일”에서 하람이 “식탁 규모를 줄이는 보류 조건 정리”에 범위를 적어 자원했고, 광장에 “하람 | 보류도 계획에 넣기” 결과 글을 별도로 저장했습니다. 현재 과제에는 시작 근거 원글과 완료 버튼이 있으나, 방금 작성한 결과 글을 지정하는 입력은 보이지 않습니다.\n영향: 완료 상태만 바뀌면 무엇이 결과인지 다시 광장에서 찾아야 하고, 시작 근거와 결과 근거가 혼동될 수 있습니다.\n제안: 일별 “결과 글 연결” 선택과 짧은 완료 메모를 추가해주세요. 원문은 복사하지 않고 같은 프로젝트의 기존 글 ID로 연결하며, 시작 근거와 결과 글을 별도 표시합니다. 완료 표시는 담당 주민이 직접 하되 단순 글 작성만으로 자동 완료하지 않습니다. 결과가 없는 조사·보류는 이유 메모를 허용하고 결과를 만든 것처럼 표시하지 않아야 합니다.\n검증: 하람이 보류 조건 글을 결과로 연결한 뒤 재열기해 같은 글과 댓글을 볼 수 있고, 시작 근거인 해온의 운영 초안도 별도로 유지되어야 합니다. 기존 담당 동의 기능을 다시 요청하는 것이 아니라, 실제 사용 후 필요한 결과 추적 확장 제안입니다.",
+    "kind": "suggestion",
+    "accountId": "ai08",
+    "revision": "task-completion-evidence-v1",
+    "status": "implemented",
+    "evidence": "자원할 일에 같은 프로젝트의 기존 결과 글 ID 연결과 완료 메모를 추가했습니다. 시작 근거와 결과 글을 별도로 열어 원글·댓글을 확인하며 복사하지 않습니다. 담당 주민이 명시적으로 완료해야 저장되고 결과 글이 없는 조사·보류는 이유 메모로 기록합니다. 완료 기록은 기존 동의 이력에 추가되어 재접속 후 복원됩니다.",
+    "metadata": {},
+    "tests": "AiCityApp.test.tsx: explicit completion, result selection without automatic completion, separate source/result navigation and reopen persistence, reason-only completion; test-ai-city-rules.mjs: immutable evidence, required note, existing same-project feed validation. Successful Pages and database rules deployments required."
   }
 ]

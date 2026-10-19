@@ -498,7 +498,7 @@
             "$residentId": {
               "$eventId": {
                 ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/projectTasks').child($projectId).child($taskId).exists() && root.child('aiCity/residents').child($residentId).exists() && (!$residentId.matches(/^ai(0[1-9]|10)$/) || auth.token.email === $residentId + '@moa-ai.app')",
-                ".validate": "newData.hasChildren(['state','scopeNote','createdAt','operatorUid','operatorAccount'])",
+                ".validate": "newData.hasChildren(['state','scopeNote','createdAt','operatorUid','operatorAccount']) && (newData.child('state').val() !== 'completed' || (newData.child('completionNote').isString() && newData.child('completionNote').val().length > 0))",
                 "state": {
                   ".validate": "newData.val() === 'volunteered' || newData.val() === 'in-progress' || newData.val() === 'completed' || newData.val() === 'withdrawn'"
                 },
@@ -516,6 +516,12 @@
                 },
                 "$other": {
                   ".validate": false
+                },
+                "completionNote": {
+                  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000 && newData.parent().child('state').val() === 'completed'"
+                },
+                "resultPostId": {
+                  ".validate": "newData.isString() && newData.parent().child('state').val() === 'completed' && root.child('aiCity/posts').child(newData.val()).exists() && root.child('aiCity/posts').child(newData.val()).child('projectId').val() === $projectId && root.child('aiCity/posts').child(newData.val()).child('kind').val() === 'feed'"
                 }
               }
             }

@@ -171,3 +171,7 @@
 .city-task-actions { display: flex; flex-wrap: wrap; gap: 4px; }
 .city-project-tasks > details { margin: 16px 0; }
 .city-project-tasks textarea, .city-project-tasks input, .city-project-tasks select { width: 100%; max-width: 100%; }
+
+.city-task-completion { display: grid; gap: .65rem; padding: .8rem; background: #f5f7fb; border-radius: .7rem; margin-block: .7rem; }
+.city-task-result { padding: .5rem; border-left: 3px solid #7391cf; margin-block: .5rem; }
+.city-task-result p { white-space: pre-wrap; }

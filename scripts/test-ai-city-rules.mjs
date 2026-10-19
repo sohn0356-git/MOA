@@ -158,7 +158,7 @@ await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e1', 
 await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e1', 'PATCH', { scopeNote: 'overwritten' }, 401)
 await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e1', 'DELETE', undefined, 401)
 await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e2', 'PUT', { ...consent, state: 'in-progress', createdAt: Date.now() })
-await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e3', 'PUT', { ...consent, state: 'completed', createdAt: Date.now() })
+await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e3', 'PUT', { ...consent, state: 'completed', completionNote: '조사 후 보류', createdAt: Date.now() })
 await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e4', 'PUT', { ...consent, state: 'withdrawn', createdAt: Date.now() })
 await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e5', 'PUT', consent, 401, null)
 await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/e5', 'PUT', { ...consent, operatorUid: 'fake' }, 401)
@@ -176,6 +176,20 @@ assert.equal(Object.keys(agreements['task-repair']['resident-11']).length, 4)
 assert.equal(agreements['task-cups'], undefined)
 assert.equal(agreements['task-repair']['resident-12'], undefined)
 
+
+await check('result', 'PUT', { ...post, projectId: 'project-table' })
+await check('elsewhere', 'PUT', { ...post, projectId: 'first-plaza' })
+const completion = { ...consent, state: 'completed', completionNote: '조건을 정리함', resultPostId: 'result' }
+await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/result', 'PUT', completion)
+for (const [id, change] of Object.entries({
+  missing: { resultPostId: 'missing' }, wrongProject: { resultPostId: 'elsewhere' },
+  noNote: { completionNote: null }, emptyNote: { completionNote: '' },
+  longNote: { completionNote: 'x'.repeat(1001) },
+  notCompleted: { state: 'volunteered' }
+})) await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/' + id, 'PUT', { ...completion, ...change }, 401)
+await collectionCheck('taskEvents', 'project-table/task-repair/resident-11/result', 'PATCH', { resultPostId: 'one' }, 401)
+await check('result', 'DELETE', undefined)
+await check('elsewhere', 'DELETE', undefined)
 await check('one/projectId', 'DELETE', undefined)
 
 

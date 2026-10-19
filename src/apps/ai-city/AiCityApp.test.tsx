@@ -463,4 +463,46 @@ describe('Explicit scoped volunteering for each project task', () => {
     await waitFor(() => expect(createCityProjectTask).toHaveBeenCalledWith('ai01', 'first-plaza', { title: '천 말리기', scopeNote: '今回の一回だけ', sourcePostId: 'evidence' }))
     expect(addCityTaskEvent).not.toHaveBeenCalled()
   })
+
+  it('requires explicit completion with evidence and restores separate source and result links', async () => {
+    const tasks = [{ id: 'task-result', title: '보류 조건', scopeNote: '한 번 조사', sourcePostId: 'start', createdAt: 1, operatorUid: 'u1', operatorAccount: 'ai01' }]
+    type Events = Parameters<Parameters<typeof subscribeCityProjectTasks>[1]>[1]
+    const events: Events = { 'task-result': { ai01: { e1: { state: 'volunteered', scopeNote: '보류 조건 조사', createdAt: 1, operatorUid: 'u1', operatorAccount: 'ai01' } } } }
+    let notify: Parameters<typeof subscribeCityProjectTasks>[1]
+    vi.mocked(subscribeCityProjectTasks).mockImplementation((_id, callback) => { notify = callback; callback(tasks, events); return () => {} })
+    vi.mocked(subscribeCity).mockImplementation(callback => { callback([
+      { id: 'start', projectId: 'first-plaza', kind: 'feed', accountId: 'ai02', authorUid: 'u2', body: '시작 운영 초안', createdAt: 1 },
+      { id: 'result', projectId: 'first-plaza', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '보류 조건 결과', createdAt: 2, comments: { c1: { accountId: 'ai02', authorUid: 'u2', body: '결과 검토 댓글', createdAt: 3 } } },
+      { id: 'idea', projectId: 'first-plaza', kind: 'suggestion', accountId: 'ai01', authorUid: 'u1', body: '결과로 선택할 수 없는 건의', createdAt: 4 },
+    ]); return () => {} })
+    vi.mocked(addCityTaskEvent).mockImplementation(async (_a, _p, taskId, resident, state, scopeNote, completion) => {
+      events[taskId][resident].e2 = { state, scopeNote, createdAt: 5, operatorUid: 'u1', operatorAccount: 'ai01', ...completion }
+      notify(tasks, { ...events })
+    })
+    let view = render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    const card = screen.getByRole('article', { name: '보류 조건' })
+    expect((within(card).getByRole('button', { name: '완료로 표시' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(within(card).queryByRole('option', { name: /선택할 수 없는 건의/ })).toBeNull()
+    fireEvent.change(within(card).getByLabelText('보류 조건 결과 글 연결'), { target: { value: 'result' } })
+    fireEvent.change(within(card).getByLabelText('보류 조건 완료 메모'), { target: { value: '규모 축소 조건을 정리했습니다.' } })
+    expect(addCityTaskEvent).not.toHaveBeenCalled()
+    fireEvent.click(within(card).getByRole('button', { name: '완료로 표시' }))
+    await waitFor(() => expect(addCityTaskEvent).toHaveBeenCalledWith('ai01', 'first-plaza', 'task-result', 'ai01', 'completed', '보류 조건 조사', { resultPostId: 'result', completionNote: '규모 축소 조건을 정리했습니다.' }))
+    view.unmount()
+    view = render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    expect(screen.getByRole('button', { name: '시작 근거 원글 보기' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '결과 글·댓글 보기' }))
+    await waitFor(() => expect(screen.getByText('결과 검토 댓글')).toBeTruthy())
+    view.unmount()
+  })
+  it('records a reason without inventing a result post', async () => {
+    vi.mocked(subscribeCityProjectTasks).mockImplementation((_id, callback) => { callback([{ id: 't', title: '조사', scopeNote: '', sourcePostId: '', createdAt: 1, operatorUid: 'u1', operatorAccount: 'ai01' }], { t: { ai01: { e: { state: 'volunteered', scopeNote: '조사만', createdAt: 1, operatorUid: 'u1', operatorAccount: 'ai01' } } } }); return () => {} })
+    render(<AiCityApp />)
+    fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
+    fireEvent.change(screen.getByLabelText('조사 완료 메모'), { target: { value: '자료가 부족하여 보류했습니다.' } })
+    fireEvent.click(screen.getByRole('button', { name: '완료로 표시' }))
+    await waitFor(() => expect(addCityTaskEvent).toHaveBeenCalledWith('ai01', 'first-plaza', 't', 'ai01', 'completed', '조사만', { completionNote: '자료가 부족하여 보류했습니다.' }))
+  })
 })
