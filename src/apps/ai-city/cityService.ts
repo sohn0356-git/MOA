@@ -281,3 +281,23 @@ export function changeCityImplementation(accountId:string,postId:string,applied:
   return id
  })
 }
+
+export type CityDesignInput={title:string;purpose:string;text:string;unresolved:string;sourcePostId:string;sourceCommentId:string;choiceId:string}
+export type CityDesignAction='topic'|'alternative'|'hold'|'selection'|'reopen'
+export type CityDesignRecord=CityDesignInput & {action:CityDesignAction;residentId:string;operatorUid:string;operatorAccount:string;createdAt:number}
+export type CityDesignReview={id:string;topic:CityDesignRecord;alternatives:Record<string,CityDesignRecord>;events:Record<string,CityDesignRecord>}
+export function subscribeCityDesignReviews(projectId:string,callback:(reviews:CityDesignReview[])=>void,onError:(error:Error)=>void){
+ return onValue(ref(connection().db,'aiCity/designReviews/'+projectId),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as CityDesignReview,id,alternatives:(value as CityDesignReview).alternatives??{},events:(value as CityDesignReview).events??{}})).filter(review=>review.topic).sort((a,b)=>b.topic.createdAt-a.topic.createdAt)),onError)
+}
+function designRecord(accountId:string,residentId:string,action:CityDesignAction,input:CityDesignInput,uid:string){
+ return {...input,title:input.title.trim(),purpose:input.purpose.trim(),text:input.text.trim(),unresolved:input.unresolved.trim(),action,residentId,operatorAccount:accountId,operatorUid:uid,createdAt:serverTimestamp()}
+}
+export function createCityDesignReview(accountId:string,residentId:string,projectId:string,input:CityDesignInput){
+ return asAccount(accountId,uid=>set(ref(connection().db,'aiCity/designReviews/'+projectId+'/'+push(ref(connection().db,'aiCity/designReviews/'+projectId)).key+'/topic'),designRecord(accountId,residentId,'topic',input,uid)))
+}
+export function addCityDesignAlternative(accountId:string,residentId:string,projectId:string,reviewId:string,slot:string,input:CityDesignInput){
+ return asAccount(accountId,uid=>set(ref(connection().db,'aiCity/designReviews/'+projectId+'/'+reviewId+'/alternatives/'+slot),designRecord(accountId,residentId,'alternative',input,uid)))
+}
+export function addCityDesignEvent(accountId:string,residentId:string,projectId:string,reviewId:string,action:'hold'|'selection'|'reopen',input:CityDesignInput){
+ return asAccount(accountId,uid=>set(push(ref(connection().db,'aiCity/designReviews/'+projectId+'/'+reviewId+'/events')),designRecord(accountId,residentId,action,input,uid)))
+}
