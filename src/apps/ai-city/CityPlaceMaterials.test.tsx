@@ -41,7 +41,7 @@ it('requires a visit preview and preserves other positions and older signboard e
 })
 it('keeps optional composition fields and preserves prior palettes and original comments',async()=>{
  const notes:CityVisualNoteEdition[]=[]
- let notify:(value:CityVisualNote[])=>void=()=>{}
+ let notify:(value:CityVisualNoteEdition[])=>void=()=>{}
  vi.mocked(subscribeCityVisualNotes).mockImplementation((_id,callback)=>{notify=callback;callback([...notes]);return()=>{}})
  vi.mocked(saveCityVisualNote).mockImplementation(async(_a,_p,input)=>{notes.unshift({...input,id:'v'+(notes.length+1),createdAt:notes.length+1,operatorUid:'u1',operatorAccount:'ai01'});notify([...notes])})
  const props={post,accountId:'ai01',busy:false,perform}
