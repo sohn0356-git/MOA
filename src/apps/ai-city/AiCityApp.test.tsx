@@ -572,3 +572,26 @@ describe('Resident notebooks',()=>{
     expect(JSON.parse(localStorage.getItem('moa:ai-city:notebook:bookmarks')!).ai01.entry.body).toBeUndefined()
   })
 })
+
+describe('Draft submission safety',()=>{
+  it('keeps a failed draft and blocks duplicate submissions while a write is pending',async()=>{
+    let finish:()=>void=()=>{}
+    vi.mocked(publishCityPost).mockImplementation(()=>new Promise<void>(resolve=>{finish=resolve}))
+    render(<AiCityApp />)
+    fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'),{target:{value:'한 번만 게시'}})
+    const form=screen.getByRole('button',{name:'게시하기'}).closest('form')!
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+    expect(publishCityPost).toHaveBeenCalledTimes(1)
+    finish()
+    await waitFor(()=>expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe(''))
+  })
+  it('warns when browser draft storage fails and keeps the text in the current window',()=>{
+    const spy=vi.spyOn(Storage.prototype,'setItem').mockImplementation(()=>{throw new Error('full')})
+    render(<AiCityApp />)
+    fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'),{target:{value:'창에서 보존할 내용'}})
+    expect(screen.getByText(/초안 저장 실패/)).toBeTruthy()
+    expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('창에서 보존할 내용')
+    spy.mockRestore()
+  })
+})
