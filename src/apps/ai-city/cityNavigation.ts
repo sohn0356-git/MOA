@@ -53,6 +53,8 @@ export function useCityNavigation<T extends {view:string}>(state:T,restore:(stat
    window.history.pushState({...window.history.state,moaCity:capture()},'',window.location.href)
    if(heading)document.getElementById('city-view-title')?.focus({preventScroll:true})
    timer.current=setTimeout(()=>{restoring.current=false},0)
+  }else if(!restoring.current){
+   window.history.replaceState({...window.history.state,moaCity:capture()},'',window.location.href)
   }
  })
  return{navigate,position:(view:string)=>positions.current[view],restoring,canBack,back:()=>window.history.back()}

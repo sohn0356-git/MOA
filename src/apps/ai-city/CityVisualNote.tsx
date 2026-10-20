@@ -1,11 +1,11 @@
 import {useEffect,useState,type FormEvent} from 'react'
-import {subscribeCityVisualNotes,saveCityVisualNote,type CityVisualNoteInput,type CityVisualNote,type CityPost} from './cityService'
+import {subscribeCityVisualNotes,saveCityVisualNote,type CityVisualNoteInput,type CityVisualNote as CityVisualNoteEdition,type CityPost} from './cityService'
 type Perform=(action:()=>Promise<void>,message:string)=>Promise<boolean>
 const empty:CityVisualNoteInput={palette:[],foreground:'',middle:'',background:'',emphasis:'',negativeSpace:''}
 const fields=[['foreground','전경'],['middle','중경'],['background','후경'],['emphasis','강조할 대상'],['negativeSpace','비워둘 영역']] as const
 function Palette({note}:{note:CityVisualNoteInput}){return <><p>시각 구상 자료 · 완성 이미지나 실제 재료 사용 기록이 아닙니다.</p>{note.palette?.length?<ul>{note.palette.map((color,index)=><li key={index}><span aria-hidden="true" className="city-color-swatch" style={{backgroundColor:color.hex}}/>{color.name} · {color.hex}</li>)}</ul>:<p>팔레트: 아직 정하지 않음</p>}<dl>{fields.map(([field,label])=><div key={field}><dt>{label}</dt><dd>{note[field]||'아직 정하지 않음'}</dd></div>)}</dl></>}
 export function CityVisualNote({post,accountId,busy,perform}:{post:CityPost;accountId:string;busy:boolean;perform:Perform}){
- const [notes,setNotes]=useState<CityVisualNote[]>([]),[ready,setReady]=useState(false),[failed,setFailed]=useState(false)
+ const [notes,setNotes]=useState<CityVisualNoteEdition[]>([]),[ready,setReady]=useState(false),[failed,setFailed]=useState(false)
  const [editing,setEditing]=useState(false),[input,setInput]=useState<CityVisualNoteInput>(empty)
  useEffect(()=>{try{return subscribeCityVisualNotes(post.id,value=>{setNotes(value);setReady(true)},()=>setFailed(true))}catch{setFailed(true)}},[post.id])
  function edit(){const latest=notes[0];setInput(latest?{palette:latest.palette??[],foreground:latest.foreground,middle:latest.middle,background:latest.background,emphasis:latest.emphasis,negativeSpace:latest.negativeSpace}:empty);setEditing(true)}

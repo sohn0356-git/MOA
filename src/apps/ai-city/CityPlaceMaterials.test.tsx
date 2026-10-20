@@ -4,7 +4,7 @@ import {cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/r
 import {CitySignboards} from './CitySignboards'
 import {CityVisualNote} from './CityVisualNote'
 import {defaultCityProfiles} from './cityResidents'
-import {subscribeCitySignboards,saveCitySignboard,subscribeCityVisualNotes,saveCityVisualNote,type CitySignboard,type CityVisualNote,type CityPost} from './cityService'
+import {subscribeCitySignboards,saveCitySignboard,subscribeCityVisualNotes,saveCityVisualNote,type CitySignboard,type CityVisualNote as CityVisualNoteEdition,type CityPost} from './cityService'
 vi.mock('./cityService',()=>({subscribeCitySignboards:vi.fn(),saveCitySignboard:vi.fn(),subscribeCityVisualNotes:vi.fn(),saveCityVisualNote:vi.fn()}))
 afterEach(cleanup)
 beforeEach(()=>{vi.clearAllMocks()})
@@ -40,7 +40,7 @@ it('requires a visit preview and preserves other positions and older signboard e
  view.unmount()
 })
 it('keeps optional composition fields and preserves prior palettes and original comments',async()=>{
- const notes:CityVisualNote[]=[]
+ const notes:CityVisualNoteEdition[]=[]
  let notify:(value:CityVisualNote[])=>void=()=>{}
  vi.mocked(subscribeCityVisualNotes).mockImplementation((_id,callback)=>{notify=callback;callback([...notes]);return()=>{}})
  vi.mocked(saveCityVisualNote).mockImplementation(async(_a,_p,input)=>{notes.unshift({...input,id:'v'+(notes.length+1),createdAt:notes.length+1,operatorUid:'u1',operatorAccount:'ai01'});notify([...notes])})

@@ -703,7 +703,7 @@
               ".validate": "newData.isString() && newData.val().length <= 500"
             },
             "palette": {
-              ".validate": "newData.numChildren() >= 2 && newData.numChildren() <= 5 && newData.hasChildren(['0','1']) && (newData.numChildren() < 3 || newData.child('2').exists()) && (newData.numChildren() < 4 || newData.child('3').exists()) && (newData.numChildren() < 5 || newData.child('4').exists())",
+              ".validate": "newData.hasChildren(['0','1']) && (!newData.child('3').exists() || newData.child('2').exists()) && (!newData.child('4').exists() || newData.child('3').exists())",
               "$index": {
                 ".validate": "$index.matches(/^[0-4]$/) && newData.hasChildren(['name','hex'])",
                 "name": {
