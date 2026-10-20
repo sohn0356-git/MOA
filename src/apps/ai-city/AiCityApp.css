@@ -191,3 +191,15 @@
 @media(max-width:600px) { .city-map-places.is-map { gap:.35rem; padding:.4rem; } .city-map-place { padding:.45rem; } .city-map-place span,.city-map-place small { font-size:.7rem; } }
 
 .city-map-cell { display:flex; flex-direction:column; gap:.5rem; min-width:0; }
+
+.city-notebook-card,.city-news,.city-continuations,.city-lab { padding:1rem; margin-block:1rem; border:1px solid #c8d2e2; border-radius:1rem; background:#fff; }
+.city-news { background:#f2f6fb; }
+.city-news article { padding:.7rem 0; border-bottom:1px solid #d4dce6; }
+.city-continuations form,.city-lab form { display:grid; gap:.6rem; margin-block:1rem; }
+.city-continuations label,.city-lab label,.city-notebook-card label { display:grid; gap:.3rem; }
+.city-continuations textarea,.city-continuations input,.city-continuations select,.city-lab textarea,.city-lab select,.city-notebook-card textarea { width:100%; max-width:100%; padding:.5rem; box-sizing:border-box; }
+.city-lab article { padding:.8rem; margin-block:.8rem; background:#f7f8fb; }
+.city-lab dd { margin-inline-start:.8rem; white-space:pre-wrap; }
+.city-lab details section { border-top:1px solid #d6deea; padding-block:.6rem; }
+.city-publish-preview { padding:.6rem; background:#eaf3ec; border-radius:.5rem; }
+.city-draft-status { font-size:.85rem; color:#526373; }

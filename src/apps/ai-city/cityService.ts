@@ -1,6 +1,6 @@
 import { getApps, initializeApp } from 'firebase/app'
 import { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } from 'firebase/auth'
-import { getDatabase, onValue, orderByChild, push, query, ref, remove, serverTimestamp, set, get, runTransaction } from 'firebase/database'
+import { getDatabase, onValue, orderByChild, push, query, ref, remove, serverTimestamp, set, get, runTransaction, update } from 'firebase/database'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { defaultCityProfiles, type CityProfile, type CityProfileInput } from './cityResidents'
 import { getFirebaseApp } from '../../services/firebase'
@@ -206,4 +206,40 @@ export function saveCityPlace(accountId: string, projectId: string, input: CityP
       createdByUid: current?.createdByUid ?? uid, updatedAt: serverTimestamp(), updatedByUid: uid,
     }), { applyLocally: false })
   })
+}
+
+export type CityContinuation = { id: string; parentPostId: string; label: string; residentId: string; operatorUid: string; operatorAccount: string; createdAt: number }
+export function subscribeCityContinuations(callback:(links:CityContinuation[])=>void,onError:(error:Error)=>void) {
+  return onValue(ref(connection().db,'aiCity/continuations'), snapshot => callback(Object.entries(snapshot.val() ?? {}).map(([id,value])=>({...value as CityContinuation,id}))),onError)
+}
+export function saveCityContinuation(accountId:string,parentPostId:string,childPostId:string,label:string) {
+  return asAccount(accountId,async uid => {
+    const db=connection().db
+    const parent=(await get(ref(db,'aiCity/posts/'+parentPostId))).val() as CityPost|null
+    const child=(await get(ref(db,'aiCity/posts/'+childPostId))).val() as CityPost|null
+    if(!parent || !child || parent.kind!=='feed' || child.kind!=='feed' || child.authorUid!==uid || child.createdAt<=parent.createdAt || !label.trim()) throw new Error('원글보다 나중에 작성한 본인 글을 선택해 주세요.')
+    await set(ref(db,'aiCity/continuations/'+childPostId),{parentPostId,label:label.trim(),residentId:child.residentId ?? child.accountId,operatorUid:uid,operatorAccount:accountId,createdAt:serverTimestamp()})
+  })
+}
+export function publishCityContinuation(accountId:string,residentId:string,parentPostId:string,label:string,body:string) {
+  const text=bodyText(body)
+  return asAccount(accountId,async uid => {
+    const db=connection().db
+    const parent=(await get(ref(db,'aiCity/posts/'+parentPostId))).val() as CityPost|null
+    if(!parent || parent.kind!=='feed' || !label.trim()) throw new Error('원글과 갈림길 이름을 확인해 주세요.')
+    const id=push(ref(db,'aiCity/posts')).key!
+    await update(ref(db,'aiCity'),{
+      ['posts/'+id]:{accountId,authorUid:uid,kind:'feed',body:text,...(residentId!==accountId ? {residentId}:{}),...(parent.projectId ? {projectId:parent.projectId}:{}),createdAt:serverTimestamp()},
+      ['continuations/'+id]:{parentPostId,label:label.trim(),residentId,operatorUid:uid,operatorAccount:accountId,createdAt:serverTimestamp()}
+    })
+  })
+}
+export type CityLabInput = { question:string; optionA:string; optionB:string; conditions:string; criteria:string; phase:'unperformed'|'review'|'retrospective'; origin:'none'|'virtual'|'actual'; evidence:string; observation:string; sourcePostId:string }
+export type CityLabEvent = CityLabInput & { id:string; residentId:string; createdAt:number; operatorUid:string; operatorAccount:string }
+export function subscribeCityLabs(projectId:string,callback:(labs:Record<string,CityLabEvent[]>)=>void,onError:(error:Error)=>void) {
+  return onValue(ref(connection().db,'aiCity/labEvents/'+projectId),snapshot => callback(Object.fromEntries(Object.entries(snapshot.val() ?? {}).map(([id,records])=>[id,Object.entries(records as object).map(([key,value])=>({...value as CityLabEvent,id:key})).sort((a,b)=>b.createdAt-a.createdAt || b.id.localeCompare(a.id))]))),onError)
+}
+export function saveCityLabEvent(accountId:string,residentId:string,projectId:string,labId:string,input:CityLabInput) {
+  if(!input.question.trim() || !input.optionA.trim() || !input.optionB.trim() || !input.criteria.trim() || !input.conditions.trim() || (input.origin==='none' && Boolean(input.observation.trim())) || (input.origin==='actual' && (!input.evidence.trim() || !input.observation.trim()))) throw new Error('비교 조건과 관찰 근거를 확인해 주세요.')
+  return asAccount(accountId,uid => set(push(ref(connection().db,'aiCity/labEvents/'+projectId+'/'+labId)),{...input,residentId,createdAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}))
 }

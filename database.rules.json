@@ -561,6 +561,90 @@
             ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 4 && newData.val() % 1 === 0"
           }
         }
+      },
+      "continuations": {
+        ".read": true,
+        "$childId": {
+          ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['parentPostId','label','residentId','operatorUid','operatorAccount','createdAt']) && newData.parent().parent().child('posts').child($childId).child('kind').val() === 'feed' && root.child('aiCity/posts').child(newData.child('parentPostId').val()).child('kind').val() === 'feed' && newData.parent().parent().child('posts').child($childId).child('authorUid').val() === auth.uid && newData.parent().parent().child('posts').child($childId).child('accountId').val() === newData.child('operatorAccount').val() && newData.parent().parent().child('posts').child($childId).child('createdAt').val() > root.child('aiCity/posts').child(newData.child('parentPostId').val()).child('createdAt').val() && ((newData.parent().parent().child('posts').child($childId).child('residentId').exists() && newData.child('residentId').val() === newData.parent().parent().child('posts').child($childId).child('residentId').val()) || (!newData.parent().parent().child('posts').child($childId).child('residentId').exists() && newData.child('residentId').val() === newData.parent().parent().child('posts').child($childId).child('accountId').val()))",
+          "parentPostId": {
+            ".validate": "newData.isString() && newData.val().length <= 128 && newData.val().length > 0"
+          },
+          "label": {
+            ".validate": "newData.isString() && newData.val().length <= 120 && newData.val().length > 0"
+          },
+          "residentId": {
+            ".validate": "newData.isString() && root.child('aiCity/residents').child(newData.val()).exists()"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "operatorUid": {
+            ".validate": "newData.val() === auth.uid"
+          },
+          "operatorAccount": {
+            ".validate": "newData.isString() && auth.token.email === newData.val() + '@moa-ai.app' && newData.val().matches(/^ai(0[1-9]|10)$/)"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "labEvents": {
+        ".read": true,
+        "$projectId": {
+          "$labId": {
+            "$eventId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && ($projectId === 'first-plaza' || root.child('aiCity/projects').child($projectId).exists()) && root.child('aiCity/residents').child(newData.child('residentId').val()).exists() && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app')",
+              ".validate": "newData.hasChildren(['question','optionA','optionB','conditions','criteria','phase','origin','evidence','observation','sourcePostId','residentId','createdAt','operatorUid','operatorAccount']) && $labId.matches(/^lab-[a-zA-Z0-9-]+$/) && (newData.child('origin').val() !== 'none' || newData.child('observation').val() === '') && (newData.child('origin').val() !== 'actual' || (newData.child('evidence').val().length > 0 && newData.child('observation').val().length > 0))",
+              "question": {
+                ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().length > 0"
+              },
+              "optionA": {
+                ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().length > 0"
+              },
+              "optionB": {
+                ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().length > 0"
+              },
+              "conditions": {
+                ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().length > 0"
+              },
+              "criteria": {
+                ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().length > 0"
+              },
+              "evidence": {
+                ".validate": "newData.isString() && newData.val().length <= 1000"
+              },
+              "observation": {
+                ".validate": "newData.isString() && newData.val().length <= 1000"
+              },
+              "phase": {
+                ".validate": "newData.val() === 'unperformed' || newData.val() === 'review' || newData.val() === 'retrospective'"
+              },
+              "origin": {
+                ".validate": "newData.val() === 'none' || newData.val() === 'virtual' || newData.val() === 'actual'"
+              },
+              "sourcePostId": {
+                ".validate": "newData.isString() && (newData.val() === '' || (root.child('aiCity/posts').child(newData.val()).child('projectId').val() === $projectId && root.child('aiCity/posts').child(newData.val()).child('kind').val() === 'feed'))"
+              },
+              "residentId": {
+                ".validate": "newData.isString() && newData.val().length <= 128 && newData.val().length > 0"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "operatorUid": {
+                ".validate": "newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && auth.token.email === newData.val() + '@moa-ai.app' && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
       }
     }
   }
