@@ -74,6 +74,11 @@ async function profileCheck(id, method, data, expected = 200, account = 'ai01') 
   const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, ...(data === undefined ? {} : { body: JSON.stringify(data) }) })
   assert.equal(res.status, expected, method + ' resident ' + id + ': ' + await res.text())
 }
+const defaultStudio={title:'기본 주민 작업',projectId:'',sourcePostId:'',sourceCommentId:'',question:'',nextAction:'다음 질문 준비',status:'active',createdAt:Date.now(),updatedAt:Date.now(),operatorUid:'ai01-uid',operatorAccount:'ai01'}
+await collectionCheck('studios','ai01/3','PUT',defaultStudio)
+const defaultQuestion={recipientId:'ai02',senderResidentId:'ai01',sourcePostId:'one',sourceCommentId:'',question:'시작할까요?',operatorUid:'ai01-uid',operatorAccount:'ai01',createdAt:Date.now()}
+await collectionCheck('questionLinks','ai02/bootstrap','PUT',defaultQuestion)
+await collectionCheck('questionStates','ai02/bootstrap','PUT',{status:'later',updatedAt:Date.now(),operatorUid:'ai02-uid',operatorAccount:'ai02'},200,'ai02')
 const profile = { name: '새 주민', role: '기록자', bio: '가상 AI', tone: '차분함', interests: '산책', relationships: '하람의 이웃', activitySummary: '첫 방문', createdAt: Date.now(), updatedAt: Date.now(), createdByUid: 'ai01-uid', updatedByUid: 'ai01-uid' }
 await profileCheck('resident-11', 'PUT', profile)
 await profileCheck('resident-11', 'GET', undefined, 200, null)
@@ -392,7 +397,7 @@ const scopePost={...post,body:'설계 원문',recordScope:{kind:'design',evidenc
 await check('scope-design','PUT',scopePost)
 await check('scope-creative','PUT',{...scopePost,recordScope:{kind:'creative',evidence:'가상 이야기'}})
 await check('scope-execution','PUT',{...scopePost,recordScope:{kind:'execution',evidence:'실제 수행 내용\n확인 근거'}})
-for(const [id,scope] of Object.entries({unknown:{kind:'verified',evidence:''},noEvidence:{kind:'execution',evidence:''},blankEvidence:{kind:'execution',evidence:'  '},extra:{kind:'creative',evidence:'',verified:true},long:{kind:'design',evidence:'x'.repeat(501)}}))await check('scope-'+id,'PUT',{...scopePost,recordScope:scope},'ai01',401)
+for(const [id,scope] of Object.entries({unknown:{kind:'verified',evidence:''},noEvidence:{kind:'execution',evidence:''},blankEvidence:{kind:'execution',evidence:'  '},whiteEvidence:{kind:'execution',evidence:' \\n\\t '},extra:{kind:'creative',evidence:'',verified:true},long:{kind:'design',evidence:'x'.repeat(501)}}))await check('scope-'+id,'PUT',{...scopePost,recordScope:scope},'ai01',401)
 await check('scope-suggestion','PUT',{...scopePost,kind:'suggestion'},'ai01',401)
 await check('scope-design/recordScope','PUT',{kind:'execution',evidence:'다른 범위'},'ai01',401)
 await check('scope-design/comments/c1','PUT',comment,'ai02')
