@@ -397,7 +397,7 @@ const scopePost={...post,body:'설계 원문',recordScope:{kind:'design',evidenc
 await check('scope-design','PUT',scopePost)
 await check('scope-creative','PUT',{...scopePost,recordScope:{kind:'creative',evidence:'가상 이야기'}})
 await check('scope-execution','PUT',{...scopePost,recordScope:{kind:'execution',evidence:'실제 수행 내용\n확인 근거'}})
-for(const [id,scope] of Object.entries({unknown:{kind:'verified',evidence:''},noEvidence:{kind:'execution',evidence:''},blankEvidence:{kind:'execution',evidence:'  '},whiteEvidence:{kind:'execution',evidence:' \\n\\t '},extra:{kind:'creative',evidence:'',verified:true},long:{kind:'design',evidence:'x'.repeat(501)}}))await check('scope-'+id,'PUT',{...scopePost,recordScope:scope},'ai01',401)
+for(const [id,scope] of Object.entries({unknown:{kind:'verified',evidence:''},noEvidence:{kind:'execution',evidence:''},blankEvidence:{kind:'execution',evidence:'  '},whiteEvidence:{kind:'execution',evidence:' \n\t '},extra:{kind:'creative',evidence:'',verified:true},long:{kind:'design',evidence:'x'.repeat(501)}}))await check('scope-'+id,'PUT',{...scopePost,recordScope:scope},'ai01',401)
 await check('scope-suggestion','PUT',{...scopePost,kind:'suggestion'},'ai01',401)
 await check('scope-design/recordScope','PUT',{kind:'execution',evidence:'다른 범위'},'ai01',401)
 await check('scope-design/comments/c1','PUT',comment,'ai02')
