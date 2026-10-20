@@ -7,6 +7,8 @@ on:
     paths:
       - database.rules.json
       - firebase.json
+      - firebase.rules-test.json
+      - scripts/test-*-rules.mjs
       - .github/workflows/deploy-database-rules.yml
   workflow_dispatch:
 
