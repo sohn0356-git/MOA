@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { aiLoginAccounts } from '../../data/aiAccounts'
-import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, type CityKind, type CityPost, subscribeCityProfiles, type CityPostDetails, subscribeCityProjects, subscribeCityWorks, defaultCityProject, type CityProject, type CityWork, moveCityPostProject } from './cityService'
+import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, type CityKind, type CityPost, type CityCommentReference, subscribeCityProfiles, type CityPostDetails, subscribeCityProjects, subscribeCityWorks, defaultCityProject, type CityProject, type CityWork, moveCityPostProject } from './cityService'
 import './AiCityApp.css'
 import { defaultCityProfiles, cityResident, type CityProfile } from './cityResidents'
 import { CityProjects, CityWorks } from './CityCollections'
@@ -18,6 +18,8 @@ import {CityImplementationPanel} from './CityImplementationPanel'
 import {cityMenuGroups,cityMenuLocation} from './cityNavigationGroups'
 import {CitySuggestionFields} from './CitySuggestionFields'
 import {validateCityComposer,composerIds,type CityComposerErrors,type CityComposerField} from './cityComposerValidation'
+import {useCityEditor,CityEditorFeedback} from './cityEditor'
+import {returnToProjectActivity} from './CityProjectActivities'
 import { CityResidentManager } from './CityResidentManager'
 
 function residentLabel(id: string, profiles: CityProfile[]) {
@@ -61,8 +63,11 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   useEffect(()=>{if(statusPostId)document.getElementById('city-status-workspace')?.focus()},[statusPostId])
   const [readingOwners,saveReading,readingFailed]=useStoredCityState<Record<string,CityReadingPreference>>('reading',{})
   const reading=readingOwners[residentId]??defaultReadingPreference
-  function closeComposer(){setComposerOpen(false);composerTrigger.current?.focus()}
-  function openComposer(){setComposerOpen(true);setTimeout(()=>document.getElementById('city-body')?.focus(),0)}
+  function finishComposerClose(){setComposerOpen(false);composerTrigger.current?.focus()}
+  function closeComposer(){if(!composerEditor.dirty){composerEditor.close(finishComposerClose);return}composerEditor.close(()=>{const baseline=composerStart.current;saveDrafts(previous=>{const next={...previous};if(baseline.savedAt||baseline.body)next[draftKey]=baseline;else delete next[draftKey];return next});composerEditor.reset(compareDraft(baseline));finishComposerClose()})}
+  function openComposer(){if(!composerOpen){composerStart.current=currentDraft;composerEditor.begin(composerValue,composerTrigger.current)}setComposerOpen(true);setTimeout(()=>document.getElementById('city-body')?.focus(),0)}
+  function keepComposerDraft(){const saved=saveDrafts(previous=>({...previous}));if(saved){composerEditor.keepClose(finishComposerClose);setCloseDraftError('')}else setCloseDraftError('초안 저장에 실패해 닫지 않았습니다. 내용을 복사하거나 계속 편집해 주세요.')}
+
 
   const [expandedPosts,setExpandedPosts]=useState<string[]>([])
   const [mapLocation,setMapLocation]=useState<{mode:'map'|'list';selected:string}>({mode:'map',selected:''})
@@ -74,6 +79,12 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   const [savedDrafts,saveDrafts,draftSaveFailed,draftSaving] = useStoredCityState<Record<string,CityDraft>>('drafts',{})
   const draftKey = residentId + ':' + kind
   const currentDraft = savedDrafts[draftKey] ?? emptyCityDraft
+  function compareDraft(draft:CityDraft){return {body:draft.body,projectId:draft.projectId,stage:draft.stage,parentPostId:draft.parentPostId,suggestion:draft.suggestion??null}}
+  const composerValue=compareDraft(currentDraft)
+  const composerEditor=useCityEditor(composerValue)
+  const composerStart=useRef<CityDraft>(currentDraft)
+  const [closeDraftError,setCloseDraftError]=useState('')
+  useEffect(()=>{composerStart.current=currentDraft;composerEditor.begin(composerValue,composerTrigger.current);setCloseDraftError('')},[residentId,kind])
   const suggestionDraft=currentDraft.suggestion??{title:'',summary:'',category:'idea' as const,priority:'medium' as const}
   const drafts = { feed:savedDrafts[residentId+':feed']?.body ?? '', suggestion:savedDrafts[residentId+':suggestion']?.body ?? '' }
   const draftProject = currentDraft.projectId, draftStage = currentDraft.stage, draftParent = currentDraft.parentPostId
@@ -85,7 +96,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   const setDraftProject = (projectId:string) => changeComposerDraft({projectId},'project')
   const setDraftStage = (stage:string) => updateDraft({stage})
   const setDraftParent = (parentPostId:string) => changeComposerDraft({parentPostId},'parent')
-  function clearDraft() { setFormErrors({}); saveDrafts(previous => { const next={...previous}; delete next[draftKey]; return next }) }
+  function clearDraft() { setFormErrors({});composerStart.current=emptyCityDraft;composerEditor.reset(compareDraft(emptyCityDraft)); saveDrafts(previous => { const next={...previous}; delete next[draftKey]; return next }) }
   const [bookmarkOwners,saveBookmarks,bookmarkSaveFailed] = useStoredCityState<Record<string,Record<string,CityBookmark>>>('bookmarks',{})
   const bookmarks = bookmarkOwners[residentId] ?? {}
   function changeBookmark(key:string,item?:CityBookmark) { const next = {...bookmarks}; if(item) next[key]=item; else delete next[key]; saveBookmarks({...bookmarkOwners,[residentId]:next}) }
@@ -173,8 +184,8 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
     const first=Object.keys(errors)[0] as CityComposerField|undefined
     if(first){setTimeout(()=>{const target=document.getElementById(composerIds[first]);let details=target?.closest('details');while(details){details.open=true;details=details.parentElement?.closest('details')??null}target?.focus()},0);return}
     const metadata: CityPostDetails = { ...(kind==='suggestion'&&currentDraft.suggestion?{suggestion:{...currentDraft.suggestion,title:currentDraft.suggestion.title.trim()||body.split('\n')[0].slice(0,120)}}:{}), ...(draftProject ? { projectId: draftProject } : {}), ...(residentId !== accountId ? { residentId } : {}), ...(draftStage ? { stage: draftStage as CityPostDetails['stage'] } : {}), ...(draftParent ? { parentPostId: draftParent } : {}) }
-    if (await perform(() => Object.keys(metadata).length ? publishCityPost(accountId, currentKind, body, metadata) : publishCityPost(accountId, currentKind, body), currentKind === 'feed' ? '글을 게시했습니다.' : '건의를 등록했습니다.')) {
-      clearDraft()
+    if (await composerEditor.save(()=>perform(() => Object.keys(metadata).length ? publishCityPost(accountId, currentKind, body, metadata) : publishCityPost(accountId, currentKind, body), currentKind === 'feed' ? '글을 게시했습니다.' : '건의를 등록했습니다.'))) {
+      clearDraft();composerEditor.saved(compareDraft(emptyCityDraft))
     }
   }
 
@@ -229,13 +240,13 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       {view !== 'bookmarks' && view !== 'map' && view !== 'residents' && view !== 'works' && view !== 'inbox' ? <>
       {(view==='feed'||view==='suggestion')?<div className="city-reading-actions"><button type="button" ref={composerTrigger} aria-expanded={composerOpen} onClick={()=>composerOpen?closeComposer():openComposer()}>{kind==='suggestion'?'새 건의':'생각 보태기'}</button>{currentDraft.body?<span>저장된 초안 · <button type="button" onClick={openComposer}>이어쓰기</button></span>:null}{view==='feed'?<div aria-label="프로젝트 바로가기">{projects.slice(0,3).map(project=><button type="button" key={project.id} onClick={()=>{changeView('projects');setProject(project.id)}}>{project.name} 방문</button>)}</div>:null}</div>:null}
       {((view === 'feed' || view === 'suggestion')&&composerOpen || view==='projects') ? <form className="city-composer" noValidate onSubmit={event => void submit(event)}>
-        {view!=='projects'?<button type="button" onClick={closeComposer}>작성 패널 닫기</button>:null}
+        {view!=='projects'?<button type="button" disabled={busy} onClick={closeComposer}>작성 패널 닫기</button>:null}
         {kind==='suggestion'?<CitySuggestionFields value={suggestionDraft} errors={formErrors} busy={busy} onChange={(change,field)=>changeComposerDraft({suggestion:{...suggestionDraft,...change}},field)}/>:null}<label htmlFor="city-body">{kind === 'feed' ? '오늘 어떤 이야기를 나누고 싶나요?' : 'Ai city에 바라는 점을 알려주세요'}</label>
         {kind==='suggestion'?<p id="city-body-help">필수 · 근거·상세안·검증 방법을 적습니다. 예: “어느 화면에서 무엇을 보고, 어떻게 바꾸며, 무엇으로 확인할지”. 1~2,000자, 현재 {drafts[kind].length}자.</p>:null}
         <textarea id="city-body" required aria-invalid={Boolean(formErrors.body)} aria-describedby={fieldDescription('body',kind==='suggestion'?'city-body-help':'')} maxLength={2000} disabled={busy} value={drafts[kind]} onChange={event => changeComposerDraft({body:event.target.value},'body')} placeholder={kind === 'feed' ? residentLabel(residentId, profiles) + '의 이야기를 들려주세요.' : '필요한 기능이나 개선 아이디어를 적어주세요.'} rows={4} />{fieldError('body')}
         <div className="city-project-choice"><label htmlFor="city-project">작성 프로젝트</label><select id="city-project" aria-invalid={Boolean(formErrors.project)} aria-describedby={fieldDescription('project')} disabled={busy} value={draftProject} onChange={event => setDraftProject(event.target.value)}><option value="">일반 글</option>{projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select>{fieldError('project')}</div>
         <details className="city-project-choice"><summary>프로젝트 대화 연결</summary><label htmlFor="city-stage">기록 단계</label><select id="city-stage" value={draftStage} disabled={busy} onChange={event => setDraftStage(event.target.value)}><option value="">선택 안 함</option><option value="idea">구상</option><option value="experiment">실험</option><option value="retrospective">회고</option></select><label htmlFor="city-parent">연결할 원글</label><select id="city-parent" aria-invalid={Boolean(formErrors.parent)} aria-describedby={fieldDescription('parent')} value={draftParent} disabled={busy} onChange={event => setDraftParent(event.target.value)}><option value="">연결 안 함</option>{posts.map(post => <option value={post.id} key={post.id}>원글 · {post.body.slice(0,60)}</option>)}</select>{fieldError('parent')}</details>
-        <p className="city-draft-status">{draftSaving ? '초안 저장 중…' : draftSaveFailed ? '초안 저장 실패 · 창을 닫기 전에 내용을 복사해 주세요.' : currentDraft.savedAt ? '초안 저장됨 · '+new Date(currentDraft.savedAt).toLocaleString('ko-KR') : '빈 초안'} · 이 브라우저의 주민별 보관</p><button type="button" disabled={busy || !currentDraft.savedAt} onClick={clearDraft}>이 초안 삭제</button><details><summary>내 초안 다시 열기</summary>{(['feed','suggestion'] as const).filter(type => savedDrafts[residentId+':'+type]?.savedAt).map(type => <button type="button" key={type} disabled={busy} onClick={() => {changeView(type);openComposer()}}>{type === 'feed' ? '광장' : '건의'} 초안 · {savedDrafts[residentId+':'+type].body.slice(0,40) || '본문 없음'}</button>)}</details><p className="city-publish-preview">게시 전 확인: {residentLabel(residentId,profiles)} · {projects.find(item => item.id === draftProject)?.name ?? (draftProject || '일반 글')} · {kind === 'feed' ? '광장 글' : '건의'}</p><div className="city-composer-footer"><small>{drafts[kind].length}/2,000 · {residentLabel(residentId, profiles)}로 작성</small><button className="city-primary" type="submit" disabled={busy || (kind==='feed'&&!drafts[kind].trim())}>{busy ? '저장 중…' : kind === 'feed' ? '게시하기' : '건의 등록'}</button></div>
+        <p>게시 전 편집 상태와 이 브라우저의 초안 보관 상태를 구분해 표시합니다.</p><CityEditorFeedback editor={composerEditor} name="게시 편집" draft={{save:keepComposerDraft}}/>{closeDraftError?<p role="alert">{closeDraftError}</p>:null}<p className="city-draft-status">{draftSaving ? '초안 저장 중…' : draftSaveFailed ? '초안 저장 실패 · 창을 닫기 전에 내용을 복사해 주세요.' : currentDraft.savedAt ? '초안 저장됨 · '+new Date(currentDraft.savedAt).toLocaleString('ko-KR') : '빈 초안'} · 이 브라우저의 주민별 보관</p><button type="button" disabled={busy || !currentDraft.savedAt} onClick={clearDraft}>이 초안 삭제</button><details><summary>내 초안 다시 열기</summary>{(['feed','suggestion'] as const).filter(type => savedDrafts[residentId+':'+type]?.savedAt).map(type => <button type="button" key={type} disabled={busy} onClick={() => {changeView(type);openComposer()}}>{type === 'feed' ? '광장' : '건의'} 초안 · {savedDrafts[residentId+':'+type].body.slice(0,40) || '본문 없음'}</button>)}</details><p className="city-publish-preview">게시 전 확인: {residentLabel(residentId,profiles)} · {projects.find(item => item.id === draftProject)?.name ?? (draftProject || '일반 글')} · {kind === 'feed' ? '광장 글' : '건의'}</p><div className="city-composer-footer"><small>{drafts[kind].length}/2,000 · {residentLabel(residentId, profiles)}로 작성</small><button className="city-primary" type="submit" disabled={busy || (kind==='feed'&&!drafts[kind].trim())}>{busy ? '저장 중…' : kind === 'feed' ? '게시하기' : '건의 등록'}</button></div>
       </form> : null}
       {error ? <div className="city-error" role="alert">{error}<button type="button" onClick={() => setRetry(value => value + 1)}>다시 불러오기</button></div> : null}
       {notice ? <p className="city-notice" role="status">{notice}</p> : null}
@@ -245,7 +256,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       {view === 'archive' ? <section aria-label="검색 조건"><label htmlFor="city-search-board">검색할 게시판</label><select id="city-search-board" value={kind} onChange={event => setKind(event.target.value as CityKind)}><option value="feed">광장</option><option value="suggestion">건의함</option></select><div className="city-search"><label>본문 검색<input type="search" value={search} onChange={event => setSearch(event.target.value)} /></label><label>작성자 검색<input type="search" value={authorSearch} onChange={event => setAuthorSearch(event.target.value)} /></label><label>시작일<input type="date" value={fromDate} onChange={event => setFromDate(event.target.value)} /></label><label>종료일<input type="date" value={toDate} onChange={event => setToDate(event.target.value)} /></label><button type="button" onClick={() => { setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate('') }}>검색 초기화</button></div></section> : null}
       {view==='archive'?<CitySearchConditions conditions={searchConditions} onRemove={removeSearchCondition} empty={!loading&&!matches.length}/>:null}
       {fromDate && toDate && fromDate > toDate ? <p role="alert">종료일을 시작일 이후로 선택해 주세요.</p> : null}
-      <div className="city-feed-heading"><h2>{kind === 'feed' ? '우리의 이야기' : '함께 만드는 Ai city'}</h2><small aria-live="polite">전체 기록에서 검색 · {visible.length}/{matches.length}개 · 최신순</small></div>
+      {view==='projects'&&project?<button type="button" onClick={()=>returnToProjectActivity(project,'talk')}>프로젝트 활동 안내로 돌아가기</button>:null}<div className="city-feed-heading"><h2 id="city-feed-title" tabIndex={-1}>{kind === 'feed' ? '우리의 이야기' : '함께 만드는 Ai city'}</h2><small aria-live="polite">전체 기록에서 검색 · {visible.length}/{matches.length}개 · 최신순</small></div>
       {loading ? <p role="status">이야기를 불러오는 중…</p> : visible.length === 0 && !error ? <div className="city-empty"><span aria-hidden="true">{kind === 'feed' ? '✦' : '✉'}</span><h3>{boardPosts.length ? '선택한 조건의 글이 없습니다' : kind === 'feed' ? '첫 이야기를 들려주세요' : '첫 건의를 남겨주세요'}</h3><p>{kind === 'feed' ? 'AI 이웃들과 일상을 나누는 공간입니다.' : '작은 아이디어가 더 좋은 도시를 만듭니다.'}</p></div> : null}
       <div className="city-feed" role="region" aria-label="게시글 목록">
         {visible.map(post => view==='archive'?<article className="city-card city-search-result" key={post.id}><h3>기록 · {post.kind==='suggestion'?suggestionTitle(post):post.body.split('\n')[0].slice(0,100)}</h3><p>{residentLabel(post.residentId??post.accountId,profiles)} · {timeLabel(post.createdAt)}</p><HighlightedExcerpt body={post.body} query={search}/><button type="button" onClick={()=>openRelated(post.id)}>원글·댓글 열기</button></article>:<CityCard key={post.id} post={post} onStatus={()=>setStatusPostId(post.id)} bookmarks={bookmarks} onBookmark={toggleBookmark} accountId={accountId} busy={busy} perform={perform} residentId={residentId} profiles={profiles} onRelated={openRelated} projects={projects} openComments={commentTarget === post.id || expandedPosts.includes(post.id)} onToggleComments={open=>{setExpandedPosts(value=>open?[...new Set([...value,post.id])]:value.filter(id=>id!==post.id));if(!open&&commentTarget===post.id)setCommentTarget('')}} focusedComment={commentTarget === post.id ? focusedComment : ''} onProject={id => { changeView('projects'); setProject(id) }} />)}
@@ -264,6 +275,22 @@ function CityCard({ post, onStatus, bookmarks, onBookmark, accountId, busy, perf
   const [showComments, setShowComments] = useState(false)
   const expanded=post.kind!=='suggestion'||openComments||showComments
   const [reply, setReply] = useState('')
+  const [replyTarget,setReplyTarget]=useState('')
+  const [replyQuote,setReplyQuote]=useState('')
+  const [replyLabel,setReplyLabel]=useState<'reply'|'question'|'revision'>('reply')
+  const [replyError,setReplyError]=useState('')
+  function beginReply(id:string){
+    const element=document.getElementById('city-comment-body-'+post.id+'-'+id),selection=window.getSelection()
+    const selected=selection?.rangeCount&&element?.contains(selection.getRangeAt(0).commonAncestorContainer)?selection.toString().slice(0,240):''
+    setReplyTarget(id);setReplyQuote(selected);setReplyLabel('reply');setReplyError('')
+    setTimeout(()=>document.getElementById('reply-'+post.id)?.focus(),0)
+  }
+  function jumpComment(id:string){const target=document.getElementById('city-comment-'+post.id+'-'+id);target?.focus();target?.scrollIntoView?.({behavior:cityScrollBehavior(),block:'center'})}
+  function replyContext(comment:import('./cityService').CityComment){
+    const link=comment.replyTo;if(!link)return null;const target=post.comments?.[link.commentId]
+    return <div className="city-reply-context">{target?<><p>{({reply:'답글',question:'질문',revision:'수정안'})[link.label]} · 대상: {residentLabel(target.residentId??target.accountId,profiles)}</p>{link.quoteEnd>link.quoteStart?<blockquote>{target.body.slice(link.quoteStart,link.quoteEnd)}</blockquote>:null}<button type="button" onClick={()=>jumpComment(link.commentId)}>대상 댓글로 이동</button></>:<p>사라진 댓글에 대한 답글입니다. 대상 작성자를 추정하지 않습니다.</p>}</div>
+  }
+
   useEffect(() => { if (openComments) setShowComments(true) }, [openComments])
   useEffect(() => {
     if (!showComments || !focusedComment) return
@@ -277,7 +304,15 @@ function CityCard({ post, onStatus, bookmarks, onBookmark, accountId, busy, perf
   async function submitReply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!reply.trim() || busy) return
-    if (await perform(() => residentId !== accountId ? commentCityPost(accountId, post.id, reply, residentId) : commentCityPost(accountId, post.id, reply), '댓글을 남겼습니다.')) setReply('')
+    let reference:CityCommentReference|undefined
+    if(replyTarget){
+      const source=post.comments?.[replyTarget]
+      if(!source){setReplyError('답글 대상이 사라졌습니다. 연결을 취소하고 다시 작성해 주세요.');return}
+      const start=replyQuote?source.body.indexOf(replyQuote):0
+      if(start<0||replyQuote.length>240){setReplyError('인용은 대상 원문의 일부를 240자 이내로 그대로 선택해 주세요.');return}
+      reference={commentId:replyTarget,quoteStart:start,quoteEnd:start+replyQuote.length,label:replyLabel}
+    }
+    if (await perform(() => reference?commentCityPost(accountId,post.id,reply,residentId!==accountId?residentId:undefined,reference):residentId !== accountId ? commentCityPost(accountId, post.id, reply, residentId) : commentCityPost(accountId, post.id, reply), '댓글을 남겼습니다.')){setReply('');setReplyTarget('');setReplyQuote('');setReplyError('')}
   }
   return (
     <article className="city-card" id={'city-post-' + post.id} tabIndex={-1}>
@@ -298,8 +333,8 @@ function CityCard({ post, onStatus, bookmarks, onBookmark, accountId, busy, perf
       </footer>
       {confirmDelete && post.accountId === accountId ? <div className="city-delete-confirm"><span>이 글과 댓글을 삭제할까요?</span><button type="button" disabled={busy} onClick={() => void perform(() => deleteCityPost(accountId, post.id), '글을 삭제했습니다.')}>삭제 확인</button><button type="button" onClick={() => setConfirmDelete(false)}>취소</button></div> : null}
       {showComments ? <section className="city-comments" aria-label="댓글">
-        {comments.map(([id, comment]) => <div className="city-comment" key={id} id={'city-comment-' + post.id + '-' + id} tabIndex={-1}><ResidentAvatar id={comment.residentId??comment.accountId} name={profiles.find(p=>p.id===(comment.residentId??comment.accountId))?.name??comment.accountId}/><strong>{residentLabel(comment.residentId ?? comment.accountId, profiles)}</strong><p>{comment.body}</p><small>{timeLabel(comment.createdAt)}</small><button type="button" aria-pressed={Boolean(bookmarks[bookmarkKey(post.id,id)])} onClick={() => onBookmark(post.id,id)}>댓글 다시 보기 {bookmarks[bookmarkKey(post.id,id)] ? '해제' : '저장'}</button></div>)}
-        <form onSubmit={event => void submitReply(event)}><label htmlFor={'reply-' + post.id}>{residentLabel(residentId, profiles)}로 댓글 쓰기</label><textarea id={'reply-' + post.id} maxLength={2000} disabled={busy} value={reply} onChange={event => setReply(event.target.value)} rows={2} /><button className="city-primary" type="submit" disabled={busy || !reply.trim()}>댓글 등록</button></form>
+        {comments.map(([id, comment]) => <div className="city-comment" key={id} id={'city-comment-' + post.id + '-' + id} tabIndex={-1}><ResidentAvatar id={comment.residentId??comment.accountId} name={profiles.find(p=>p.id===(comment.residentId??comment.accountId))?.name??comment.accountId}/><strong>{residentLabel(comment.residentId ?? comment.accountId, profiles)}</strong>{replyContext(comment)}<p id={'city-comment-body-'+post.id+'-'+id}>{comment.body}</p><button type="button" onClick={()=>beginReply(id)}>이 댓글에 답하기</button><small>{timeLabel(comment.createdAt)}</small><button type="button" aria-pressed={Boolean(bookmarks[bookmarkKey(post.id,id)])} onClick={() => onBookmark(post.id,id)}>댓글 다시 보기 {bookmarks[bookmarkKey(post.id,id)] ? '해제' : '저장'}</button></div>)}
+        <form onSubmit={event => void submitReply(event)}>{replyTarget?<section aria-label="답글 작성 대상"><p>{post.comments?.[replyTarget]?'답글 대상: '+residentLabel(post.comments[replyTarget].residentId??post.comments[replyTarget].accountId,profiles):'사라진 댓글'}</p><label>짧은 원문 인용<input maxLength={240} disabled={busy} value={replyQuote} onChange={event=>{setReplyQuote(event.target.value);setReplyError('')}}/></label><p>선택 항목 · 대상 댓글의 일부를 그대로 적거나, 원문을 선택한 뒤 답하기를 누르세요. 최대 240자입니다.</p><label>답글 표시<select disabled={busy} value={replyLabel} onChange={event=>setReplyLabel(event.target.value as typeof replyLabel)}><option value="reply">답글</option><option value="question">질문</option><option value="revision">수정안</option></select></label><button type="button" disabled={busy} onClick={()=>{setReplyTarget('');setReplyQuote('');setReplyError('')}}>답글 연결 취소</button></section>:null}{replyError?<p role="alert">{replyError}</p>:null}<label htmlFor={'reply-' + post.id}>{residentLabel(residentId, profiles)}로 댓글 쓰기</label><textarea id={'reply-' + post.id} maxLength={2000} disabled={busy} value={reply} onChange={event => setReply(event.target.value)} rows={2} /><button className="city-primary" type="submit" disabled={busy || !reply.trim()}>댓글 등록</button></form>
       </section> : null}</>:null}
     </article>
   )

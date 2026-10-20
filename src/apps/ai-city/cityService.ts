@@ -9,7 +9,8 @@ export type CityKind = 'feed' | 'suggestion'
 export type CitySuggestionDetails={title:string;summary:string;category:'problem'|'idea';priority:'high'|'medium'|'low'}
 export type CityPostDetails = { suggestion?:CitySuggestionDetails; projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
 export type CityImplementation = { eventId?:string; applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
-export type CityComment = { accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
+export type CityCommentReference={commentId:string;quoteStart:number;quoteEnd:number;label:'reply'|'question'|'revision'}
+export type CityComment = { replyTo?:CityCommentReference; accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
 export type CityPost = CityComment & { id: string; kind: CityKind; suggestion?:CitySuggestionDetails; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
 let context: ReturnType<typeof createContext> | undefined
@@ -54,12 +55,17 @@ export function publishCityPost(accountId: string, kind: CityKind, value: string
     accountId, authorUid: uid, kind, body, ...Object.fromEntries(Object.entries(details).filter(([, value]) => value)), createdAt: serverTimestamp(),
   }))
 }
-export function commentCityPost(accountId: string, postId: string, value: string, residentId?: string) {
-  const body = bodyText(value)
-  return asAccount(accountId, uid => set(push(ref(connection().db, 'aiCity/posts/' + postId + '/comments')), {
-    accountId, authorUid: uid, body, ...(residentId ? { residentId } : {}), createdAt: serverTimestamp(),
-  }))
+export function commentCityPost(accountId:string,postId:string,value:string,residentId?:string,replyTo?:CityCommentReference){
+ const body=bodyText(value)
+ return asAccount(accountId,async uid=>{
+  if(replyTo){
+   const source=(await get(ref(connection().db,'aiCity/posts/'+postId+'/comments/'+replyTo.commentId))).val() as CityComment|null
+   if(!source||!Number.isInteger(replyTo.quoteStart)||!Number.isInteger(replyTo.quoteEnd)||replyTo.quoteStart<0||replyTo.quoteEnd<replyTo.quoteStart||replyTo.quoteEnd>source.body.length||replyTo.quoteEnd-replyTo.quoteStart>240)throw new Error('답글 대상과 인용 범위를 확인해 주세요.')
+  }
+  await set(push(ref(connection().db,'aiCity/posts/'+postId+'/comments')),{accountId,authorUid:uid,body,...(residentId?{residentId}:{}),...(replyTo?{replyTo}:{}),createdAt:serverTimestamp()})
+ })
 }
+
 export function likeCityPost(accountId: string, postId: string, liked: boolean, residentId = accountId) {
   return asAccount(accountId, uid => set(ref(connection().db, 'aiCity/posts/' + postId + '/residentLikes/' + residentId), liked ? { operatorUid: uid, operatorAccount: accountId, createdAt: serverTimestamp() } : null))
 }

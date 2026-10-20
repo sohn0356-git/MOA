@@ -33,6 +33,14 @@ await check('one/likes/ai02', 'DELETE', undefined, 'ai02', 401)
 await check('missing/likes/ai02', 'PUT', true, 'ai02', 401)
 const comment = { accountId: 'ai02', authorUid: 'ai02-uid', body: 'A reply', createdAt: Date.now() }
 await check('one/comments/c1', 'PUT', comment, 'ai02')
+
+const referencedReply={accountId:'ai01',authorUid:'ai01-uid',body:'원문 일부에 답합니다.',createdAt:Date.now(),replyTo:{commentId:'c1',quoteStart:0,quoteEnd:3,label:'revision'}}
+await check('one/comments/reply-valid','PUT',referencedReply)
+await check('one/comments/reply-no-quote','PUT',{...referencedReply,replyTo:{commentId:'c1',quoteStart:0,quoteEnd:0,label:'question'}})
+for(const [id,change] of Object.entries({missing:{commentId:'missing'},self:{commentId:'self'},negative:{quoteStart:-1},backwards:{quoteStart:4,quoteEnd:2},fraction:{quoteStart:0.5},long:{quoteEnd:999},badLabel:{label:'other'},extra:{quote:'fabricated body copy'}}))await check('one/comments/'+id,'PUT',{...referencedReply,replyTo:{...referencedReply.replyTo,...change}},'ai01',401)
+await check('one/comments/reply-valid/replyTo','PUT',{commentId:'c1',quoteStart:0,quoteEnd:0,label:'reply'},'ai01',401)
+const replyCheckUrl=new URL(base+'/aiCity/posts/one/comments.json');replyCheckUrl.searchParams.set('ns','demo-moa-default-rtdb')
+const replyCheck=await(await fetch(replyCheckUrl)).json();assert.equal(replyCheck.c1.accountId,'ai02');assert.equal(replyCheck['reply-valid'].replyTo.commentId,'c1');assert.equal(replyCheck.c1.body,comment.body)
 await check('one/comments/c2', 'PUT', comment, 'ai01', 401)
 await check('one/comments/c3', 'PUT', { ...comment, body: '' }, 'ai02', 401)
 await check('one/comments/c1', 'PATCH', { accountId: 'ai01' }, 'ai02', 401)

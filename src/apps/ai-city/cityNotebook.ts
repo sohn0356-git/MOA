@@ -14,7 +14,7 @@ export function useStoredCityState<T>(name: string, initial: T) {
     setSaving(true)
     current.current = next
     setValue(next)
-    try { localStorage.setItem(key, JSON.stringify(next)); setFailed(false) } catch { setFailed(true) }
+    try { localStorage.setItem(key, JSON.stringify(next)); setFailed(false);return true } catch { setFailed(true);return false }
   }
   return [value, save, failed, saving] as const
 }

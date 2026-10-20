@@ -258,3 +258,19 @@
 .city-design-review label { display:grid; gap:.3rem; }
 .city-design-review input,.city-design-review textarea,.city-design-review select { padding:.5rem; max-width:100%; box-sizing:border-box; }
 @media(max-width:640px) { .city .city-main-nav { grid-template-columns:1fr; } .city-menu-group > div { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+.city-project-activities { margin-block:1rem; padding:.8rem; border:1px solid #c9d6e3; border-radius:.8rem; }
+.city-project-activities > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem; }
+.city-project-activities button { display:flex; flex-direction:column; gap:.4rem; align-items:flex-start; padding:.8rem; text-align:left; min-width:0; background:#f4f7fc; border:1px solid #c3d1e2; border-radius:.6rem; }
+.city-project-activities small { color:#4f627b; }
+.city-project-area { margin-block:.8rem; padding:.8rem; border:1px solid #d3dce6; border-radius:.7rem; }
+.city-project-area > summary { font-weight:650; cursor:pointer; }
+.city-editor-feedback { margin-block:.7rem; font-size:.9rem; }
+.city-editor-feedback > p { border-left:3px solid #8ca3bf; padding:.4rem .6rem; }
+.city-safe-close { border:2px solid #bca36b; padding:.8rem; background:#fffaf0; border-radius:.6rem; }
+.city-safe-close button { margin:.3rem; }
+.city-reply-context { border-left:2px solid #93a6c4; padding:.4rem .6rem; margin:.5rem 0; background:#f4f6fb; }
+.city-reply-context blockquote { margin:.4rem 0; padding:.3rem; white-space:pre-wrap; }
+.city-comment { min-width:0; }
+.city-comment > .city-avatar { margin-right:.4rem; vertical-align:middle; }
+@media(max-width:600px) { .city-project-activities > div { grid-template-columns:1fr; } }
