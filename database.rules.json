@@ -291,6 +291,9 @@
             },
             "$other": {
               ".validate": false
+            },
+            "eventId": {
+              ".validate": "newData.isString() && newData.parent().parent().parent().parent().child('implementationEvents').child($postId).child(newData.val()).exists() && newData.parent().parent().parent().parent().child('implementationEvents').child($postId).child(newData.val()).child('applied').val() === newData.parent().child('applied').val() && newData.parent().parent().parent().parent().child('implementationEvents').child($postId).child(newData.val()).child('note').val() === newData.parent().child('note').val() && newData.parent().parent().parent().parent().child('implementationEvents').child($postId).child(newData.val()).child('reviewedAt').val() === newData.parent().child('reviewedAt').val() && newData.parent().parent().parent().parent().child('implementationEvents').child($postId).child(newData.val()).child('reviewerUid').val() === auth.uid"
             }
           },
           "residentId": {
@@ -318,6 +321,24 @@
               "$other": {
                 ".validate": false
               }
+            }
+          },
+          "suggestion": {
+            ".validate": "newData.parent().child('kind').val() === 'suggestion' && newData.hasChildren(['title','summary','category','priority'])",
+            "title": {
+              ".validate": "newData.isString() && newData.val().length <= 120 && newData.val().length > 0"
+            },
+            "summary": {
+              ".validate": "newData.isString() && newData.val().length <= 300"
+            },
+            "category": {
+              ".validate": "newData.val() === 'problem' || newData.val() === 'idea'"
+            },
+            "priority": {
+              ".validate": "newData.val() === 'high' || newData.val() === 'medium' || newData.val() === 'low'"
+            },
+            "$other": {
+              ".validate": false
             }
           }
         }
@@ -725,6 +746,48 @@
             },
             "createdAt": {
               ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "implementationEvents": {
+        ".read": true,
+        "$postId": {
+          "$eventId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/posts').child($postId).child('kind').val() === 'suggestion'",
+            ".validate": "newData.hasChildren(['applied','previousApplied','previousReviewedAt','previousEventId','reviewedAt','reviewerAccount','reviewerUid','note','action','undoOf']) && newData.parent().parent().parent().child('posts').child($postId).child('implementation').child('eventId').val() === $eventId && newData.parent().parent().parent().child('posts').child($postId).child('implementation').child('applied').val() === newData.child('applied').val() && newData.parent().parent().parent().child('posts').child($postId).child('implementation').child('note').val() === newData.child('note').val() && newData.parent().parent().parent().child('posts').child($postId).child('implementation').child('reviewedAt').val() === newData.child('reviewedAt').val() && newData.parent().parent().parent().child('posts').child($postId).child('implementation').child('reviewerUid').val() === auth.uid && ((root.child('aiCity/posts').child($postId).child('implementation').exists() && newData.child('previousApplied').val() === root.child('aiCity/posts').child($postId).child('implementation').child('applied').val() && newData.child('previousReviewedAt').val() === root.child('aiCity/posts').child($postId).child('implementation').child('reviewedAt').val()) || (!root.child('aiCity/posts').child($postId).child('implementation').exists() && newData.child('previousApplied').val() === false && newData.child('previousReviewedAt').val() === 0)) && ((root.child('aiCity/posts').child($postId).child('implementation').child('eventId').exists() && newData.child('previousEventId').val() === root.child('aiCity/posts').child($postId).child('implementation').child('eventId').val()) || (!root.child('aiCity/posts').child($postId).child('implementation').child('eventId').exists() && newData.child('previousEventId').val() === '')) && ((newData.child('action').val() === 'change' && newData.child('undoOf').val() === '') || (newData.child('action').val() === 'undo' && newData.child('undoOf').val() === root.child('aiCity/posts').child($postId).child('implementation').child('eventId').val() && newData.child('applied').val() === root.child('aiCity/implementationEvents').child($postId).child(newData.child('undoOf').val()).child('previousApplied').val()))",
+            "applied": {
+              ".validate": "newData.isBoolean()"
+            },
+            "previousApplied": {
+              ".validate": "newData.isBoolean()"
+            },
+            "previousReviewedAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+            },
+            "previousEventId": {
+              ".validate": "newData.isString() && newData.val().length <= 128"
+            },
+            "reviewedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "reviewerAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/) && auth.token.email === newData.val() + '@moa-ai.app'"
+            },
+            "reviewerUid": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "note": {
+              ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().length > 0"
+            },
+            "action": {
+              ".validate": "newData.val() === 'change' || newData.val() === 'undo'"
+            },
+            "undoOf": {
+              ".validate": "newData.isString() && newData.val().length <= 128"
             },
             "$other": {
               ".validate": false

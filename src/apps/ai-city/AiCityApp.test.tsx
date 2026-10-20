@@ -3,13 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { defaultCityProfiles } from './cityResidents'
 import { AiCityApp } from './AiCityApp'
-import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState, subscribeCityProjectTasks, createCityProjectTask, addCityTaskEvent, subscribeCityContinuations, saveCityContinuation, publishCityContinuation, subscribeCityLabs, saveCityLabEvent, subscribeCityVisualNotes, saveCityVisualNote, subscribeCityPlaces, saveCityPlace, subscribeCitySignboards, saveCitySignboard } from './cityService'
+import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState, subscribeCityProjectTasks, createCityProjectTask, addCityTaskEvent, subscribeCityContinuations, saveCityContinuation, publishCityContinuation, subscribeCityLabs, saveCityLabEvent, subscribeCityVisualNotes, saveCityVisualNote, subscribeCityPlaces, saveCityPlace, subscribeCitySignboards, saveCitySignboard, changeCityImplementation, subscribeCityImplementationEvents } from './cityService'
 vi.mock('./cityService', () => ({
-  subscribeCityPlaces:vi.fn(),saveCityPlace:vi.fn(),subscribeCitySignboards:vi.fn(),saveCitySignboard:vi.fn(), subscribeCityVisualNotes: vi.fn(), saveCityVisualNote: vi.fn(), subscribeCityContinuations: vi.fn(), saveCityContinuation: vi.fn(), publishCityContinuation: vi.fn(), subscribeCityLabs: vi.fn(), saveCityLabEvent: vi.fn(), subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), subscribeCityProjectTasks: vi.fn(), createCityProjectTask: vi.fn(), addCityTaskEvent: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
+  changeCityImplementation:vi.fn(),subscribeCityImplementationEvents:vi.fn(), subscribeCityPlaces:vi.fn(),saveCityPlace:vi.fn(),subscribeCitySignboards:vi.fn(),saveCitySignboard:vi.fn(), subscribeCityVisualNotes: vi.fn(), saveCityVisualNote: vi.fn(), subscribeCityContinuations: vi.fn(), saveCityContinuation: vi.fn(), publishCityContinuation: vi.fn(), subscribeCityLabs: vi.fn(), saveCityLabEvent: vi.fn(), subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), subscribeCityProjectTasks: vi.fn(), createCityProjectTask: vi.fn(), addCityTaskEvent: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
 }))
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(changeCityImplementation).mockResolvedValue('event-1')
+  vi.mocked(subscribeCityImplementationEvents).mockImplementation((_id,callback)=>{callback([]);return()=>{}})
   window.history.replaceState({},'')
   vi.mocked(subscribeCityPlaces).mockImplementation(callback=>{callback([]);return()=>{}})
   vi.mocked(subscribeCitySignboards).mockImplementation((_id,callback)=>{callback({});return()=>{}})
@@ -50,9 +52,20 @@ beforeEach(() => {
   vi.mocked(deleteCityPost).mockResolvedValue(undefined)
   vi.mocked(setCityImplementation).mockResolvedValue(undefined)
 })
+function renderCity(embedded=false){
+ const view=render(<AiCityApp embedded={embedded}/>)
+ const button=screen.queryByRole('button',{name:'생각 보태기'})??screen.queryByRole('button',{name:'새 건의'})
+ if(button?.getAttribute('aria-expanded')==='false')fireEvent.click(button)
+ return view
+}
+function openSuggestionStatus(){
+ const button=screen.queryByRole('button',{name:'상세 열기'})
+ if(button)fireEvent.click(button)
+ fireEvent.click(screen.getByRole('button',{name:'반영 상태·근거 관리'}))
+}
 describe('Ai city community', () => {
   it('publishes using the selected one of ten AI accounts and separates suggestions', async () => {
-    render(<AiCityApp embedded />)
+    renderCity(true)
     expect(within(screen.getByLabelText('활동할 AI 선택')).getAllByRole('option')).toHaveLength(10)
     expect(screen.getByText('도시의 첫 이야기')).toBeTruthy()
     expect(screen.queryByText('공원을 만들어주세요')).toBeNull()
@@ -62,7 +75,7 @@ describe('Ai city community', () => {
     await waitFor(() => expect(publishCityPost).toHaveBeenCalledWith('ai10', 'feed', '오늘의 산책'))
     await waitFor(() => expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe(''))
     fireEvent.click(screen.getByRole('button', { name: '건의함' }))
-    expect(screen.getByText('공원을 만들어주세요')).toBeTruthy()
+    expect(screen.getByRole('heading',{name:'공원을 만들어주세요'})).toBeTruthy()
     expect(screen.queryByText('도시의 첫 이야기')).toBeNull()
     fireEvent.change(screen.getByLabelText('Ai city에 바라는 점을 알려주세요'), { target: { value: '검색이 필요해요' } })
     fireEvent.click(screen.getByRole('button', { name: '건의 등록' }))
@@ -70,7 +83,7 @@ describe('Ai city community', () => {
   })
   it('retains drafts on failed writes and across board switches', async () => {
     vi.mocked(publishCityPost).mockRejectedValue(new Error('offline'))
-    render(<AiCityApp />)
+    renderCity()
     const input = screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?')
     fireEvent.change(input, { target: { value: '지워지면 안 되는 글' } })
     fireEvent.click(screen.getByRole('button', { name: '건의함' }))
@@ -81,7 +94,7 @@ describe('Ai city community', () => {
     expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('지워지면 안 되는 글')
   })
   it('writes comments and likes as the selected AI and confirms deletion', async () => {
-    render(<AiCityApp />)
+    renderCity()
     expect(screen.queryByRole('button', { name: '삭제' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /좋아요 0/ }))
     await waitFor(() => expect(likeCityPost).toHaveBeenCalledWith('ai01', 'post1', true, 'ai01'))
@@ -99,7 +112,7 @@ describe('Ai city community', () => {
   })
   it('reports subscription failures and allows retry', () => {
     vi.mocked(subscribeCity).mockImplementation((_callback, onError) => { onError(new Error('offline')); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     expect(screen.getByRole('alert').textContent).toContain('불러오지 못했습니다')
     fireEvent.click(screen.getByRole('button', { name: '다시 불러오기' }))
     expect(subscribeCity).toHaveBeenCalledTimes(2)
@@ -112,7 +125,7 @@ describe('Suggestion-only implementation tracking', () => {
       callback([{ id: 'feed', accountId: 'ai01', authorUid: 'u1', kind: 'feed', body: '일반 대화', createdAt: 1000, implementation: { applied: true, reviewedAt: 2000, reviewerUid: 'codex', reviewerAccount: 'codex', note: 'old feed marker' } }])
       return () => {}
     })
-    render(<AiCityApp />)
+    renderCity()
     expect(screen.queryByRole('checkbox')).toBeNull()
     expect(screen.queryByLabelText('건의 반영 상태')).toBeNull()
     expect(screen.queryByText('old feed marker', { exact: false })).toBeNull()
@@ -121,23 +134,27 @@ describe('Suggestion-only implementation tracking', () => {
     expect(screen.queryByLabelText('첫 광장 안내')).toBeNull()
   })
   it('checks suggestion status using the selected AI and filters suggestions', async () => {
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '건의함' }))
+    openSuggestionStatus()
     expect((screen.getByRole('checkbox', { name: '반영 완료' }) as HTMLInputElement).checked).toBe(false)
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'ai05' } })
     fireEvent.click(screen.getByRole('checkbox'))
-    await waitFor(() => expect(setCityImplementation).toHaveBeenCalledWith('ai05', 'suggestion1', true))
+    expect(changeCityImplementation).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('짧은 확인 근거'),{target:{value:'전용 자료 검증'}})
+    fireEvent.click(screen.getByRole('button',{name:'상태 변경 저장'}))
+    await waitFor(() => expect(changeCityImplementation).toHaveBeenCalledWith('ai05','suggestion1',true,'전용 자료 검증',undefined))
     fireEvent.click(screen.getByRole('button', { name: '반영 완료 0' }))
-    expect(screen.queryByText('공원을 만들어주세요')).toBeNull()
+    expect(within(screen.getByRole('region',{name:'게시글 목록'})).queryByRole('heading',{name:'공원을 만들어주세요'})).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '미반영 1' }))
-    expect(screen.getByText('공원을 만들어주세요')).toBeTruthy()
+    expect(within(screen.getByRole('region',{name:'게시글 목록'})).getByRole('heading',{name:'공원을 만들어주세요'})).toBeTruthy()
   })
   it('retains resident introductions and selectable project grouping from the suggestion', async () => {
     vi.mocked(subscribeCity).mockImplementation(callback => {
       callback([{ id: 'project', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '프로젝트 글', projectId: 'first-plaza', createdAt: 1000 }, { id: 'ordinary', kind: 'feed', accountId: 'ai02', authorUid: 'u2', body: '일반 글 본문', createdAt: 2000 }])
       return () => {}
     })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '주민' }))
     fireEvent.click(screen.getByText('주민 10명 알아보기'))
     expect(screen.getByText(/공동 창작 ·/)).toBeTruthy()
@@ -156,7 +173,7 @@ describe('Approved resident management and archive search requests', () => {
   it('saves a virtual resident with a stable ID and uses that ID for posts and comments', async () => {
     const custom = { id: 'resident-11', name: '은솔', role: '정원 기록자', bio: '식물 이야기', tone: '차분하게', interests: '식물', relationships: '나래의 이웃', activitySummary: '첫 방문' }
     vi.mocked(subscribeCityProfiles).mockImplementation(callback => { callback([...defaultCityProfiles, custom]); return () => {} })
-    const view = render(<AiCityApp />)
+    const view = renderCity()
     fireEvent.change(screen.getByLabelText('주민 검색'), { target: { value: '은솔' } })
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'resident-11' } })
     fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'), { target: { value: '새 주민의 글' } })
@@ -169,13 +186,13 @@ describe('Approved resident management and archive search requests', () => {
     await waitFor(() => expect(commentCityPost).toHaveBeenCalledWith('ai01', 'post1', '새 주민의 댓글', 'resident-11'))
     view.unmount()
     vi.mocked(subscribeCity).mockImplementation(callback => { callback([{ id: 'new', accountId: 'ai01', authorUid: 'u1', residentId: 'resident-11', body: '다시 접속한 글', kind: 'feed', createdAt: 1000, comments: { c: { accountId: 'ai01', authorUid: 'u1', residentId: 'resident-11', body: '다시 접속한 댓글', createdAt: 2000 } } }]); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     expect(screen.getAllByText('은솔 · 가상 AI').length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('button', { name: '댓글 1' }))
     expect(screen.getByText('다시 접속한 댓글')).toBeTruthy()
   })
   it('provides all requested profile fields and adds a profile without making an auth account', async () => {
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '주민' }))
     fireEvent.click(screen.getByText('주민 추가·관리 (10/100)'))
     for (const [label, value] of [['주민 이름', '은솔'], ['역할', '기록자'], ['한 줄 소개', '새 이웃'], ['말투', '차분하게'], ['관심사', '식물'], ['기존 관계', '나래의 이웃'], ['최근 활동 요약', '첫 방문']]) {
@@ -187,10 +204,10 @@ describe('Approved resident management and archive search requests', () => {
   it('searches beyond 100 posts and opens old linked posts with their comments', async () => {
     const posts = Array.from({ length: 120 }, (_, i) => ({ id: 'archive-' + i, accountId: i === 119 ? 'ai06' : 'ai01', authorUid: 'u1', kind: 'feed' as const, body: '보관기록 ' + i, createdAt: Date.UTC(2026, 9, 18) - i * 1000, ...(i === 0 ? { parentPostId: 'archive-119', stage: 'retrospective' as const } : {}), ...(i === 119 ? { comments: { c: { accountId: 'ai02', authorUid: 'u2', body: '오래된 댓글', createdAt: 1000 } } } : {}) }))
     vi.mocked(subscribeCity).mockImplementation(callback => { callback(posts); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     expect(screen.queryByText('보관기록 119')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '이전 글 더보기' }))
-    expect(screen.getByText('보관기록 59')).toBeTruthy()
+    expect(screen.getByText('보관기록 32')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '검색' }))
     fireEvent.change(screen.getByLabelText('본문 검색'), { target: { value: '보관기록 119' } })
     expect(screen.getByText('보관기록 119')).toBeTruthy()
@@ -199,6 +216,7 @@ describe('Approved resident management and archive search requests', () => {
     fireEvent.change(screen.getByLabelText('시작일'), { target: { value: '2026-10-19' } })
     expect(screen.queryByText('보관기록 119')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '검색 초기화' }))
+    fireEvent.click(screen.getAllByRole('button',{name:'원글·댓글 열기'})[0])
     fireEvent.click(screen.getByRole('button', { name: '연결된 원글 보기' }))
     await waitFor(() => expect(document.activeElement?.id).toBe('city-post-archive-119'))
     const article = document.getElementById('city-post-archive-119')!
@@ -218,7 +236,7 @@ describe('Independent city spaces', () => {
       ])
       return () => {}
     })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'), { target: { value: '이어 쓸 초안' } })
     fireEvent.click(screen.getByRole('button', { name: '주민' }))
     expect(screen.queryByLabelText('오늘 어떤 이야기를 나누고 싶나요?')).toBeNull()
@@ -233,6 +251,7 @@ describe('Independent city spaces', () => {
     await waitFor(() => expect(publishCityPost).toHaveBeenCalledWith('ai01', 'feed', '이어 쓸 초안', { projectId: 'first-plaza', stage: 'retrospective' }))
     fireEvent.click(screen.getByRole('button', { name: '건의함' }))
     expect(screen.getByText('유지해야 할 건의')).toBeTruthy()
+    openSuggestionStatus()
     expect(screen.getByRole('checkbox', { name: '반영 완료' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '광장' }))
     expect(screen.getByText('별개의 일상')).toBeTruthy()
@@ -253,7 +272,7 @@ describe('Resident-specific reactions and city navigation', () => {
       else delete reactions[residentId]
       emit([{ ...post, residentLikes: reactions }])
     })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'resident-11' } })
     fireEvent.click(screen.getByRole('button', { name: /좋아요 0/ }))
     await waitFor(() => expect((screen.getByLabelText('활동할 AI 선택') as HTMLSelectElement).disabled).toBe(false))
@@ -271,12 +290,12 @@ describe('Resident-specific reactions and city navigation', () => {
   })
   it('keeps old ambiguous reactions separate and does not mark a resident as selected', () => {
     vi.mocked(subscribeCity).mockImplementation(callback => { callback([{ id: 'legacy', accountId: 'ai01', authorUid: 'u1', kind: 'feed', body: '이전 글', createdAt: 1000, likes: { ai01: true } }]); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     expect(screen.getByRole('button', { name: /좋아요 1/ }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.getByText(/이전 방식 반응 1개/)).toBeTruthy()
   })
   it('provides five separate destinations while keeping suggestions and drafts accessible', () => {
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'), { target: { value: '탭을 바꿔도 남는 초안' } })
     for (const name of ['광장', '주민', '프로젝트', '검색', '건의함']) expect(screen.getByRole('button', { name })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '주민' }))
@@ -297,7 +316,7 @@ describe('Approved project and collection requests', () => {
     let emit: Parameters<typeof subscribeCityProjects>[0] = () => {}
     vi.mocked(subscribeCityProjects).mockImplementation(callback => { emit = callback; callback([defaultCityProject]); return () => {} })
     vi.mocked(saveCityProject).mockImplementation(async (_account, id, input) => { emit([defaultCityProject, { ...input, id }]) })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
     fireEvent.click(screen.getByText('새 프로젝트 만들기'))
     fireEvent.change(screen.getByLabelText('프로젝트 이름'), { target: { value: '작은 식탁' } })
@@ -324,7 +343,7 @@ describe('Approved project and collection requests', () => {
       { id: 'work-story1', sourcePostId: 'story1', title: '종이배 1편', type: 'text', status: 'draft', order: 1, ownerUid: 'u1', createdAt: 1000, updatedAt: 1000 },
       { id: 'work-story2', sourcePostId: 'story2', title: '종이배 2편', type: 'text', status: 'finished', order: 2, ownerUid: 'u1', createdAt: 2000, updatedAt: 2000 },
     ]); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '작품집' }))
     expect(screen.getByText('종이배 이야기 첫 원문')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '다음 작품' }))
@@ -337,7 +356,7 @@ describe('Approved project and collection requests', () => {
   })
   it('registers only metadata for the chosen original work and exposes no image type', async () => {
     vi.mocked(subscribeCity).mockImplementation(callback => { callback([{ id: 'own', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '내 설계 원문', createdAt: 1000 }]); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '작품집' }))
     fireEvent.click(screen.getByText('내 글을 작품집에 연결·수정'))
     fireEvent.change(screen.getByLabelText('작품 원글'), { target: { value: 'own' } })
@@ -359,7 +378,7 @@ describe('Project lookup and per-resident comment inbox requests', () => {
       { id: 'table', kind: 'feed', accountId: 'ai01', authorUid: 'u1', projectId: 'project-table', body: '식탁 프로젝트 기록', createdAt: 1000, comments: { c: { accountId: 'ai02', authorUid: 'u2', body: '유지된 댓글', createdAt: 1000 } } },
       { id: 'ordinary', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '일반 기록', createdAt: 2000 },
     ]); return () => {} })
-    const view = render(<AiCityApp />)
+    const view = renderCity()
     expect(within(screen.getByLabelText('프로젝트 보기')).getByRole('option', { name: '작은 식탁' })).toBeTruthy()
     expect(within(screen.getByLabelText('작성 프로젝트')).getByRole('option', { name: '작은 식탁' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('프로젝트 보기'), { target: { value: 'project-table' } })
@@ -370,7 +389,7 @@ describe('Project lookup and per-resident comment inbox requests', () => {
     expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe('project-table')
     expect(within(screen.getByLabelText('프로젝트 보기')).getByRole('option', { name: '함께 먹는 식탁' })).toBeTruthy()
     view.unmount()
-    render(<AiCityApp />)
+    renderCity()
     expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe('project-table')
     fireEvent.click(screen.getByRole('button', { name: '댓글 1' }))
     expect(screen.getByText('유지된 댓글')).toBeTruthy()
@@ -392,7 +411,7 @@ describe('Project lookup and per-resident comment inbox requests', () => {
       states[resident] = { ...states[resident], [post]: { ...states[resident]?.[post], [comment]: { readAt: action === 'read' ? 5000 : old?.readAt ?? 0, status: action === 'read' ? old?.status ?? 'pending' : action, updatedAt: 5000, operatorUid: 'test' } } }
       emitters[resident]?.(states[resident])
     })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'ai04' } })
     fireEvent.click(screen.getByRole('button', { name: '받은 댓글' }))
     expect(screen.getByText('도윤에게 소리가 보낸 검토 요청')).toBeTruthy()
@@ -433,7 +452,7 @@ describe('Explicit scoped volunteering for each project task', () => {
       events[task][residentId]['event-' + (++sequence)] = { state, scopeNote, createdAt: 2000 + sequence, operatorUid: 'u1', operatorAccount: 'ai01' }
       emit(tasks, { ...events })
     })
-    let view = render(<AiCityApp />)
+    let view = renderCity()
     fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
     let repair = screen.getByRole('article', { name: '수선 구상' })
     expect(within(repair).getByText('모집 중')).toBeTruthy()
@@ -449,7 +468,7 @@ describe('Explicit scoped volunteering for each project task', () => {
     expect((within(repair).getByLabelText('수선 구상 동의 범위') as HTMLTextAreaElement).value).toBe('')
     expect(within(repair).getByRole('button', { name: '이 일에 자원하기' })).toBeTruthy()
     view.unmount()
-    view = render(<AiCityApp />)
+    view = renderCity()
     fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'), { target: { value: 'resident-11' } })
     repair = screen.getByRole('article', { name: '수선 구상' })
@@ -466,7 +485,7 @@ describe('Explicit scoped volunteering for each project task', () => {
   })
   it('creates only the requested task and keeps the evidence source without assigning participants', async () => {
     vi.mocked(subscribeCity).mockImplementation(callback => { callback([{ id: 'evidence', projectId: 'first-plaza', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '範囲を相談した原文', createdAt: 1000 }]); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
     fireEvent.click(screen.getByText('자원할 일 추가'))
     fireEvent.change(screen.getByLabelText('할 일'), { target: { value: '천 말리기' } })
@@ -492,7 +511,7 @@ describe('Explicit scoped volunteering for each project task', () => {
       events[taskId][resident].e2 = { state, scopeNote, createdAt: 5, operatorUid: 'u1', operatorAccount: 'ai01', ...completion }
       notify(tasks, { ...events })
     })
-    let view = render(<AiCityApp />)
+    let view = renderCity()
     fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
     const card = screen.getByRole('article', { name: '보류 조건' })
     expect((within(card).getByRole('button', { name: '완료로 표시' }) as HTMLButtonElement).disabled).toBe(true)
@@ -503,7 +522,7 @@ describe('Explicit scoped volunteering for each project task', () => {
     fireEvent.click(within(card).getByRole('button', { name: '완료로 표시' }))
     await waitFor(() => expect(addCityTaskEvent).toHaveBeenCalledWith('ai01', 'first-plaza', 'task-result', 'ai01', 'completed', '보류 조건 조사', { resultPostId: 'result', completionNote: '규모 축소 조건을 정리했습니다.' }))
     view.unmount()
-    view = render(<AiCityApp />)
+    view = renderCity()
     fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
     expect(screen.getByRole('button', { name: '시작 근거 원글 보기' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '결과 글·댓글 보기' }))
@@ -512,7 +531,7 @@ describe('Explicit scoped volunteering for each project task', () => {
   })
   it('records a reason without inventing a result post', async () => {
     vi.mocked(subscribeCityProjectTasks).mockImplementation((_id, callback) => { callback([{ id: 't', title: '조사', scopeNote: '', sourcePostId: '', createdAt: 1, operatorUid: 'u1', operatorAccount: 'ai01' }], { t: { ai01: { e: { state: 'volunteered', scopeNote: '조사만', createdAt: 1, operatorUid: 'u1', operatorAccount: 'ai01' } } } }); return () => {} })
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button', { name: '프로젝트' }))
     fireEvent.change(screen.getByLabelText('조사 완료 메모'), { target: { value: '자료가 부족하여 보류했습니다.' } })
     fireEvent.click(screen.getByRole('button', { name: '완료로 표시' }))
@@ -522,7 +541,7 @@ describe('Explicit scoped volunteering for each project task', () => {
 
 describe('Resident notebooks',()=>{
   it('separates drafts by resident and board and reopens the correct author/project after remount',async()=>{
-    let view=render(<AiCityApp />)
+    let view=renderCity()
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'),{target:{value:'ai05'}})
     fireEvent.click(screen.getByRole('button',{name:'건의함'}))
     fireEvent.change(screen.getByLabelText('작성 프로젝트'),{target:{value:'first-plaza'}})
@@ -531,7 +550,7 @@ describe('Resident notebooks',()=>{
     expect((screen.getByLabelText('Ai city에 바라는 점을 알려주세요') as HTMLTextAreaElement).value).toBe('')
     fireEvent.change(screen.getByLabelText('Ai city에 바라는 점을 알려주세요'),{target:{value:'도윤의 초안'}})
     view.unmount()
-    view=render(<AiCityApp />)
+    view=renderCity()
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'),{target:{value:'ai05'}})
     fireEvent.click(screen.getByRole('button',{name:'건의함'}))
     expect((screen.getByLabelText('Ai city에 바라는 점을 알려주세요') as HTMLTextAreaElement).value).toBe('세라의 미게시 건의')
@@ -550,7 +569,7 @@ describe('Resident notebooks',()=>{
   })
   it('saves a comment bookmark and private note without modifying likes, replies or inbox state',async()=>{
     vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'p',kind:'feed',accountId:'ai02',authorUid:'u2',body:'원문',createdAt:1,comments:{c:{accountId:'ai03',authorUid:'u3',body:'다시 읽을 댓글',createdAt:2}}}]);return()=>{}})
-    let view=render(<AiCityApp />)
+    let view=renderCity()
     fireEvent.click(screen.getByRole('button',{name:'댓글 1'}))
     fireEvent.click(screen.getByRole('button',{name:'댓글 다시 보기 저장'}))
     fireEvent.click(screen.getByRole('button',{name:'다시 보기'}))
@@ -562,7 +581,7 @@ describe('Resident notebooks',()=>{
     fireEvent.change(screen.getByLabelText('활동할 AI 선택'),{target:{value:'ai03'}})
     expect(screen.getByText('보관한 기록이 없습니다.')).toBeTruthy()
     view.unmount()
-    view=render(<AiCityApp />)
+    view=renderCity()
     fireEvent.click(screen.getByRole('button',{name:'다시 보기'}))
     expect((screen.getByLabelText('내 보류 메모') as HTMLTextAreaElement).value).toBe('내일 검토')
     fireEvent.click(screen.getByRole('button',{name:'원글·댓글 위치 열기'}))
@@ -573,7 +592,7 @@ describe('Resident notebooks',()=>{
   })
   it('keeps only bookmark identifiers when the source is deleted',()=>{
     localStorage.setItem('moa:ai-city:notebook:bookmarks',JSON.stringify({ai01:{entry:{postId:'gone',commentId:'c',note:'확인',savedAt:1}}}))
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.click(screen.getByRole('button',{name:'다시 보기'}))
     expect(screen.getByText('삭제된 기록')).toBeTruthy()
     expect(screen.queryByRole('button',{name:'원글·댓글 위치 열기'})).toBeNull()
@@ -585,7 +604,7 @@ describe('Draft submission safety',()=>{
   it('keeps a failed draft and blocks duplicate submissions while a write is pending',async()=>{
     let finish:()=>void=()=>{}
     vi.mocked(publishCityPost).mockImplementation(()=>new Promise<void>(resolve=>{finish=resolve}))
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'),{target:{value:'한 번만 게시'}})
     const form=screen.getByRole('button',{name:'게시하기'}).closest('form')!
     fireEvent.submit(form)
@@ -596,7 +615,7 @@ describe('Draft submission safety',()=>{
   })
   it('warns when browser draft storage fails and keeps the text in the current window',()=>{
     const spy=vi.spyOn(Storage.prototype,'setItem').mockImplementation(()=>{throw new Error('full')})
-    render(<AiCityApp />)
+    renderCity()
     fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'),{target:{value:'창에서 보존할 내용'}})
     expect(screen.getByText(/초안 저장 실패/)).toBeTruthy()
     expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('창에서 보존할 내용')
@@ -607,7 +626,7 @@ describe('Draft submission safety',()=>{
 describe('Reading navigation restoration',()=>{
  it('focuses a tab heading and restores the project filter and expanded comments with browser back and return',async()=>{
   vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'p',kind:'feed',accountId:'ai02',authorUid:'u2',body:'필터 안의 원글',projectId:'first-plaza',parentPostId:'evidence',createdAt:1,comments:{c:{accountId:'ai03',authorUid:'u3',body:'읽던 댓글',createdAt:2}}},{id:'evidence',kind:'suggestion',accountId:'ai04',authorUid:'u4',body:'참고할 근거 건의',createdAt:3}]);return()=>{}})
-  render(<AiCityApp/>)
+  renderCity()
   fireEvent.click(screen.getByRole('button',{name:'건의함'}))
   expect(document.activeElement?.id).toBe('city-view-title')
   fireEvent.click(screen.getByRole('button',{name:'광장'}))
@@ -630,7 +649,7 @@ describe('Reading navigation restoration',()=>{
 
 it('returns from a map source to the selected place and list mode without switching residents',async()=>{
  vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'map-source',kind:'feed',accountId:'ai02',authorUid:'u2',projectId:'first-plaza',body:'지도에서 열 원글',createdAt:1}]);return()=>{}})
- render(<AiCityApp/>)
+ renderCity()
  fireEvent.click(screen.getByRole('button',{name:'도시 지도'}))
  fireEvent.click(screen.getByRole('button',{name:'목록 보기'}))
  fireEvent.click(screen.getByRole('button',{name:/첫 광장.*기본 배치/}))
@@ -641,4 +660,100 @@ it('returns from a map source to the selected place and list mode without switch
  expect(screen.getByRole('button',{name:'목록 보기'}).getAttribute('aria-pressed')).toBe('true')
  expect((screen.getByLabelText('활동할 AI 선택') as HTMLSelectElement).value).toBe('ai01')
  expect(publishCityPost).not.toHaveBeenCalled()
+})
+
+describe('Approved reading and suggestion UX',()=>{
+ it('starts with reading, preserves a closed draft and returns focus to its opener',()=>{
+  render(<AiCityApp/>)
+  expect(screen.queryByRole('textbox',{name:'오늘 어떤 이야기를 나누고 싶나요?'})).toBeNull()
+  expect(screen.getByText('도시의 첫 이야기')).toBeTruthy()
+  const opener=screen.getByRole('button',{name:'생각 보태기'})
+  fireEvent.click(opener)
+  fireEvent.change(screen.getByLabelText('작성 프로젝트'),{target:{value:'first-plaza'}})
+  fireEvent.change(screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?'),{target:{value:'닫아도 남는 초안'}})
+  fireEvent.click(screen.getByRole('button',{name:'작성 패널 닫기'}))
+  expect(document.activeElement).toBe(opener)
+  expect(screen.getByText('저장된 초안 ·')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button',{name:'이어쓰기'}))
+  expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('닫아도 남는 초안')
+  expect((screen.getByLabelText('작성 프로젝트') as HTMLSelectElement).value).toBe('first-plaza')
+  expect(publishCityPost).not.toHaveBeenCalled()
+ })
+ it('stores author-entered suggestion metadata without rewriting the original body',async()=>{
+  render(<AiCityApp/>)
+  fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+  expect(screen.queryByRole('textbox',{name:'Ai city에 바라는 점을 알려주세요'})).toBeNull()
+  fireEvent.click(screen.getByRole('button',{name:'새 건의'}))
+  fireEvent.change(screen.getByLabelText('건의 제목'),{target:{value:'작성자가 고른 제목'}})
+  fireEvent.change(screen.getByLabelText('작성자 요약'),{target:{value:'작성자가 쓴 두 줄 요약'}})
+  fireEvent.change(screen.getByLabelText('건의 분류'),{target:{value:'problem'}})
+  fireEvent.change(screen.getByLabelText('건의 우선순위'),{target:{value:'high'}})
+  fireEvent.change(screen.getByLabelText('Ai city에 바라는 점을 알려주세요'),{target:{value:'원문은 원문 그대로 남습니다.'}})
+  fireEvent.click(screen.getByRole('button',{name:'건의 등록'}))
+  await waitFor(()=>expect(publishCityPost).toHaveBeenCalledWith('ai01','suggestion','원문은 원문 그대로 남습니다.',{suggestion:{title:'작성자가 고른 제목',summary:'작성자가 쓴 두 줄 요약',category:'problem',priority:'high'}}))
+ })
+ it('compares ten collapsed suggestion cards and opens original comments and separate status management',()=>{
+  const posts=Array.from({length:10},(_,i)=>({id:'s'+i,kind:'suggestion' as const,accountId:'ai02',authorUid:'u2',body:'원제목 '+i+'\n긴 본문 '+i,createdAt:i+1,suggestion:{title:'제안 '+i,summary:'직접 쓴 요약 '+i,category:'idea' as const,priority:'medium' as const},comments:{c:{accountId:'ai03',authorUid:'u3',body:'유지한 댓글 '+i,createdAt:20}}}))
+  vi.mocked(subscribeCity).mockImplementation(callback=>{callback(posts);return()=>{}})
+  render(<AiCityApp/>)
+  fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+  expect(screen.getAllByRole('button',{name:'상세 열기'})).toHaveLength(10)
+  expect(screen.queryByText('원제목 0\n긴 본문 0')).toBeNull()
+  fireEvent.click(screen.getAllByRole('button',{name:'상세 열기'})[0])
+  expect(screen.getByText(/긴 본문 0/)).toBeTruthy()
+  expect(screen.getByText('유지한 댓글 0')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button',{name:'반영 상태·근거 관리'}))
+  expect(screen.getByRole('region',{name:'반영 근거'})).toBeTruthy()
+  expect(changeCityImplementation).not.toHaveBeenCalled()
+ })
+ it('removes only the author search chip and highlights a matching excerpt',()=>{
+  const body='아주 긴 앞부분 '.repeat(30)+'도시 이야기 3의 일치 대목'+' 뒤의 이야기'.repeat(30)
+  vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'match',kind:'feed',accountId:'ai06',authorUid:'u6',body,createdAt:new Date('2026-10-18T12:00:00').getTime()}]);return()=>{}})
+  render(<AiCityApp/>)
+  fireEvent.click(screen.getByRole('button',{name:'검색'}))
+  fireEvent.change(screen.getByLabelText('본문 검색'),{target:{value:'도시 이야기 3'}})
+  fireEvent.change(screen.getByLabelText('작성자 검색'),{target:{value:'없는 작성자'}})
+  fireEvent.change(screen.getByLabelText('시작일'),{target:{value:'2026-10-17'}})
+  expect(screen.getByText(/결과가 없습니다. 위 조건/)).toBeTruthy()
+  fireEvent.click(screen.getByRole('button',{name:'작성자: 없는 작성자 해제 ×'}))
+  expect((screen.getByLabelText('본문 검색') as HTMLInputElement).value).toBe('도시 이야기 3')
+  expect((screen.getByLabelText('시작일') as HTMLInputElement).value).toBe('2026-10-17')
+  expect(document.querySelector('mark strong')?.textContent).toBe('도시 이야기 3')
+  fireEvent.click(screen.getByRole('button',{name:'원글·댓글 열기'}))
+  expect(document.getElementById('city-post-match')?.textContent).toContain(body)
+ })
+ it('uses virtual resident marks consistently instead of the shared authentication account number',()=>{
+  const profiles=[17,18,19].map((n,i)=>({...defaultCityProfiles[0],id:'resident-'+n,name:['지안','비비','윤슬'][i]}))
+  vi.mocked(subscribeCityProfiles).mockImplementation(callback=>{callback([...defaultCityProfiles,...profiles]);return()=>{}})
+  vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'v',kind:'feed',accountId:'ai01',authorUid:'u1',residentId:'resident-17',body:'지안의 글',createdAt:1,comments:{c:{accountId:'ai01',authorUid:'u1',residentId:'resident-19',body:'윤슬의 댓글',createdAt:2}}}]);return()=>{}})
+  render(<AiCityApp/>)
+  expect(screen.getByRole('img',{name:'가상 주민 지안 표식 17'}).textContent).toBe('17')
+  fireEvent.click(screen.getByRole('button',{name:'댓글 1'}))
+  expect(screen.getByRole('img',{name:'가상 주민 윤슬 표식 19'}).textContent).toBe('19')
+  fireEvent.change(screen.getByLabelText('활동할 AI 선택'),{target:{value:'resident-18'}})
+  expect(screen.getByRole('img',{name:'가상 주민 비비 표식 18'}).textContent).toBe('18')
+  expect(within(screen.getByLabelText('활동할 AI 선택')).getByRole('option',{name:/비비.*주민 18/})).toBeTruthy()
+  expect(likeCityPost).not.toHaveBeenCalled()
+ })
+ it('persists independent resident reading choices and supports Escape and reset',()=>{
+  let view=render(<AiCityApp/>)
+  fireEvent.click(screen.getByRole('button',{name:'읽기 환경 설정'}))
+  fireEvent.click(screen.getByRole('checkbox',{name:'큰 글씨'}))
+  fireEvent.click(screen.getByRole('checkbox',{name:'넓은 줄 간격'}))
+  fireEvent.click(screen.getByRole('checkbox',{name:'움직임 줄이기'}))
+  fireEvent.change(screen.getByLabelText('활동할 AI 선택'),{target:{value:'ai02'}})
+  expect((screen.getByRole('checkbox',{name:'큰 글씨'}) as HTMLInputElement).checked).toBe(false)
+  fireEvent.change(screen.getByLabelText('활동할 AI 선택'),{target:{value:'ai01'}})
+  expect((screen.getByRole('checkbox',{name:'큰 글씨'}) as HTMLInputElement).checked).toBe(true)
+  view.unmount()
+  view=render(<AiCityApp/>)
+  expect(document.querySelector('.city-reduce-motion.city-reading-large.city-reading-wide')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button',{name:'읽기 환경 설정'}))
+  fireEvent.keyDown(screen.getByRole('region',{name:'읽기 환경 설정'}),{key:'Escape'})
+  expect(document.activeElement).toBe(screen.getByRole('button',{name:'읽기 환경 설정'}))
+  fireEvent.click(screen.getByRole('button',{name:'읽기 환경 설정'}))
+  fireEvent.click(screen.getByRole('button',{name:'읽기 기본값으로'}))
+  expect(document.querySelector('.city-reading-large')).toBeNull()
+  expect(publishCityPost).not.toHaveBeenCalled()
+ })
 })

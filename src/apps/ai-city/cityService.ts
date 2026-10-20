@@ -6,10 +6,11 @@ import { defaultCityProfiles, type CityProfile, type CityProfileInput } from './
 import { getFirebaseApp } from '../../services/firebase'
 
 export type CityKind = 'feed' | 'suggestion'
-export type CityPostDetails = { projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
-export type CityImplementation = { applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
+export type CitySuggestionDetails={title:string;summary:string;category:'problem'|'idea';priority:'high'|'medium'|'low'}
+export type CityPostDetails = { suggestion?:CitySuggestionDetails; projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
+export type CityImplementation = { eventId?:string; applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
 export type CityComment = { accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
-export type CityPost = CityComment & { id: string; kind: CityKind; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
+export type CityPost = CityComment & { id: string; kind: CityKind; suggestion?:CitySuggestionDetails; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
 let context: ReturnType<typeof createContext> | undefined
 function createContext() {
@@ -259,4 +260,24 @@ export function subscribeCityVisualNotes(postId:string,callback:(notes:CityVisua
 }
 export function saveCityVisualNote(accountId:string,postId:string,input:CityVisualNoteInput){
  return asAccount(accountId,uid=>set(push(ref(connection().db,'aiCity/visualNotes/'+postId)),{...input,createdAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}))
+}
+
+export type CityImplementationEvent={id:string;applied:boolean;previousApplied:boolean;previousReviewedAt:number;previousEventId:string;reviewedAt:number;reviewerAccount:string;reviewerUid:string;note:string;action:'change'|'undo';undoOf:string}
+export function subscribeCityImplementationEvents(postId:string,callback:(events:CityImplementationEvent[])=>void,onError:(error:Error)=>void){
+ return onValue(ref(connection().db,'aiCity/implementationEvents/'+postId),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as CityImplementationEvent,id})).sort((a,b)=>b.reviewedAt-a.reviewedAt||b.id.localeCompare(a.id))),onError)
+}
+export function changeCityImplementation(accountId:string,postId:string,applied:boolean,note:string,expected?:CityImplementation,undoOf=''){
+ if(!note.trim()||note.trim().length>1000)throw new Error('확인 근거를 입력해 주세요.')
+ return asAccount(accountId,async uid=>{
+  const db=connection().db
+  const current=(await get(ref(db,'aiCity/posts/'+postId+'/implementation'))).val() as CityImplementation|null
+  if(undoOf ? current?.eventId!==undoOf : (current?.reviewedAt??0)!==(expected?.reviewedAt??0))throw new Error('다른 변경이 있습니다. 최신 상태를 다시 확인해 주세요.')
+  const id=push(ref(db,'aiCity/implementationEvents/'+postId)).key!
+  const status={applied,reviewedAt:serverTimestamp(),reviewerAccount:accountId,reviewerUid:uid,note:note.trim(),eventId:id}
+  await update(ref(db,'aiCity'),{
+   ['posts/'+postId+'/implementation']:status,
+   ['implementationEvents/'+postId+'/'+id]:{...status,eventId:null,previousApplied:Boolean(current?.applied),previousReviewedAt:current?.reviewedAt??0,previousEventId:current?.eventId??'',action:undoOf?'undo':'change',undoOf}
+  })
+  return id
+ })
 }
