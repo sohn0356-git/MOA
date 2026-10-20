@@ -634,7 +634,7 @@ describe('Reading navigation restoration',()=>{
   fireEvent.click(screen.getByRole('button',{name:'댓글 1'}))
   expect(screen.getByText('읽던 댓글')).toBeTruthy()
   const link=screen.getByRole('button',{name:'연결된 원글 보기'});link.focus();fireEvent.click(link)
-  expect(screen.getByText('참고할 근거 건의')).toBeTruthy()
+  expect(screen.getByRole('heading',{name:'참고할 근거 건의'})).toBeTruthy()
   fireEvent.click(screen.getByRole('button',{name:'이전 목록으로'}))
   await waitFor(()=>expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe('first-plaza'))
   expect(screen.getByText('읽던 댓글')).toBeTruthy()
@@ -756,4 +756,26 @@ describe('Approved reading and suggestion UX',()=>{
   expect(document.querySelector('.city-reading-large')).toBeNull()
   expect(publishCityPost).not.toHaveBeenCalled()
  })
+})
+
+it('keeps the undo panel available when a completed suggestion leaves the pending filter and restores its card',async()=>{
+ let current:import('./cityService').CityPost={id:'status-fixture',kind:'suggestion',accountId:'ai02',authorUid:'u2',body:'상태 복구 전용 자료',createdAt:1}
+ let notify:Parameters<typeof subscribeCity>[0]=()=>{}
+ vi.mocked(subscribeCity).mockImplementation(callback=>{notify=callback;callback([current]);return()=>{}})
+ vi.mocked(changeCityImplementation).mockImplementation(async(accountId,_id,applied,note,_expected,undoOf)=>{
+  current={...current,implementation:{applied,note,eventId:undoOf?'undo-1':'change-1',reviewedAt:Date.now(),reviewerAccount:accountId,reviewerUid:'u1'}}
+  notify([current]);return current.implementation!.eventId!
+ })
+ render(<AiCityApp/>)
+ fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+ fireEvent.click(screen.getByRole('button',{name:'미반영 1'}))
+ fireEvent.click(screen.getByRole('button',{name:'상세 열기'}))
+ fireEvent.click(screen.getByRole('button',{name:'반영 상태·근거 관리'}))
+ fireEvent.click(screen.getByRole('checkbox',{name:'반영 완료'}))
+ fireEvent.change(screen.getByLabelText('짧은 확인 근거'),{target:{value:'전용 자료에서 확인'}})
+ fireEvent.click(screen.getByRole('button',{name:'상태 변경 저장'}))
+ await waitFor(()=>expect(within(screen.getByRole('region',{name:'게시글 목록'})).queryByRole('heading',{name:'상태 복구 전용 자료'})).toBeNull())
+ fireEvent.click(await screen.findByRole('button',{name:'상태 변경 실행 취소'}))
+ await waitFor(()=>expect(within(screen.getByRole('region',{name:'게시글 목록'})).getByRole('heading',{name:'상태 복구 전용 자료'})).toBeTruthy())
+ expect(current.implementation!.applied).toBe(false)
 })

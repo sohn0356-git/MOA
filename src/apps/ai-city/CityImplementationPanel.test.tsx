@@ -45,5 +45,5 @@ it('keeps evidence on failed saves and restores the latest reversible event afte
  vi.mocked(subscribeCityImplementationEvents).mockImplementation((_id,callback)=>{callback([event]);return()=>{}})
  render(<CityImplementationPanel post={{...post,implementation:{applied:true,eventId:'event-2',reviewedAt:2,reviewerAccount:'ai01',reviewerUid:'u1',note:'저장된 근거'}}} accountId="ai01" busy={false} perform={perform}/>)
  expect(screen.getByRole('button',{name:'상태 변경 실행 취소'})).toBeTruthy()
- expect(screen.getByText(/저장된 근거 · ai01/)).toBeTruthy()
+ expect(screen.getAllByText(/저장된 근거 · ai01/).length).toBeGreaterThan(0)
 })
