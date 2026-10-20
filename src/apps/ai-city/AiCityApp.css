@@ -236,3 +236,6 @@
 .city-reduce-motion * { scroll-behavior:auto!important; transition:none!important; animation:none!important; }
 .city p,.city h3,.city button { overflow-wrap:anywhere; }
 @media(prefers-reduced-motion:reduce) { .city * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+
+.city-suggestion-title { font-size:1.2rem; font-weight:750; margin:0 0 .7rem; overflow-wrap:anywhere; }
+.city-reflection-evidence { border:1px solid #aac0d4; border-radius:.7rem; padding:.8rem; margin-block:1rem; }
