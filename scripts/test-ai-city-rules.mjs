@@ -320,14 +320,16 @@ await check('ux-status','PUT',{...post,kind:'suggestion',body:'상태 전용 검
 async function statusWrite(eventId,applied,previous,action='change',undoOf='',expected=200,account='ai01'){
  const stamp=Date.now()
  const status={applied,reviewedAt:stamp,reviewerAccount:account,reviewerUid:account+'-uid',note:action==='undo'?'테스트 되돌림':'전용 검증 통과',eventId}
- const event={applied,previousApplied:previous?.applied??false,previousReviewedAt:previous?.reviewedAt??0,previousEventId:previous?.eventId??'',reviewedAt:stamp,reviewerAccount:account,reviewerUid:account+'-uid',note:status.note,action,undoOf}
+ const event={previousNote:previous?.note??'',previousReviewerAccount:previous?.reviewerAccount??'',previousReviewerUid:previous?.reviewerUid??'',applied,previousApplied:previous?.applied??false,previousReviewedAt:previous?.reviewedAt??0,previousEventId:previous?.eventId??'',reviewedAt:stamp,reviewerAccount:account,reviewerUid:account+'-uid',note:status.note,action,undoOf}
  const url=new URL(base+'/aiCity.json');url.searchParams.set('ns','demo-moa-default-rtdb')
  if(account)url.searchParams.set('auth',token(account+'-uid',account+'@moa-ai.app'))
  const response=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({['posts/ux-status/implementation']:status,['implementationEvents/ux-status/'+eventId]:event})})
  assert.equal(response.status,expected,await response.text())
  return status
 }
-const firstStatus=await statusWrite('change-1',true,null)
+const legacyStatus={applied:false,reviewedAt:Date.now(),reviewerAccount:'ai01',reviewerUid:'ai01-uid',note:'기존 확인 근거를 보존'}
+await check('ux-status/implementation','PUT',legacyStatus)
+const firstStatus=await statusWrite('change-1',true,legacyStatus)
 await statusWrite('stale-change',false,null,'change','',401)
 await statusWrite('wrong-undo',true,firstStatus,'undo','change-1',401)
 const restored=await statusWrite('undo-1',false,firstStatus,'undo','change-1')
@@ -340,7 +342,7 @@ const statusUrl=new URL(base+'/aiCity/posts/ux-status.json');statusUrl.searchPar
 assert.equal((await(await fetch(statusUrl)).json()).implementation.applied,false)
 const statusHistoryUrl=new URL(base+'/aiCity/implementationEvents/ux-status.json');statusHistoryUrl.searchParams.set('ns','demo-moa-default-rtdb')
 const statusHistory=await(await fetch(statusHistoryUrl)).json()
-assert.equal(statusHistory['change-1'].applied,true);assert.equal(statusHistory['undo-1'].applied,false);assert.equal(Object.keys(statusHistory).length,2)
+assert.equal(statusHistory['change-1'].previousNote,'기존 확인 근거를 보존');assert.equal(statusHistory['change-1'].applied,true);assert.equal(statusHistory['undo-1'].applied,false);assert.equal(Object.keys(statusHistory).length,2)
 const metaUrl=new URL(base+'/aiCity/posts/ux-meta.json');metaUrl.searchParams.set('ns','demo-moa-default-rtdb')
 const preservedMeta=await(await fetch(metaUrl)).json();assert.equal(preservedMeta.body,post.body);assert.ok(preservedMeta.comments.c1)
 await check('ux-meta','DELETE',undefined)

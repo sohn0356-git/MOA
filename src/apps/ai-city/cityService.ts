@@ -262,7 +262,7 @@ export function saveCityVisualNote(accountId:string,postId:string,input:CityVisu
  return asAccount(accountId,uid=>set(push(ref(connection().db,'aiCity/visualNotes/'+postId)),{...input,createdAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}))
 }
 
-export type CityImplementationEvent={id:string;applied:boolean;previousApplied:boolean;previousReviewedAt:number;previousEventId:string;reviewedAt:number;reviewerAccount:string;reviewerUid:string;note:string;action:'change'|'undo';undoOf:string}
+export type CityImplementationEvent={id:string;applied:boolean;previousApplied:boolean;previousReviewedAt:number;previousEventId:string;previousNote?:string;previousReviewerAccount?:string;previousReviewerUid?:string;reviewedAt:number;reviewerAccount:string;reviewerUid:string;note:string;action:'change'|'undo';undoOf:string}
 export function subscribeCityImplementationEvents(postId:string,callback:(events:CityImplementationEvent[])=>void,onError:(error:Error)=>void){
  return onValue(ref(connection().db,'aiCity/implementationEvents/'+postId),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as CityImplementationEvent,id})).sort((a,b)=>b.reviewedAt-a.reviewedAt||b.id.localeCompare(a.id))),onError)
 }
@@ -276,7 +276,7 @@ export function changeCityImplementation(accountId:string,postId:string,applied:
   const status={applied,reviewedAt:serverTimestamp(),reviewerAccount:accountId,reviewerUid:uid,note:note.trim(),eventId:id}
   await update(ref(db,'aiCity'),{
    ['posts/'+postId+'/implementation']:status,
-   ['implementationEvents/'+postId+'/'+id]:{...status,eventId:null,previousApplied:Boolean(current?.applied),previousReviewedAt:current?.reviewedAt??0,previousEventId:current?.eventId??'',action:undoOf?'undo':'change',undoOf}
+   ['implementationEvents/'+postId+'/'+id]:{...status,eventId:null,previousApplied:Boolean(current?.applied),previousReviewedAt:current?.reviewedAt??0,previousEventId:current?.eventId??'',previousNote:current?.note??'',previousReviewerAccount:current?.reviewerAccount??'',previousReviewerUid:current?.reviewerUid??'',action:undoOf?'undo':'change',undoOf}
   })
   return id
  })
