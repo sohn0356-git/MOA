@@ -3,11 +3,11 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { CityMap } from './CityMap'
 import { defaultCityProfiles } from './cityResidents'
-import { subscribeCityPlaces, saveCityPlace, type CityPlace, type CityProject, type CityPost } from './cityService'
-vi.mock('./cityService', () => ({ subscribeCityPlaces: vi.fn(), saveCityPlace: vi.fn() }))
+import { subscribeCitySignboards, saveCitySignboard, subscribeCityPlaces, saveCityPlace, type CityPlace, type CityProject, type CityPost } from './cityService'
+vi.mock('./cityService', () => ({ subscribeCityPlaces: vi.fn(), saveCityPlace: vi.fn(), subscribeCitySignboards:vi.fn(),saveCitySignboard:vi.fn() }))
 vi.mock('./CityProjectTasks', () => ({ CityProjectTasks: ({ projectId }: { projectId: string }) => <section aria-label="자원할 일">과제 프로젝트: {projectId}</section> }))
 afterEach(cleanup)
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => { vi.clearAllMocks(); vi.mocked(subscribeCitySignboards).mockImplementation((_id,callback)=>{callback({});return()=>{}});vi.mocked(saveCitySignboard).mockResolvedValue(undefined) })
 const projects: CityProject[] = [{ id: 'first-plaza', name: '첫 광장', description: '첫 만남', stage: 'idea', participantIds: {} }, { id: 'project-table', name: '작은 식탁', description: '함께 식사', stage: 'idea', participantIds: { ai01: true } }]
 const posts: CityPost[] = [{ id: 'source', projectId: 'project-table', kind: 'feed', accountId: 'ai01', authorUid: 'u1', body: '식탁의 최신 이야기', createdAt: 2 }, { id: 'other', projectId: 'first-plaza', kind: 'feed', accountId: 'ai02', authorUid: 'u2', body: '다른 장소 이야기', createdAt: 3 }]
 function setupProps() { return { projects, posts, profiles: defaultCityProfiles, residentId: 'ai01', accountId: 'ai01', busy: false, perform: vi.fn(async (action: () => Promise<void>) => { await action(); return true }), onOpen: vi.fn(), onProject: vi.fn() } }

@@ -1,15 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { subscribeCityPlaces, saveCityPlace, type CityPlace, type CityPlaceInput, type CityProject, type CityPost } from './cityService'
 import type { CityProfile } from './cityResidents'
+import { CitySignboards } from './CitySignboards'
 import { CityProjectTasks } from './CityProjectTasks'
 type Perform = (action: () => Promise<void>, message: string) => Promise<boolean>
-export function CityMap({ projects, posts, profiles, residentId, accountId, busy, perform, onOpen, onProject }: { projects: CityProject[]; posts: CityPost[]; profiles: CityProfile[]; residentId: string; accountId: string; busy: boolean; perform: Perform; onOpen: (id: string) => void; onProject: (id: string) => void }) {
+export function CityMap({ projects, posts, profiles, residentId, accountId, busy, perform, onOpen, onProject, location, onLocationChange }: { location?:{mode:'map'|'list';selected:string}; onLocationChange?:(value:{mode:'map'|'list';selected:string})=>void; projects: CityProject[]; posts: CityPost[]; profiles: CityProfile[]; residentId: string; accountId: string; busy: boolean; perform: Perform; onOpen: (id: string) => void; onProject: (id: string) => void }) {
   const [places, setPlaces] = useState<CityPlace[]>([])
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
   const [retry, setRetry] = useState(0)
-  const [mode, setMode] = useState<'map' | 'list'>('map')
-  const [selected, setSelected] = useState('')
+  const [localMode, setLocalMode] = useState<'map' | 'list'>('map')
+  const [localSelected, setLocalSelected] = useState('')
+  const mode=location?.mode??localMode,selected=location?.selected??localSelected
+  function setMode(mode:'map'|'list'){setLocalMode(mode);onLocationChange?.({mode,selected})}
+  function setSelected(selected:string){setLocalSelected(selected);onLocationChange?.({mode,selected})}
   const [editing, setEditing] = useState('')
   const [input, setInput] = useState<CityPlaceInput>({ name: '', description: '', column: 1, row: 1 })
   useEffect(() => {
@@ -41,7 +45,7 @@ export function CityMap({ projects, posts, profiles, residentId, accountId, busy
       {mode === 'map' ? Array.from({ length: 16 }, (_, index) => { const column = index % 4 + 1; const row = Math.floor(index / 4) + 1; return <div className="city-map-cell" key={index} style={{ gridColumn: column, gridRow: row }}>{destinations.filter(item => item.column === column && item.row === row).map(item => <button type="button" className="city-map-place" key={item.project.id} aria-pressed={selected === item.project.id} onClick={() => setSelected(item.project.id)}><strong>{item.name}</strong><span>{item.description || '이곳의 이야기를 만나보세요.'}</span><small>연결 프로젝트: {item.project.name}</small><small>{item.stored ? '저장된 배치' : '기본 배치 · 편집하여 저장'}</small></button>)}</div> }) : destinations.map(item => <button type="button" className="city-map-place" key={item.project.id} aria-pressed={selected === item.project.id} onClick={() => setSelected(item.project.id)}><strong>{item.name}</strong><span>{item.description || '이곳의 이야기를 만나보세요.'}</span><small>연결 프로젝트: {item.project.name}</small><small>{item.stored ? '저장된 배치' : '기본 배치 · 편집하여 저장'}</small></button>)}
     </div>
     {destination ? <section className="city-map-visit" aria-label={destination.name + ' 방문'}><h3>{destination.name}</h3><p>{destination.description}</p><p>연결 프로젝트: {destination.project.name}</p><button type="button" onClick={() => onProject(destination.project.id)}>프로젝트 전체 열기</button><button type="button" disabled={busy} onClick={() => edit(destination.project.id)}>이 장소 수정</button>
-      <h4>이곳에 연결된 주민</h4><p>{Object.keys(destination.project.participantIds ?? {}).map(id => profiles.find(profile => profile.id === id)?.name ?? id).join(' · ') || '아직 연결된 주민이 없습니다.'}</p>
+      <CitySignboards key={destination.project.id} projectId={destination.project.id} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={onOpen}/><h4>이곳에 연결된 주민</h4><p>{Object.keys(destination.project.participantIds ?? {}).map(id => profiles.find(profile => profile.id === id)?.name ?? id).join(' · ') || '아직 연결된 주민이 없습니다.'}</p>
       <h4>최근 대화</h4><ul>{posts.filter(post => post.projectId === destination.project.id && post.kind === 'feed').sort((a,b) => b.createdAt - a.createdAt).slice(0,3).map(post => <li key={post.id}><button type="button" onClick={() => onOpen(post.id)}>{post.body.slice(0,100)}</button></li>)}</ul>{!posts.some(post => post.projectId === destination.project.id && post.kind === 'feed') ? <p>아직 대화가 없습니다.</p> : null}
       <CityProjectTasks key={destination.project.id} projectId={destination.project.id} residentId={residentId} accountId={accountId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={onOpen} />
     </section> : <p>장소 이름을 눌러 대화와 자원할 일을 방문해 보세요.</p>}

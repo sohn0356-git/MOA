@@ -3,13 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { defaultCityProfiles } from './cityResidents'
 import { AiCityApp } from './AiCityApp'
-import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState, subscribeCityProjectTasks, createCityProjectTask, addCityTaskEvent, subscribeCityContinuations, saveCityContinuation, publishCityContinuation, subscribeCityLabs, saveCityLabEvent } from './cityService'
+import { commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState, subscribeCityProjectTasks, createCityProjectTask, addCityTaskEvent, subscribeCityContinuations, saveCityContinuation, publishCityContinuation, subscribeCityLabs, saveCityLabEvent, subscribeCityVisualNotes, saveCityVisualNote } from './cityService'
 vi.mock('./cityService', () => ({
-  subscribeCityContinuations: vi.fn(), saveCityContinuation: vi.fn(), publishCityContinuation: vi.fn(), subscribeCityLabs: vi.fn(), saveCityLabEvent: vi.fn(), subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), subscribeCityProjectTasks: vi.fn(), createCityProjectTask: vi.fn(), addCityTaskEvent: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
+  subscribeCityVisualNotes: vi.fn(), saveCityVisualNote: vi.fn(), subscribeCityContinuations: vi.fn(), saveCityContinuation: vi.fn(), publishCityContinuation: vi.fn(), subscribeCityLabs: vi.fn(), saveCityLabEvent: vi.fn(), subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), subscribeCityProjectTasks: vi.fn(), createCityProjectTask: vi.fn(), addCityTaskEvent: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
 }))
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
+  window.history.replaceState({},'')
+  vi.spyOn(window,'scrollTo').mockImplementation(()=>{})
+  vi.mocked(subscribeCityVisualNotes).mockImplementation((_id,callback)=>{callback([]);return()=>{}})
+  vi.mocked(saveCityVisualNote).mockResolvedValue(undefined)
   vi.mocked(subscribeCityContinuations).mockImplementation(callback=>{callback([]);return()=>{}})
   vi.mocked(subscribeCityLabs).mockImplementation((_id,callback)=>{callback({});return()=>{}})
   vi.mocked(saveCityContinuation).mockResolvedValue(undefined)
@@ -594,4 +598,28 @@ describe('Draft submission safety',()=>{
     expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('창에서 보존할 내용')
     spy.mockRestore()
   })
+})
+
+describe('Reading navigation restoration',()=>{
+ it('focuses a tab heading and restores the project filter and expanded comments with browser back and return',async()=>{
+  vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'p',kind:'feed',accountId:'ai02',authorUid:'u2',body:'필터 안의 원글',projectId:'first-plaza',parentPostId:'evidence',createdAt:1,comments:{c:{accountId:'ai03',authorUid:'u3',body:'읽던 댓글',createdAt:2}}},{id:'evidence',kind:'suggestion',accountId:'ai04',authorUid:'u4',body:'참고할 근거 건의',createdAt:3}]);return()=>{}})
+  render(<AiCityApp/>)
+  fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+  expect(document.activeElement?.id).toBe('city-view-title')
+  fireEvent.click(screen.getByRole('button',{name:'광장'}))
+  fireEvent.change(screen.getByLabelText('프로젝트 보기'),{target:{value:'first-plaza'}})
+  fireEvent.click(screen.getByRole('button',{name:'댓글 1'}))
+  expect(screen.getByText('읽던 댓글')).toBeTruthy()
+  const link=screen.getByRole('button',{name:'연결된 원글 보기'});link.focus();fireEvent.click(link)
+  expect(screen.getByText('참고할 근거 건의')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button',{name:'이전 목록으로'}))
+  await waitFor(()=>expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe('first-plaza'))
+  expect(screen.getByText('읽던 댓글')).toBeTruthy()
+  await waitFor(()=>expect(document.activeElement?.textContent).toBe('연결된 원글 보기'))
+  fireEvent.click(screen.getByRole('button',{name:'연결된 원글 보기'}))
+  window.history.back()
+  await waitFor(()=>expect((screen.getByLabelText('프로젝트 보기') as HTMLSelectElement).value).toBe('first-plaza'))
+  expect(screen.getByText('읽던 댓글')).toBeTruthy()
+  expect(publishCityPost).not.toHaveBeenCalled()
+ })
 })

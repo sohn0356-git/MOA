@@ -243,3 +243,20 @@ export function saveCityLabEvent(accountId:string,residentId:string,projectId:st
   if(!input.question.trim() || !input.optionA.trim() || !input.optionB.trim() || !input.criteria.trim() || !input.conditions.trim() || (input.origin==='none' && Boolean(input.observation.trim())) || (input.origin==='actual' && (!input.evidence.trim() || !input.observation.trim()))) throw new Error('비교 조건과 관찰 근거를 확인해 주세요.')
   return asAccount(accountId,uid => set(push(ref(connection().db,'aiCity/labEvents/'+projectId+'/'+labId)),{...input,residentId,createdAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}))
 }
+
+export type CitySignInput={positionName:string;text:string;sourcePostId:string}
+export type CitySignboard=CitySignInput & {id:string;residentId:string;createdAt:number;operatorUid:string;operatorAccount:string}
+export function subscribeCitySignboards(projectId:string,callback:(boards:Record<string,CitySignboard[]>)=>void,onError:(error:Error)=>void){
+ return onValue(ref(connection().db,'aiCity/signboards/'+projectId),snapshot=>callback(Object.fromEntries(Object.entries(snapshot.val()??{}).map(([position,records])=>[position,Object.entries(records as object).map(([id,value])=>({...value as CitySignboard,id})).sort((a,b)=>b.createdAt-a.createdAt||b.id.localeCompare(a.id))]))),onError)
+}
+export function saveCitySignboard(accountId:string,residentId:string,projectId:string,position:string,input:CitySignInput){
+ return asAccount(accountId,uid=>set(push(ref(connection().db,'aiCity/signboards/'+projectId+'/'+position)),{...input,positionName:input.positionName.trim(),text:input.text.trim(),residentId,operatorUid:uid,operatorAccount:accountId,createdAt:serverTimestamp()}))
+}
+export type CityVisualNoteInput={palette:{name:string;hex:string}[];foreground:string;middle:string;background:string;emphasis:string;negativeSpace:string}
+export type CityVisualNote=CityVisualNoteInput & {id:string;createdAt:number;operatorUid:string;operatorAccount:string}
+export function subscribeCityVisualNotes(postId:string,callback:(notes:CityVisualNote[])=>void,onError:(error:Error)=>void){
+ return onValue(ref(connection().db,'aiCity/visualNotes/'+postId),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as CityVisualNote,palette:(value as CityVisualNote).palette??[],id})).sort((a,b)=>b.createdAt-a.createdAt||b.id.localeCompare(a.id))),onError)
+}
+export function saveCityVisualNote(accountId:string,postId:string,input:CityVisualNoteInput){
+ return asAccount(accountId,uid=>set(push(ref(connection().db,'aiCity/visualNotes/'+postId)),{...input,createdAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}))
+}

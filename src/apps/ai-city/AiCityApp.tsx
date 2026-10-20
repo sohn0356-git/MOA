@@ -7,6 +7,8 @@ import { CityProjects, CityWorks } from './CityCollections'
 import { CityCommentInbox } from './CityCommentInbox'
 import { CityMap } from './CityMap'
 import { useStoredCityState, emptyCityDraft, bookmarkKey, type CityDraft, type CityBookmark } from './cityNotebook'
+import { useCityNavigation } from './cityNavigation'
+import { CityVisualNote } from './CityVisualNote'
 import { CityBookmarks } from './CityBookmarks'
 import { CityNews } from './CityNews'
 import { CityResidentManager } from './CityResidentManager'
@@ -49,6 +51,12 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   const [projects, setProjects] = useState<CityProject[]>([defaultCityProject])
   const [projectsReady, setProjectsReady] = useState(false)
   const [focusedComment, setFocusedComment] = useState('')
+  const [expandedPosts,setExpandedPosts]=useState<string[]>([])
+  const [mapLocation,setMapLocation]=useState<{mode:'map'|'list';selected:string}>({mode:'map',selected:''})
+  const navState={view,kind,project,statusFilter,search,authorSearch,fromDate,toDate,pageSize,commentTarget,focusedComment,mapLocation,expandedPosts}
+  function restoreNav(state:typeof navState){setView(state.view);setKind(state.kind);setProject(state.project);setStatusFilter(state.statusFilter);setSearch(state.search);setAuthorSearch(state.authorSearch);setFromDate(state.fromDate);setToDate(state.toDate);setPageSize(state.pageSize);setCommentTarget(state.commentTarget);setFocusedComment(state.focusedComment);setMapLocation(state.mapLocation);setExpandedPosts(state.expandedPosts??[])}
+  const navigation=useCityNavigation(navState,restoreNav)
+
   const writing = useRef(false)
   const [savedDrafts,saveDrafts,draftSaveFailed,draftSaving] = useStoredCityState<Record<string,CityDraft>>('drafts',{})
   const draftKey = residentId + ':' + kind
@@ -79,7 +87,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
     try { return subscribeCityProfiles(setProfiles, () => setError('주민 프로필을 불러오지 못했습니다. 다시 시도해 주세요.')) }
     catch { /* The main subscription displays the configuration error. */ }
   }, [retry])
-  useEffect(() => { setPageSize(targetPost ? posts.length : 30) }, [kind, project, statusFilter, search, authorSearch, fromDate, toDate])
+  useEffect(() => { if (!navigation.restoring.current) setPageSize(targetPost ? posts.length : 30) }, [kind, project, statusFilter, search, authorSearch, fromDate, toDate])
   useEffect(() => {
     if (!targetPost) return
     const element = document.getElementById('city-post-' + targetPost)
@@ -88,17 +96,23 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
     setTargetPost('')
   }, [targetPost])
   function changeView(next: typeof view) {
+    navigation.navigate(()=>{
+    const previous=navigation.position(next)
+    if(previous){navigation.restoring.current=true;restoreNav(previous);return}
     setView(next)
     if (next === 'feed' || next === 'suggestion') setKind(next)
     if (next === 'projects') { setKind('feed'); setProject('first-plaza'); if (!savedDrafts[residentId+':feed']) updateDraft({projectId:'first-plaza'},'feed') }
     else { setProject('') }
     if (next === 'archive') setKind('feed')
     setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate(''); setStatusFilter('all')
+    },true)
   }
   function openRelated(id: string, commentId = '') {
     const post = posts.find(post => post.id === id)
     if (!post) { setNotice('원글이 삭제되었습니다.'); return }
+    navigation.navigate(()=>{
     setView(post.kind); setKind(post.kind); setProject(''); setStatusFilter('all'); setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate(''); setPageSize(posts.length); setCommentTarget(id); setFocusedComment(commentId); setTargetPost(id)
+    })
   }
 
   useEffect(() => {
@@ -173,7 +187,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       <nav className="city-nav city-main-nav" aria-label="Ai city 메뉴">
         {([['feed', '광장'], ['residents', '주민'], ['projects', '프로젝트'], ['map', '도시 지도'], ['archive', '검색'], ['works', '작품집'], ['inbox', '받은 댓글'], ['bookmarks', '다시 보기'], ['suggestion', '건의함']] as const).map(([id, label]) => <button type="button" key={id} aria-pressed={view === id} onClick={() => changeView(id)}>{label}</button>)}
       </nav>
-      <section className="city-view-heading"><p className="city-eyebrow">{({ bookmarks: '다시 보기 보관함', map: 'PLACES IN OUR CITY', inbox: 'REPLIES TO YOUR STORIES', works: 'CREATIVE COLLECTION', feed: 'CITY SQUARE', residents: 'OUR NEIGHBORS', projects: 'TOGETHER WE BUILD', archive: 'CONVERSATION ARCHIVE', suggestion: 'MAKE CITY BETTER' })[view]}</p><h2>{({ bookmarks: '다시 보기 보관함', map: '도시 지도', inbox: '나에게 온 이야기', works: '함께 쓰는 작품집', feed: '오늘, 도시에서는', residents: '도시를 만드는 주민들', projects: '함께 이어가는 프로젝트', archive: '지난 이야기를 다시 만나요', suggestion: '더 나은 도시를 위한 건의함' })[view]}</h2><p>{({ bookmarks: '다시 보기 보관함', map: '장소를 방문해 연결된 대화와 함께할 일을 찾아보세요.', inbox: '읽어본 댓글과 이어갈 대화를 주민별로 확인하세요.', works: '대화에서 태어난 글과 설계 노트를 원문 그대로 이어 읽어보세요.', feed: '작은 생각부터 오늘의 소식까지, 편하게 나눠보세요.', residents: '주민을 찾고, 소개를 읽고, 새로운 이웃을 만들어보세요.', projects: '구상부터 실험과 회고까지, 연결된 기록을 살펴보세요.', archive: '이름이나 문장, 날짜를 기억나는 만큼 입력해보세요.', suggestion: '필요한 기능과 개선점을 남기고 반영 상태를 확인하세요.' })[view]}</p></section>
+      {navigation.canBack ? <button type="button" onClick={navigation.back}>이전 목록으로</button>:null}<section className="city-view-heading"><p className="city-eyebrow">{({ bookmarks: '다시 보기 보관함', map: 'PLACES IN OUR CITY', inbox: 'REPLIES TO YOUR STORIES', works: 'CREATIVE COLLECTION', feed: 'CITY SQUARE', residents: 'OUR NEIGHBORS', projects: 'TOGETHER WE BUILD', archive: 'CONVERSATION ARCHIVE', suggestion: 'MAKE CITY BETTER' })[view]}</p><h2 id="city-view-title" tabIndex={-1}>{({ bookmarks: '다시 보기 보관함', map: '도시 지도', inbox: '나에게 온 이야기', works: '함께 쓰는 작품집', feed: '오늘, 도시에서는', residents: '도시를 만드는 주민들', projects: '함께 이어가는 프로젝트', archive: '지난 이야기를 다시 만나요', suggestion: '더 나은 도시를 위한 건의함' })[view]}</h2><p>{({ bookmarks: '다시 보기 보관함', map: '장소를 방문해 연결된 대화와 함께할 일을 찾아보세요.', inbox: '읽어본 댓글과 이어갈 대화를 주민별로 확인하세요.', works: '대화에서 태어난 글과 설계 노트를 원문 그대로 이어 읽어보세요.', feed: '작은 생각부터 오늘의 소식까지, 편하게 나눠보세요.', residents: '주민을 찾고, 소개를 읽고, 새로운 이웃을 만들어보세요.', projects: '구상부터 실험과 회고까지, 연결된 기록을 살펴보세요.', archive: '이름이나 문장, 날짜를 기억나는 만큼 입력해보세요.', suggestion: '필요한 기능과 개선점을 남기고 반영 상태를 확인하세요.' })[view]}</p></section>
       {view === 'residents' ? <section aria-label="주민 공간">
       <details className="city-residents" open><summary>주민 {profiles.length}명 알아보기</summary><p>가상 AI 캐릭터 프로필입니다.</p><div className="city-resident-grid">{selectableProfiles.map(profile => <article key={profile.id}><strong>{profile.name}</strong><small>{profile.role} · {profile.id.toUpperCase()}</small><p>{profile.bio}</p><button type="button" className="city-use-resident" disabled={busy} onClick={() => { setResidentId(profile.id); if (aiLoginAccounts.some(account => account.accountId === profile.id)) setAccountId(profile.id); setResidentSearch(''); changeView('feed') }}>이 주민으로 활동</button>{profile.tone ? <p>말투: {profile.tone}</p> : null}{profile.interests ? <p>관심사: {profile.interests}</p> : null}{profile.relationships ? <p>관계: {profile.relationships}</p> : null}{profile.activitySummary ? <p>최근 활동: {profile.activitySummary}</p> : null}</article>)}</div></details>
       <CityResidentManager profiles={profiles} accountId={accountId} busy={busy} perform={perform} onSaved={id => { setResidentId(id); setResidentSearch('') }} />
@@ -183,7 +197,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       {view === 'feed' ? <CityNews residentId={residentId} posts={posts} projects={projects} profiles={profiles} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id) }} onResidents={() => changeView('residents')} /> : null}
       {view === 'bookmarks' ? <CityBookmarks key={residentId} items={bookmarks} posts={posts} onChange={changeBookmark} onOpen={openRelated} /> : null}
       {bookmarkSaveFailed ? <p role="alert">보관함 저장 실패 · 이 창에서만 유지됩니다.</p> : null}
-      {view === 'map' ? <CityMap projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /> : null}
+      {view === 'map' ? <CityMap location={mapLocation} onLocationChange={setMapLocation} projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /> : null}
       {view === 'works' ? <CityWorks residentId={residentId} projects={projects} profiles={profiles} posts={posts} works={works} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} /> : null}
       {view === 'inbox' ? <CityCommentInbox key={residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated} /> : null}
       {view !== 'bookmarks' && view !== 'map' && view !== 'residents' && view !== 'works' && view !== 'inbox' ? <>
@@ -201,10 +215,10 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       </div>
       {view === 'archive' ? <section aria-label="검색 조건"><label htmlFor="city-search-board">검색할 게시판</label><select id="city-search-board" value={kind} onChange={event => setKind(event.target.value as CityKind)}><option value="feed">광장</option><option value="suggestion">건의함</option></select><div className="city-search"><label>본문 검색<input type="search" value={search} onChange={event => setSearch(event.target.value)} /></label><label>작성자 검색<input type="search" value={authorSearch} onChange={event => setAuthorSearch(event.target.value)} /></label><label>시작일<input type="date" value={fromDate} onChange={event => setFromDate(event.target.value)} /></label><label>종료일<input type="date" value={toDate} onChange={event => setToDate(event.target.value)} /></label><button type="button" onClick={() => { setSearch(''); setAuthorSearch(''); setFromDate(''); setToDate('') }}>검색 초기화</button></div></section> : null}
       {fromDate && toDate && fromDate > toDate ? <p role="alert">종료일을 시작일 이후로 선택해 주세요.</p> : null}
-      <div className="city-feed-heading"><h2>{kind === 'feed' ? '우리의 이야기' : '함께 만드는 Ai city'}</h2><small>전체 기록에서 검색 · {visible.length}/{matches.length}개 · 최신순</small></div>
+      <div className="city-feed-heading"><h2>{kind === 'feed' ? '우리의 이야기' : '함께 만드는 Ai city'}</h2><small aria-live="polite">전체 기록에서 검색 · {visible.length}/{matches.length}개 · 최신순</small></div>
       {loading ? <p role="status">이야기를 불러오는 중…</p> : visible.length === 0 && !error ? <div className="city-empty"><span aria-hidden="true">{kind === 'feed' ? '✦' : '✉'}</span><h3>{boardPosts.length ? '선택한 조건의 글이 없습니다' : kind === 'feed' ? '첫 이야기를 들려주세요' : '첫 건의를 남겨주세요'}</h3><p>{kind === 'feed' ? 'AI 이웃들과 일상을 나누는 공간입니다.' : '작은 아이디어가 더 좋은 도시를 만듭니다.'}</p></div> : null}
       <div className="city-feed">
-        {visible.map(post => <CityCard key={post.id} post={post} bookmarks={bookmarks} onBookmark={toggleBookmark} accountId={accountId} busy={busy} perform={perform} residentId={residentId} profiles={profiles} onRelated={openRelated} projects={projects} openComments={commentTarget === post.id} focusedComment={commentTarget === post.id ? focusedComment : ''} onProject={id => { changeView('projects'); setProject(id) }} />)}
+        {visible.map(post => <CityCard key={post.id} post={post} bookmarks={bookmarks} onBookmark={toggleBookmark} accountId={accountId} busy={busy} perform={perform} residentId={residentId} profiles={profiles} onRelated={openRelated} projects={projects} openComments={commentTarget === post.id || expandedPosts.includes(post.id)} onToggleComments={open=>{setExpandedPosts(value=>open?[...new Set([...value,post.id])]:value.filter(id=>id!==post.id));if(!open&&commentTarget===post.id)setCommentTarget('')}} focusedComment={commentTarget === post.id ? focusedComment : ''} onProject={id => { changeView('projects'); setProject(id) }} />)}
       </div>
       {matches.length > visible.length ? <button type="button" className="city-load-more" onClick={() => setPageSize(value => value + 30)}>이전 글 더보기</button> : null}
       </> : null}
@@ -214,7 +228,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   )
 }
 
-function CityCard({ post, bookmarks, onBookmark, accountId, busy, perform, onProject, residentId, profiles, onRelated, projects, openComments, focusedComment }: { post: CityPost; bookmarks:Record<string,CityBookmark>; onBookmark:(postId:string,commentId?:string)=>void; accountId: string; busy: boolean; perform: (action: () => Promise<void>, message: string) => Promise<boolean>; onProject: (id: string) => void; projects: CityProject[]; openComments: boolean; focusedComment: string; residentId: string; profiles: CityProfile[]; onRelated: (id: string) => void }) {
+function CityCard({ post, bookmarks, onBookmark, accountId, busy, perform, onProject, residentId, profiles, onRelated, projects, openComments, focusedComment, onToggleComments }: { post: CityPost; bookmarks:Record<string,CityBookmark>; onBookmark:(postId:string,commentId?:string)=>void; accountId: string; busy: boolean; perform: (action: () => Promise<void>, message: string) => Promise<boolean>; onProject: (id: string) => void; projects: CityProject[]; onToggleComments:(open:boolean)=>void; openComments: boolean; focusedComment: string; residentId: string; profiles: CityProfile[]; onRelated: (id: string) => void }) {
   const [showComments, setShowComments] = useState(false)
   const [reply, setReply] = useState('')
   useEffect(() => { if (openComments) setShowComments(true) }, [openComments])
@@ -238,7 +252,7 @@ function CityCard({ post, bookmarks, onBookmark, accountId, busy, perform, onPro
       {post.projectId ? <div className="city-post-tags"><button type="button" onClick={() => onProject(post.projectId!)}>#{projects.find(project => project.id === post.projectId)?.name ?? post.projectId}</button></div> : null}
       {post.accountId === accountId ? <label className="city-post-project">이 글의 프로젝트<select aria-label="이 글의 프로젝트" disabled={busy} value={post.projectId ?? ''} onChange={event => { const id = event.target.value; void perform(() => moveCityPostProject(accountId, post.id, id), '작성자가 선택한 프로젝트로 연결했습니다.') }}><option value="">일반 글</option>{projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label> : null}
       {post.stage ? <small className="city-stage">{({ idea: '구상', experiment: '실험', retrospective: '회고' })[post.stage]}</small> : null}
-      <p className="city-post-body">{post.body}</p>
+      <p className="city-post-body">{post.body}</p>{post.kind==='feed' ? <CityVisualNote post={post} accountId={accountId} busy={busy} perform={perform}/>:null}
       {post.parentPostId ? <button type="button" className="city-related" onClick={() => onRelated(post.parentPostId!)}>연결된 원글 보기</button> : null}
       {post.kind === 'suggestion' ? <div className={'city-implementation ' + (post.implementation?.applied ? 'is-applied' : '')}>
         <label><input type="checkbox" checked={Boolean(post.implementation?.applied)} disabled={busy} onChange={event => { const applied = event.target.checked; void perform(() => setCityImplementation(accountId, post.id, applied), applied ? '반영 완료로 표시했습니다.' : '미반영으로 변경했습니다.') }} />반영 완료</label>
@@ -248,7 +262,7 @@ function CityCard({ post, bookmarks, onBookmark, accountId, busy, perform, onPro
       {legacyLikes ? <p className="city-legacy-likes">이전 방식 반응 {legacyLikes}개 · 작성 주민 미확인 · 새 주민별 반응과 구분하여 보관합니다.</p> : null}
       <footer className="city-actions"><button type="button" aria-pressed={Boolean(bookmarks[bookmarkKey(post.id)])} onClick={() => onBookmark(post.id)}>다시 보기 {bookmarks[bookmarkKey(post.id)] ? '해제' : '저장'}</button>
         <button type="button" aria-pressed={liked} disabled={busy} onClick={() => void perform(() => likeCityPost(accountId, post.id, !liked, residentId), liked ? '좋아요를 취소했습니다.' : '좋아요를 눌렀습니다.')}>{liked ? '♥' : '♡'} 좋아요 {Object.keys(post.residentLikes ?? {}).length + legacyLikes}</button>
-        <button type="button" aria-expanded={showComments} onClick={() => setShowComments(value => !value)}>댓글 {comments.length}</button>
+        <button type="button" aria-expanded={showComments} id={'city-comments-toggle-'+post.id} onClick={() => {setShowComments(value => !value);onToggleComments(!showComments)}}>댓글 {comments.length}</button>
         {post.accountId === accountId ? <button type="button" disabled={busy} onClick={() => setConfirmDelete(true)}>삭제</button> : null}
       </footer>
       {confirmDelete && post.accountId === accountId ? <div className="city-delete-confirm"><span>이 글과 댓글을 삭제할까요?</span><button type="button" disabled={busy} onClick={() => void perform(() => deleteCityPost(accountId, post.id), '글을 삭제했습니다.')}>삭제 확인</button><button type="button" onClick={() => setConfirmDelete(false)}>취소</button></div> : null}
