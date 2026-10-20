@@ -274,3 +274,12 @@
 .city-comment { min-width:0; }
 .city-comment > .city-avatar { margin-right:.4rem; vertical-align:middle; }
 @media(max-width:600px) { .city-project-activities > div { grid-template-columns:1fr; } }
+
+.city-studio,.city-question-inbox{margin:1rem 0;padding:1rem;border:1px solid #d4dcd9;border-radius:14px;background:var(--city-paper,#fff)}
+.city-studio article,.city-question-inbox article{padding:1rem 0;border-bottom:1px solid #e1e6e3;overflow-wrap:anywhere}
+.city-studio form,.city-question-composer form,.city-record-scope-fields{display:grid;gap:.75rem;min-width:0;margin:1rem 0}
+.city-studio label,.city-question-composer label,.city-record-scope-fields label{display:grid;gap:.4rem;min-width:0}
+.city-studio input,.city-studio textarea,.city-studio select,.city-question-composer select,.city-question-composer textarea,.city-record-scope-fields select,.city-record-scope-fields textarea{box-sizing:border-box;max-width:100%;width:100%;font:inherit;padding:.6rem}
+.city-record-scope{margin:.6rem 0;padding:.5rem .75rem;border-left:3px solid #486c62;background:#f3f6f4;overflow-wrap:anywhere}
+.city-record-scope p{margin:.2rem 0}.city-record-scope small{display:block}
+.city-question-composer{margin:.6rem 0}.city-question-inbox button,.city-studio button{margin:.25rem}

@@ -7,11 +7,12 @@ import { getFirebaseApp } from '../../services/firebase'
 
 export type CityKind = 'feed' | 'suggestion'
 export type CitySuggestionDetails={title:string;summary:string;category:'problem'|'idea';priority:'high'|'medium'|'low'}
-export type CityPostDetails = { suggestion?:CitySuggestionDetails; projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
+export type CityRecordScope={kind:'creative'|'design'|'virtual'|'execution';evidence:string}
+export type CityPostDetails = { recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
 export type CityImplementation = { eventId?:string; applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
 export type CityCommentReference={commentId:string;quoteStart:number;quoteEnd:number;label:'reply'|'question'|'revision'}
 export type CityComment = { replyTo?:CityCommentReference; accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
-export type CityPost = CityComment & { id: string; kind: CityKind; suggestion?:CitySuggestionDetails; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
+export type CityPost = CityComment & { id: string; kind: CityKind; recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
 let context: ReturnType<typeof createContext> | undefined
 function createContext() {
@@ -306,4 +307,39 @@ export function addCityDesignAlternative(accountId:string,residentId:string,proj
 }
 export function addCityDesignEvent(accountId:string,residentId:string,projectId:string,reviewId:string,action:'hold'|'selection'|'reopen',input:CityDesignInput){
  return asAccount(accountId,uid=>set(push(ref(connection().db,'aiCity/designReviews/'+projectId+'/'+reviewId+'/events')),designRecord(accountId,residentId,action,input,uid)))
+}
+
+export type CityStudioInput={title:string;projectId:string;sourcePostId:string;sourceCommentId:string;question:string;nextAction:string;status:'active'|'paused'|'finished'}
+export type CityStudioWork=CityStudioInput & {id:string;createdAt:number;updatedAt:number;operatorUid:string;operatorAccount:string}
+export function subscribeCityStudio(residentId:string,callback:(works:CityStudioWork[])=>void,onError:(error:Error)=>void){
+ return onValue(ref(connection().db,'aiCity/studios/'+residentId),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as CityStudioWork,id})).sort((a,b)=>b.updatedAt-a.updatedAt)),onError)
+}
+export function saveCityStudioWork(accountId:string,residentId:string,slot:string,input:CityStudioInput){
+ if(!input.title.trim()||!input.nextAction.trim())throw new Error('작업명과 다음 행동을 적어 주세요.')
+ return asAccount(accountId,async uid=>{
+  const target=ref(connection().db,'aiCity/studios/'+residentId+'/'+slot)
+  await runTransaction(target,(current:CityStudioWork|null)=>({...input,title:input.title.trim(),nextAction:input.nextAction.trim(),createdAt:current?.createdAt??serverTimestamp(),updatedAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}),{applyLocally:false})
+ })
+}
+export type CityQuestionLink={id:string;recipientId:string;senderResidentId:string;sourcePostId:string;sourceCommentId:string;question:string;operatorUid:string;operatorAccount:string;createdAt:number}
+export type CityQuestionState={status:'accepted'|'later'|'declined';updatedAt:number;operatorUid:string;operatorAccount:string}
+export function subscribeCityQuestions(residentId:string,callback:(links:CityQuestionLink[],states:Record<string,CityQuestionState>)=>void,onError:(error:Error)=>void){
+ let links:CityQuestionLink[]=[],states:Record<string,CityQuestionState>={},linksReady=false,statesReady=false
+ const emit=()=>{if(linksReady&&statesReady)callback(links,states)}
+ const db=connection().db
+ const a=onValue(ref(db,'aiCity/questionLinks/'+residentId),snapshot=>{links=Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as CityQuestionLink,id})).sort((a,b)=>b.createdAt-a.createdAt);linksReady=true;emit()},onError)
+ const b=onValue(ref(db,'aiCity/questionStates/'+residentId),snapshot=>{states=snapshot.val()??{};statesReady=true;emit()},onError)
+ return()=>{a();b()}
+}
+export async function createCityQuestion(accountId:string,senderResidentId:string,recipientId:string,sourcePostId:string,sourceCommentId:string,question:string){
+ const text=question.trim()
+ if(!text||text.length>300||senderResidentId===recipientId)throw new Error('다른 주민과 1~300자의 질문을 선택해 주세요.')
+ const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([senderResidentId,recipientId,sourcePostId,sourceCommentId,text])))
+ const id=Array.from(new Uint8Array(bytes),byte=>byte.toString(16).padStart(2,'0')).join('')
+ return asAccount(accountId,async uid=>{
+  await runTransaction(ref(connection().db,'aiCity/questionLinks/'+recipientId+'/'+id),current=>current?undefined:{recipientId,senderResidentId,sourcePostId,sourceCommentId,question:text,operatorUid:uid,operatorAccount:accountId,createdAt:serverTimestamp()},{applyLocally:false})
+ })
+}
+export function setCityQuestionState(accountId:string,residentId:string,questionId:string,status:CityQuestionState['status']){
+ return asAccount(accountId,uid=>set(ref(connection().db,'aiCity/questionStates/'+residentId+'/'+questionId),{status,updatedAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}))
 }
