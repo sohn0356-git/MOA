@@ -1416,7 +1416,7 @@
                   ".validate": false
                 }
               },
-              ".validate": "newData.numChildren() >= 3 && newData.numChildren() <= 10 && newData.hasChildren(['0','1','2'])",
+              ".validate": "newData.hasChildren(['0','1','2'])",
               "$other": {
                 ".validate": false
               }
@@ -1574,7 +1574,7 @@
                 ".validate": false
               }
             },
-            ".validate": "newData.numChildren() >= 3 && newData.numChildren() <= 10 && newData.hasChildren(['0','1','2'])",
+            ".validate": "newData.hasChildren(['0','1','2'])",
             "$other": {
               ".validate": false
             }

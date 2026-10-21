@@ -18,7 +18,7 @@ export function appendCityRecord(account:string,path:string,value:object){
 export function saveMaterial(account:string,input:Omit<Material,keyof Meta>){return appendCityRecord(account,'materials',input).then(()=>{})}
 export function addPostStage(account:string,postId:string,residentId:string,stage:Stage['stage']){return appendCityRecord(account,'postStages/'+postId,{residentId,stage}).then(()=>{})}
 export function correctComment(account:string,postId:string,commentId:string,residentId:string,body:string,reason:string,kind:Correction['kind']){
- if(!body.trim()||!reason.trim())throw new Error('正정 문장과 이유를 적어 주세요.')
+ if(!body.trim()||!reason.trim())throw new Error('정정 문장과 이유를 적어 주세요.')
  return appendCityRecord(account,'commentCorrections/'+postId+'/'+commentId,{residentId,body:body.trim(),reason:reason.trim(),kind}).then(()=>{})
 }
 export function withdrawQuestion(account:string,senderId:string,recipientId:string,questionId:string,reason:string){
