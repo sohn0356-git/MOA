@@ -32,7 +32,7 @@ export function saveTriage(account:string,residentId:string,postId:string,input:
   const db=cityDatabase(),id=push(ref(db,'aiCity/triageEvents/'+postId)).key!
   const candidates=(await get(ref(db,'aiCity/triageCandidates'))).val()??{}
   const updates:Record<string,unknown>={}
-  for(const [slot,value] of Object.entries(candidates)){if((value as {postId:string}).postId===postId)updates['triageCandidates/'+slot]=null}
+  for(const [slot,value] of Object.entries(candidates)){if(value&&(value as {postId:string}).postId===postId)updates['triageCandidates/'+slot]=null}
   if(input.stage==='candidate'){
    if(!['1','2','3'].includes(input.slot))throw new Error('실행 후보 자리 1~3을 선택해 주세요.')
    if(candidates[input.slot]&&candidates[input.slot].postId!==postId)throw new Error('다른 후보가 차지한 자리입니다. 다른 자리를 고르거나 기존 후보를 검토해 주세요.')

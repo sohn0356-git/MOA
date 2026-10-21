@@ -123,3 +123,10 @@ it('shows the exact referenced correction instead of silently substituting the l
  expect(screen.getByText('당시 조건')).toBeTruthy()
  expect(screen.queryByText('나중 문장')).toBeNull()
 })
+
+it('ignores empty numeric studio slots when composing the progress board',()=>{
+ vi.mocked(watchProgress).mockImplementation(callback=>{callback({ai01:[null,{title:'기존 작업',nextAction:'빈 자리 제외 후 확인',question:'조건',status:'paused',projectId:''}]} as never,{},{},{});return()=>{}})
+ render(<CityProgress profiles={[profiles[0]]} posts={[]} projects={[]} timezone="city" onOpen={vi.fn()} onStudio={vi.fn()}/>)
+ expect(screen.getByText(/다음 행동: 빈 자리 제외 후 확인/)).toBeTruthy()
+ expect(screen.getAllByRole('article')).toHaveLength(1)
+})

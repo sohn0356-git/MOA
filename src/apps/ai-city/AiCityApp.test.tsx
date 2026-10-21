@@ -712,7 +712,7 @@ describe('Approved reading and suggestion UX',()=>{
   fireEvent.click(screen.getByRole('button',{name:'건의함'}))
   expect(screen.getAllByRole('button',{name:'상세 열기'})).toHaveLength(10)
   expect(screen.queryByText('원제목 0\n긴 본문 0')).toBeNull()
-  fireEvent.click(screen.getAllByRole('button',{name:'상세 열기'})[0])
+  fireEvent.click(within(document.getElementById('city-post-s0')!).getByRole('button',{name:'상세 열기'}))
   expect(screen.getByText(/긴 본문 0/)).toBeTruthy()
   expect(screen.getByText('유지한 댓글 0')).toBeTruthy()
   fireEvent.click(screen.getByRole('button',{name:'반영 상태·근거 관리'}))

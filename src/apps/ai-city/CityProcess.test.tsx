@@ -216,3 +216,10 @@ it('uses the real common UI states and practices without writing city or browser
  expect(localStorage.length).toBe(0)
  expect(saveTriage).not.toHaveBeenCalled()
 })
+
+it('counts real candidate slots without treating Firebase array gaps as a fourth candidate',()=>{
+ vi.mocked(watchCityValue).mockImplementation((path,callback)=>{callback((path==='triageCandidates'?[null,{postId:'s1',eventId:'e1'}]:{}) as never);return()=>{}})
+ render(<CityTriage posts={[]} residentId="ai01" accountId="ai01" busy={false} ready perform={perform} onOpen={vi.fn()}/>)
+ fireEvent.click(screen.getByRole('button',{name:'건의 검토함 열기'}))
+ expect(screen.getByText('실행 후보 1/3')).toBeTruthy()
+})

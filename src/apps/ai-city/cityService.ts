@@ -314,7 +314,7 @@ export function addCityDesignEvent(accountId:string,residentId:string,projectId:
 export type CityStudioInput={title:string;projectId:string;sourcePostId:string;sourceCommentId:string;question:string;nextAction:string;status:'active'|'paused'|'finished'}
 export type CityStudioWork=CityStudioInput & {id:string;createdAt:number;updatedAt:number;operatorUid:string;operatorAccount:string}
 export function subscribeCityStudio(residentId:string,callback:(works:CityStudioWork[])=>void,onError:(error:Error)=>void){
- return onValue(ref(connection().db,'aiCity/studios/'+residentId),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as CityStudioWork,id})).sort((a,b)=>b.updatedAt-a.updatedAt)),onError)
+ return onValue(ref(connection().db,'aiCity/studios/'+residentId),snapshot=>callback(Object.entries(snapshot.val()??{}).filter(([,value])=>Boolean(value)).map(([id,value])=>({...value as CityStudioWork,id})).sort((a,b)=>b.updatedAt-a.updatedAt)),onError)
 }
 export function saveCityStudioWork(accountId:string,residentId:string,slot:string,input:CityStudioInput){
  if(!input.title.trim()||!input.nextAction.trim())throw new Error('작업명과 다음 행동을 적어 주세요.')

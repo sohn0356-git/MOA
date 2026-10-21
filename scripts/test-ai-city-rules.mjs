@@ -594,7 +594,7 @@ async function processTriage(postId,eventId,stage,slot,expected=200,relatedPostI
  const currentSlots=await(await fetch(processUrl('triageCandidates'))).json()??{}
  const record={...processMeta,stage,reason:'검토 이유 '+eventId,minimal:stage==='candidate'?'최소 구현 한 가지':'',screen:stage==='candidate'?'건의함':'',relatedPostId,slot:stage==='candidate'?slot:''}
  const changes={['triageEvents/'+postId+'/'+eventId]:record,['triageCurrent/'+postId]:{...record,eventId}}
- for(const [key,value] of Object.entries(currentSlots))if(value.postId===postId)changes['triageCandidates/'+key]=null
+ for(const [key,value] of Object.entries(currentSlots))if(value&&value.postId===postId)changes['triageCandidates/'+key]=null
  if(stage==='candidate')changes['triageCandidates/'+slot]={postId,eventId}
  const url=new URL(base+'/aiCity.json');url.searchParams.set('ns','demo-moa-default-rtdb');url.searchParams.set('auth',token('ai01-uid','ai01@moa-ai.app'))
  const response=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(changes)})
@@ -620,7 +620,7 @@ assert.equal((await(await fetch(processUrl('dependencyBoards/first-plaza/b2'))).
 assert.equal((await(await fetch(processUrl('reviewAnswers/first-plaza/r1/ai02'))).json()).e1.reason,response.reason)
 assert.equal(await(await fetch(processUrl('workshopMembers/first-plaza/session1/ai03'))).json(),null)
 assert.equal((await(await fetch(processUrl('recordQuotes/fixed1'))).json()).snapshotBody,processComment.body)
-assert.equal(Object.keys(await(await fetch(processUrl('triageCandidates'))).json()).length,3)
+assert.equal(Object.values(await(await fetch(processUrl('triageCandidates'))).json()).filter(Boolean).length,3)
 assert.equal((await(await fetch(processUrl('triageCurrent/process-suggestion-1'))).json()).reason,'검토 이유 pause1')
 assert.equal((await(await fetch(processUrl('posts/process-suggestion-1'))).json()).implementation,undefined)
 console.log('Ai city project maps, dependencies, review response history, workshops, record links, quote snapshots and capped independent triage passed.')
