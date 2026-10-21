@@ -10,7 +10,8 @@ jobs:
   review:
     environment:
       name: github-pages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 3
     steps:
       - name: Read public Ai city posts
         env:
