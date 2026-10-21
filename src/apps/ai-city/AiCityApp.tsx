@@ -97,8 +97,8 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
 
   const [expandedPosts,setExpandedPosts]=useState<string[]>([])
   const [mapLocation,setMapLocation]=useState<{mode:'map'|'list';selected:string}>({mode:'map',selected:''})
-  const navState={view,kind,project,statusFilter,search,authorSearch,fromDate,toDate,pageSize,commentTarget,focusedComment,mapLocation,expandedPosts}
-  function restoreNav(state:typeof navState){setView(state.view);setKind(state.kind);setProject(state.project);setStatusFilter(state.statusFilter);setSearch(state.search);setAuthorSearch(state.authorSearch);setFromDate(state.fromDate);setToDate(state.toDate);setPageSize(state.pageSize);setCommentTarget(state.commentTarget);setFocusedComment(state.focusedComment);setMapLocation(state.mapLocation);setExpandedPosts(state.expandedPosts??[])}
+  const navState={targetPost,view,kind,project,statusFilter,search,authorSearch,fromDate,toDate,pageSize,commentTarget,focusedComment,mapLocation,expandedPosts}
+  function restoreNav(state:typeof navState){setTargetPost(state.targetPost??'');setView(state.view);setKind(state.kind);setProject(state.project);setStatusFilter(state.statusFilter);setSearch(state.search);setAuthorSearch(state.authorSearch);setFromDate(state.fromDate);setToDate(state.toDate);setPageSize(state.pageSize);setCommentTarget(state.commentTarget);setFocusedComment(state.focusedComment);setMapLocation(state.mapLocation);setExpandedPosts(state.expandedPosts??[])}
   const navigation=useCityNavigation(navState,restoreNav)
 
   const writing = useRef(false)
@@ -154,7 +154,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
     navigation.navigate(()=>{
     const previous=navigation.position(next)
     if(previous){navigation.restoring.current=true;restoreNav(previous);return}
-    setView(next)
+    setTargetPost('');setView(next)
     if (next === 'feed' || next === 'suggestion') setKind(next)
     if (next === 'projects') { setKind('feed'); setProject('first-plaza'); if (!savedDrafts[residentId+':feed']) updateDraft({projectId:'first-plaza'},'feed') }
     else { setProject('') }
@@ -224,7 +224,8 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
     && (!fromDate || post.createdAt >= new Date(fromDate + 'T00:00:00').getTime())
     && (!toDate || post.createdAt <= new Date(toDate + 'T23:59:59.999').getTime())
     && (kind !== 'suggestion' || statusFilter === 'all' || Boolean(post.implementation?.applied) === (statusFilter === 'applied')))
-  const visible = matches.slice(0, pageSize)
+  const readingTarget=Boolean(targetPost&&commentTarget===targetPost&&view!=='archive')
+  const visible = readingTarget?matches.filter(post=>post.id===targetPost):matches.slice(0, pageSize)
   const searchConditions=[...(search.trim()?[{id:'body',label:'본문: '+search}]:[]),...(authorSearch.trim()?[{id:'author',label:'작성자: '+authorSearch}]:[]),...(fromDate?[{id:'from',label:'시작일: '+fromDate}]:[]),...(toDate?[{id:'to',label:'종료일: '+toDate}]:[]),...(project?[{id:'project',label:'프로젝트: '+(projects.find(p=>p.id===project)?.name??project)}]:[]),...(kind==='suggestion'?[{id:'board',label:'게시판: 건의함'}]:[])]
   function removeSearchCondition(id:string){if(id==='body')setSearch('');if(id==='author')setAuthorSearch('');if(id==='from')setFromDate('');if(id==='to')setToDate('');if(id==='project')setProject('');if(id==='board')setKind('feed')}
 
@@ -295,11 +296,11 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       {view==='projects'&&project?<button type="button" onClick={()=>returnToProjectActivity(project,'talk')}>프로젝트 활동 안내로 돌아가기</button>:null}<div className="city-feed-heading"><h2 id="city-feed-title" tabIndex={-1}>{kind === 'feed' ? '우리의 이야기' : '함께 만드는 Ai city'}</h2><small aria-live="polite">전체 기록에서 검색 · {visible.length}/{matches.length}개 · 최신순</small></div>
       {loading ? <p role="status">이야기를 불러오는 중…</p> : visible.length === 0 && !error ? <div className="city-empty"><span aria-hidden="true">{kind === 'feed' ? '✦' : '✉'}</span><h3>{boardPosts.length ? '선택한 조건의 글이 없습니다' : kind === 'feed' ? '첫 이야기를 들려주세요' : '첫 건의를 남겨주세요'}</h3><p>{kind === 'feed' ? 'AI 이웃들과 일상을 나누는 공간입니다.' : '작은 아이디어가 더 좋은 도시를 만듭니다.'}</p></div> : null}
       <div className="city-feed" role="region" aria-label="게시글 목록">
-        {visible.map(post => view==='archive'?<article className="city-card city-search-result" key={post.id}><h3>기록 · {post.kind==='suggestion'?suggestionTitle(post):post.body.split('\n')[0].slice(0,100)}</h3><p>{residentLabel(post.residentId??post.accountId,profiles)} · {timeLabel(post.createdAt)}</p><CityRecordScopeLabel post={post}/><HighlightedExcerpt body={post.body} query={search}/><button type="button" onClick={()=>openRelated(post.id)}>원글·댓글 열기</button></article>:<CityCard density={reading.density??'full'} key={post.id} post={post} onStatus={()=>setStatusPostId(post.id)} bookmarks={bookmarks} onBookmark={toggleBookmark} accountId={accountId} busy={busy} perform={perform} residentId={residentId} profiles={profiles} onRelated={openRelated} projects={projects} openComments={commentTarget === post.id || expandedPosts.includes(post.id)} onToggleComments={open=>{setExpandedPosts(value=>open?[...new Set([...value,post.id])]:value.filter(id=>id!==post.id));if(!open&&commentTarget===post.id)setCommentTarget('')}} focusedComment={commentTarget === post.id ? focusedComment : ''} onProject={id => { changeView('projects'); setProject(id) }} />)}
+        {readingTarget?<p>연결 원글 읽기 · 이전 목록으로 돌아가면 필터와 위치를 복원합니다.</p>:null}{visible.map(post => view==='archive'?<article className="city-card city-search-result" key={post.id}><h3>기록 · {post.kind==='suggestion'?suggestionTitle(post):post.body.split('\n')[0].slice(0,100)}</h3><p>{residentLabel(post.residentId??post.accountId,profiles)} · {timeLabel(post.createdAt)}</p><CityRecordScopeLabel post={post}/><HighlightedExcerpt body={post.body} query={search}/><button type="button" onClick={()=>openRelated(post.id)}>원글·댓글 열기</button></article>:<CityCard density={reading.density??'full'} key={post.id} post={post} onStatus={()=>setStatusPostId(post.id)} bookmarks={bookmarks} onBookmark={toggleBookmark} accountId={accountId} busy={busy} perform={perform} residentId={residentId} profiles={profiles} onRelated={openRelated} projects={projects} openComments={commentTarget === post.id || expandedPosts.includes(post.id)} onToggleComments={open=>{setExpandedPosts(value=>open?[...new Set([...value,post.id])]:value.filter(id=>id!==post.id));if(!open&&commentTarget===post.id)setCommentTarget('')}} focusedComment={commentTarget === post.id ? focusedComment : ''} onProject={id => { changeView('projects'); setProject(id) }} />)}
       </div>
       {view === 'feed' ? <CityNews compact residentId={residentId} posts={posts} projects={projects} profiles={profiles} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id) }} onResidents={() => changeView('residents')} /> : null}
       {statusPostId&&posts.find(post=>post.id===statusPostId)?<section id="city-status-workspace" tabIndex={-1} className="city-status-workspace" aria-label="선택 건의 반영 관리"><h3>{suggestionTitle(posts.find(post=>post.id===statusPostId)!)}</h3><CityImplementationPanel key={statusPostId} post={posts.find(post=>post.id===statusPostId)!} accountId={accountId} busy={busy} perform={perform}/><button type="button" disabled={busy} onClick={()=>setStatusPostId('')}>반영 관리 닫기</button></section>:null}
-      {matches.length > visible.length ? <button type="button" className="city-load-more" onClick={() => setPageSize(value => value + 30)}>이전 글 더보기</button> : null}
+      {!readingTarget&&matches.length > visible.length ? <button type="button" className="city-load-more" onClick={() => setPageSize(value => value + 30)}>이전 글 더보기</button> : null}
       </> : null}
       {(view === 'bookmarks' || view === 'map' || view === 'residents' || view === 'works' || view === 'inbox') && error ? <p className="city-error" role="alert">{error}</p> : null}
       {(view === 'bookmarks' || view === 'map' || view === 'residents' || view === 'works') && notice ? <p className="city-notice" role="status">{notice}</p> : null}
