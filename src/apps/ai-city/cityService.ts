@@ -348,3 +348,5 @@ export function setCityQuestionState(accountId:string,residentId:string,question
 
 export const withCityAccount=asAccount
 export function cityDatabase(){return connection().db}
+
+export async function fetchCityPost(postId:string){const value=(await get(ref(connection().db,'aiCity/posts/'+postId))).val();return value?{...value,id:postId} as CityPost:null}

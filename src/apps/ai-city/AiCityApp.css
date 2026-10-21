@@ -291,3 +291,25 @@
 .city section[aria-label="도시 출판실"] input,.city section[aria-label="도시 출판실"] select,.city form[aria-label="재료 후보 편집"] textarea,.city form[aria-label="재료 후보 편집"] select,.city form[aria-label="내 댓글 정정"] textarea{max-width:100%;box-sizing:border-box;width:100%;font:inherit}
 .city [role="dialog"]{padding:1rem;border:2px solid #486c62;background:#fff;position:relative;z-index:2}.city [role="dialog"] label{display:block;margin:.7rem 0}
 .city-corrections{border-left:2px solid #adbdb5;padding-left:.7rem}.city-corrections p{white-space:pre-wrap;overflow-wrap:anywhere}
+
+.city{--city-accent:#28665f;--city-neutral:#59625d;--city-gap-sm:8px;--city-gap:16px;--city-gap-lg:24px;--city-gap-xl:32px;font-size:16px;line-height:1.6}
+.city-ui-button,.city button{min-height:44px;max-width:100%;padding:8px 16px;border-radius:10px;white-space:normal;overflow-wrap:anywhere}
+.city-ui-button{border:1px solid #c9d2cd;background:#f4f6f4;color:#263b34;font:inherit}
+.city-ui-button.city-ui-primary{background:var(--city-accent);color:#fff;border-color:var(--city-accent)}.city-ui-button.city-ui-danger{background:#fff4f0;color:#8a3027;border-color:#a44e40}
+.city-ui-button:disabled{opacity:.55;cursor:wait}.city-ui-input,.city input:not([type="checkbox"]):not([type="radio"]),.city select,.city textarea{box-sizing:border-box;min-height:44px;max-width:100%;font:inherit;border-radius:8px}
+.city-ui-input{padding:8px 12px;border:1px solid #a9b7af}.city-ui-input[aria-invalid="true"]{border:2px solid #a5392e}
+.city :is(button,input,select,textarea,summary):focus-visible{outline:3px solid var(--city-accent);outline-offset:3px}
+.city-ui-card{padding:24px;min-width:0;overflow-wrap:anywhere}.city h2{font-size:24px}.city h3{font-size:20px}
+.city section[aria-label="도시 진행판"],.city section[aria-label="기록 연결·비교 탐색"],.city section[aria-label="반복 작업 묶음"],.city section[aria-label="건의 검토함"]{min-width:0;margin-block:24px}
+.city fieldset{min-width:0;margin-block:16px;padding:16px}.city fieldset label,.city section[aria-label="반복 작업 묶음"] label,.city section[aria-label="주민별 저장 보기"] label,.city section[aria-label="건의 검토함"] label{display:grid;gap:8px;margin-block:8px}
+.city fieldset textarea,.city fieldset input,.city fieldset select,.city-evidence-link textarea{width:100%;min-width:0}
+.city-screening{position:fixed;inset:0;z-index:300;overflow:auto;background:#f5f3ee;color:#242823;padding:clamp(16px,4vw,40px);font-size:18px;line-height:1.7}
+.city-screening>header,.city-screening>nav{max-width:1080px;margin:0 auto 24px;display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between}
+.city-screening-grid{max-width:1080px;margin:auto;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px}.city-screening-grid>*{min-width:0}.city-screening h2{font-size:28px}.city-screening-text{white-space:pre-wrap;overflow-wrap:anywhere;max-width:720px}
+.city-screening aside{border-left:1px solid #c7cdc6;padding-left:24px}.city-screening nav{margin-top:24px}
+.city-comparison{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;font-size:17px;line-height:1.7}.city-comparison article{min-width:0;border:1px solid #d1d8d2;padding:16px}.city-comparison header{position:sticky;top:0;background:#f6f7f3;z-index:1}.city-comparison del,.city-comparison ins{text-decoration:underline;text-underline-offset:3px}.city-comparison strong{font-size:14px}
+.city-preserve-lines{white-space:pre-wrap;overflow-wrap:anywhere}
+.city-quote{position:relative;padding:16px;margin-block:16px;border:1px solid #aebbb2;overflow-wrap:anywhere}.city-quote-fixed{border-top-right-radius:20px}.city-quote-fixed:after{content:'';position:absolute;right:0;top:0;border-top:16px solid #d1d9d3;border-left:16px solid transparent}.city-quote-latest{border-style:solid}.city-quote>p:first-child{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+.city-saved-views{padding:20px;border:1px solid #d8e0d9;border-radius:12px;margin-block:16px}.city-saved-views>p:first-child{overflow-wrap:anywhere}.city-evidence-link{padding:16px;border-left:3px solid #8fa99d;margin-block:16px}.city-evidence-link p{overflow-wrap:anywhere}
+.city-ui-samples{display:grid;gap:24px;border:2px dashed #78988b;padding:24px}
+@media(max-width:680px){.city-screening-grid,.city-comparison{grid-template-columns:minmax(0,1fr)}.city-screening aside{border-left:0;border-top:1px solid #c7cdc6;padding:16px 0 0}.city-ui-card{padding:20px}.city-screening button{flex:1 1 140px}.city-saved-views details{max-width:100%}}

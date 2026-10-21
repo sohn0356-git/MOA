@@ -1601,6 +1601,1040 @@
           },
           ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('operatorUid').val() === auth.uid && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && newData.child('residentId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('residentId').val() && newData.child('title').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('title').val() && newData.child('operatorUid').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('operatorUid').val() && newData.child('operatorAccount').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('operatorAccount').val() && newData.child('createdAt').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('createdAt').val() && newData.child('scenes/0/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val() && newData.child('scenes/0/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/connection').val() && newData.child('scenes/1/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val() && newData.child('scenes/1/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/connection').val() && newData.child('scenes/2/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val() && newData.child('scenes/2/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/connection').val() && newData.child('scenes/3/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val() && newData.child('scenes/3/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/connection').val() && newData.child('scenes/4/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val() && newData.child('scenes/4/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/connection').val() && newData.child('scenes/5/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val() && newData.child('scenes/5/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/connection').val() && newData.child('scenes/6/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val() && newData.child('scenes/6/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/connection').val() && newData.child('scenes/7/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val() && newData.child('scenes/7/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/connection').val() && newData.child('scenes/8/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val() && newData.child('scenes/8/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/connection').val() && newData.child('scenes/9/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val() && newData.child('scenes/9/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/connection').val() && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('accepted').val() === true)))"
         }
+      },
+      "stageMaps": {
+        ".read": true,
+        "$projectId": {
+          "$versionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && ($projectId === 'first-plaza' || root.child('aiCity/projects').child($projectId).exists())",
+            ".validate": "newData.hasChildren(['residentId','points','operatorUid','operatorAccount','createdAt'])",
+            "points": {
+              "0": {
+                ".validate": "newData.hasChildren(['id','title','condition','unknown','reason','status','postId','commentId','labId']) && (newData.child('postId').val() === '' ? newData.child('commentId').val() === '' : root.child('aiCity/posts').child(newData.child('postId').val()).exists())",
+                "id": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "unknown": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "status": {
+                  ".validate": "newData.val() === 'preparing' || newData.val() === 'review' || newData.val() === 'passed' || newData.val() === 'paused'"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "labId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/labEvents').child($projectId).child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "1": {
+                ".validate": "newData.hasChildren(['id','title','condition','unknown','reason','status','postId','commentId','labId']) && (newData.child('postId').val() === '' ? newData.child('commentId').val() === '' : root.child('aiCity/posts').child(newData.child('postId').val()).exists())",
+                "id": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "unknown": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "status": {
+                  ".validate": "newData.val() === 'preparing' || newData.val() === 'review' || newData.val() === 'passed' || newData.val() === 'paused'"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "labId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/labEvents').child($projectId).child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "2": {
+                ".validate": "newData.hasChildren(['id','title','condition','unknown','reason','status','postId','commentId','labId']) && (newData.child('postId').val() === '' ? newData.child('commentId').val() === '' : root.child('aiCity/posts').child(newData.child('postId').val()).exists()) && newData.parent().child('1').exists()",
+                "id": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "unknown": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "status": {
+                  ".validate": "newData.val() === 'preparing' || newData.val() === 'review' || newData.val() === 'passed' || newData.val() === 'paused'"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "labId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/labEvents').child($projectId).child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "3": {
+                ".validate": "newData.hasChildren(['id','title','condition','unknown','reason','status','postId','commentId','labId']) && (newData.child('postId').val() === '' ? newData.child('commentId').val() === '' : root.child('aiCity/posts').child(newData.child('postId').val()).exists()) && newData.parent().child('2').exists()",
+                "id": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "unknown": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "status": {
+                  ".validate": "newData.val() === 'preparing' || newData.val() === 'review' || newData.val() === 'passed' || newData.val() === 'paused'"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "labId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/labEvents').child($projectId).child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "4": {
+                ".validate": "newData.hasChildren(['id','title','condition','unknown','reason','status','postId','commentId','labId']) && (newData.child('postId').val() === '' ? newData.child('commentId').val() === '' : root.child('aiCity/posts').child(newData.child('postId').val()).exists()) && newData.parent().child('3').exists()",
+                "id": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "unknown": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "status": {
+                  ".validate": "newData.val() === 'preparing' || newData.val() === 'review' || newData.val() === 'passed' || newData.val() === 'paused'"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "labId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/labEvents').child($projectId).child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              ".validate": "newData.hasChildren(['0','1'])",
+              "$other": {
+                ".validate": false
+              }
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "dependencyBoards": {
+        ".read": true,
+        "$projectId": {
+          "$versionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && ($projectId === 'first-plaza' || root.child('aiCity/projects').child($projectId).exists())",
+            ".validate": "newData.hasChildren(['residentId','nodes','edges','operatorUid','operatorAccount','createdAt'])",
+            "nodes": {
+              "0": {
+                ".validate": "newData.hasChildren(['id','title','postId'])",
+                "id": {
+                  ".validate": "newData.val() === '1'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "1": {
+                ".validate": "newData.hasChildren(['id','title','postId'])",
+                "id": {
+                  ".validate": "newData.val() === '2'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "2": {
+                ".validate": "newData.hasChildren(['id','title','postId']) && newData.parent().child('1').exists()",
+                "id": {
+                  ".validate": "newData.val() === '3'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "3": {
+                ".validate": "newData.hasChildren(['id','title','postId']) && newData.parent().child('2').exists()",
+                "id": {
+                  ".validate": "newData.val() === '4'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "4": {
+                ".validate": "newData.hasChildren(['id','title','postId']) && newData.parent().child('3').exists()",
+                "id": {
+                  ".validate": "newData.val() === '5'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "5": {
+                ".validate": "newData.hasChildren(['id','title','postId']) && newData.parent().child('4').exists()",
+                "id": {
+                  ".validate": "newData.val() === '6'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "6": {
+                ".validate": "newData.hasChildren(['id','title','postId']) && newData.parent().child('5').exists()",
+                "id": {
+                  ".validate": "newData.val() === '7'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "7": {
+                ".validate": "newData.hasChildren(['id','title','postId']) && newData.parent().child('6').exists()",
+                "id": {
+                  ".validate": "newData.val() === '8'"
+                },
+                "title": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              ".validate": "newData.hasChildren(['0','1'])",
+              "$other": {
+                ".validate": false
+              }
+            },
+            "edges": {
+              "0": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val())",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "1": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('0').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "2": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('1').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "3": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('2').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "4": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('3').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "5": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('4').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "6": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('5').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "7": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('6').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "8": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('7').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "9": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('8').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "10": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('9').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "11": {
+                ".validate": "newData.hasChildren(['before','after','condition','reason','postId','evidencePostId']) && newData.child('before').val() !== newData.child('after').val() && (newData.parent().parent().child('nodes/0/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('before').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('before').val()) && (newData.parent().parent().child('nodes/0/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/1/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/2/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/3/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/4/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/5/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/6/id').val() === newData.child('after').val() || newData.parent().parent().child('nodes/7/id').val() === newData.child('after').val()) && newData.parent().child('10').exists()",
+                "before": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "after": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2"
+                },
+                "condition": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "evidencePostId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              ".validate": "newData.hasChildren(['0'])",
+              "$other": {
+                ".validate": false
+              }
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "reviewQuestions": {
+        ".read": true,
+        "$projectId": {
+          "$reviewId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && root.child('aiCity/designReviews').child($projectId).child($reviewId).child('topic').child('operatorUid').val() === auth.uid && root.child('aiCity/designReviews').child($projectId).child($reviewId).child('topic').child('residentId').val() === newData.child('residentId').val()",
+            ".validate": "newData.hasChildren(['residentId','question','sourcePostId','operatorUid','operatorAccount','createdAt'])",
+            "question": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+            },
+            "sourcePostId": {
+              ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.val()).exists())"
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "reviewAnswers": {
+        ".read": true,
+        "$projectId": {
+          "$reviewId": {
+            "$residentId": {
+              "$eventId": {
+                ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && newData.child('residentId').val() === $residentId && root.child('aiCity/reviewQuestions').child($projectId).child($reviewId).exists()",
+                ".validate": "newData.hasChildren(['residentId','choice','reason','operatorUid','operatorAccount','createdAt'])",
+                "choice": {
+                  ".validate": "newData.val() === 'understood' || newData.val() === 'question' || newData.val() === 'paused'"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "residentId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "operatorUid": {
+                  ".validate": "newData.isString() && newData.val() === auth.uid"
+                },
+                "operatorAccount": {
+                  ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+                },
+                "createdAt": {
+                  ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "workshops": {
+        ".read": true,
+        "$projectId": {
+          "$sessionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && ($projectId === 'first-plaza' || root.child('aiCity/projects').child($projectId).exists())",
+            ".validate": "newData.hasChildren(['residentId','title','question','operatorUid','operatorAccount','createdAt'])",
+            "title": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+            },
+            "question": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "workshopMembers": {
+        ".read": true,
+        "$projectId": {
+          "$sessionId": {
+            "$residentId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && newData.child('residentId').val() === $residentId && root.child('aiCity/workshops').child($projectId).child($sessionId).exists()",
+              ".validate": "newData.hasChildren(['residentId','operatorUid','operatorAccount','createdAt'])",
+              "residentId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      },
+      "workshopDrafts": {
+        ".read": true,
+        "$projectId": {
+          "$sessionId": {
+            "$residentId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && newData.child('residentId').val() === $residentId && root.child('aiCity/workshopMembers').child($projectId).child($sessionId).child($residentId).exists() && root.child('aiCity/posts').child(newData.child('postId').val()).child('authorUid').val() === auth.uid && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && (root.child('aiCity/posts').child(newData.child('postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(newData.child('postId').val()).child('residentId').val() : root.child('aiCity/posts').child(newData.child('postId').val()).child('accountId').val()) === $residentId",
+              ".validate": "newData.hasChildren(['residentId','postId','operatorUid','operatorAccount','createdAt'])",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "residentId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      },
+      "workshopEvents": {
+        ".read": true,
+        "$projectId": {
+          "$sessionId": {
+            "$eventId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && root.child('aiCity/workshopMembers').child($projectId).child($sessionId).child(newData.child('residentId').val()).exists()",
+              ".validate": "newData.hasChildren(['residentId','kind','postId','targetResidentId','reason','decision','nextAction','operatorUid','operatorAccount','createdAt']) && root.child('aiCity/workshopDrafts').child($projectId).child($sessionId).child(newData.child('targetResidentId').val()).child('postId').val() === newData.child('postId').val() && (newData.child('kind').val() === 'review' ? (newData.child('targetResidentId').val() !== newData.child('residentId').val() && newData.child('decision').val() === 'none' && newData.child('nextAction').val() === '') : (newData.child('kind').val() === 'followup' && newData.child('targetResidentId').val() === newData.child('residentId').val() && (newData.child('decision').val() === 'adopted' || newData.child('decision').val() === 'paused') && newData.child('nextAction').val().length > 0))",
+              "kind": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20"
+              },
+              "postId": {
+                ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+              },
+              "targetResidentId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "reason": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+              },
+              "decision": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20"
+              },
+              "nextAction": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+              },
+              "residentId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      },
+      "recordConnections": {
+        ".read": true,
+        "$connectionId": {
+          ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['residentId','left','right','relation','reason','operatorUid','operatorAccount','createdAt']) && (newData.child('left/postId').val() !== newData.child('right/postId').val() || newData.child('left/commentId').val() !== newData.child('right/commentId').val())",
+          "left": {
+            ".validate": "newData.hasChildren(['postId','commentId']) && root.child('aiCity/posts').child(newData.child('postId').val()).exists() && (newData.child('commentId').val() === '' || root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).exists())",
+            "postId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "commentId": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "right": {
+            ".validate": "newData.hasChildren(['postId','commentId']) && root.child('aiCity/posts').child(newData.child('postId').val()).exists() && (newData.child('commentId').val() === '' || root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).exists())",
+            "postId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "commentId": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "relation": {
+            ".validate": "newData.val() === 'reference' || newData.val() === 'objection' || newData.val() === 'variant'"
+          },
+          "reason": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+          },
+          "residentId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "operatorUid": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "operatorAccount": {
+            ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "recordQuotes": {
+        ".read": true,
+        "$quoteId": {
+          ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['residentId','postId','commentId','mode','snapshotBody','sourceResidentId','sourceCreatedAt','revisionId','versionAt','reason','operatorUid','operatorAccount','createdAt']) && root.child('aiCity/posts').child(newData.child('postId').val()).exists() && (newData.child('commentId').val() === '' || root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).exists()) && newData.child('sourceResidentId').val() === (newData.child('commentId').val() === '' ? (root.child('aiCity/posts').child(newData.child('postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(newData.child('postId').val()).child('residentId').val() : root.child('aiCity/posts').child(newData.child('postId').val()).child('accountId').val()) : (root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).child('residentId').val() : root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).child('accountId').val())) && newData.child('sourceCreatedAt').val() === (newData.child('commentId').val() === '' ? root.child('aiCity/posts').child(newData.child('postId').val()).child('createdAt').val() : root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).child('createdAt').val()) && (newData.child('revisionId').val() === '' ? (newData.child('snapshotBody').val() === (newData.child('commentId').val() === '' ? root.child('aiCity/posts').child(newData.child('postId').val()).child('body').val() : root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).child('body').val()) && newData.child('versionAt').val() === (newData.child('commentId').val() === '' ? root.child('aiCity/posts').child(newData.child('postId').val()).child('createdAt').val() : root.child('aiCity/posts').child(newData.child('postId').val()).child('comments').child(newData.child('commentId').val()).child('createdAt').val())) : (newData.child('commentId').val() !== '' && root.child('aiCity/commentCorrections').child(newData.child('postId').val()).child(newData.child('commentId').val()).child(newData.child('revisionId').val()).exists() && newData.child('snapshotBody').val() === root.child('aiCity/commentCorrections').child(newData.child('postId').val()).child(newData.child('commentId').val()).child(newData.child('revisionId').val()).child('body').val() && newData.child('versionAt').val() === root.child('aiCity/commentCorrections').child(newData.child('postId').val()).child(newData.child('commentId').val()).child(newData.child('revisionId').val()).child('createdAt').val()))",
+          "postId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "commentId": {
+            ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+          },
+          "mode": {
+            ".validate": "newData.val() === 'latest' || newData.val() === 'fixed'"
+          },
+          "snapshotBody": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2000"
+          },
+          "sourceResidentId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "sourceCreatedAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "revisionId": {
+            ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+          },
+          "versionAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "reason": {
+            ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+          },
+          "residentId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "operatorUid": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "operatorAccount": {
+            ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "triageEvents": {
+        ".read": true,
+        "$postId": {
+          "$eventId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && root.child('aiCity/posts').child($postId).child('kind').val() === 'suggestion'",
+            ".validate": "newData.hasChildren(['residentId','stage','reason','minimal','screen','relatedPostId','slot','operatorUid','operatorAccount','createdAt']) && (newData.child('stage').val() !== 'candidate' || (newData.child('minimal').val().length > 0 && newData.child('screen').val().length > 0)) && newData.parent().parent().parent().child('triageCurrent').child($postId).child('eventId').val() === $eventId && newData.child('residentId').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('residentId').val() && newData.child('stage').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('stage').val() && newData.child('reason').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('reason').val() && newData.child('minimal').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('minimal').val() && newData.child('screen').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('screen').val() && newData.child('relatedPostId').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('relatedPostId').val() && newData.child('slot').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('slot').val() && newData.child('operatorUid').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('operatorUid').val() && newData.child('operatorAccount').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('operatorAccount').val() && newData.child('createdAt').val() === newData.parent().parent().parent().child('triageCurrent').child($postId).child('createdAt').val() && (newData.child('stage').val() === 'candidate' ? (newData.parent().parent().parent().child('triageCandidates').child(newData.child('slot').val()).child('postId').val() === $postId && newData.parent().parent().parent().child('triageCandidates').child(newData.child('slot').val()).child('eventId').val() === $eventId) : (newData.parent().parent().parent().child('triageCandidates/1/postId').val() !== $postId && newData.parent().parent().parent().child('triageCandidates/2/postId').val() !== $postId && newData.parent().parent().parent().child('triageCandidates/3/postId').val() !== $postId))",
+            "stage": {
+              ".validate": "newData.val() === 'received' || newData.val() === 'needs-info' || newData.val() === 'candidate' || newData.val() === 'paused'"
+            },
+            "reason": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+            },
+            "minimal": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 1000"
+            },
+            "screen": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+            },
+            "relatedPostId": {
+              ".validate": "newData.isString() && (newData.val() === '' || (newData.val() !== $postId && root.child('aiCity/posts').child(newData.val()).child('kind').val() === 'suggestion'))"
+            },
+            "slot": {
+              ".validate": "newData.isString() && (newData.parent().child('stage').val() === 'candidate' ? (newData.val() === '1' || newData.val() === '2' || newData.val() === '3') : newData.val() === '')"
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "triageCurrent": {
+        ".read": true,
+        "$postId": {
+          ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && newData.exists() && !root.child('aiCity/triageEvents').child($postId).child(newData.child('eventId').val()).exists()",
+          ".validate": "newData.hasChildren(['residentId','stage','reason','minimal','screen','relatedPostId','slot','operatorUid','operatorAccount','createdAt']) && newData.hasChildren(['eventId']) && newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).exists() && newData.child('residentId').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('residentId').val() && newData.child('stage').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('stage').val() && newData.child('reason').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('reason').val() && newData.child('minimal').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('minimal').val() && newData.child('screen').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('screen').val() && newData.child('relatedPostId').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('relatedPostId').val() && newData.child('slot').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('slot').val() && newData.child('operatorUid').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('operatorUid').val() && newData.child('operatorAccount').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('operatorAccount').val() && newData.child('createdAt').val() === newData.parent().parent().child('triageEvents').child($postId).child(newData.child('eventId').val()).child('createdAt').val()",
+          "eventId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "stage": {
+            ".validate": "newData.val() === 'received' || newData.val() === 'needs-info' || newData.val() === 'candidate' || newData.val() === 'paused'"
+          },
+          "reason": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+          },
+          "minimal": {
+            ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 1000"
+          },
+          "screen": {
+            ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+          },
+          "relatedPostId": {
+            ".validate": "newData.isString() && (newData.val() === '' || (newData.val() !== $postId && root.child('aiCity/posts').child(newData.val()).child('kind').val() === 'suggestion'))"
+          },
+          "slot": {
+            ".validate": "newData.isString() && (newData.parent().child('stage').val() === 'candidate' ? (newData.val() === '1' || newData.val() === '2' || newData.val() === '3') : newData.val() === '')"
+          },
+          "residentId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "operatorUid": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "operatorAccount": {
+            ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "triageCandidates": {
+        ".read": true,
+        "$slot": {
+          ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && ($slot === '1' || $slot === '2' || $slot === '3') && (newData.exists() ? (newData.parent().parent().child('triageCurrent').child(newData.child('postId').val()).child('stage').val() === 'candidate' && newData.parent().parent().child('triageCurrent').child(newData.child('postId').val()).child('slot').val() === $slot && newData.parent().parent().child('triageCurrent').child(newData.child('postId').val()).child('eventId').val() === newData.child('eventId').val() && (!data.exists() || data.child('postId').val() === newData.child('postId').val() || newData.parent().parent().child('triageCurrent').child(data.child('postId').val()).child('stage').val() !== 'candidate')) : (data.exists() && (newData.parent().parent().child('triageCurrent').child(data.child('postId').val()).child('stage').val() !== 'candidate' || newData.parent().parent().child('triageCurrent').child(data.child('postId').val()).child('slot').val() !== $slot)))",
+          ".validate": "newData.hasChildren(['postId','eventId'])",
+          "postId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "eventId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
       }
     }
   }
