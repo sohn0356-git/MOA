@@ -8,8 +8,8 @@ export type Consent=Meta & {residentId:string;accepted:boolean}
 export type Stage=Meta & {residentId:string;stage:'draft'|'question'|'objection'|'revision'|'paused'}
 export type Correction=Meta & {residentId:string;body:string;reason:string;kind:'typo'|'meaning'}
 export type Withdrawal=Meta & {residentId:string;reason:string}
-export function watchCityRecords<T>(path:string,callback:(value:T[])=>void,onError:(error:Error)=>void){
- return onValue(ref(cityDatabase(),'aiCity/'+path),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as T,id})).sort((a,b)=>(b as Meta).createdAt-(a as Meta).createdAt||(b as Meta).id.localeCompare((a as Meta).id))),onError)
+export function watchCityRecords<T extends Meta>(path:string,callback:(value:T[])=>void,onError:(error:Error)=>void){
+ return onValue(ref(cityDatabase(),'aiCity/'+path),snapshot=>callback(Object.entries(snapshot.val()??{}).map(([id,value])=>({...value as T,id})).sort((a,b)=>b.createdAt-a.createdAt||b.id.localeCompare(a.id))),onError)
 }
 export function watchCityValue<T=Record<string,unknown>>(path:string,callback:(value:T)=>void,onError:(error:Error)=>void){return onValue(ref(cityDatabase(),'aiCity/'+path),snapshot=>callback(snapshot.val()??{}),onError)}
 export function appendCityRecord(account:string,path:string,value:object){
