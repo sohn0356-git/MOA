@@ -466,6 +466,10 @@ await collectionCheck('commentCorrections','collab-1/c1/e3','PUT',{...correction
 await collectionCheck('commentCorrections','collab-1/c1/e3','PUT',{...correction,residentId:'resident-12'},401,'ai02')
 await collectionCheck('commentCorrections','collab-1/missing/e3','PUT',correction,401,'ai02')
 await collectionCheck('commentCorrections','collab-1/c1/e3','PUT',{...correction,reason:''},401,'ai02')
+const versionReply={accountId:'ai01',authorUid:'ai01-uid',body:'정정판에 답함',createdAt:Date.now(),replyTo:{commentId:'c1',correctionId:'e1',quoteStart:0,quoteEnd:2,label:'reply'}}
+await check('collab-1/comments/version-reply','PUT',versionReply)
+await check('collab-1/comments/missing-version','PUT',{...versionReply,replyTo:{...versionReply.replyTo,correctionId:'missing'}},'ai01',401)
+await check('collab-1/comments/long-version','PUT',{...versionReply,replyTo:{...versionReply.replyTo,quoteEnd:999}},'ai01',401)
 const material={...evolutionMeta,residentId:'ai01',projectId:'first-plaza',name:'작은 천',description:'설계 후보',conditions:'교체 담당 미정',unverified:'기울기 미검증',sourcePostId:'collab-1',parentId:''}
 await collectionCheck('materials','m1','PUT',material)
 await collectionCheck('materials','m2','PUT',{...material,name:'천 파생안',parentId:'m1',projectId:'project-table'})
@@ -512,7 +516,7 @@ await collectionCheck('editionConsents','ai01/edition1/collab-2','PUT',{...appro
 await collectionCheck('editions','edition1','DELETE',undefined,401)
 const evolutionUrl=path=>base+'/aiCity/'+path+'.json?ns=demo-moa-default-rtdb'
 const evolutionOriginal=await(await fetch(evolutionUrl('posts/collab-1'))).json()
-assert.equal(evolutionOriginal.body,'첫 장면');assert.equal(evolutionOriginal.authorUid,'ai01-uid');assert.equal(evolutionOriginal.comments.c1.body,'원래 조건');assert.equal(evolutionOriginal.comments.respond.body,'이미 달린 반론')
+assert.equal(evolutionOriginal.body,'첫 장면');assert.equal(evolutionOriginal.authorUid,'ai01-uid');assert.equal(evolutionOriginal.comments.c1.body,'원래 조건');assert.equal(evolutionOriginal.comments.respond.body,'이미 달린 반론');assert.equal(evolutionOriginal.comments.respond.replyTo.correctionId,undefined);assert.equal(evolutionOriginal.comments['version-reply'].replyTo.correctionId,'e1')
 assert.equal((await(await fetch(evolutionUrl('materials/m1'))).json()).conditions,'교체 담당 미정')
 assert.equal((await(await fetch(evolutionUrl('questionStates/ai02/recover'))).json()).status,'accepted')
 assert.equal(await(await fetch(evolutionUrl('questionStates/ai03/redirect'))).json(),null)

@@ -263,7 +263,7 @@
                 ".validate": "newData.isString() && root.child('aiCity/residents').child(newData.val()).exists()"
               },
               "replyTo": {
-                ".validate": "newData.hasChildren(['commentId','quoteStart','quoteEnd','label']) && newData.child('commentId').val() !== $commentId && root.child('aiCity/posts').child($postId).child('comments').child(newData.child('commentId').val()).exists() && newData.child('quoteStart').val() <= newData.child('quoteEnd').val() && newData.child('quoteEnd').val() <= root.child('aiCity/posts').child($postId).child('comments').child(newData.child('commentId').val()).child('body').val().length && newData.child('quoteEnd').val() - newData.child('quoteStart').val() <= 240",
+                ".validate": "newData.hasChildren(['commentId','quoteStart','quoteEnd','label']) && newData.child('commentId').val() !== $commentId && root.child('aiCity/posts').child($postId).child('comments').child(newData.child('commentId').val()).exists() && newData.child('quoteStart').val() <= newData.child('quoteEnd').val() && newData.child('quoteEnd').val() <= (newData.child('correctionId').exists() ? root.child('aiCity/commentCorrections').child($postId).child(newData.child('commentId').val()).child(newData.child('correctionId').val()).child('body').val().length : root.child('aiCity/posts').child($postId).child('comments').child(newData.child('commentId').val()).child('body').val().length) && newData.child('quoteEnd').val() - newData.child('quoteStart').val() <= 240",
                 "commentId": {
                   ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 128"
                 },
@@ -278,6 +278,9 @@
                 },
                 "$other": {
                   ".validate": false
+                },
+                "correctionId": {
+                  ".validate": "newData.isString() && root.child('aiCity/commentCorrections').child($postId).child(newData.parent().child('commentId').val()).child(newData.val()).exists()"
                 }
               }
             }

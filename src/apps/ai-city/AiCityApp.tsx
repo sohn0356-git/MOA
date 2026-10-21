@@ -28,7 +28,7 @@ import {CityMaterials} from './CityMaterials'
 import {CityProgress} from './CityProgress'
 import {CityPublishing} from './CityPublishing'
 import {CitySentQuestions} from './CitySentQuestions'
-import {CityConversationStage,CityCommentCorrections} from './CityConversationHistory'
+import {CityConversationStage,CityCommentCorrections,CityCorrectionQuote} from './CityConversationHistory'
 import { CityResidentManager } from './CityResidentManager'
 
 function residentLabel(id: string, profiles: CityProfile[]) {
@@ -247,7 +247,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
         </div>
         <span className="city-online">{selectedProfile?.role}{designRole(residentId)?' · '+designRole(residentId):''}</span>
       </div>
-      {switchTarget?<section role="dialog" aria-modal="true" aria-label="작성 중 주민 전환 확인"><h3>현재 초안 주인: {residentLabel(residentId,profiles)}</h3><p>전환할 주민: {residentLabel(switchTarget,profiles)}. 이 브라우저의 초안이며 자동 게시하지 않습니다.</p><label><input type="radio" name="switch-mode" checked={switchMode==='keep'} onChange={()=>setSwitchMode('keep')}/>현재 주민 초안으로 보관 (기본)</label><label><input type="radio" name="switch-mode" checked={switchMode==='copy'} onChange={()=>setSwitchMode('copy')}/>새 주민에게 사본 넘기기</label>{switchMode==='copy'?<label>인계 이유<textarea maxLength={500} value={switchReason} onChange={event=>setSwitchReason(event.target.value)}/></label>:null}<button type="button" onClick={confirmResidentSwitch}>선택대로 전환</button><button type="button" autoFocus onClick={()=>{setSwitchTarget('');document.getElementById('city-account')?.focus()}}>전환 취소</button>{switchError?<p role="alert">{switchError}</p>:null}</section>:null}
+      {switchTarget?<section role="dialog" aria-modal="true" aria-label="작성 중 주민 전환 확인" onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();setSwitchTarget('');document.getElementById('city-account')?.focus()}if(event.key==='Tab'){const controls=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button,input,textarea,select')).filter(control=>!control.hasAttribute('disabled'));const first=controls[0],last=controls[controls.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus()}}}}><h3>현재 초안 주인: {residentLabel(residentId,profiles)}</h3><p>전환할 주민: {residentLabel(switchTarget,profiles)}. 이 브라우저의 초안이며 자동 게시하지 않습니다.</p><label><input type="radio" name="switch-mode" checked={switchMode==='keep'} onChange={()=>setSwitchMode('keep')}/>현재 주민 초안으로 보관 (기본)</label><label><input type="radio" name="switch-mode" checked={switchMode==='copy'} onChange={()=>setSwitchMode('copy')}/>새 주민에게 사본 넘기기</label>{switchMode==='copy'?<label>인계 이유<textarea maxLength={500} value={switchReason} onChange={event=>setSwitchReason(event.target.value)}/></label>:null}<button type="button" onClick={confirmResidentSwitch}>선택대로 전환</button><button type="button" autoFocus onClick={()=>{setSwitchTarget('');document.getElementById('city-account')?.focus()}}>전환 취소</button>{switchError?<p role="alert">{switchError}</p>:null}</section>:null}
       {handoffs[residentId]?.map((item,index)=><section aria-label="받은 초안 사본" key={index}><p>원본 소유자: {residentLabel(item.draft.handoff!.fromResidentId,profiles)} · 생성: <CityTime value={item.draft.handoff!.createdAt}/> · 인계 이유: {item.draft.handoff!.reason} · 수락 대기</p><p>{item.draft.body}</p><p>원본 주민 초안은 그대로이며 수락 전에는 이 사본을 편집하지 않습니다.</p><button type="button" onClick={()=>acceptHandoff(index)}>출처 확인 후 사본 수락</button><button type="button" onClick={()=>saveHandoffs(previous=>({...previous,[residentId]:(previous[residentId]??[]).filter((_,i)=>i!==index)}))}>사본 받지 않기</button></section>)}
       {currentDraft.handoff?<p>인계받은 사본 · 원본: {residentLabel(currentDraft.handoff.fromResidentId,profiles)} · <CityTime value={currentDraft.handoff.createdAt}/> · 이유: {currentDraft.handoff.reason} · {currentDraft.handoff.status==='accepted'?'수락함':'수락 대기'}</p>:null}
       {handoffFailed?<p role="alert">초안 인계 저장 실패 · 창을 닫기 전에 내용을 보관해 주세요.</p>:null}
@@ -316,19 +316,20 @@ function CityCard({density, post, onStatus, bookmarks, onBookmark, accountId, bu
   const expanded=post.kind!=='suggestion'||openComments||showComments
   const [reply, setReply] = useState('')
   const [replyTarget,setReplyTarget]=useState('')
+  const [replyVersion,setReplyVersion]=useState<{id:string;body:string}|null>(null)
   const [replyQuote,setReplyQuote]=useState('')
   const [replyLabel,setReplyLabel]=useState<'reply'|'question'|'revision'>('reply')
   const [replyError,setReplyError]=useState('')
   function beginReply(id:string){
     const element=document.getElementById('city-comment-body-'+post.id+'-'+id),selection=window.getSelection()
     const selected=selection?.rangeCount&&element?.contains(selection.getRangeAt(0).commonAncestorContainer)?selection.toString().slice(0,240):''
-    setReplyTarget(id);setReplyQuote(selected);setReplyLabel('reply');setReplyError('')
+    setReplyVersion(null);setReplyTarget(id);setReplyQuote(selected);setReplyLabel('reply');setReplyError('')
     setTimeout(()=>document.getElementById('reply-'+post.id)?.focus(),0)
   }
   function jumpComment(id:string){const target=document.getElementById('city-comment-'+post.id+'-'+id);target?.focus();target?.scrollIntoView?.({behavior:cityScrollBehavior(),block:'center'})}
   function replyContext(comment:import('./cityService').CityComment){
     const link=comment.replyTo;if(!link)return null;const target=post.comments?.[link.commentId]
-    return <div className="city-reply-context">{target?<><p>{({reply:'답글',question:'질문',revision:'수정안'})[link.label]} · 대상: {residentLabel(target.residentId??target.accountId,profiles)}</p>{link.quoteEnd>link.quoteStart?<blockquote>{target.body.slice(link.quoteStart,link.quoteEnd)}</blockquote>:null}<button type="button" onClick={()=>jumpComment(link.commentId)}>대상 댓글로 이동</button></>:<p>사라진 댓글에 대한 답글입니다. 대상 작성자를 추정하지 않습니다.</p>}</div>
+    return <div className="city-reply-context">{target?<><p>{({reply:'답글',question:'질문',revision:'수정안'})[link.label]} · 대상: {residentLabel(target.residentId??target.accountId,profiles)}</p>{link.correctionId?<CityCorrectionQuote postId={post.id} commentId={link.commentId} correctionId={link.correctionId} start={link.quoteStart} end={link.quoteEnd}/>:link.quoteEnd>link.quoteStart?<blockquote>{target.body.slice(link.quoteStart,link.quoteEnd)}</blockquote>:null}<button type="button" onClick={()=>jumpComment(link.commentId)}>대상 댓글로 이동</button></>:<p>사라진 댓글에 대한 답글입니다. 대상 작성자를 추정하지 않습니다.</p>}</div>
   }
 
   useEffect(() => { if (openComments) setShowComments(true) }, [openComments])
@@ -348,11 +349,12 @@ function CityCard({density, post, onStatus, bookmarks, onBookmark, accountId, bu
     if(replyTarget){
       const source=post.comments?.[replyTarget]
       if(!source){setReplyError('답글 대상이 사라졌습니다. 연결을 취소하고 다시 작성해 주세요.');return}
-      const start=replyQuote?source.body.indexOf(replyQuote):0
+      const quotedBody=replyVersion?.body??source.body
+      const start=replyQuote?quotedBody.indexOf(replyQuote):0
       if(start<0||replyQuote.length>240){setReplyError('인용은 대상 원문의 일부를 240자 이내로 그대로 선택해 주세요.');return}
-      reference={commentId:replyTarget,quoteStart:start,quoteEnd:start+replyQuote.length,label:replyLabel}
+      reference={commentId:replyTarget,quoteStart:start,quoteEnd:start+replyQuote.length,label:replyLabel,...(replyVersion?{correctionId:replyVersion.id}:{})}
     }
-    if (await perform(() => reference?commentCityPost(accountId,post.id,reply,residentId!==accountId?residentId:undefined,reference):residentId !== accountId ? commentCityPost(accountId, post.id, reply, residentId) : commentCityPost(accountId, post.id, reply), '댓글을 남겼습니다.')){setReply('');setReplyTarget('');setReplyQuote('');setReplyError('')}
+    if (await perform(() => reference?commentCityPost(accountId,post.id,reply,residentId!==accountId?residentId:undefined,reference):residentId !== accountId ? commentCityPost(accountId, post.id, reply, residentId) : commentCityPost(accountId, post.id, reply), '댓글을 남겼습니다.')){setReply('');setReplyTarget('');setReplyVersion(null);setReplyQuote('');setReplyError('')}
   }
   return (
     <article className="city-card" id={'city-post-' + post.id} tabIndex={-1}>
@@ -373,8 +375,8 @@ function CityCard({density, post, onStatus, bookmarks, onBookmark, accountId, bu
       </footer>
       {confirmDelete && post.accountId === accountId ? <div className="city-delete-confirm"><span>이 글과 댓글을 삭제할까요?</span><button type="button" disabled={busy} onClick={() => void perform(() => deleteCityPost(accountId, post.id), '글을 삭제했습니다.')}>삭제 확인</button><button type="button" onClick={() => setConfirmDelete(false)}>취소</button></div> : null}
       {showComments ? <section className="city-comments" aria-label="댓글">
-        {comments.map(([id, comment]) => <div className="city-comment" key={id} id={'city-comment-' + post.id + '-' + id} tabIndex={-1}><ResidentAvatar id={comment.residentId??comment.accountId} name={profiles.find(p=>p.id===(comment.residentId??comment.accountId))?.name??comment.accountId}/><strong>{residentLabel(comment.residentId ?? comment.accountId, profiles)}</strong>{replyContext(comment)}<p id={'city-comment-body-'+post.id+'-'+id}>{comment.body}</p><CityCommentCorrections postId={post.id} commentId={id} comment={comment} residentId={residentId} busy={busy} perform={perform}/><button type="button" onClick={()=>beginReply(id)}>이 댓글에 답하기</button><small>{timeLabel(comment.createdAt)}</small><button type="button" aria-pressed={Boolean(bookmarks[bookmarkKey(post.id,id)])} onClick={() => onBookmark(post.id,id)}>댓글 다시 보기 {bookmarks[bookmarkKey(post.id,id)] ? '해제' : '저장'}</button></div>)}
-        <form onSubmit={event => void submitReply(event)}>{replyTarget?<section aria-label="답글 작성 대상"><p>{post.comments?.[replyTarget]?'답글 대상: '+residentLabel(post.comments[replyTarget].residentId??post.comments[replyTarget].accountId,profiles):'사라진 댓글'}</p><label>짧은 원문 인용<input maxLength={240} disabled={busy} value={replyQuote} onChange={event=>{setReplyQuote(event.target.value);setReplyError('')}}/></label><p>선택 항목 · 대상 댓글의 일부를 그대로 적거나, 원문을 선택한 뒤 답하기를 누르세요. 최대 240자입니다.</p><label>답글 표시<select disabled={busy} value={replyLabel} onChange={event=>setReplyLabel(event.target.value as typeof replyLabel)}><option value="reply">답글</option><option value="question">질문</option><option value="revision">수정안</option></select></label><button type="button" disabled={busy} onClick={()=>{setReplyTarget('');setReplyQuote('');setReplyError('')}}>답글 연결 취소</button></section>:null}{replyError?<p role="alert">{replyError}</p>:null}<label htmlFor={'reply-' + post.id}>{residentLabel(residentId, profiles)}로 댓글 쓰기</label><textarea id={'reply-' + post.id} maxLength={2000} disabled={busy} value={reply} onChange={event => setReply(event.target.value)} rows={2} /><button className="city-primary" type="submit" disabled={busy || !reply.trim()}>댓글 등록</button></form>
+        {comments.map(([id, comment]) => <div className="city-comment" key={id} id={'city-comment-' + post.id + '-' + id} tabIndex={-1}><ResidentAvatar id={comment.residentId??comment.accountId} name={profiles.find(p=>p.id===(comment.residentId??comment.accountId))?.name??comment.accountId}/><strong>{residentLabel(comment.residentId ?? comment.accountId, profiles)}</strong>{replyContext(comment)}<p id={'city-comment-body-'+post.id+'-'+id}>{comment.body}</p><CityCommentCorrections postId={post.id} commentId={id} comment={comment} residentId={residentId} busy={busy} perform={perform} onReply={revision=>{setReplyTarget(id);setReplyVersion({id:revision.id,body:revision.body});setReplyQuote('');setReplyError('');setTimeout(()=>document.getElementById('reply-'+post.id)?.focus(),0)}}/><button type="button" onClick={()=>beginReply(id)}>이 댓글에 답하기</button><small>{timeLabel(comment.createdAt)}</small><button type="button" aria-pressed={Boolean(bookmarks[bookmarkKey(post.id,id)])} onClick={() => onBookmark(post.id,id)}>댓글 다시 보기 {bookmarks[bookmarkKey(post.id,id)] ? '해제' : '저장'}</button></div>)}
+        <form onSubmit={event => void submitReply(event)}>{replyTarget?<section aria-label="답글 작성 대상"><p>{post.comments?.[replyTarget]?'답글 대상: '+residentLabel(post.comments[replyTarget].residentId??post.comments[replyTarget].accountId,profiles):'사라진 댓글'}</p><p>참조 판: {replyVersion?'선택한 정정판':'최초 원문'}</p><label>짧은 원문 인용<input maxLength={240} disabled={busy} value={replyQuote} onChange={event=>{setReplyQuote(event.target.value);setReplyError('')}}/></label><p>선택 항목 · 대상 댓글의 일부를 그대로 적거나, 원문을 선택한 뒤 답하기를 누르세요. 최대 240자입니다.</p><label>답글 표시<select disabled={busy} value={replyLabel} onChange={event=>setReplyLabel(event.target.value as typeof replyLabel)}><option value="reply">답글</option><option value="question">질문</option><option value="revision">수정안</option></select></label><button type="button" disabled={busy} onClick={()=>{setReplyTarget('');setReplyQuote('');setReplyError('')}}>답글 연결 취소</button></section>:null}{replyError?<p role="alert">{replyError}</p>:null}<label htmlFor={'reply-' + post.id}>{residentLabel(residentId, profiles)}로 댓글 쓰기</label><textarea id={'reply-' + post.id} maxLength={2000} disabled={busy} value={reply} onChange={event => setReply(event.target.value)} rows={2} /><button className="city-primary" type="submit" disabled={busy || !reply.trim()}>댓글 등록</button></form>
       </section> : null}</>:null}
     </article>
   )

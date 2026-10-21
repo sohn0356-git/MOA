@@ -10,7 +10,7 @@ export type CitySuggestionDetails={title:string;summary:string;category:'problem
 export type CityRecordScope={kind:'creative'|'design'|'virtual'|'execution';evidence:string}
 export type CityPostDetails = { recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
 export type CityImplementation = { eventId?:string; applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
-export type CityCommentReference={commentId:string;quoteStart:number;quoteEnd:number;label:'reply'|'question'|'revision'}
+export type CityCommentReference={correctionId?:string;commentId:string;quoteStart:number;quoteEnd:number;label:'reply'|'question'|'revision'}
 export type CityComment = { replyTo?:CityCommentReference; accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
 export type CityPost = CityComment & { id: string; kind: CityKind; recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
@@ -61,7 +61,9 @@ export function commentCityPost(accountId:string,postId:string,value:string,resi
  return asAccount(accountId,async uid=>{
   if(replyTo){
    const source=(await get(ref(connection().db,'aiCity/posts/'+postId+'/comments/'+replyTo.commentId))).val() as CityComment|null
-   if(!source||!Number.isInteger(replyTo.quoteStart)||!Number.isInteger(replyTo.quoteEnd)||replyTo.quoteStart<0||replyTo.quoteEnd<replyTo.quoteStart||replyTo.quoteEnd>source.body.length||replyTo.quoteEnd-replyTo.quoteStart>240)throw new Error('답글 대상과 인용 범위를 확인해 주세요.')
+   const corrected=replyTo.correctionId?(await get(ref(connection().db,'aiCity/commentCorrections/'+postId+'/'+replyTo.commentId+'/'+replyTo.correctionId))).val() as {body:string}|null:null
+   const quotedBody=replyTo.correctionId?corrected?.body:source?.body
+   if(!source||!quotedBody||!Number.isInteger(replyTo.quoteStart)||!Number.isInteger(replyTo.quoteEnd)||replyTo.quoteStart<0||replyTo.quoteEnd<replyTo.quoteStart||replyTo.quoteEnd>quotedBody.length||replyTo.quoteEnd-replyTo.quoteStart>240)throw new Error('답글 대상과 인용 범위를 확인해 주세요.')
   }
   await set(push(ref(connection().db,'aiCity/posts/'+postId+'/comments')),{accountId,authorUid:uid,body,...(residentId?{residentId}:{}),...(replyTo?{replyTo}:{}),createdAt:serverTimestamp()})
  })

@@ -3,7 +3,7 @@ import {afterEach,beforeEach,expect,it,vi} from 'vitest'
 import {act,cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react'
 import {CityMaterials} from './CityMaterials'
 import {CityPublishing} from './CityPublishing'
-import {CityConversationStage,CityCommentCorrections} from './CityConversationHistory'
+import {CityConversationStage,CityCommentCorrections,CityCorrectionQuote} from './CityConversationHistory'
 import {CitySentQuestions} from './CitySentQuestions'
 import {CityProgress} from './CityProgress'
 import {CityTime,CityTimeContext,cityDateKey} from './CityTime'
@@ -114,4 +114,12 @@ it('makes absolute time and zone available while retaining the original timestam
  render(<CityTimeContext.Provider value="city"><CityTime value={value}/></CityTimeContext.Provider>)
  expect(screen.getByText(/2026-10-21 00:01:00.*Asia\/Seoul/)).toBeTruthy()
  expect(document.querySelector('time')?.getAttribute('datetime')).toBe(new Date(value).toISOString())
+})
+
+it('shows the exact referenced correction instead of silently substituting the latest version',()=>{
+ vi.mocked(watchCityRecords).mockImplementation((_path,callback)=>{callback([{...meta,id:'new',body:'나중 문장',reason:'후속',residentId:'ai01',kind:'meaning'},{...meta,id:'old',body:'당시 조건',reason:'당시 정정',residentId:'ai01',kind:'meaning'}] as never);return()=>{}})
+ render(<CityCorrectionQuote postId="p1" commentId="c1" correctionId="old" start={0} end={2}/>)
+ expect(screen.getByText('당시')).toBeTruthy()
+ expect(screen.getByText('당시 조건')).toBeTruthy()
+ expect(screen.queryByText('나중 문장')).toBeNull()
 })

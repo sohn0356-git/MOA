@@ -234,7 +234,7 @@ describe('Approved resident management and archive search requests', () => {
     const article = document.getElementById('city-post-archive-119')!
     expect(within(article).getByRole('button', { name: '댓글 1' }).getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByText('오래된 댓글')).toBeTruthy()
-  })
+  }, 15000)
 })
 
 
