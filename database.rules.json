@@ -1051,6 +1051,18 @@
             },
             "$other": {
               ".validate": false
+            },
+            "supersedes": {
+              ".validate": "newData.hasChildren(['recipientId','questionId']) && root.child('aiCity/questionWithdrawals').child(newData.child('recipientId').val()).child(newData.child('questionId').val()).exists() && root.child('aiCity/questionLinks').child(newData.child('recipientId').val()).child(newData.child('questionId').val()).child('senderResidentId').val() === newData.parent().child('senderResidentId').val() && root.child('aiCity/questionLinks').child(newData.child('recipientId').val()).child(newData.child('questionId').val()).child('operatorUid').val() === auth.uid",
+              "recipientId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "questionId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "$other": {
+                ".validate": false
+              }
             }
           }
         }
@@ -1059,7 +1071,7 @@
         ".read": true,
         "$residentId": {
           "$questionId": {
-            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && ($residentId.matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child($residentId).exists()) && ($residentId.matches(/^resident-/) || auth.token.email === $residentId + '@moa-ai.app') && root.child('aiCity/questionLinks').child($residentId).child($questionId).exists() && newData.exists() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'",
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && ($residentId.matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child($residentId).exists()) && ($residentId.matches(/^resident-/) || auth.token.email === $residentId + '@moa-ai.app') && root.child('aiCity/questionLinks').child($residentId).child($questionId).exists() && newData.exists() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && !root.child('aiCity/questionWithdrawals').child($residentId).child($questionId).exists()",
             ".validate": "newData.hasChildren(['status','updatedAt','operatorUid','operatorAccount'])",
             "status": {
               ".validate": "newData.val() === 'accepted' || newData.val() === 'later' || newData.val() === 'declined'"
@@ -1077,6 +1089,514 @@
               ".validate": false
             }
           }
+        }
+      },
+      "postStages": {
+        ".read": true,
+        "$postId": {
+          "$eventId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/posts').child($postId).child('authorUid').val() === auth.uid && (root.child('aiCity/posts').child($postId).child('residentId').exists() ? root.child('aiCity/posts').child($postId).child('residentId').val() : root.child('aiCity/posts').child($postId).child('accountId').val()) === newData.child('residentId').val() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'",
+            ".validate": "newData.hasChildren(['residentId','stage','operatorUid','operatorAccount','createdAt'])",
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "stage": {
+              ".validate": "newData.val() === 'draft' || newData.val() === 'question' || newData.val() === 'objection' || newData.val() === 'revision' || newData.val() === 'paused'"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "commentCorrections": {
+        ".read": true,
+        "$postId": {
+          "$commentId": {
+            "$eventId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/posts').child($postId).child('comments').child($commentId).child('authorUid').val() === auth.uid && (root.child('aiCity/posts').child($postId).child('comments').child($commentId).child('residentId').exists() ? root.child('aiCity/posts').child($postId).child('comments').child($commentId).child('residentId').val() : root.child('aiCity/posts').child($postId).child('comments').child($commentId).child('accountId').val()) === newData.child('residentId').val() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'",
+              ".validate": "newData.hasChildren(['residentId','body','reason','kind','operatorUid','operatorAccount','createdAt'])",
+              "residentId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "body": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2000"
+              },
+              "reason": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+              },
+              "kind": {
+                ".validate": "newData.val() === 'typo' || newData.val() === 'meaning'"
+              },
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      },
+      "questionWithdrawals": {
+        ".read": true,
+        "$recipientId": {
+          "$questionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/questionLinks').child($recipientId).child($questionId).child('operatorUid').val() === auth.uid && root.child('aiCity/questionLinks').child($recipientId).child($questionId).child('senderResidentId').val() === newData.child('residentId').val() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'",
+            ".validate": "newData.hasChildren(['residentId','reason','operatorUid','operatorAccount','createdAt'])",
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "reason": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 500"
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "materials": {
+        ".read": true,
+        "$materialId": {
+          ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'",
+          ".validate": "newData.hasChildren(['residentId','projectId','name','description','conditions','unverified','sourcePostId','parentId','operatorUid','operatorAccount','createdAt'])",
+          "residentId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "projectId": {
+            ".validate": "newData.isString() && (newData.val() === '' || newData.val() === 'first-plaza' || root.child('aiCity/projects').child(newData.val()).exists())"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+          },
+          "description": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+          },
+          "conditions": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+          },
+          "unverified": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+          },
+          "sourcePostId": {
+            ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+          },
+          "parentId": {
+            ".validate": "newData.isString() && (newData.val() === '' || (newData.val() !== $materialId && root.child('aiCity/materials').child(newData.val()).exists()))"
+          },
+          "operatorUid": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "operatorAccount": {
+            ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "editionRequests": {
+        ".read": true,
+        "$residentId": {
+          "$editionId": {
+            "$sourcePostId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('operatorUid').val() === auth.uid && (root.child('aiCity/posts').child($sourcePostId).child('residentId').exists() ? root.child('aiCity/posts').child($sourcePostId).child('residentId').val() : root.child('aiCity/posts').child($sourcePostId).child('accountId').val()) === $residentId && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'",
+              ".validate": "newData.hasChildren(['editorId','editionId','sourcePostId','operatorUid','operatorAccount','createdAt']) && newData.child('editionId').val() === $editionId && newData.child('sourcePostId').val() === $sourcePostId && (root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/0/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/1/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/2/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/3/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/4/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/5/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/6/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/7/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/8/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child(newData.child('editorId').val()).child($editionId).child('scenes/9/postId').val() === $sourcePostId)",
+              "editorId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "editionId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "sourcePostId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      },
+      "editionConsents": {
+        ".read": true,
+        "$editorId": {
+          "$editionId": {
+            "$sourcePostId": {
+              ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.exists() && !root.child('aiCity/editions').child($editionId).exists() && root.child('aiCity/posts').child($sourcePostId).child('authorUid').val() === auth.uid && (root.child('aiCity/posts').child($sourcePostId).child('residentId').exists() ? root.child('aiCity/posts').child($sourcePostId).child('residentId').val() : root.child('aiCity/posts').child($sourcePostId).child('accountId').val()) === newData.child('residentId').val() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/0/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/1/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/2/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/3/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/4/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/5/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/6/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/7/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/8/postId').val() === $sourcePostId || root.child('aiCity/editionPlans').child($editorId).child($editionId).child('scenes/9/postId').val() === $sourcePostId)",
+              ".validate": "newData.hasChildren(['residentId','accepted','operatorUid','operatorAccount','createdAt'])",
+              "residentId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "accepted": {
+                ".validate": "newData.isBoolean()"
+              },
+              "operatorUid": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "operatorAccount": {
+                ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      },
+      "editionPlans": {
+        "$editorId": {
+          ".read": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && (!$editorId.matches(/^ai(0[1-9]|10)$/) || auth.token.email === $editorId + '@moa-ai.app')",
+          "$editionId": {
+            ".validate": "newData.hasChildren(['residentId','title','scenes','contributors','operatorUid','operatorAccount','createdAt']) && (!newData.child('scenes/1').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/1/postId').val()) && (!newData.child('scenes/2').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/2/postId').val()) && (!newData.child('scenes/3').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/3/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/2').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/2/postId').val()) && (!newData.child('scenes/3').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/3/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/3').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/3/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/6/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/6/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/6/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/7/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/7/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/8/postId').val() !== newData.child('scenes/9/postId').val())",
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 120"
+            },
+            "scenes": {
+              "0": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed'",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "1": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed'",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "2": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed'",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "3": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('2').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "4": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('3').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "5": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('4').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "6": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('5').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "7": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('6').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "8": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('7').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "9": {
+                ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('8').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "connection": {
+                  ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              ".validate": "newData.numChildren() >= 3 && newData.numChildren() <= 10 && newData.hasChildren(['0','1','2'])",
+              "$other": {
+                ".validate": false
+              }
+            },
+            "contributors": {
+              "$uid": {
+                ".validate": "newData.val() === true && (root.child('aiCity/posts').child(newData.parent().parent().child('scenes/0/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/1/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/2/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/3/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/4/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/5/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/6/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/7/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/8/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/9/postId').val()).child('authorUid').val() === $uid)"
+              }
+            },
+            "operatorUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "$other": {
+              ".validate": false
+            },
+            ".read": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && data.child('contributors').child(auth.uid).val() === true",
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && newData.child('residentId').val() === $editorId && ($editorId.matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child($editorId).exists()) && (!$editorId.matches(/^ai(0[1-9]|10)$/) || auth.token.email === $editorId + '@moa-ai.app') && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app'"
+          }
+        }
+      },
+      "editions": {
+        ".read": true,
+        "$editionId": {
+          ".validate": "newData.hasChildren(['residentId','title','scenes','contributors','operatorUid','operatorAccount','createdAt']) && (!newData.child('scenes/1').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/1/postId').val()) && (!newData.child('scenes/2').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/2/postId').val()) && (!newData.child('scenes/3').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/3/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/0/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/2').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/2/postId').val()) && (!newData.child('scenes/3').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/3/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/1/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/3').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/3/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/2/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/4').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/4/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/3/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/5').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/5/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/4/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/6').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/6/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/5/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/7').exists() || newData.child('scenes/6/postId').val() !== newData.child('scenes/7/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/6/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/6/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/8').exists() || newData.child('scenes/7/postId').val() !== newData.child('scenes/8/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/7/postId').val() !== newData.child('scenes/9/postId').val()) && (!newData.child('scenes/9').exists() || newData.child('scenes/8/postId').val() !== newData.child('scenes/9/postId').val())",
+          "residentId": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 120"
+          },
+          "scenes": {
+            "0": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed'",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "1": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed'",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "2": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed'",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "3": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('2').exists()",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "4": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('3').exists()",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "5": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('4').exists()",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "6": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('5').exists()",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "7": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('6').exists()",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "8": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('7').exists()",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "9": {
+              ".validate": "newData.hasChildren(['postId','connection']) && root.child('aiCity/posts').child(newData.child('postId').val()).child('kind').val() === 'feed' && newData.parent().child('8').exists()",
+              "postId": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+              },
+              "connection": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 300"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            ".validate": "newData.numChildren() >= 3 && newData.numChildren() <= 10 && newData.hasChildren(['0','1','2'])",
+            "$other": {
+              ".validate": false
+            }
+          },
+          "contributors": {
+            "$uid": {
+              ".validate": "newData.val() === true && (root.child('aiCity/posts').child(newData.parent().parent().child('scenes/0/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/1/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/2/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/3/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/4/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/5/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/6/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/7/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/8/postId').val()).child('authorUid').val() === $uid || root.child('aiCity/posts').child(newData.parent().parent().child('scenes/9/postId').val()).child('authorUid').val() === $uid)"
+            }
+          },
+          "operatorUid": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "operatorAccount": {
+            ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
+          },
+          ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && !data.exists() && newData.exists() && root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('operatorUid').val() === auth.uid && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && newData.child('residentId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('residentId').val() && newData.child('title').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('title').val() && newData.child('operatorUid').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('operatorUid').val() && newData.child('operatorAccount').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('operatorAccount').val() && newData.child('createdAt').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('createdAt').val() && newData.child('scenes/0/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val() && newData.child('scenes/0/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/connection').val() && newData.child('scenes/1/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val() && newData.child('scenes/1/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/connection').val() && newData.child('scenes/2/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val() && newData.child('scenes/2/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/connection').val() && newData.child('scenes/3/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val() && newData.child('scenes/3/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/connection').val() && newData.child('scenes/4/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val() && newData.child('scenes/4/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/connection').val() && newData.child('scenes/5/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val() && newData.child('scenes/5/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/connection').val() && newData.child('scenes/6/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val() && newData.child('scenes/6/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/connection').val() && newData.child('scenes/7/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val() && newData.child('scenes/7/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/connection').val() && newData.child('scenes/8/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val() && newData.child('scenes/8/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/connection').val() && newData.child('scenes/9/postId').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val() && newData.child('scenes/9/connection').val() === root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/connection').val() && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/0/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/1/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/2/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/3/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/4/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/5/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/6/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/7/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/8/postId').val()).child('accepted').val() === true))) && (!root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9').exists() || (root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).exists() && ((root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('residentId').exists() ? root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('residentId').val() : root.child('aiCity/posts').child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('accountId').val()) === newData.child('residentId').val() || root.child('aiCity/editionConsents').child(newData.child('residentId').val()).child($editionId).child(root.child('aiCity/editionPlans').child(newData.child('residentId').val()).child($editionId).child('scenes/9/postId').val()).child('accepted').val() === true)))"
         }
       }
     }

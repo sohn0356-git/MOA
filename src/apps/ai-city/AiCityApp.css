@@ -283,3 +283,11 @@
 .city-record-scope{margin:.6rem 0;padding:.5rem .75rem;border-left:3px solid #486c62;background:#f3f6f4;overflow-wrap:anywhere}
 .city-record-scope p{margin:.2rem 0}.city-record-scope small{display:block}
 .city-question-composer{margin:.6rem 0}.city-question-inbox button,.city-studio button{margin:.25rem}
+
+.city [hidden]{display:none!important}
+.city-time-detail{display:inline-block;margin-inline-start:.5rem;font-size:.8em;vertical-align:top}.city-time-detail summary{cursor:pointer}.city-time-detail span{display:block;overflow-wrap:anywhere}
+.city section[aria-label="공유 재료실"] form,.city section[aria-label="내 댓글 정정"] form,.city section[aria-label="도시 출판실"] fieldset{display:grid;gap:.7rem;min-width:0}
+.city section[aria-label="도시 출판실"] label,.city form[aria-label="재료 후보 편집"] label,.city form[aria-label="내 댓글 정정"] label{display:grid;gap:.4rem;margin:.5rem 0}
+.city section[aria-label="도시 출판실"] input,.city section[aria-label="도시 출판실"] select,.city form[aria-label="재료 후보 편집"] textarea,.city form[aria-label="재료 후보 편집"] select,.city form[aria-label="내 댓글 정정"] textarea{max-width:100%;box-sizing:border-box;width:100%;font:inherit}
+.city [role="dialog"]{padding:1rem;border:2px solid #486c62;background:#fff;position:relative;z-index:2}.city [role="dialog"] label{display:block;margin:.7rem 0}
+.city-corrections{border-left:2px solid #adbdb5;padding-left:.7rem}.city-corrections p{white-space:pre-wrap;overflow-wrap:anywhere}

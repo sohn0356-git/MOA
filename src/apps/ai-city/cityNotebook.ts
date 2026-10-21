@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-export type CityDraft = { recordScope?:import('./cityService').CityRecordScope; suggestion?:import('./cityService').CitySuggestionDetails; body: string; projectId: string; stage: string; parentPostId: string; savedAt: number }
+export type CityDraft = { handoff?:{fromResidentId:string;createdAt:number;reason:string;status:'pending'|'accepted'}; recordScope?:import('./cityService').CityRecordScope; suggestion?:import('./cityService').CitySuggestionDetails; body: string; projectId: string; stage: string; parentPostId: string; savedAt: number }
 export const emptyCityDraft: CityDraft = { body: '', projectId: '', stage: '', parentPostId: '', savedAt: 0 }
 export type CityBookmark = { postId: string; commentId: string; note: string; savedAt: number }
 export function useStoredCityState<T>(name: string, initial: T) {

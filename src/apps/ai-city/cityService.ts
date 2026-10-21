@@ -321,7 +321,7 @@ export function saveCityStudioWork(accountId:string,residentId:string,slot:strin
   await runTransaction(target,(current:CityStudioWork|null)=>({...input,title:input.title.trim(),nextAction:input.nextAction.trim(),createdAt:current?.createdAt??serverTimestamp(),updatedAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}),{applyLocally:false})
  })
 }
-export type CityQuestionLink={id:string;recipientId:string;senderResidentId:string;sourcePostId:string;sourceCommentId:string;question:string;operatorUid:string;operatorAccount:string;createdAt:number}
+export type CityQuestionLink={id:string;recipientId:string;senderResidentId:string;sourcePostId:string;sourceCommentId:string;question:string;operatorUid:string;operatorAccount:string;createdAt:number;supersedes?:{recipientId:string;questionId:string}}
 export type CityQuestionState={status:'accepted'|'later'|'declined';updatedAt:number;operatorUid:string;operatorAccount:string}
 export function subscribeCityQuestions(residentId:string,callback:(links:CityQuestionLink[],states:Record<string,CityQuestionState>)=>void,onError:(error:Error)=>void){
  let links:CityQuestionLink[]=[],states:Record<string,CityQuestionState>={},linksReady=false,statesReady=false
@@ -331,15 +331,18 @@ export function subscribeCityQuestions(residentId:string,callback:(links:CityQue
  const b=onValue(ref(db,'aiCity/questionStates/'+residentId),snapshot=>{states=snapshot.val()??{};statesReady=true;emit()},onError)
  return()=>{a();b()}
 }
-export async function createCityQuestion(accountId:string,senderResidentId:string,recipientId:string,sourcePostId:string,sourceCommentId:string,question:string){
+export async function createCityQuestion(accountId:string,senderResidentId:string,recipientId:string,sourcePostId:string,sourceCommentId:string,question:string,supersedes?:{recipientId:string;questionId:string}){
  const text=question.trim()
  if(!text||text.length>300||senderResidentId===recipientId)throw new Error('다른 주민과 1~300자의 질문을 선택해 주세요.')
- const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([senderResidentId,recipientId,sourcePostId,sourceCommentId,text])))
+ const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([senderResidentId,recipientId,sourcePostId,sourceCommentId,text,...(supersedes?[supersedes.recipientId,supersedes.questionId]:[])])))
  const id=Array.from(new Uint8Array(bytes),byte=>byte.toString(16).padStart(2,'0')).join('')
  return asAccount(accountId,async uid=>{
-  await runTransaction(ref(connection().db,'aiCity/questionLinks/'+recipientId+'/'+id),current=>current?undefined:{recipientId,senderResidentId,sourcePostId,sourceCommentId,question:text,operatorUid:uid,operatorAccount:accountId,createdAt:serverTimestamp()},{applyLocally:false})
+  await runTransaction(ref(connection().db,'aiCity/questionLinks/'+recipientId+'/'+id),current=>current?undefined:{recipientId,senderResidentId,sourcePostId,sourceCommentId,question:text,...(supersedes?{supersedes}:{}),operatorUid:uid,operatorAccount:accountId,createdAt:serverTimestamp()},{applyLocally:false})
  })
 }
 export function setCityQuestionState(accountId:string,residentId:string,questionId:string,status:CityQuestionState['status']){
  return asAccount(accountId,uid=>set(ref(connection().db,'aiCity/questionStates/'+residentId+'/'+questionId),{status,updatedAt:serverTimestamp(),operatorUid:uid,operatorAccount:accountId}))
 }
+
+export const withCityAccount=asAccount
+export function cityDatabase(){return connection().db}
