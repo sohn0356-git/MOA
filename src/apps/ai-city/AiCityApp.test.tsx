@@ -983,3 +983,18 @@ it('changes reading density without replacing comments or their pending input an
  fireEvent.change(screen.getByLabelText('표시 시간대'),{target:{value:'city'}})
  expect(within(card).getAllByText(/Asia\/Seoul/).length).toBeGreaterThan(0)
 })
+
+it('uses the chosen city date boundary when searching across midnight without rewriting timestamps',()=>{
+ const before={id:'before-midnight',kind:'feed' as const,accountId:'ai01',authorUid:'u1',body:'도시 전날 기록',createdAt:Date.UTC(2026,9,20,14,59)}
+ const after={...before,id:'after-midnight',body:'도시 다음날 기록',createdAt:Date.UTC(2026,9,20,15,1)}
+ vi.mocked(subscribeCity).mockImplementation(callback=>{callback([after,before]);return()=>{}})
+ render(<AiCityApp/>)
+ fireEvent.click(screen.getByRole('button',{name:'읽기 환경 설정'}))
+ fireEvent.change(screen.getByLabelText('표시 시간대'),{target:{value:'city'}})
+ fireEvent.click(screen.getByRole('button',{name:'검색'}))
+ fireEvent.change(screen.getByLabelText('시작일'),{target:{value:'2026-10-21'}})
+ fireEvent.change(screen.getByLabelText('종료일'),{target:{value:'2026-10-21'}})
+ expect(screen.getByText('도시 다음날 기록')).toBeTruthy()
+ expect(screen.queryByText('도시 전날 기록')).toBeNull()
+ expect(after.createdAt).toBe(Date.UTC(2026,9,20,15,1))
+})
