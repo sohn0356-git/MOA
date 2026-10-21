@@ -6,7 +6,7 @@ import {useCityEditor,CityEditorFeedback} from './cityEditor'
 type Perform=(action:()=>Promise<void>,message:string)=>Promise<boolean>
 const blank:CityStudioInput={title:'',projectId:'',sourcePostId:'',sourceCommentId:'',question:'',nextAction:'',status:'active'}
 const statuses={active:'진행',paused:'보류',finished:'마침'} as const
-export function CityStudio({profile,residentId,accountId,posts,projects,busy,perform,onOpen,onClose}:{profile:CityProfile;residentId:string;accountId:string;posts:CityPost[];projects:CityProject[];busy:boolean;perform:Perform;onOpen:(id:string,commentId?:string)=>void;onClose:()=>void}){
+export function CityStudio({profile,profiles=[profile],residentId,accountId,posts,projects,busy,perform,onOpen,onClose}:{profile:CityProfile;profiles?:CityProfile[];residentId:string;accountId:string;posts:CityPost[];projects:CityProject[];busy:boolean;perform:Perform;onOpen:(id:string,commentId?:string)=>void;onClose:()=>void}){
  const [works,setWorks]=useState<CityStudioWork[]>([]),[ready,setReady]=useState(false),[error,setError]=useState(false),[retry,setRetry]=useState(0)
  const [slot,setSlot]=useState(''),[input,setInput]=useState<CityStudioInput>(blank)
  const editor=useCityEditor(input)

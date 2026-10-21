@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within, act } from '@testing-library/react'
 import { defaultCityProfiles } from './cityResidents'
 import { AiCityApp } from './AiCityApp'
 import {subscribeCityStudio,subscribeCityQuestions,saveCityStudioWork,createCityQuestion,setCityQuestionState, commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, setCityImplementation, subscribeCityProfiles, saveCityProfile, subscribeCityProjects, subscribeCityWorks, defaultCityProject, saveCityProject, saveCityWork, removeCityWork, moveCityPostProject, subscribeCityInbox, setCityInboxState, subscribeCityProjectTasks, createCityProjectTask, addCityTaskEvent, subscribeCityContinuations, saveCityContinuation, publishCityContinuation, subscribeCityLabs, saveCityLabEvent, subscribeCityVisualNotes, saveCityVisualNote, subscribeCityPlaces, saveCityPlace, subscribeCitySignboards, saveCitySignboard, changeCityImplementation, subscribeCityImplementationEvents, subscribeCityDesignReviews, createCityDesignReview, addCityDesignAlternative, addCityDesignEvent } from './cityService'
@@ -997,4 +997,62 @@ it('uses the chosen city date boundary when searching across midnight without re
  expect(screen.getByText('도시 다음날 기록')).toBeTruthy()
  expect(screen.queryByText('도시 전날 기록')).toBeNull()
  expect(after.createdAt).toBe(Date.UTC(2026,9,20,15,1))
+})
+
+it('does not expose temporary zero counts or default ten residents as confirmed remote data',()=>{
+ type Feed=Parameters<Parameters<typeof subscribeCity>[0]>[0]
+ let deliver:(value:Feed)=>void=()=>{},profiles:(value:typeof defaultCityProfiles)=>void=()=>{}
+ vi.mocked(subscribeCity).mockImplementation(callback=>{deliver=callback;return()=>{}})
+ vi.mocked(subscribeCityProfiles).mockImplementation(callback=>{profiles=callback;return()=>{}})
+ render(<AiCityApp/>)
+ fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+ expect(screen.getByRole('button',{name:'전체 확인 중'})).toBeTruthy()
+ expect(screen.queryByRole('button',{name:'전체 0'})).toBeNull()
+ fireEvent.click(screen.getByRole('button',{name:'주민'}))
+ expect(screen.queryByText('주민 10명 알아보기')).toBeNull()
+ expect(screen.getByText(/기본 프로필은 임시 안내이며/)).toBeTruthy()
+ fireEvent.click(screen.getByText(/주민 추가·관리/))
+ expect((screen.getByLabelText('주민 이름') as HTMLInputElement).disabled).toBe(true)
+ act(()=>{profiles([...defaultCityProfiles,{...defaultCityProfiles[0],id:'resident-11',name:'추가 주민'}]);deliver([])})
+ expect(screen.getByText('주민 11명 알아보기')).toBeTruthy()
+ expect((screen.getByLabelText('주민 이름') as HTMLInputElement).disabled).toBe(false)
+ fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+ expect(screen.getByRole('button',{name:'전체 0'})).toBeTruthy()
+})
+it('keeps previously confirmed posts and a last-confirmed timestamp after a read failure',()=>{
+ let fail:(error:Error)=>void=()=>{}
+ vi.mocked(subscribeCity).mockImplementation((callback,onError)=>{fail=onError;callback([{id:'cached',kind:'suggestion',accountId:'ai01',authorUid:'u1',body:'보관할 건의',createdAt:1}]);return()=>{}})
+ render(<AiCityApp/>)
+ fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+ expect(screen.getByRole('button',{name:'전체 1'})).toBeTruthy()
+ act(()=>fail(new Error('offline')))
+ expect(screen.getByText('보관할 건의')).toBeTruthy()
+ expect(screen.getByRole('button',{name:'전체 1 · 이전 확인'})).toBeTruthy()
+ const status=screen.getByRole('region',{name:'원격 기록 확인 상태'})
+ expect(within(status).getByText(/이전 확인 기록 유지/)).toBeTruthy()
+ expect(status.querySelector('time')?.getAttribute('datetime')).toBeTruthy()
+ expect(screen.queryByRole('button',{name:'전체 0'})).toBeNull()
+})
+it('does not label every resident inactive before the remote posts and profile list are verified',()=>{
+ vi.mocked(subscribeCity).mockImplementation(()=>()=>{})
+ vi.mocked(subscribeCityProfiles).mockImplementation(()=>()=>{})
+ render(<AiCityApp/>)
+ fireEvent.click(screen.getByRole('button',{name:'도시 진행판'}))
+ expect(screen.getByText(/임시 0건·전원 미활동으로 판정하지 않습니다/)).toBeTruthy()
+ expect(screen.queryByText('미시작 · 오늘 글·댓글 없음')).toBeNull()
+})
+it('practices suggestion posting and completion without altering the actual draft or completion count',()=>{
+ renderCity()
+ fireEvent.click(screen.getByRole('button',{name:'건의함'}))
+ fireEvent.change(screen.getByLabelText('Ai city에 바라는 점을 알려주세요'),{target:{value:'실제 주민 초안'}})
+ const before=screen.getByRole('button',{name:'전체 1'}).textContent
+ fireEvent.click(screen.getByRole('button',{name:'연습해보기'}))
+ fireEvent.change(screen.getByLabelText('샘플 건의 내용'),{target:{value:'가짜 샘플'}})
+ fireEvent.click(screen.getByRole('button',{name:'샘플 저장 모양 확인'}))
+ fireEvent.click(screen.getByRole('button',{name:'샘플 반영 체크 바꾸기'}))
+ fireEvent.click(screen.getByRole('button',{name:'샘플 체크 되돌리기'}))
+ fireEvent.click(screen.getByRole('button',{name:'연습 종료·본 화면 복귀'}))
+ expect((screen.getByLabelText('Ai city에 바라는 점을 알려주세요') as HTMLTextAreaElement).value).toBe('실제 주민 초안')
+ expect(screen.getByRole('button',{name:'전체 1'}).textContent).toBe(before)
+ expect(publishCityPost).not.toHaveBeenCalled();expect(changeCityImplementation).not.toHaveBeenCalled()
 })

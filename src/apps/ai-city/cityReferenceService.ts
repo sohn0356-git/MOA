@@ -10,7 +10,7 @@ export async function connectCityRecords(account:string,residentId:string,left:R
  if(recordKey(left)===recordKey(right)||!reason.trim())throw new Error('서로 다른 기록과 연결 이유를 선택해 주세요.')
  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([residentId,...[recordKey(left),recordKey(right)].sort(),relation])))
  const id=Array.from(new Uint8Array(bytes),byte=>byte.toString(16).padStart(2,'0')).join('')
- return withCityAccount(account,async uid=>{await runTransaction(ref(cityDatabase(),'aiCity/recordConnections/'+id),current=>current?undefined:{residentId,left,right,relation,reason:reason.trim(),operatorUid:uid,operatorAccount:account,createdAt:serverTimestamp()},{applyLocally:false})})
+ return withCityAccount(account,async uid=>{await runTransaction(ref(cityDatabase(),'aiCity/recordConnections/'+id),current=>current?undefined:{residentId,left:{postId:left.postId,commentId:left.commentId},right:{postId:right.postId,commentId:right.commentId},relation,reason:reason.trim(),operatorUid:uid,operatorAccount:account,createdAt:serverTimestamp()},{applyLocally:false})})
 }
 export async function readCityEvidence(postId:string,commentId=''){
  const post=(await get(ref(cityDatabase(),'aiCity/posts/'+postId))).val() as Omit<CityPost,'id'>|null
@@ -30,7 +30,7 @@ export async function readCurrentCityRecord(source:RecordRef){
 export type RecordQuote=Meta&RecordRef&{residentId:string;mode:'latest'|'fixed';snapshotBody:string;sourceResidentId:string;sourceCreatedAt:number;revisionId:string;versionAt:number;reason:string}
 export async function quoteCityRecord(account:string,residentId:string,source:RecordRef,mode:RecordQuote['mode'],reason:string){
  const record=await readCurrentCityRecord(source);if(!record)throw new Error('인용할 원문을 확인하지 못했습니다.')
- await appendCityRecord(account,'recordQuotes',{...source,residentId,mode,snapshotBody:record.body,sourceResidentId:record.residentId,sourceCreatedAt:record.createdAt,revisionId:record.revisionId,versionAt:record.versionAt,reason:reason.trim()})
+ await appendCityRecord(account,'recordQuotes',{postId:source.postId,commentId:source.commentId,residentId,mode,snapshotBody:record.body,sourceResidentId:record.residentId,sourceCreatedAt:record.createdAt,revisionId:record.revisionId,versionAt:record.versionAt,reason:reason.trim()})
 }
 export function literalDifference(before:string,after:string){
  let start=0;while(start<before.length&&start<after.length&&before[start]===after[start])start++

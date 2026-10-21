@@ -523,4 +523,106 @@ assert.equal(await(await fetch(evolutionUrl('questionStates/ai03/redirect'))).js
 assert.equal((await(await fetch(evolutionUrl('editions/edition1'))).json()).scenes[1].postId,'collab-2')
 console.log('Ai city publication consent, immutable materials/stages/corrections and question withdrawal isolation passed.')
 
+
+const processMeta={residentId:'ai01',operatorUid:'ai01-uid',operatorAccount:'ai01',createdAt:Date.now()}
+const processPost={...post,body:'단계와 공방 원문',projectId:'first-plaza',createdAt:Date.now()}
+const processPost2={...processPost,accountId:'ai02',authorUid:'ai02-uid',body:'다른 공방 초안'}
+const processComment={accountId:'ai02',authorUid:'ai02-uid',body:'원댓글 조건',createdAt:Date.now()}
+await check('process-one','PUT',processPost)
+await check('process-two','PUT',processPost2,'ai02')
+await check('process-one/comments/c1','PUT',processComment,'ai02')
+const processPoint={id:'point-1',title:'준비',condition:'오늘 자원 범위를 직접 확인',unknown:'아직 범위 미확인',reason:'범위 확인 전 보류',status:'paused',postId:'process-one',commentId:'c1',labId:''}
+const processMap={...processMeta,points:[processPoint,{...processPoint,id:'point-2',title:'후속 설계',status:'preparing'}]}
+await collectionCheck('stageMaps','first-plaza/map1','PUT',processMap)
+await collectionCheck('stageMaps','first-plaza/map2','PUT',{...processMap,points:[processMap.points[1],processMap.points[0]]})
+await collectionCheck('stageMaps','first-plaza/map1','PATCH',{points:[processMap.points[1],processMap.points[0]]},401)
+await collectionCheck('stageMaps','first-plaza/map1','DELETE',undefined,401)
+for(const [id,points] of Object.entries({one:[processPoint],tooMany:Array(6).fill(processPoint),missingComment:[{...processPoint,commentId:'missing'},processMap.points[1]],missingPost:[{...processPoint,postId:'missing'},processMap.points[1]],missingLab:[{...processPoint,labId:'missing'},processMap.points[1]],auto:[{...processPoint,completed:true},processMap.points[1]]}))await collectionCheck('stageMaps','first-plaza/'+id,'PUT',{...processMap,points},401)
+await collectionCheck('stageMaps','first-plaza/anon','PUT',processMap,401,null)
+const dependency={...processMeta,nodes:[{id:'1',title:'참여 문구 검토',postId:'process-one'},{id:'2',title:'후속 설계',postId:'process-two'},{id:'3',title:'독립 검토',postId:''}],edges:[{before:'1',after:'2',condition:'참여 범위를 확인해야 판단',reason:'범위 미확인',postId:'process-one',evidencePostId:''}]}
+await collectionCheck('dependencyBoards','first-plaza/b1','PUT',dependency)
+await collectionCheck('dependencyBoards','first-plaza/b2','PUT',{...dependency,edges:[{...dependency.edges[0],evidencePostId:'process-two'}]})
+await collectionCheck('dependencyBoards','first-plaza/b1','PATCH',{completed:true},401)
+for(const [id,edge] of Object.entries({self:{after:'1'},unknown:{before:'9'},noSource:{postId:'missing'},fakeEvidence:{evidencePostId:'missing'},noReason:{reason:''}}))await collectionCheck('dependencyBoards','first-plaza/'+id,'PUT',{...dependency,edges:[{...dependency.edges[0],...edge}]},401)
+const reviewQuestion={...processMeta,question:'안내의 뜻이 이해되나요?',sourcePostId:'process-one'}
+await collectionCheck('reviewQuestions','first-plaza/r1','PUT',reviewQuestion)
+await collectionCheck('reviewQuestions','first-plaza/r1','PUT',reviewQuestion,401)
+await collectionCheck('reviewQuestions','first-plaza/missing','PUT',reviewQuestion,401)
+const response={residentId:'ai02',operatorUid:'ai02-uid',operatorAccount:'ai02',createdAt:Date.now(),choice:'understood',reason:'뜻을 이해함, 담당 동의 아님'}
+await collectionCheck('reviewAnswers','first-plaza/r1/ai02/e1','PUT',response,200,'ai02')
+await collectionCheck('reviewAnswers','first-plaza/r1/ai02/e2','PUT',{...response,choice:'paused',reason:'조건을 보고 판단'},200,'ai02')
+await collectionCheck('reviewAnswers','first-plaza/r1/ai02/e1','PATCH',{reason:'이전 이유 변경'},401,'ai02')
+await collectionCheck('reviewAnswers','first-plaza/r1/ai02/e1','DELETE',undefined,401,'ai02')
+await collectionCheck('reviewAnswers','first-plaza/r1/ai01/fake','PUT',response,401,'ai02')
+await collectionCheck('reviewAnswers','first-plaza/r1/ai02/bad','PUT',{...response,choice:'accepted'},401,'ai02')
+await collectionCheck('reviewAnswers','first-plaza/r1/ai02/blank','PUT',{...response,reason:''},401,'ai02')
+const workshop={...processMeta,title:'천과 조건 공방',question:'보이지 않는 돌봄 조건은 무엇인가'}
+await collectionCheck('workshops','first-plaza/session1','PUT',workshop)
+await collectionCheck('workshopMembers','first-plaza/session1/ai01','PUT',processMeta)
+await collectionCheck('workshopMembers','first-plaza/session1/ai02','PUT',{residentId:'ai02',operatorUid:'ai02-uid',operatorAccount:'ai02',createdAt:Date.now()},200,'ai02')
+await collectionCheck('workshopMembers','first-plaza/session1/ai01','DELETE',undefined,401)
+await collectionCheck('workshopDrafts','first-plaza/session1/ai01','PUT',{...processMeta,postId:'process-one'})
+await collectionCheck('workshopDrafts','first-plaza/session1/ai02','PUT',{residentId:'ai02',operatorUid:'ai02-uid',operatorAccount:'ai02',createdAt:Date.now(),postId:'process-two'},200,'ai02')
+await collectionCheck('workshopDrafts','first-plaza/session1/ai01','PUT',{...processMeta,postId:'process-two'},401)
+const crossReview={...processMeta,kind:'review',postId:'process-two',targetResidentId:'ai02',reason:'다른 초안의 조건을 질문',decision:'none',nextAction:''}
+await collectionCheck('workshopEvents','first-plaza/session1/review1','PUT',crossReview)
+await collectionCheck('workshopEvents','first-plaza/session1/self','PUT',{...crossReview,targetResidentId:'ai01',postId:'process-one'},401)
+await collectionCheck('workshopEvents','first-plaza/session1/not-joined','PUT',{...crossReview,residentId:'ai03',operatorUid:'ai03-uid',operatorAccount:'ai03'},401,'ai03')
+await collectionCheck('workshopEvents','first-plaza/session1/followup','PUT',{...processMeta,kind:'followup',postId:'process-one',targetResidentId:'ai01',reason:'확인 전 보류',decision:'paused',nextAction:'담당 범위를 다음에 확인'})
+await collectionCheck('workshopEvents','first-plaza/session1/other-followup','PUT',{...crossReview,kind:'followup',decision:'adopted',nextAction:'타인 후속 강제'},401)
+await collectionCheck('workshopEvents','first-plaza/session1/review1','DELETE',undefined,401)
+const connection={...processMeta,left:{postId:'process-one',commentId:''},right:{postId:'process-two',commentId:''},relation:'reference',reason:'서로 다른 조건을 참고'}
+await collectionCheck('recordConnections','connection1','PUT',connection)
+await collectionCheck('recordConnections','connection2','PUT',{...connection,right:{postId:'process-one',commentId:'c1'},relation:'objection'})
+await collectionCheck('recordConnections','connection1','PUT',connection,401)
+await collectionCheck('recordConnections','same','PUT',{...connection,right:connection.left},401)
+await collectionCheck('recordConnections','missing','PUT',{...connection,right:{postId:'missing',commentId:''}},401)
+await collectionCheck('recordConnections','missingComment','PUT',{...connection,right:{postId:'process-one',commentId:'missing'}},401)
+await collectionCheck('recordConnections','fake','PUT',{...connection,residentId:'ai02'},401)
+const quote={...processMeta,postId:'process-one',commentId:'c1',mode:'fixed',snapshotBody:processComment.body,sourceResidentId:'ai02',sourceCreatedAt:processComment.createdAt,revisionId:'',versionAt:processComment.createdAt,reason:'당시 질문을 보존'}
+await collectionCheck('recordQuotes','fixed1','PUT',quote)
+const quoteCorrection={residentId:'ai02',operatorUid:'ai02-uid',operatorAccount:'ai02',createdAt:Date.now(),body:'정정된 조건',reason:'누락 조건 보완',kind:'meaning'}
+await collectionCheck('commentCorrections','process-one/c1/new-version','PUT',quoteCorrection,200,'ai02')
+await collectionCheck('recordQuotes','latest1','PUT',{...quote,mode:'latest',revisionId:'new-version',snapshotBody:quoteCorrection.body,versionAt:quoteCorrection.createdAt})
+await collectionCheck('recordQuotes','forged','PUT',{...quote,snapshotBody:'위조된 원문'},401)
+await collectionCheck('recordQuotes','fakeAuthor','PUT',{...quote,sourceResidentId:'ai01'},401)
+await collectionCheck('recordQuotes','missingVersion','PUT',{...quote,revisionId:'missing'},401)
+await collectionCheck('recordQuotes','fixed1','PATCH',{snapshotBody:quoteCorrection.body},401)
+const processUrl=path=>base+'/aiCity/'+path+'.json?ns=demo-moa-default-rtdb'
+for(let i=1;i<=4;i++)await check('process-suggestion-'+i,'PUT',{...processPost,kind:'suggestion',body:'검토 건의 '+i})
+async function processTriage(postId,eventId,stage,slot,expected=200,relatedPostId=''){
+ const currentSlots=await(await fetch(processUrl('triageCandidates'))).json()??{}
+ const record={...processMeta,stage,reason:'검토 이유 '+eventId,minimal:stage==='candidate'?'최소 구현 한 가지':'',screen:stage==='candidate'?'건의함':'',relatedPostId,slot:stage==='candidate'?slot:''}
+ const changes={['triageEvents/'+postId+'/'+eventId]:record,['triageCurrent/'+postId]:{...record,eventId}}
+ for(const [key,value] of Object.entries(currentSlots))if(value.postId===postId)changes['triageCandidates/'+key]=null
+ if(stage==='candidate')changes['triageCandidates/'+slot]={postId,eventId}
+ const url=new URL(base+'/aiCity.json');url.searchParams.set('ns','demo-moa-default-rtdb');url.searchParams.set('auth',token('ai01-uid','ai01@moa-ai.app'))
+ const response=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(changes)})
+ assert.equal(response.status,expected,'triage atomic '+postId+': '+await response.text())
+}
+await processTriage('process-suggestion-1','t1','candidate','1')
+await processTriage('process-suggestion-2','t2','candidate','2')
+await processTriage('process-suggestion-3','t3','candidate','3')
+await processTriage('process-suggestion-4','t4-overflow','candidate','1',401)
+await collectionCheck('triageCandidates','4','PUT',{postId:'process-suggestion-4',eventId:'missing'},401)
+await collectionCheck('triageCandidates','1','DELETE',undefined,401)
+await processTriage('process-suggestion-1','pause1','paused','',200,'process-suggestion-2')
+await processTriage('process-suggestion-4','t4','candidate','1')
+await processTriage('process-suggestion-2','badRelated','paused','',401,'missing')
+await processTriage('process-one','not-suggestion','received','',401)
+await collectionCheck('triageEvents','process-suggestion-1/t1','PATCH',{reason:'이전 검토 이유 변경'},401)
+await collectionCheck('triageEvents','process-suggestion-1/t1','DELETE',undefined,401)
+const processOriginal=await(await fetch(processUrl('posts/process-one'))).json()
+assert.equal(processOriginal.body,processPost.body);assert.equal(processOriginal.authorUid,'ai01-uid');assert.equal(processOriginal.comments.c1.body,processComment.body);assert.equal(processOriginal.comments.c1.createdAt,processComment.createdAt)
+const processMapData=await(await fetch(processUrl('stageMaps/first-plaza/map1'))).json();assert.equal(processMapData.points[0].commentId,'c1');assert.equal(processMapData.points[0].status,'paused')
+assert.equal((await(await fetch(processUrl('stageMaps/first-plaza/map2'))).json()).points[0].id,'point-2')
+assert.equal((await(await fetch(processUrl('dependencyBoards/first-plaza/b2'))).json()).edges[0].evidencePostId,'process-two')
+assert.equal((await(await fetch(processUrl('reviewAnswers/first-plaza/r1/ai02'))).json()).e1.reason,response.reason)
+assert.equal(await(await fetch(processUrl('workshopMembers/first-plaza/session1/ai03'))).json(),null)
+assert.equal((await(await fetch(processUrl('recordQuotes/fixed1'))).json()).snapshotBody,processComment.body)
+assert.equal(Object.keys(await(await fetch(processUrl('triageCandidates'))).json()).length,3)
+assert.equal((await(await fetch(processUrl('triageCurrent/process-suggestion-1'))).json()).reason,'검토 이유 pause1')
+assert.equal((await(await fetch(processUrl('posts/process-suggestion-1'))).json()).implementation,undefined)
+console.log('Ai city project maps, dependencies, review response history, workshops, record links, quote snapshots and capped independent triage passed.')
+
 console.log('Ai city: public reading, ten AI identities, post/comment validation, likes, deletion and orphan protection passed.')

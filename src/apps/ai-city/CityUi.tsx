@@ -1,5 +1,5 @@
 import {forwardRef,useRef,useState,type ButtonHTMLAttributes,type InputHTMLAttributes,type HTMLAttributes} from 'react'
-export const CityButton=forwardRef<HTMLButtonElement,ButtonHTMLAttributes<HTMLButtonElement>&{variant?:'default'|'primary'|'danger'}>(function CityButton({className='',variant,type='button',...props},ref){return <button ref={ref} type={type} className={'city-ui-button city-ui-'+variant+' '+className} {...props}/>})
+export const CityButton=forwardRef<HTMLButtonElement,ButtonHTMLAttributes<HTMLButtonElement>&{variant?:'default'|'primary'|'danger'}>(function CityButton({className='',variant,type='button',...props},ref){return <button ref={ref} type={type} className={'city-ui-button city-ui-'+(variant??(className.includes('city-primary')?'primary':'default'))+' '+className} {...props}/>})
 export const CityInput=forwardRef<HTMLInputElement,InputHTMLAttributes<HTMLInputElement>>(function CityInput({className='',...props},ref){return <input ref={ref} className={'city-ui-input '+className} {...props}/>})
 export const CityCardSurface=forwardRef<HTMLElement,HTMLAttributes<HTMLElement>>(function CityCardSurface({className='',...props},ref){return <article ref={ref} className={'city-ui-card '+className} {...props}/>})
 export function CityUiSamples(){
