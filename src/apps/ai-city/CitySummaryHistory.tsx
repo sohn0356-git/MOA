@@ -6,8 +6,8 @@ export function CitySummaryHistory({residentId,accountId,busy,perform,onRestored
  const [data,setData]=useState<{activitySummary?:string;updatedAt?:number}>({}),[history,setHistory]=useState<Record<string,SummaryVersion>>({}),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[selected,setSelected]=useState<{id:string;side:'before'|'after';summary:string;current:string;updatedAt:number}|null>(null),[message,setMessage]=useState('')
  const result=useRef<HTMLParagraphElement>(null)
  useEffect(()=>{setReady(false);setFailed(false);setSelected(null);setMessage('');const seen=new Set<string>(),stops:(()=>void)[]=[];try{
- stops.push(watchCityValue('residents/'+residentId,v=>{setData(v);seen.add('profile');if(seen.size===2)setReady(true)},()=>setFailed(true)))
- stops.push(watchCityValue('summaryVersions/'+residentId,v=>{setHistory(v);seen.add('history');if(seen.size===2)setReady(true)},()=>setFailed(true)))
+ stops.push(watchCityValue<{activitySummary?:string;updatedAt?:number}>('residents/'+residentId,v=>{setData(v);seen.add('profile');if(seen.size===2)setReady(true)},()=>setFailed(true)))
+ stops.push(watchCityValue<Record<string,SummaryVersion>>('summaryVersions/'+residentId,v=>{setHistory(v);seen.add('history');if(seen.size===2)setReady(true)},()=>setFailed(true)))
  }catch{setFailed(true)}return()=>stops.forEach(stop=>stop())},[residentId])
  const sorted=Object.entries(history).sort(([a,x],[b,y])=>y.createdAt-x.createdAt||b.localeCompare(a))
  const versions=sorted.flatMap(([id,v],i)=>[{id,side:'after' as const,summary:v.summary,createdAt:v.createdAt,restoredFrom:v.restoredFrom},...(i===sorted.length-1?[{id,side:'before' as const,summary:v.previousSummary,createdAt:v.previousUpdatedAt,restoredFrom:''}]:[])]).slice(0,5)

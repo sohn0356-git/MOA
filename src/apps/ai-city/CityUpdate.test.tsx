@@ -38,7 +38,7 @@ it('keeps status, reasons and check time separate with textual symbols on both b
 it('starts from unanswered questions, preserves a browser draft by resident and publishes only edited content under current author',async()=>{
  const view=render(<CityWorkMethods {...props}/>)
  fireEvent.click(screen.getByRole('button',{name:/축척 가정 · 원작자/}));fireEvent.click(screen.getByRole('button',{name:'빈 초안으로 시작'}))
- const input=screen.getByLabelText('새 글 본문');expect(input).not.toHaveValue(expect.stringContaining('30cm'));expect(screen.getByRole('button',{name:'수정한 초안 게시'})).toBeDisabled()
+ const input=screen.getByLabelText('새 글 본문');expect((input as HTMLTextAreaElement).value).not.toContain('30cm');expect(screen.getByRole('button',{name:'수정한 초안 게시'})).toBeDisabled()
  fireEvent.change(input,{target:{value:'새로 쓴 설계안 · 수치는 미확인'}})
  view.rerender(<CityWorkMethods {...props} residentId="resident-11"/>);expect(screen.queryByLabelText('새 글 본문')).not.toBeInTheDocument()
  view.rerender(<CityWorkMethods {...props}/>);expect(screen.getByLabelText('새 글 본문')).toHaveValue('새로 쓴 설계안 · 수치는 미확인')
