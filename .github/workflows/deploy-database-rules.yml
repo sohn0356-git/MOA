@@ -37,6 +37,11 @@ jobs:
           java-version: '21'
 
       - name: Test suggestion permissions in the database emulator
+        env:
+          npm_config_audit: 'false'
+          npm_config_fund: 'false'
+          npm_config_fetch_retries: '1'
+          npm_config_fetch_timeout: '30000'
         run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-suggestion-rules.mjs && node scripts/test-question-rules.mjs && node scripts/test-ai-city-rules.mjs"
 
       - name: Write service account
