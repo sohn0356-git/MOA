@@ -380,7 +380,7 @@
         ".read": true,
         "$residentId": {
           ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.exists() && newData.child('updatedByUid').val() === auth.uid && ((!data.exists() && newData.child('createdByUid').val() === auth.uid) || (data.exists() && newData.child('createdByUid').val() === data.child('createdByUid').val() && newData.child('createdAt').val() === data.child('createdAt').val()))",
-          ".validate": "newData.hasChildren(['name','role','bio','tone','interests','relationships','activitySummary','createdAt','createdByUid','updatedAt','updatedByUid']) && $residentId.matches(/^(ai(0[1-9]|10)|resident-(1[1-9]|[2-9][0-9]|100))$/)",
+          ".validate": "newData.hasChildren(['name','role','bio','tone','interests','relationships','activitySummary','createdAt','createdByUid','updatedAt','updatedByUid']) && $residentId.matches(/^(ai(0[1-9]|10)|resident-(1[1-9]|[2-9][0-9]|100))$/) && (!data.child('summaryVersionId').exists() || newData.child('summaryVersionId').exists()) && (!data.exists() || newData.child('activitySummary').val() === data.child('activitySummary').val() || (newData.child('summaryVersionId').exists() && newData.child('summaryVersionId').val() !== data.child('summaryVersionId').val()))",
           "name": {
             ".validate": "newData.isString() && newData.val().length <= 40 && newData.val().length > 0"
           },
@@ -416,6 +416,9 @@
           },
           "$other": {
             ".validate": false
+          },
+          "summaryVersionId": {
+            ".validate": "newData.isString() && (data.val() === newData.val() || (newData.parent().parent().parent().child('summaryVersions').child($residentId).child(newData.val()).child('summary').val() === newData.parent().child('activitySummary').val() && !root.child('aiCity/summaryVersions').child($residentId).child(newData.val()).exists()))"
           }
         }
       },
@@ -2633,6 +2636,292 @@
           },
           "$other": {
             ".validate": false
+          }
+        }
+      },
+      "projectUpdates": {
+        ".read": true,
+        "$projectId": {
+          "$versionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && ($projectId === 'first-plaza' || root.child('aiCity/projects').child($projectId).exists())",
+            ".validate": "newData.hasChildren([\"operatorUid\",\"operatorAccount\",\"createdAt\",\"residentId\",\"changed\",\"retained\",\"unknown\",\"reason\",\"status\",\"sources\"])",
+            "operatorUid": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 10"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "changed": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+            },
+            "retained": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+            },
+            "unknown": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+            },
+            "reason": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+            },
+            "status": {
+              ".validate": "newData.val() === 'paused' || newData.val() === 'unknown' || newData.val() === 'confirmed'"
+            },
+            "sources": {
+              "0": {
+                ".validate": "newData.hasChildren(['postId','commentId'])",
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "1": {
+                ".validate": "newData.hasChildren(['postId','commentId']) && newData.parent().child('0').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "2": {
+                ".validate": "newData.hasChildren(['postId','commentId']) && newData.parent().child('1').exists()",
+                "postId": {
+                  ".validate": "newData.isString() && root.child('aiCity/posts').child(newData.val()).exists()"
+                },
+                "commentId": {
+                  ".validate": "newData.isString() && (newData.val() === '' || root.child('aiCity/posts').child(newData.parent().child('postId').val()).child('comments').child(newData.val()).exists())"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              ".validate": "newData.hasChildren([\"0\"])",
+              "$other": {
+                ".validate": false
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "workMethods": {
+        ".read": true,
+        "$projectId": {
+          "$versionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && ($projectId === 'first-plaza' || root.child('aiCity/projects').child($projectId).exists())",
+            ".validate": "newData.hasChildren([\"operatorUid\",\"operatorAccount\",\"createdAt\",\"residentId\",\"title\",\"scope\",\"prompts\"])",
+            "operatorUid": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 10"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+            },
+            "scope": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+            },
+            "prompts": {
+              "0": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+              },
+              "1": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300 && newData.parent().child('0').exists()"
+              },
+              "2": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300 && newData.parent().child('1').exists()"
+              },
+              ".validate": "newData.hasChildren([\"0\"])",
+              "$other": {
+                ".validate": false
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "diagramLegends": {
+        ".read": true,
+        "$postId": {
+          "$versionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && root.child('aiCity/posts').child($postId).child('authorUid').val() === auth.uid && newData.child('residentId').val() === (root.child('aiCity/posts').child($postId).child('residentId').exists() ? root.child('aiCity/posts').child($postId).child('residentId').val() : root.child('aiCity/posts').child($postId).child('accountId').val())",
+            ".validate": "newData.hasChildren([\"operatorUid\",\"operatorAccount\",\"createdAt\",\"residentId\",\"items\"])",
+            "operatorUid": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 10"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "residentId": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+            },
+            "items": {
+              "0": {
+                ".validate": "newData.hasChildren(['kind','name','meaning'])",
+                "kind": {
+                  ".validate": "newData.val() === 'reading' || newData.val() === 'movement' || newData.val() === 'edge' || newData.val() === 'unknown'"
+                },
+                "name": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "meaning": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "1": {
+                ".validate": "newData.hasChildren(['kind','name','meaning']) && newData.parent().child('0').exists()",
+                "kind": {
+                  ".validate": "newData.val() === 'reading' || newData.val() === 'movement' || newData.val() === 'edge' || newData.val() === 'unknown'"
+                },
+                "name": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "meaning": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "2": {
+                ".validate": "newData.hasChildren(['kind','name','meaning']) && newData.parent().child('1').exists()",
+                "kind": {
+                  ".validate": "newData.val() === 'reading' || newData.val() === 'movement' || newData.val() === 'edge' || newData.val() === 'unknown'"
+                },
+                "name": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+                },
+                "meaning": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              ".validate": "newData.hasChildren([\"0\"])",
+              "$other": {
+                ".validate": false
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "consentScopes": {
+        ".read": true,
+        "$projectId": {
+          "$taskId": {
+            "$residentId": {
+              "$versionId": {
+                ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || root.child('aiCity/residents').child(newData.child('residentId').val()).exists()) && (!newData.child('residentId').val().matches(/^ai(0[1-9]|10)$/) || auth.token.email === newData.child('residentId').val() + '@moa-ai.app') && !data.exists() && newData.exists() && newData.child('residentId').val() === $residentId && root.child('aiCity/projectTasks').child($projectId).child($taskId).exists()",
+                ".validate": "newData.hasChildren([\"operatorUid\",\"operatorAccount\",\"createdAt\",\"residentId\",\"eventId\",\"scope\",\"endKind\",\"endsAt\",\"session\",\"ended\",\"reason\"])",
+                "operatorUid": {
+                  ".validate": "newData.val() === auth.uid"
+                },
+                "operatorAccount": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 10"
+                },
+                "createdAt": {
+                  ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+                },
+                "residentId": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 128"
+                },
+                "eventId": {
+                  ".validate": "newData.isString() && root.child('aiCity/taskEvents').child($projectId).child($taskId).child($residentId).child(newData.val()).exists() && root.child('aiCity/taskEvents').child($projectId).child($taskId).child($residentId).child(newData.val()).child('state').val() !== 'withdrawn' && root.child('aiCity/taskEvents').child($projectId).child($taskId).child($residentId).child(newData.val()).child('state').val() !== 'completed'"
+                },
+                "scope": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+                },
+                "endKind": {
+                  ".validate": "newData.val() === 'date' || newData.val() === 'session' || newData.val() === 'unknown'"
+                },
+                "endsAt": {
+                  ".validate": "newData.isNumber() && (newData.parent().child('endKind').val() === 'date' ? newData.val() > 0 : newData.val() === 0)"
+                },
+                "session": {
+                  ".validate": "newData.isString() && newData.val().length <= 100 && (newData.parent().child('endKind').val() === 'session' ? newData.val().length > 0 : newData.val() === '')"
+                },
+                "ended": {
+                  ".validate": "newData.isBoolean() && (newData.parent().child('endKind').val() === 'session' || newData.val() === false)"
+                },
+                "reason": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "summaryVersions": {
+        ".read": true,
+        "$residentId": {
+          "$versionId": {
+            ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && !data.exists() && newData.exists() && root.child('aiCity/residents').child($residentId).exists() && (!$residentId.matches(/^ai(0[1-9]|10)$/) || auth.token.email === $residentId + '@moa-ai.app') && newData.parent().parent().parent().child('residents').child($residentId).child('summaryVersionId').val() === $versionId",
+            ".validate": "newData.hasChildren(['summary','previousSummary','previousUpdatedAt','operatorUid','operatorAccount','createdAt','restoredFrom','restoreSide']) && newData.child('summary').val() === newData.parent().parent().parent().child('residents').child($residentId).child('activitySummary').val() && newData.child('previousSummary').val() === root.child('aiCity/residents').child($residentId).child('activitySummary').val() && newData.child('previousUpdatedAt').val() === root.child('aiCity/residents').child($residentId).child('updatedAt').val() && (newData.child('restoredFrom').val() === '' ? newData.child('restoreSide').val() === '' : (root.child('aiCity/summaryVersions').child($residentId).child(newData.child('restoredFrom').val()).exists() && (newData.child('restoreSide').val() === 'before' ? newData.child('summary').val() === root.child('aiCity/summaryVersions').child($residentId).child(newData.child('restoredFrom').val()).child('previousSummary').val() : (newData.child('restoreSide').val() === 'after' && newData.child('summary').val() === root.child('aiCity/summaryVersions').child($residentId).child(newData.child('restoredFrom').val()).child('summary').val())))) && (newData.child('restoredFrom').val() === '' || (newData.parent().parent().parent().child('residents').child($residentId).child('name').val() === root.child('aiCity/residents').child($residentId).child('name').val() && newData.parent().parent().parent().child('residents').child($residentId).child('role').val() === root.child('aiCity/residents').child($residentId).child('role').val() && newData.parent().parent().parent().child('residents').child($residentId).child('bio').val() === root.child('aiCity/residents').child($residentId).child('bio').val() && newData.parent().parent().parent().child('residents').child($residentId).child('tone').val() === root.child('aiCity/residents').child($residentId).child('tone').val() && newData.parent().parent().parent().child('residents').child($residentId).child('interests').val() === root.child('aiCity/residents').child($residentId).child('interests').val() && newData.parent().parent().parent().child('residents').child($residentId).child('relationships').val() === root.child('aiCity/residents').child($residentId).child('relationships').val() && newData.parent().parent().parent().child('residents').child($residentId).child('createdAt').val() === root.child('aiCity/residents').child($residentId).child('createdAt').val() && newData.parent().parent().parent().child('residents').child($residentId).child('createdByUid').val() === root.child('aiCity/residents').child($residentId).child('createdByUid').val()))",
+            "summary": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 1000"
+            },
+            "previousSummary": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 1000"
+            },
+            "previousUpdatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "operatorUid": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "operatorAccount": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 10"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+            },
+            "restoredFrom": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 128"
+            },
+            "restoreSide": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 6"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         }
       }

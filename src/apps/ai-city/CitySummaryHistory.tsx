@@ -1,0 +1,15 @@
+import {useEffect,useRef,useState} from 'react'
+import {restoreCitySummary,type SummaryVersion} from './cityUpdateService'
+import {watchCityValue} from './cityCollaboration'
+import type {Perform} from './CityUpdates'
+export function CitySummaryHistory({residentId,accountId,busy,perform,onRestored}:{residentId:string;accountId:string;busy:boolean;perform:Perform;onRestored:(summary:string)=>void}){
+ const [data,setData]=useState<{activitySummary?:string;updatedAt?:number}>({}),[history,setHistory]=useState<Record<string,SummaryVersion>>({}),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[selected,setSelected]=useState<{id:string;side:'before'|'after';summary:string;current:string;updatedAt:number}|null>(null),[message,setMessage]=useState('')
+ const result=useRef<HTMLParagraphElement>(null)
+ useEffect(()=>{setReady(false);setFailed(false);setSelected(null);setMessage('');const seen=new Set<string>(),stops:(()=>void)[]=[];try{
+ stops.push(watchCityValue('residents/'+residentId,v=>{setData(v);seen.add('profile');if(seen.size===2)setReady(true)},()=>setFailed(true)))
+ stops.push(watchCityValue('summaryVersions/'+residentId,v=>{setHistory(v);seen.add('history');if(seen.size===2)setReady(true)},()=>setFailed(true)))
+ }catch{setFailed(true)}return()=>stops.forEach(stop=>stop())},[residentId])
+ const sorted=Object.entries(history).sort(([a,x],[b,y])=>y.createdAt-x.createdAt||b.localeCompare(a))
+ const versions=sorted.flatMap(([id,v],i)=>[{id,side:'after' as const,summary:v.summary,createdAt:v.createdAt,restoredFrom:v.restoredFrom},...(i===sorted.length-1?[{id,side:'before' as const,summary:v.previousSummary,createdAt:v.previousUpdatedAt,restoredFrom:''}]:[])]).slice(0,5)
+ return <section aria-label="최근 활동 요약 판 복원"><h4>최근 활동 요약 · 최근 5판</h4><p>현재 선택한 주민 {residentId}의 요약만 복원합니다. 정체성·글·댓글·담당 동의·완료 체크와 다른 주민은 바꾸지 않습니다.</p>{failed?<p role="alert">요약 이력을 확인하지 못했습니다. 주민을 다시 선택해 주세요.</p>:!ready?<p role="status">요약 이력 확인 중…</p>:null}{ready&&!versions.length?<p>아직 저장된 이전 판이 없습니다. 요약을 변경해 저장하면 현재 판부터 보관합니다.</p>:null}{versions.map(v=><article key={v.id+v.side}><p>{v.summary||'(빈 요약)'}</p><p>{new Date(v.createdAt).toLocaleString('ko-KR')}{v.restoredFrom?' · 이전 판을 복원한 새 판':''}</p><button type="button" disabled={busy||!ready||failed} onClick={()=>setSelected({id:v.id,side:v.side,summary:v.summary,current:data.activitySummary??'',updatedAt:data.updatedAt??0})}>이 판 복원 미리보기</button></article>)}{selected?<div aria-label="요약 복원 미리보기"><h5>현재 요약</h5><p>{selected.current||'(빈 요약)'}</p><h5>복원될 요약</h5><p>{selected.summary||'(빈 요약)'}</p><p>바뀌는 범위: 최근 활동 요약 한 항목. 기존 판은 유지하고 새 복원 판을 만듭니다.</p><button type="button" disabled={busy||failed} onClick={async()=>{if(await perform(()=>restoreCitySummary(accountId,residentId,selected.id,selected.updatedAt,selected.side),'요약을 새 판으로 복원했습니다.')){setSelected(null);setMessage('요약 복원 완료 · 다른 기록은 유지됩니다.');onRestored(selected.summary);setTimeout(()=>result.current?.focus(),0)}}}>요약 복원 확인</button><button type="button" disabled={busy} onClick={()=>setSelected(null)}>요약 복원 취소</button></div>:null}<p role="status" tabIndex={-1} ref={result}>{message}</p></section>
+}

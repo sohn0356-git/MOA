@@ -107,10 +107,16 @@ export function saveCityProfile(accountId: string, profileId: string, input: Cit
       const ids = new Set([...defaultCityProfiles.map(profile => profile.id), ...Object.keys(all)])
       if (!ids.has(profileId) && ids.size >= 100) throw new Error('주민은 최대 100명까지 등록할 수 있습니다.')
     }
-    const value = { ...input, name, createdAt: current?.createdAt ?? serverTimestamp(), createdByUid: current?.createdByUid ?? uid, updatedAt: serverTimestamp(), updatedByUid: uid }
+    const value = { ...input, name, ...((current as CityProfile & {summaryVersionId?:string}|null)?.summaryVersionId?{summaryVersionId:(current as CityProfile & {summaryVersionId:string}).summaryVersionId}:{}), createdAt: current?.createdAt ?? serverTimestamp(), createdByUid: current?.createdByUid ?? uid, updatedAt: serverTimestamp(), updatedByUid: uid }
     if (createOnly) {
       const result = await runTransaction(target, existing => existing ? undefined : value, { applyLocally: false })
       if (!result.committed) throw new Error('다른 사용자가 먼저 등록했습니다. 주민 목록을 새로 확인해 주세요.')
+    } else if(current&&current.activitySummary!==input.activitySummary){
+      const id=push(ref(db,'aiCity/summaryVersions/'+profileId)).key!
+      await update(ref(db,'aiCity'),{
+        ['residents/'+profileId]:{...value,summaryVersionId:id},
+        ['summaryVersions/'+profileId+'/'+id]:{summary:input.activitySummary,previousSummary:current.activitySummary,previousUpdatedAt:current.updatedAt??0,operatorUid:uid,operatorAccount:accountId,createdAt:serverTimestamp(),restoredFrom:'',restoreSide:''}
+      })
     } else { await set(target, value) }
   })
 }

@@ -313,3 +313,19 @@
 .city-saved-views{padding:20px;border:1px solid #d8e0d9;border-radius:12px;margin-block:16px}.city-saved-views>p:first-child{overflow-wrap:anywhere}.city-evidence-link{padding:16px;border-left:3px solid #8fa99d;margin-block:16px}.city-evidence-link p{overflow-wrap:anywhere}
 .city-ui-samples{display:grid;gap:24px;border:2px dashed #78988b;padding:24px}
 @media(max-width:680px){.city-screening-grid,.city-comparison{grid-template-columns:minmax(0,1fr)}.city-screening aside{border-left:0;border-top:1px solid #c7cdc6;padding:16px 0 0}.city-ui-card{padding:20px}.city-screening button{flex:1 1 140px}.city-saved-views details{max-width:100%}}
+
+/* Explicit meaning, reason and freshness remain readable without color. */
+.city-meaning-status{display:flex;flex-direction:column;gap:8px;padding:16px;border:2px solid currentColor;border-radius:8px;font-size:16px;line-height:1.6;overflow-wrap:anywhere}
+.city-meaning-status>strong{font-size:16px;font-weight:700;white-space:normal}
+.city-meaning-status p{margin:0;white-space:pre-wrap}
+.city-status-paused{border-style:double}.city-status-unknown{border-style:dashed}
+.city-update-card{padding:24px;margin:16px 0;border:1px solid #61756e;border-radius:12px}
+.city-update-card dd{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.city-update-card dt{font-weight:700}
+.city-status-samples{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:16px}
+.city-status-samples h4{grid-column:1/-1}
+.city-status-light{background:#f5f3ee;color:#242823}
+.city-status-dark{background:#242823;color:#f5f3ee}
+.city-legend-item{display:flex;flex-direction:column;gap:8px;font-size:16px;line-height:1.6;margin:16px 0}
+.city-legend-item p{margin:0;overflow-wrap:anywhere}
+@media(max-width:600px){.city-status-samples{grid-template-columns:1fr}.city-update-card{padding:16px}.city-meaning-status{min-width:0}}

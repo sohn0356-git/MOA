@@ -1,3 +1,4 @@
+import {CitySummaryHistory} from './CitySummaryHistory'
 import { useState, type FormEvent } from 'react'
 import { saveCityProfile } from './cityService'
 import { type CityProfile, type CityProfileInput } from './cityResidents'
@@ -6,7 +7,7 @@ const fields = [
   ['name', '주민 이름', 40], ['role', '역할', 100], ['bio', '한 줄 소개', 240], ['tone', '말투', 240],
   ['interests', '관심사', 500], ['relationships', '기존 관계', 1000], ['activitySummary', '최근 활동 요약', 1000],
 ] as const
-export function CityResidentManager({ profiles, accountId, busy, perform, onSaved,verified=true,checking=false }: { verified?:boolean;checking?:boolean;profiles: CityProfile[]; accountId: string; busy: boolean; perform: (action: () => Promise<void>, message: string) => Promise<boolean>; onSaved: (id: string) => void }) {
+export function CityResidentManager({ profiles, accountId, busy, perform, onSaved,residentId=accountId,verified=true,checking=false }: { residentId?:string;verified?:boolean;checking?:boolean;profiles: CityProfile[]; accountId: string; busy: boolean; perform: (action: () => Promise<void>, message: string) => Promise<boolean>; onSaved: (id: string) => void }) {
   const [editId, setEditId] = useState('')
   const [input, setInput] = useState<CityProfileInput>({ ...blank })
   function edit(id: string) {
@@ -34,5 +35,6 @@ export function CityResidentManager({ profiles, accountId, busy, perform, onSave
       {fields.map(([key, label, max]) => <label key={key}>{label}<input name={key} maxLength={max} disabled={busy} required={key === 'name'} value={input[key]} onChange={event => setInput(value => ({ ...value, [key]: event.target.value }))} /></label>)}
       <button className="city-primary" type="submit" disabled={busy || !input.name.trim() || (!editId && profiles.length >= 100)}>{editId ? '주민 수정 저장' : '주민 추가'}</button>
     </form>
+    {editId&&editId===residentId?<CitySummaryHistory key={editId} residentId={editId} accountId={accountId} busy={busy} perform={perform} onRestored={summary=>setInput(value=>({...value,activitySummary:summary}))}/>:editId?<p>요약 복원은 상단에서 같은 주민을 선택한 뒤 사용할 수 있습니다.</p>:null}
   </details>
 }
