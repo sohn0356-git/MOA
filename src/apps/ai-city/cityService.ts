@@ -1,3 +1,5 @@
+import {getStorage,setMaxUploadRetryTime} from 'firebase/storage'
+import type {CityImage} from './cityImages'
 import { getApps, initializeApp } from 'firebase/app'
 import { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } from 'firebase/auth'
 import { getDatabase, onValue, orderByChild, push, query, ref, remove, serverTimestamp, set, get, runTransaction, update } from 'firebase/database'
@@ -8,11 +10,11 @@ import { getFirebaseApp } from '../../services/firebase'
 export type CityKind = 'feed' | 'suggestion'
 export type CitySuggestionDetails={title:string;summary:string;category:'problem'|'idea';priority:'high'|'medium'|'low'}
 export type CityRecordScope={kind:'creative'|'design'|'virtual'|'execution';evidence:string}
-export type CityPostDetails = { recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
+export type CityPostDetails = { image?:CityImage; recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; projectId?: string; residentId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string }
 export type CityImplementation = { eventId?:string; applied: boolean; reviewedAt: number; reviewerAccount: string; reviewerUid: string; note: string }
 export type CityCommentReference={correctionId?:string;commentId:string;quoteStart:number;quoteEnd:number;label:'reply'|'question'|'revision'}
 export type CityComment = { replyTo?:CityCommentReference; accountId: string; authorUid: string; body: string; createdAt: number; residentId?: string }
-export type CityPost = CityComment & { id: string; kind: CityKind; recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
+export type CityPost = CityComment & { id: string; kind: CityKind; image?:CityImage; recordScope?:CityRecordScope; suggestion?:CitySuggestionDetails; implementation?: CityImplementation; residentLikes?: Record<string, { operatorUid: string; operatorAccount: string; createdAt: number }>; projectId?: string; stage?: 'idea' | 'experiment' | 'retrospective'; parentPostId?: string; likes?: Record<string, boolean>; comments?: Record<string, CityComment> }
 
 let context: ReturnType<typeof createContext> | undefined
 function createContext() {
@@ -20,9 +22,10 @@ function createContext() {
   const app = getApps().find(item => item.name === 'ai-city') ?? initializeApp(base.options, 'ai-city')
   const auth = initializeAuth(app, { persistence: inMemoryPersistence })
   const db = getDatabase(app, 'https://' + base.options.projectId + '-default-rtdb.firebaseio.com')
-  return { auth, db }
+  return { auth, db, app }
 }
 function connection() { return context ??= createContext() }
+export function cityStorage(){const storage=getStorage(connection().app);setMaxUploadRetryTime(storage,60000);return storage}
 let pending: Promise<unknown> = Promise.resolve()
 function asAccount<T>(accountId: string, action: (uid: string) => Promise<T>) {
   const operation = pending.catch(() => {}).then(async () => {
@@ -52,9 +55,10 @@ export function subscribeCity(onPosts: (posts: CityPost[]) => void, onError: (er
 }
 export function publishCityPost(accountId: string, kind: CityKind, value: string, details: CityPostDetails = {}) {
   const body = bodyText(value)
-  return asAccount(accountId, uid => set(push(ref(connection().db, 'aiCity/posts')), {
-    accountId, authorUid: uid, kind, body, ...Object.fromEntries(Object.entries(details).filter(([, value]) => value)), createdAt: serverTimestamp(),
-  }))
+  return asAccount(accountId, uid => {
+    if(details.image&&(details.image.ownerUid!==uid||!details.image.alt.trim()))throw new Error('현재 계정으로 그림을 다시 첨부하고 설명을 확인해 주세요.')
+    return set(push(ref(connection().db, 'aiCity/posts')), {accountId,authorUid:uid,kind,body,...Object.fromEntries(Object.entries(details).filter(([,value])=>value)),createdAt:serverTimestamp()})
+  })
 }
 export function commentCityPost(accountId:string,postId:string,value:string,residentId?:string,replyTo?:CityCommentReference){
  const body=bodyText(value)

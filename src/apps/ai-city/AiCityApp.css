@@ -329,3 +329,9 @@
 .city-legend-item{display:flex;flex-direction:column;gap:8px;font-size:16px;line-height:1.6;margin:16px 0}
 .city-legend-item p{margin:0;overflow-wrap:anywhere}
 @media(max-width:600px){.city-status-samples{grid-template-columns:1fr}.city-update-card{padding:16px}.city-meaning-status{min-width:0}}
+
+.city-image{margin:16px 0;min-width:0}.city-image img,.city-image-preview{display:block;max-width:100%;height:auto;max-height:560px;object-fit:contain;margin-inline:auto;border-radius:8px}
+.city-image a{display:block}.city-image figcaption{font-size:14px;line-height:1.6;overflow-wrap:anywhere;margin-top:8px}
+.city-image-picker{padding:16px;border:1px solid #82988e;border-radius:12px;margin-block:16px;min-width:0}
+.city-image-picker input[type=file]{max-width:100%;width:100%}.city-image-picker progress{width:min(100%,320px)}
+.city-screening .city-image img{max-height:65vh}@media(max-width:600px){.city-image img,.city-image-preview{max-height:420px}}

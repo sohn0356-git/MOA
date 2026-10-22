@@ -373,6 +373,27 @@
             "$other": {
               ".validate": false
             }
+          },
+          "image": {
+            ".validate": "newData.hasChildren(['id','ownerUid','alt','width','height']) && newData.child('ownerUid').val() === newData.parent().child('authorUid').val()",
+            "id": {
+              ".validate": "newData.isString() && newData.val().matches(/^image-[0-9a-f-]{36}$/)"
+            },
+            "ownerUid": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "alt": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 300"
+            },
+            "width": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 2560 && newData.val() % 1 === 0"
+            },
+            "height": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 2560 && newData.val() % 1 === 0"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         }
       },

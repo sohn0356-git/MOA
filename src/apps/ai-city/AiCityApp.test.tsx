@@ -1,3 +1,4 @@
+import {uploadCityImage,readCityImage} from './cityImageService'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within, act } from '@testing-library/react'
@@ -9,6 +10,7 @@ vi.mock('./cityService', () => ({
  subscribeCityStudio:vi.fn(),subscribeCityQuestions:vi.fn(),saveCityStudioWork:vi.fn(),createCityQuestion:vi.fn(),setCityQuestionState:vi.fn(),
   subscribeCityDesignReviews:vi.fn(),createCityDesignReview:vi.fn(),addCityDesignAlternative:vi.fn(),addCityDesignEvent:vi.fn(), changeCityImplementation:vi.fn(),subscribeCityImplementationEvents:vi.fn(), subscribeCityPlaces:vi.fn(),saveCityPlace:vi.fn(),subscribeCitySignboards:vi.fn(),saveCitySignboard:vi.fn(), subscribeCityVisualNotes: vi.fn(), saveCityVisualNote: vi.fn(), subscribeCityContinuations: vi.fn(), saveCityContinuation: vi.fn(), publishCityContinuation: vi.fn(), subscribeCityLabs: vi.fn(), saveCityLabEvent: vi.fn(), subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), subscribeCityProjectTasks: vi.fn(), createCityProjectTask: vi.fn(), addCityTaskEvent: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
 }))
+vi.mock('./cityImageService',()=>({uploadCityImage:vi.fn(),readCityImage:vi.fn()}))
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
@@ -1055,4 +1057,31 @@ it('practices suggestion posting and completion without altering the actual draf
  expect((screen.getByLabelText('Ai city에 바라는 점을 알려주세요') as HTMLTextAreaElement).value).toBe('실제 주민 초안')
  expect(screen.getByRole('button',{name:'전체 1'}).textContent).toBe(before)
  expect(publishCityPost).not.toHaveBeenCalled();expect(changeCityImplementation).not.toHaveBeenCalled()
+})
+
+it('attaches an uploaded image, preserves it after reopening and publishes image-only content with the current resident',async()=>{
+ const image={id:'image-11111111-1111-4111-8111-111111111111',ownerUid:'u1',alt:'푸른 종이배 그림',width:640,height:480}
+ URL.createObjectURL=vi.fn(()=> 'blob:preview');URL.revokeObjectURL=vi.fn()
+ vi.mocked(uploadCityImage).mockResolvedValue(image);vi.mocked(readCityImage).mockResolvedValue('https://example.com/image.webp')
+ let view=renderCity()
+ fireEvent.change(screen.getByLabelText('그림 파일 선택'),{target:{files:[new File(['png'],'boat.png',{type:'image/png'})]}})
+ fireEvent.change(screen.getByLabelText('새 그림 설명'),{target:{value:image.alt}})
+ fireEvent.click(screen.getByRole('button',{name:'그림 첨부하기'}))
+ await waitFor(()=>expect(screen.getByLabelText('첨부 그림 설명')).toBeTruthy())
+ expect(publishCityPost).not.toHaveBeenCalled()
+ view.unmount();view=renderCity()
+ expect((screen.getByLabelText('첨부 그림 설명') as HTMLInputElement).value).toBe(image.alt)
+ fireEvent.click(screen.getByRole('button',{name:'게시하기'}))
+ await waitFor(()=>expect(publishCityPost).toHaveBeenCalledWith('ai01','feed',image.alt,{image}))
+ await waitFor(()=>expect(screen.queryByLabelText('첨부 그림 설명')).toBeNull())
+ view.unmount()
+})
+it('retains the uploaded draft and description after a post failure',async()=>{
+ const image={id:'image-22222222-2222-4222-8222-222222222222',ownerUid:'u1',alt:'보존할 그림',width:10,height:10}
+ localStorage.setItem('moa:ai-city:notebook:drafts',JSON.stringify({'ai01:feed':{body:'남겨 둘 글',image,projectId:'',stage:'',parentPostId:'',savedAt:1}}))
+ vi.mocked(readCityImage).mockResolvedValue('https://example.com/image.webp');vi.mocked(publishCityPost).mockRejectedValueOnce(new Error('write failed'))
+ renderCity();fireEvent.click(screen.getByRole('button',{name:'게시하기'}))
+ await waitFor(()=>expect(publishCityPost).toHaveBeenCalled())
+ expect((screen.getByLabelText('첨부 그림 설명') as HTMLInputElement).value).toBe(image.alt)
+ expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('남겨 둘 글')
 })
