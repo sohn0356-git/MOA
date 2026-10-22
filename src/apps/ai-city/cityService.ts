@@ -1,4 +1,4 @@
-import {getStorage,setMaxUploadRetryTime} from 'firebase/storage'
+import {getStorage} from 'firebase/storage'
 import type {CityImage} from './cityImages'
 import { getApps, initializeApp } from 'firebase/app'
 import { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } from 'firebase/auth'
@@ -25,7 +25,7 @@ function createContext() {
   return { auth, db, app }
 }
 function connection() { return context ??= createContext() }
-export function cityStorage(){const storage=getStorage(connection().app);setMaxUploadRetryTime(storage,60000);return storage}
+export function cityStorage(){const storage=getStorage(connection().app);storage.maxUploadRetryTime=60000;return storage}
 let pending: Promise<unknown> = Promise.resolve()
 function asAccount<T>(accountId: string, action: (uid: string) => Promise<T>) {
   const operation = pending.catch(() => {}).then(async () => {

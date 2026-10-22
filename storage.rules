@@ -22,7 +22,7 @@ service firebase.storage {
 
     match /ai-city/{uid}/{imageId} {
       allow read: if true;
-      allow create: if isOwner(uid)
+      allow create: if resource == null && isOwner(uid)
         && request.auth.token.email.matches('ai(0[1-9]|10)@moa-ai[.]app')
         && imageId.matches('image-[0-9a-f-]{36}')
         && request.resource.size > 0 && request.resource.size <= 4 * 1024 * 1024

@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import {Blob as NodeBlob} from 'node:buffer'
 import {afterEach,beforeEach,it,expect,vi} from 'vitest'
 import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
 import {useState} from 'react'
@@ -10,6 +9,7 @@ import {prepareCityImage,readCityImage,uploadCityImage} from './cityImageService
 vi.mock('./cityImageService',async()=>({...await vi.importActual<typeof import('./cityImageService')>('./cityImageService'),readCityImage:vi.fn(),uploadCityImage:vi.fn()}))
 afterEach(()=>{cleanup();vi.restoreAllMocks();vi.unstubAllGlobals()})
 beforeEach(()=>{vi.clearAllMocks();URL.createObjectURL=vi.fn(()=> 'blob:preview');URL.revokeObjectURL=vi.fn();vi.mocked(readCityImage).mockResolvedValue('https://example.com/picture.webp')})
+function signatureBlob(bytes:number[],type:string){return {type,size:bytes.length,slice:()=>({arrayBuffer:async()=>new Uint8Array(bytes).buffer})} as unknown as Blob}
 const image:CityImage={id:'image-11111111-1111-4111-8111-111111111111',ownerUid:'u1',alt:'초록 나무 그림',width:1280,height:720}
 const perform=async(fn:()=>Promise<void>)=>{try{await fn();return true}catch{return false}}
 function Harness(){const [value,setValue]=useState<CityImage>();return <CityImagePicker value={value} onChange={setValue} accountId="ai01" busy={false} perform={perform}/>}
@@ -24,15 +24,15 @@ it('rejects unsupported, empty and oversized images and bounds dimensions while 
  expect(()=>cityImagePath({...image,ownerUid:'../other'})).toThrow()
 })
 it('checks actual signatures instead of trusting an image filename or MIME alone',async()=>{
- const png=new NodeBlob([new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0])],{type:'image/png'})
+ const png=signatureBlob([137,80,78,71,13,10,26,10,0,0,0,0],'image/png')
  await expect(verifyImageSignature(png as unknown as Blob)).resolves.toBeUndefined()
- await expect(verifyImageSignature(new NodeBlob(['<svg/>'],{type:'image/png'}) as unknown as Blob)).rejects.toThrow('파일 내용')
+ await expect(verifyImageSignature(signatureBlob([60,115,118,103,47,62],'image/png') as unknown as Blob)).rejects.toThrow('파일 내용')
 })
 it('re-encodes to a resized bitmap and closes it after processing',async()=>{
  const close=vi.fn(),draw=vi.fn();vi.stubGlobal('createImageBitmap',vi.fn().mockResolvedValue({width:4000,height:2000,close}))
  vi.spyOn(HTMLCanvasElement.prototype,'getContext').mockReturnValue({drawImage:draw} as unknown as CanvasRenderingContext2D)
- vi.spyOn(HTMLCanvasElement.prototype,'toBlob').mockImplementation(callback=>callback(new NodeBlob(['encoded'],{type:'image/webp'}) as unknown as Blob))
- const png=new NodeBlob([new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0])],{type:'image/png'})
+ vi.spyOn(HTMLCanvasElement.prototype,'toBlob').mockImplementation(callback=>callback(new Blob(['encoded'],{type:'image/webp'}) as unknown as Blob))
+ const png=signatureBlob([137,80,78,71,13,10,26,10,0,0,0,0],'image/png')
  const result=await prepareCityImage(png as unknown as File)
  expect(result.width).toBe(2560);expect(result.height).toBe(1280);expect(result.blob.type).toBe('image/webp');expect(draw).toHaveBeenCalled();expect(close).toHaveBeenCalledTimes(1)
 })
