@@ -26,13 +26,14 @@ const projects=[{id:'first-plaza',name:'첫 광장',description:'두 프로젝�
 const meta={residentId:'ai01',operatorUid:'u1',operatorAccount:'ai01',createdAt:1}
 const proposal={...meta,id:'q1',paragraphKey:'one',body:'기여 문단',postId:'p1',commentId:'c1',baseProposalId:''}
 const alternative={...proposal,id:'q2',residentId:'ai02',operatorUid:'u2',operatorAccount:'ai02',body:'보류된 대안',baseProposalId:'q1',createdAt:2}
+const otherParagraph={...alternative,id:'q3',paragraphKey:'two',body:'두 번째 기여 문단',postId:'p2',commentId:'',baseProposalId:''}
 const decision={...meta,id:'d1',proposalId:'q1',choice:'adopted',reason:'조건을 출처와 함께 읽기'}
-function memoData(){vi.mocked(watchCityValue).mockImplementation((_path,cb)=>{cb({...meta,title:'공동 조건 메모'} as never);return()=>{}});vi.mocked(watchCityRecords).mockImplementation((path,cb)=>{cb((path.endsWith('/proposals')?[alternative,proposal]:path.endsWith('/decisions')?[decision]:path.endsWith('/versions')?[{...meta,id:'v1',reason:'첫 판',items:[{proposalId:'q1',decisionId:'d1'}]}]:[]) as never);return()=>{}})}
+function memoData(){vi.mocked(watchCityValue).mockImplementation((_path,cb)=>{cb({...meta,title:'공동 조건 메모'} as never);return()=>{}});vi.mocked(watchCityRecords).mockImplementation((path,cb)=>{cb((path.endsWith('/proposals')?[alternative,proposal,otherParagraph]:path.endsWith('/decisions')?[decision,{...decision,id:'d4',proposalId:'q3'}]:path.endsWith('/versions')?[{...meta,id:'v1',reason:'첫 판',items:[{proposalId:'q1',decisionId:'d1'},{proposalId:'q3',decisionId:'d4'}]}]:[]) as never);return()=>{}})}
 const perform=async(fn:()=>Promise<void>)=>{try{await fn();return true}catch{return false}}
 const props={projectId:'first-plaza',residentId:'ai01',accountId:'ai01',posts,profiles:defaultCityProfiles,busy:false,perform,onOpen:vi.fn()}
 it('keeps source-linked contributions and unadopted alternatives while the editor explicitly publishes a version',async()=>{
  memoData();render(<CityReviewMemo {...props}/>);fireEvent.click(screen.getByText('공동 검토 메모'))
- expect(screen.getByText('보류된 대안')).toBeInTheDocument()
+ expect(screen.getByText('보류된 대안')).toBeInTheDocument();expect(screen.getByText('문단 2 · 검토 중 · 기여 주민 모아')).toBeInTheDocument()
  fireEvent.click(screen.getByRole('button',{name:'근거 원댓글 열기'}));expect(props.onOpen).toHaveBeenCalledWith('p1','c1')
  fireEvent.change(screen.getByLabelText('판단할 문단'),{target:{value:'q2'}});fireEvent.change(screen.getByLabelText('문단 판단 이유'),{target:{value:'공간 조건은 아직 미확인'}});fireEvent.click(screen.getByRole('button',{name:'문단 판단 저장'}))
  await waitFor(()=>expect(decideMemoParagraph).toHaveBeenCalledWith('ai01','first-plaza',expect.objectContaining({proposalId:'q2',choice:'paused',reason:'공간 조건은 아직 미확인'})))
@@ -101,4 +102,10 @@ it('previews focus without changing picture data, cancels to the saved view and 
  fireEvent.click(screen.getByRole('button',{name:'구도 미리보기 취소'}));expect(saveImagePreview).not.toHaveBeenCalled();expect(screen.getByAltText(post.image.alt).style.objectFit).toBe('')
  fireEvent.click(screen.getByRole('button',{name:'구도 미리보기 시작'}));fireEvent.change(screen.getByLabelText('그림 미리보기 방식'),{target:{value:'focus'}});fireEvent.click(screen.getByRole('button',{name:'미리보기 구도 저장'}))
  await waitFor(()=>expect(saveImagePreview).toHaveBeenCalledWith('ai01','p1','ai01',{mode:'focus',x:50,y:50}));expect(post.image.width).toBe(800);expect(post.image.height).toBe(1600)
+})
+
+it('does not call an unconfirmed artwork list empty while loading or recovering',()=>{
+ render(<CityMap {...props} projects={projects} worksReady={false} onProject={vi.fn()}/>)
+ expect(screen.getAllByText('작품 연결 확인 전 · 미등록으로 판정하지 않습니다.')).toHaveLength(2)
+ expect(screen.queryByText('작품 미등록 · 그림 미첨부')).not.toBeInTheDocument()
 })

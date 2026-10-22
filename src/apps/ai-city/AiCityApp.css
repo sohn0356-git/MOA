@@ -355,3 +355,5 @@
 .city-post-image .city-image{background:#f5f3ee;border:1px solid #bec9c3;padding:8px}
 .city-summary-before{padding:16px;background:#f5f3ee;color:#242823}
 @media(max-width:600px){.city-scene-grid{grid-template-columns:1fr}.city-map-places.is-map{display:flex;flex-direction:column;gap:16px}.city-map-cell:empty{display:none}.city-map-cell{display:contents}.city-map-destination{width:100%}}
+
+.city-map-places.is-map{background:#f5f3ee;grid-template-rows:repeat(4,minmax(48px,auto))}

@@ -771,3 +771,10 @@ assert.deepEqual(await readCity('images/ai01-uid/'+attachedImage.id),imageBlobBe
 assert.equal((await readCity('posts/preview-picture')).image.width,attachedImage.width)
 assert.equal((await readCity('scenePairs/process-one/s1')).sides[0].body,'앞쪽 창작')
 console.log('Ai city collaborative memo provenance, immutable decisions/versions, two-sided scenes, non-destructive image previews and 999/1000/1001 summary boundaries passed.')
+
+await collectionCheck('reviewMemos','first-plaza/proposals/p3','PUT',{...paragraph2,paragraphKey:'paragraph-two',body:'두 번째 주민의 별도 조건',postId:'process-two',commentId:'',baseProposalId:''},200,'ai02')
+await collectionCheck('reviewMemos','first-plaza/decisions/d4','PUT',{...decisionRecord,proposalId:'p3',reason:'독립 문단으로 함께 검토'})
+await collectionCheck('reviewMemos','first-plaza/versions/v3','PUT',{...memoVersion,reason:'두 주민의 조건을 함께',items:[{proposalId:'p1',decisionId:'d1'},{proposalId:'p3',decisionId:'d4'}]})
+assert.equal((await readCity('reviewMemos/first-plaza/proposals/p3')).residentId,'ai02')
+assert.equal((await readCity('reviewMemos/first-plaza/versions/v3')).items.length,2)
+console.log('Ai city shared memo also preserves two independent residents in one published review version.')

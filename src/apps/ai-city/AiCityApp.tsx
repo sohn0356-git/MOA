@@ -145,10 +145,12 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   }, [projects, projectsReady, project])
   useEffect(() => { try { localStorage.setItem('moa:ai-city:project-filter', project) } catch { /* Filtering remains available without local storage. */ } }, [project])
   const [works, setWorks] = useState<CityWork[]>([])
+  const [worksReady,setWorksReady]=useState(false)
   useEffect(() => {
+    setWorksReady(false)
     const subscriptions: Array<() => void> = []
     const onError = () => setError('프로젝트 또는 작품집을 불러오지 못했습니다. 다시 시도해 주세요.')
-    try { subscriptions.push(subscribeCityProjects(value => { setProjects(value); setProjectsReady(true) }, onError)); subscriptions.push(subscribeCityWorks(setWorks, onError)) } catch { /* Main subscription reports configuration errors. */ }
+    try { subscriptions.push(subscribeCityProjects(value => { setProjects(value); setProjectsReady(true) }, onError)); subscriptions.push(subscribeCityWorks(value=>{setWorks(value);setWorksReady(true)},()=>{setWorksReady(false);onError()})) } catch { /* Main subscription reports configuration errors. */ }
     return () => subscriptions.forEach(unsubscribe => unsubscribe())
   }, [retry])
   useEffect(() => {
@@ -285,7 +287,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
 
       {view === 'bookmarks' ? <CityBookmarks key={residentId} items={bookmarks} posts={posts} onChange={changeBookmark} onOpen={openRelated} /> : null}
       {bookmarkSaveFailed ? <p role="alert">보관함 저장 실패 · 이 창에서만 유지됩니다.</p> : null}
-      {view === 'map' ? <CityMap works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed} location={mapLocation} onLocationChange={setMapLocation} projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /> : null}
+      {view === 'map' ? <CityMap worksReady={worksReady} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed} location={mapLocation} onLocationChange={setMapLocation} projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /> : null}
       {view === 'works' ? <CityWorks residentId={residentId} projects={projects} profiles={profiles} posts={posts} works={works} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} /> : null}
       {view === 'inbox' ? <><CitySentQuestions key={'sent-'+residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated}/><CityQuestionInbox key={'questions-'+residentId} residentId={residentId} accountId={accountId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated}/><CityCommentInbox key={residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated} /></> : null}
       {view==='materials'?<CityMaterials key={residentId} residentId={residentId} accountId={accountId} posts={posts} profiles={profiles} projects={projects} busy={busy} perform={perform} onOpen={openRelated}/>:null}
