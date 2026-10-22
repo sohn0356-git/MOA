@@ -109,3 +109,13 @@ it('does not call an unconfirmed artwork list empty while loading or recovering'
  expect(screen.getAllByText('작품 연결 확인 전 · 미등록으로 판정하지 않습니다.')).toHaveLength(2)
  expect(screen.queryByText('작품 미등록 · 그림 미첨부')).not.toBeInTheDocument()
 })
+
+it('keeps a known selected place on record lookup failure until the reader explicitly chooses the full list',()=>{
+ const onLocationChange=vi.fn()
+ render(<CityMap {...props} projects={projects} recordsReady={false} location={{mode:'list',selected:'first-plaza'}} onLocationChange={onLocationChange} onProject={vi.fn()}/>)
+ expect(screen.getByText('선택한 장소의 원문 연결을 현재 확인하지 못했습니다. 이전 확인 기록과 선택은 유지합니다.')).toBeInTheDocument()
+ expect(screen.getByRole('button',{name:/첫 광장.*기본 배치/})).toHaveAttribute('aria-pressed','true')
+ expect(onLocationChange).not.toHaveBeenCalled()
+ fireEvent.click(screen.getByRole('button',{name:'전체 장소 목록으로'}))
+ expect(onLocationChange).toHaveBeenLastCalledWith({mode:'list',selected:''})
+})
