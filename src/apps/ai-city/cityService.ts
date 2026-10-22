@@ -1,3 +1,4 @@
+import {citySummaryError} from './cityProfileValidation'
 import type {CityImage} from './cityImages'
 import { getApps, initializeApp } from 'firebase/app'
 import { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } from 'firebase/auth'
@@ -99,6 +100,7 @@ export function subscribeCityProfiles(onProfiles: (profiles: CityProfile[]) => v
 }
 export function saveCityProfile(accountId: string, profileId: string, input: CityProfileInput, createOnly = false) {
   const name = input.name.trim()
+  const summaryError=citySummaryError(input.activitySummary);if(summaryError)throw new Error(summaryError)
   if (!name) throw new Error('주민 이름을 입력해 주세요.')
   return asAccount(accountId, async uid => {
     const db = connection().db

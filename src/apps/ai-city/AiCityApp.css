@@ -340,3 +340,18 @@
 .city-image-lightbox{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;background:rgba(12,20,17,.95);color:#fff;overflow:auto}
 .city-image-lightbox img{max-width:100%;max-height:75vh;object-fit:contain}.city-image-lightbox p{margin:0;overflow-wrap:anywhere}
 .city-image-lightbox button{min-height:44px;padding:8px 16px;color:#18251e;background:#fff;border-radius:8px}
+
+.city-review-memo,.city-scene-pair,.city-post-image{min-width:0;overflow-wrap:anywhere}
+.city-review-memo{margin-block:16px;padding:16px;border:1px solid #708c80;border-radius:8px}
+.city-memo-paragraph{padding:16px;border-left:3px solid #61796b;margin-block:16px}
+.city-memo-paragraph p,.city-review-memo article>p,.city-scene-pair p,.city-summary-before{white-space:pre-wrap}
+.city-scene-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;background:#f5f3ee;color:#242823;padding:16px;font-size:16px;line-height:1.6}
+.city-scene-grid article{min-width:0}.city-scene-grid article[hidden]{display:none}
+.city-map-destination{min-width:0;border:1px solid #8b9b94;border-radius:12px;overflow:hidden;background:#f9faf8}
+.city-map-destination>.city-map-place{width:100%;border:0;border-radius:0}
+.city-place-work{padding:16px;font-size:16px;line-height:1.6;overflow-wrap:anywhere}.city-place-work h4{margin:8px 0}
+.city-place-work p{margin-block:8px}.city-place-work button{min-height:44px;white-space:normal}
+.city-place-work section[aria-label="장소 작품 자리"]{border-top:1px solid #b5c0bb;margin-top:16px;padding-top:8px}
+.city-post-image .city-image{background:#f5f3ee;border:1px solid #bec9c3;padding:8px}
+.city-summary-before{padding:16px;background:#f5f3ee;color:#242823}
+@media(max-width:600px){.city-scene-grid{grid-template-columns:1fr}.city-map-places.is-map{display:flex;flex-direction:column;gap:16px}.city-map-cell:empty{display:none}.city-map-cell{display:contents}.city-map-destination{width:100%}}
