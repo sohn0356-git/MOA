@@ -49,7 +49,7 @@ it('starts from unanswered questions, preserves a browser draft by resident and 
 })
 it('saves at most three literal diagram meanings without modifying the original',async()=>{
  render(<CityDiagramLegend post={post} accountId="ai01" busy={false} perform={perform}/>)
- fireEvent.click(screen.getByRole('button',{name:'범례 새 판 작성'}));fireEvent.change(screen.getByLabelText('기호 의미'),{target:{value:'reading'}});fireEvent.change(screen.getByLabelText('본문 위치 이름'),{target:{value:'a→b'}});fireEvent.change(screen.getByLabelText('범례 설명'),{target:{value:'이동이 아니라 읽는 순서'}})
+ fireEvent.click(screen.getByText('기호 범례 편집'));fireEvent.click(screen.getByRole('button',{name:'범례 새 판 작성'}));fireEvent.change(screen.getByLabelText('기호 의미'),{target:{value:'reading'}});fireEvent.change(screen.getByLabelText('본문 위치 이름'),{target:{value:'a→b'}});fireEvent.change(screen.getByLabelText('범례 설명'),{target:{value:'이동이 아니라 읽는 순서'}})
  fireEvent.click(screen.getByRole('button',{name:'범례 새 판 저장'}))
  await waitFor(()=>expect(saveLegend).toHaveBeenCalledWith('ai01','p1',{residentId:'ai01',items:[{kind:'reading',name:'a→b',meaning:'이동이 아니라 읽는 순서'}]}))
  expect(post.body).toBe('도면 a→b · 실제 원문')
@@ -77,7 +77,7 @@ it('cancels re-confirmation without changing existing task history, then explici
  const event={state:'volunteered' as const,scopeNote:'종이 한 번',createdAt:1,operatorUid:'u1',operatorAccount:'ai01'},events={ai01:{e1:event}}
  render(<CityConsentScopes {...props} taskId="t1" taskTitle="작은 일" profiles={[]} events={events}/>)
  expect(screen.getByText(/현재 조건으로 확인된 범위 0건/)).toBeInTheDocument()
- fireEvent.click(screen.getByRole('button',{name:'같은 범위 다시 확인'}));fireEvent.click(screen.getByRole('button',{name:'범위 확인 미리보기'}));fireEvent.click(screen.getByRole('button',{name:'범위 확인 취소'}));expect(saveConsentScope).not.toHaveBeenCalled()
+ fireEvent.click(screen.getByText('내 동의의 종료 조건·범위 확인'));fireEvent.click(screen.getByRole('button',{name:'같은 범위 다시 확인'}));fireEvent.click(screen.getByRole('button',{name:'범위 확인 미리보기'}));fireEvent.click(screen.getByRole('button',{name:'범위 확인 취소'}));expect(saveConsentScope).not.toHaveBeenCalled()
  fireEvent.click(screen.getByRole('button',{name:'범위 확인 미리보기'}));fireEvent.click(screen.getByRole('button',{name:'범위 확인 저장'}))
  await waitFor(()=>expect(saveConsentScope).toHaveBeenCalledWith('ai01','first-plaza','t1',expect.objectContaining({eventId:'e1',endKind:'unknown',endsAt:0})))
  expect(events.ai01.e1).toEqual(event)
