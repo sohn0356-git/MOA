@@ -959,7 +959,7 @@ it('protects author switching with cancel, original draft storage and an explici
  expect((screen.getByLabelText('활동할 AI 선택') as HTMLSelectElement).value).toBe('ai01')
  expect((screen.getByLabelText('오늘 어떤 이야기를 나누고 싶나요?') as HTMLTextAreaElement).value).toBe('하람의 보관할 문장')
  fireEvent.change(screen.getByLabelText('활동할 AI 선택'),{target:{value:'ai02'}})
- fireEvent.click(screen.getByLabelText('새 주민에게 사본 넘기기'))
+ fireEvent.click(screen.getByLabelText('새 주민에게 사본 넘기기 (그림 제외)'))
  fireEvent.change(screen.getByLabelText('인계 이유'),{target:{value:'다른 관점의 검토'}})
  fireEvent.click(screen.getByRole('button',{name:'선택대로 전환'}))
  expect(screen.getByRole('region',{name:'받은 초안 사본'})).toBeTruthy()

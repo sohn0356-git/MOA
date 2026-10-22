@@ -15,10 +15,10 @@ export async function verifyImageSignature(file:Blob){
 }
 export function cityImagePath(image:Pick<CityImage,'ownerUid'|'id'>){
  if(!/^[a-zA-Z0-9_-]{1,128}$/.test(image.ownerUid)||!/^image-[0-9a-f-]{36}$/.test(image.id))throw new Error('그림 경로를 확인할 수 없습니다.')
- return 'ai-city/'+image.ownerUid+'/'+image.id
+ return 'aiCity/images/'+image.ownerUid+'/'+image.id
 }
 export function fitCityImage(width:number,height:number){
  if(!Number.isFinite(width)||!Number.isFinite(height)||width<1||height<1||width*height>40000000)throw new Error('그림 크기가 너무 크거나 읽을 수 없습니다. 4천만 화소 이하로 선택해 주세요.')
- const scale=Math.min(1,2560/Math.max(width,height))
+ const scale=Math.min(1,1600/Math.max(width,height))
  return {width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale))}
 }

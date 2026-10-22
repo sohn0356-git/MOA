@@ -694,6 +694,7 @@ assert.equal(await readCity('taskEvents/project-table/task-repair/ai02'),null)
 console.log('Ai city change updates, status sources, blank methods, immutable diagram legends, atomic summary restore and consent scope history passed.')
 
 const attachedImage={id:'image-11111111-1111-4111-8111-111111111111',ownerUid:'ai01-uid',alt:'종이 시제품 그림',width:1280,height:720}
+await collectionCheck('images','ai01-uid/'+attachedImage.id,'PUT',{data:'data:image/png;base64,aGVsbG8=',width:1280,height:720,createdAt:Date.now()})
 await check('image-post','PUT',{...post,body:'그림과 설명',image:attachedImage})
 await check('image-post','GET',undefined,null)
 await check('image-post/image','PATCH',{alt:'조작'},'ai01',401)

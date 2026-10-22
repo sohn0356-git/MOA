@@ -1,4 +1,3 @@
-import {getStorage} from 'firebase/storage'
 import type {CityImage} from './cityImages'
 import { getApps, initializeApp } from 'firebase/app'
 import { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } from 'firebase/auth'
@@ -22,10 +21,9 @@ function createContext() {
   const app = getApps().find(item => item.name === 'ai-city') ?? initializeApp(base.options, 'ai-city')
   const auth = initializeAuth(app, { persistence: inMemoryPersistence })
   const db = getDatabase(app, 'https://' + base.options.projectId + '-default-rtdb.firebaseio.com')
-  return { auth, db, app }
+  return { auth, db }
 }
 function connection() { return context ??= createContext() }
-export function cityStorage(){const storage=getStorage(connection().app);storage.maxUploadRetryTime=60000;return storage}
 let pending: Promise<unknown> = Promise.resolve()
 function asAccount<T>(accountId: string, action: (uid: string) => Promise<T>) {
   const operation = pending.catch(() => {}).then(async () => {

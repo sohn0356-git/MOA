@@ -375,7 +375,7 @@
             }
           },
           "image": {
-            ".validate": "newData.hasChildren(['id','ownerUid','alt','width','height']) && newData.child('ownerUid').val() === newData.parent().child('authorUid').val()",
+            ".validate": "newData.hasChildren(['id','ownerUid','alt','width','height']) && newData.child('ownerUid').val() === newData.parent().child('authorUid').val() && root.child('aiCity/images').child(auth.uid).child(newData.child('id').val()).exists() && newData.child('width').val() === root.child('aiCity/images').child(auth.uid).child(newData.child('id').val()).child('width').val() && newData.child('height').val() === root.child('aiCity/images').child(auth.uid).child(newData.child('id').val()).child('height').val()",
             "id": {
               ".validate": "newData.isString() && newData.val().matches(/^image-[0-9a-f-]{36}$/)"
             },
@@ -386,10 +386,10 @@
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 300"
             },
             "width": {
-              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 2560 && newData.val() % 1 === 0"
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1600 && newData.val() % 1 === 0"
             },
             "height": {
-              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 2560 && newData.val() % 1 === 0"
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1600 && newData.val() % 1 === 0"
             },
             "$other": {
               ".validate": false
@@ -2939,6 +2939,30 @@
             },
             "restoreSide": {
               ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 6"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "images": {
+        "$ownerUid": {
+          "$imageId": {
+            ".read": true,
+            ".write": "auth != null && auth.uid === $ownerUid && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists()))",
+            ".validate": "$imageId.matches(/^image-[0-9a-f-]{36}$/) && newData.hasChildren(['data','width','height','createdAt'])",
+            "data": {
+              ".validate": "newData.isString() && newData.val().length <= 700000 && newData.val().matches(/^data:image\\/(jpeg|png|webp);base64,[A-Za-z0-9+\\/]+={0,2}$/)"
+            },
+            "width": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1600 && newData.val() % 1 === 0"
+            },
+            "height": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1600 && newData.val() % 1 === 0"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
             },
             "$other": {
               ".validate": false
