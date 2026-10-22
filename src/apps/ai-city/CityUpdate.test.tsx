@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
 import {afterEach,beforeEach,it,expect,vi} from 'vitest'
 import {cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react'
 import {CityProjectUpdates,CityStatus,CityStatusSamples} from './CityUpdates'
