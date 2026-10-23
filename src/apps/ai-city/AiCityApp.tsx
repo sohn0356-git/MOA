@@ -57,7 +57,7 @@ function AiCityContent({ embedded = false }: { embedded?: boolean }) {
   const [loading, setLoading] = useState(true)
   const [postsVerified,setPostsVerified]=useState(false),[postsReadFailed,setPostsReadFailed]=useState(false),[postsConfirmedAt,setPostsConfirmedAt]=useState(0)
   const [profilesReady,setProfilesReady]=useState(false),[profilesLoading,setProfilesLoading]=useState(true),[profilesFailed,setProfilesFailed]=useState(false),[profilesConfirmedAt,setProfilesConfirmedAt]=useState(0)
-  const [scopeFilter,setScopeFilter]=useState('all'),[viewSort,setViewSort]=useState<'newest'|'oldest'>('newest'),[showDetails,setShowDetails]=useState(true),[archiveTools,setArchiveTools]=useState(false),[batchOpen,setBatchOpen]=useState(false)
+  const [scopeFilter,setScopeFilter]=useState('all'),[viewSort,setViewSort]=useState<'newest'|'oldest'>('newest'),[showDetails,setShowDetails]=useState(false),[archiveTools,setArchiveTools]=useState(false),[batchOpen,setBatchOpen]=useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -66,7 +66,7 @@ function AiCityContent({ embedded = false }: { embedded?: boolean }) {
   const [statusFilter, setStatusFilter] = useState('all')
   const [residentId, setResidentId] = useState('ai01')
   const viewResident=useRef('')
-  useLayoutEffect(()=>{if(viewResident.current&&viewResident.current!==residentId){setProject('');setAuthorSearch('');setScopeFilter('all');setViewSort('newest');setShowDetails(true)}viewResident.current=residentId},[residentId])
+  useLayoutEffect(()=>{if(viewResident.current&&viewResident.current!==residentId){setProject('');setAuthorSearch('');setScopeFilter('all');setViewSort('newest');setShowDetails(false)}viewResident.current=residentId},[residentId])
   const [switchTarget,setSwitchTarget]=useState('')
   const [switchMode,setSwitchMode]=useState<'keep'|'copy'>('keep')
   const [switchReason,setSwitchReason]=useState('')
@@ -115,7 +115,7 @@ function AiCityContent({ embedded = false }: { embedded?: boolean }) {
   const [expandedPosts,setExpandedPosts]=useState<string[]>([])
   const [mapLocation,setMapLocation]=useState<{mode:'map'|'list';selected:string}>({mode:'map',selected:''})
   const navState={scopeFilter,viewSort,showDetails,archiveTools,targetPost,view,kind,project,statusFilter,search,authorSearch,fromDate,toDate,pageSize,commentTarget,focusedComment,mapLocation,expandedPosts}
-  function restoreNav(state:typeof navState){setScopeFilter(state.scopeFilter??'all');setViewSort(state.viewSort??'newest');setShowDetails(state.showDetails??true);setArchiveTools(state.archiveTools??false);setTargetPost(state.targetPost??'');setView(state.view);setKind(state.kind);setProject(state.project);setStatusFilter(state.statusFilter);setSearch(state.search);setAuthorSearch(state.authorSearch);setFromDate(state.fromDate);setToDate(state.toDate);setPageSize(state.pageSize);setCommentTarget(state.commentTarget);setFocusedComment(state.focusedComment);setMapLocation(state.mapLocation);setExpandedPosts(state.expandedPosts??[])}
+  function restoreNav(state:typeof navState){setScopeFilter(state.scopeFilter??'all');setViewSort(state.viewSort??'newest');setShowDetails(state.showDetails??false);setArchiveTools(state.archiveTools??false);setTargetPost(state.targetPost??'');setView(state.view);setKind(state.kind);setProject(state.project);setStatusFilter(state.statusFilter);setSearch(state.search);setAuthorSearch(state.authorSearch);setFromDate(state.fromDate);setToDate(state.toDate);setPageSize(state.pageSize);setCommentTarget(state.commentTarget);setFocusedComment(state.focusedComment);setMapLocation(state.mapLocation);setExpandedPosts(state.expandedPosts??[])}
   const navigation=useCityNavigation(navState,restoreNav)
 
   const writing = useRef(false)
@@ -256,7 +256,7 @@ function AiCityContent({ embedded = false }: { embedded?: boolean }) {
   return (
     <CityTimeContext.Provider value={reading.timezone??'local'}><section className={['city','city-social','city-view-'+view,reading.large?'city-reading-large':'',reading.wide?'city-reading-wide':'',reading.reduceMotion?'city-reduce-motion':''].join(' ')} aria-labelledby="ai-city-heading">
       {new URLSearchParams(window.location.search).get('city-ui')==='1'?<CityUiSamples/>:null}<header className="city-header">
-        <div><p className="city-eyebrow">A LITTLE WORLD TOGETHER</p><h1 id="ai-city-heading">Ai city<span className="city-brand-dot">✳</span></h1><p>이웃의 하루와 나의 이야기가 만나는 곳.</p></div>
+        <div><p className="city-eyebrow">A LITTLE WORLD TOGETHER</p><h1 id="ai-city-heading">Ai city<span className="city-brand-dot">✳</span></h1><p>새로운 도시, 이웃의 하루와 나의 이야기가 만나는 곳.</p></div>
         {!embedded ? <a className="city-home" href="#/">MOA 홈 ↗</a> : null}
       </header>
       <div className="city-identity">
@@ -293,7 +293,7 @@ function AiCityContent({ embedded = false }: { embedded?: boolean }) {
       {view === 'bookmarks' ? <CityBookmarks key={residentId} items={bookmarks} posts={posts} onChange={changeBookmark} onOpen={openRelated} /> : null}
       {bookmarkSaveFailed ? <p role="alert">보관함 저장 실패 · 이 창에서만 유지됩니다.</p> : null}
       {view==='map'?<CityWorld profiles={profiles} posts={posts} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onProfile={id=>{setStudioId(id);changeView('residents')}} onPost={openRelated}/>:null}
-      {view === 'map' ? <details className="city-connected-places"><summary>프로젝트 장소 · 기록과 작업 연결</summary><CityMap worksReady={worksReady} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed} location={mapLocation} onLocationChange={setMapLocation} projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /></details> : null}
+      {view === 'map' ? <details className="city-connected-places" open={Boolean(mapLocation.selected)||undefined}><summary>프로젝트 장소 · 기록과 작업 연결</summary><CityMap worksReady={worksReady} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed} location={mapLocation} onLocationChange={setMapLocation} projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /></details> : null}
       {view === 'works' ? <CityWorks residentId={residentId} projects={projects} profiles={profiles} posts={posts} works={works} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} /> : null}
       {view === 'inbox' ? <><CitySentQuestions key={'sent-'+residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated}/><CityQuestionInbox key={'questions-'+residentId} residentId={residentId} accountId={accountId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated}/><CityCommentInbox key={residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated} /></> : null}
       {view==='materials'?<CityMaterials key={residentId} residentId={residentId} accountId={accountId} posts={posts} profiles={profiles} projects={projects} busy={busy} perform={perform} onOpen={openRelated}/>:null}
@@ -314,7 +314,7 @@ function AiCityContent({ embedded = false }: { embedded?: boolean }) {
       </form> : null}
       {error ? <div className="city-error" role="alert">{error}<CityButton type="button" onClick={() => setRetry(value => value + 1)}>다시 불러오기</CityButton></div> : null}
       {notice ? <p className="city-notice" role="status">{notice}</p> : null}
-      {(view==='feed'||view==='suggestion')?<CitySavedViews residentId={residentId} kind={kind} value={{project,author:authorSearch,scope:scopeFilter,sort:viewSort,details:showDetails,density:reading.density??'full'}} onChange={(value:CityViewConfig)=>{setProject(value.project);setAuthorSearch(value.author);setScopeFilter(value.scope);setViewSort(value.sort);setShowDetails(value.details);saveReading(previous=>({...previous,[residentId]:{...reading,density:value.density}}))}}/>:null}
+      {(view==='feed'||view==='suggestion')?<details className="city-feed-preferences"><summary>피드 정렬 · 필터 · 부가정보</summary><CitySavedViews residentId={residentId} kind={kind} value={{project,author:authorSearch,scope:scopeFilter,sort:viewSort,details:showDetails,density:reading.density??'full'}} onChange={(value:CityViewConfig)=>{setProject(value.project);setAuthorSearch(value.author);setScopeFilter(value.scope);setViewSort(value.sort);setShowDetails(value.details);saveReading(previous=>({...previous,[residentId]:{...reading,density:value.density}}))}}/></details>:null}
       {view==='suggestion'?<><CityPractice/><CityTriage posts={posts} residentId={residentId} accountId={accountId} ready={postsVerified&&!loading&&!postsReadFailed} busy={busy} perform={perform} onOpen={openRelated}/></>:null}
       <div className="city-filters"><label htmlFor="city-project-filter">프로젝트 보기</label><select id="city-project-filter" value={project} onChange={event => setProject(event.target.value)}><option value="">전체 프로젝트</option>{projects.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         {kind === 'suggestion' ? <div className="city-status-filters" aria-label="건의 반영 상태">{[['all', '전체', boardPosts.length], ['pending', '미반영', boardPosts.length - appliedCount], ['applied', '반영 완료', appliedCount]].map(([id, name, count]) => <CityButton type="button" key={id} aria-pressed={statusFilter === id} onClick={() => setStatusFilter(String(id))}>{name} {postsVerified?String(count)+(loading||postsReadFailed?' · 이전 확인':''):postsReadFailed?'확인 불가':'확인 중'}</CityButton>)}</div> : null}
