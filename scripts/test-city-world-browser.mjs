@@ -54,7 +54,7 @@ try{
   assert.equal(await canvas.getAttribute('data-position'),movedPosition,'last position survives reloading')
   await page.waitForFunction(()=>document.querySelector('.city-map-3d')?.getAttribute('data-renderer')==='webgl')
   const touch=map3d.getByRole('button',{name:'오른쪽 이동',exact:true})
-  await touch.dispatchEvent('pointerdown',{pointerId:7,button:0});await page.waitForTimeout(300);await touch.dispatchEvent('pointerup',{pointerId:7})
+  await touch.hover();await page.mouse.down();await page.waitForTimeout(300);await page.mouse.up()
   assert.notEqual(await canvas.getAttribute('data-position'),movedPosition,'mobile direction controls move avatar')
   await canvas.focus();await page.keyboard.down('w');await page.getByRole('button',{name:'광장',exact:true}).focus();await page.keyboard.up('w')
   const stopped=await canvas.getAttribute('data-position');await page.waitForTimeout(200)
