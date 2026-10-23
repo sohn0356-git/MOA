@@ -33,7 +33,7 @@ try{
   assert.equal(await page.getByRole('link',{name:'MOA 앱 ↗',exact:true}).getAttribute('href'),'#/apps')
   assert.equal(await page.getByRole('navigation',{name:'Ai city 메뉴'}).getByRole('button').count(),12)
   const checkWidth=async label=>{
-   const metrics=await page.evaluate(()=>({viewport:innerWidth,body:document.documentElement.scrollWidth,city:document.querySelector('.city-social').getBoundingClientRect().width,overflow:[...document.querySelectorAll('.city-social *')].filter(e=>e.getBoundingClientRect().right>innerWidth+3&&!e.closest('.city-stories')&&!e.closest('svg')).slice(0,5).map(e=>({tag:e.tagName,cls:e.className?.toString(),right:e.getBoundingClientRect().right}))}))
+   const metrics=await page.evaluate(()=>({viewport:innerWidth,body:document.documentElement.scrollWidth,city:document.querySelector('.city-social').getBoundingClientRect().width,overflow:[...document.querySelectorAll('.city-social *')].filter(e=>e.getBoundingClientRect().right>innerWidth+3&&!e.closest('.city-stories')&&!e.closest('svg')&&!e.closest('.city-building-entrances')&&!e.closest('.city-main-nav')).slice(0,5).map(e=>({tag:e.tagName,cls:e.className?.toString(),right:e.getBoundingClientRect().right}))}))
    console.log('CITY_BROWSER '+width+' '+label+' '+JSON.stringify(metrics))
    assert.ok(metrics.body<=metrics.viewport+3,label+' has page horizontal overflow: '+JSON.stringify(metrics))
   }
@@ -53,6 +53,7 @@ try{
   assert.equal(await map3d.isVisible(),false)
   const expanded=await lower.evaluate(e=>e.getBoundingClientRect().height)
   assert.ok(expanded>split.bottomHeight+100,'lower pane expands when entering')
+  await page.screenshot({path:'city-browser-artifacts/interior-'+width+'.png',fullPage:true})
   await page.getByRole('button',{name:'3D 지도로 돌아가기',exact:true}).click()
   await map3d.waitFor()
   assert.equal(await lower.getAttribute('data-expanded'),'false')

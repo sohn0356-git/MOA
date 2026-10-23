@@ -27,7 +27,7 @@ function road(mesh:Mesh,a:{x:number;y:number},b:{x:number;y:number}){
 }
 export function buildCityScenery(){
  const mesh:Mesh=[]
- box(mesh,0,-1.7,0,150,1.7,102,'#cadcc1');box(mesh,0,-.07,0,149,.07,101,'#e1ead8')
+ box(mesh,0,-1.7,0,150,1.63,102,'#cadcc1');box(mesh,0,-.07,0,149,.07,101,'#e1ead8')
  for(let x=-75;x<75;x+=5){const z=-37+Math.sin(x/13)*2.7,next=-37+Math.sin((x+5)/13)*2.7;quad(mesh,[x,.02,z-2.2],[x+5,.02,next-2.2],[x+5,.02,next+2.2],[x,.02,z+2.2],color('#a6d2d5'))}
  for(const [a,b] of worldEdges)road(mesh,worldNodes[a],worldNodes[b])
  const branches=[['hall','plaza'],['post','library'],['press','studio'],['material','cafe'],['tower','west'],['shelf','park']] as const
@@ -57,7 +57,7 @@ function buildResidents(snapshot:CitySceneSnapshot){
  for(const p of snapshot.profiles){
   const pos=residentWorldState(p.id,snapshot.now,snapshot.commands[p.id]).point,x=(pos.x-600)/10,z=(pos.y-400)/10,look=snapshot.avatars[p.id]??defaultAvatar(p.id)
   const shirt=avatarColors.shirt[look.shirt],skin=avatarColors.skin[look.skin],hair=avatarColors.hair[look.hair]
-  box(mesh,x,.1,z,1.7,.05,1.3,'#bbc5af')
+  box(mesh,x,.17,z,1.7,.05,1.3,'#bbc5af')
   const moving=residentWorldState(p.id,snapshot.now,snapshot.commands[p.id]).moving,step=moving?Math.sin(snapshot.now/130+p.id.length)*.2:0
   box(mesh,x-.32,.15,z+step,.45,.9,.5,'#475267');box(mesh,x+.32,.15,z-step,.45,.9,.5,'#475267')
   box(mesh,x,1.0,z,1.2,1.15,.7,shirt)

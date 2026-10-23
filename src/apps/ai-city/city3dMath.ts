@@ -19,7 +19,7 @@ export function multiply(a:Float32Array,b:Float32Array){
 export function cameraMatrix(camera:CityCamera,aspect:number){
  const {eye,forward:f,right:s,up:u}=cameraBasis(camera)
  const view=new Float32Array([s[0],u[0],-f[0],0,s[1],u[1],-f[1],0,s[2],u[2],-f[2],0,-dot(s,eye),-dot(u,eye),dot(f,eye),1])
- const t=1/Math.tan(Math.PI/7),near=.1,far=600
+ const t=1/Math.tan(Math.PI/7),near=1,far=600
  const perspective=new Float32Array([t/aspect,0,0,0,0,t,0,0,0,0,(far+near)/(near-far),-1,0,0,2*far*near/(near-far),0])
  return multiply(perspective,view)
 }
