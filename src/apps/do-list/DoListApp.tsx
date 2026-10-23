@@ -565,7 +565,7 @@ export function DoListApp() {
       : 0
 
   function handleBackHome() {
-    history.pushState('', document.title, window.location.pathname + window.location.search)
+    history.pushState('', document.title, window.location.pathname + window.location.search + '#/apps')
     window.dispatchEvent(new HashChangeEvent('hashchange'))
   }
 

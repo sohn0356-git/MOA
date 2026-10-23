@@ -1,6 +1,5 @@
 import { useState, type ReactNode, type FormEvent } from 'react'
 import './AuthGate.css'
-import { AiCityApp } from '../apps/ai-city/AiCityApp'
 import type { User } from 'firebase/auth'
 import { aiLoginAccounts } from '../data/aiAccounts'
 
@@ -29,7 +28,7 @@ export function AuthGate({
   onSignIn,
   user,
 }: AuthGateProps) {
-  const [loginTab, setLoginTab] = useState<'google' | 'email' | 'ai-city'>('ai-city')
+  const [loginTab, setLoginTab] = useState<'google' | 'email'>('google')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -49,7 +48,7 @@ export function AuthGate({
     }
   }
 
-  if (isAuthLoading && loginTab !== 'ai-city') {
+  if (isAuthLoading) {
     return (
       <main className="auth-screen">
         <section className="auth-panel" aria-label="로그인 확인 중">
@@ -57,7 +56,7 @@ export function AuthGate({
             M
           </div>
           <h1>MOA</h1>
-          <p>로그인 상태를 확인하는 중입니다.</p>
+          <p>로그인 상태를 확인하는 중입니다.</p><a className="back-button" href="#/ai-city">AI City로 돌아가기</a>
         </section>
       </main>
     )
@@ -69,17 +68,18 @@ export function AuthGate({
 
   return (
     <main className="auth-screen">
-      <section className={`auth-panel ${loginTab === 'ai-city' ? 'auth-panel-city' : ''}`} aria-label="로그인">
+      <section className="auth-panel" aria-label="로그인">
         <div className="brand-mark" aria-hidden="true">
           M
         </div>
         <div>
           <h1>MOA</h1>
-          <p>{loginTab === 'ai-city' ? 'AI 이웃들과 이야기를 나눠보세요.' : 'Google 계정 또는 AI 계정의 이메일과 비밀번호로 로그인하세요.'}</p>
+          <p>Google 계정 또는 AI 계정의 이메일과 비밀번호로 로그인하세요.</p>
         </div>
+        <a className="back-button" href="#/ai-city">← AI City로 돌아가기</a>
         {authError ? <p className="app-error" role="alert">{authError}</p> : null}
         <div className="auth-tabs" role="tablist" aria-label="로그인 및 앱">
-          {(['google', 'email', 'ai-city'] as const).map((tab) => (
+          {(['google', 'email'] as const).map((tab) => (
             <button
               aria-controls={`auth-panel-${tab}`}
               aria-selected={loginTab === tab}
@@ -92,14 +92,14 @@ export function AuthGate({
               onKeyDown={(event) => {
                 if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
                 event.preventDefault()
-                const tabs = ['google', 'email', 'ai-city'] as const
+                const tabs = ['google', 'email'] as const
                 const index = tabs.indexOf(tab)
-                const nextTab = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs[2] : tabs[(index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]
+                const nextTab = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs[1] : tabs[(index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]
                 setLoginTab(nextTab)
                 document.getElementById(`auth-tab-${nextTab}`)?.focus()
               }}
             >
-              {tab === 'google' ? 'Google 로그인' : tab === 'email' ? '이메일 로그인 (AI)' : 'Ai city'}
+              {tab === 'google' ? 'Google 로그인' : '이메일 로그인 (AI)'}
             </button>
           ))}
         </div>
@@ -134,10 +134,7 @@ export function AuthGate({
           </form>
 
         </div>
-        <div id="auth-panel-ai-city" role="tabpanel" aria-labelledby="auth-tab-ai-city" hidden={loginTab !== 'ai-city'}>
-          {loginTab === 'ai-city' ? <AiCityApp embedded /> : null}
-        </div>
-        <section aria-label="AI 계정 빠른 로그인" hidden={loginTab === 'ai-city'}>
+        <section aria-label="AI 계정 빠른 로그인">
           <p>AI 계정 바로 로그인</p>
         <div className="ai-login-list" aria-label="AI 계정 로그인">
           {aiLoginAccounts.map((account) => (

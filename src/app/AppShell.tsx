@@ -1,3 +1,4 @@
+import { AiCityApp } from '../apps/ai-city/AiCityApp'
 import { useEffect, useMemo, useState } from 'react'
 import { appRegistry } from '../apps/registry'
 import { AppGrid } from '../components/AppGrid'
@@ -42,6 +43,44 @@ export function AppShell() {
     window.location.hash = route.replace(/^#/, '')
   }
 
+  const authProps = {
+    authError, isAuthLoading, isAuthMutating, user,
+    onAiSignIn: signInWithAiAccount,
+    onEmailSignIn: signInWithEmail,
+    onSignIn: signInWithGoogle,
+  }
+  const isCityRoute = !activeRoute || activeRoute === '#' || activeRoute === '#/' || activeRoute === '#/ai-city'
+
+  if (isCityRoute) {
+    return (
+      <main className="city-main-app" aria-label="AI City 메인">
+        {hasUpdate ? <AppUpdateBanner isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
+        <AiCityApp embedded entryActions={
+          <nav className="city-entry-actions" aria-label="계정 및 MOA 앱">
+            <a href="#/login">{user ? '계정' : '로그인'}</a>
+            <a href="#/apps">MOA 앱 ↗</a>
+          </nav>
+        } />
+      </main>
+    )
+  }
+
+  if (activeRoute === '#/login') {
+    return (
+      <AuthGate {...authProps}>
+        <main className="auth-screen">
+          <section className="auth-panel" aria-label="내 계정">
+            <h1>내 계정</h1>
+            <p>{user?.displayName || user?.email || 'MOA'} 계정으로 로그인되어 있습니다.</p>
+            <a className="back-button" href="#/ai-city">AI City로 돌아가기</a>
+            <a className="back-button" href="#/apps">MOA 앱 열기</a>
+            <button className="logout-button" disabled={isAuthMutating} type="button" onClick={() => void signOutUser()}>로그아웃</button>
+          </section>
+        </main>
+      </AuthGate>
+    )
+  }
+
   if (ActiveAppComponent) {
     return (
       <AuthGate
@@ -77,6 +116,7 @@ export function AppShell() {
       onSignIn={signInWithGoogle}
     >
       <main className="app-shell">
+        <a className="back-button moa-city-return" href="#/ai-city">← AI City로 돌아가기</a>
         <header className="brand-header">
           <div className="brand-mark" aria-hidden="true">
             M

@@ -28,6 +28,9 @@ try{
   const city=page.locator('.city-social');await city.waitFor()
   await page.getByRole('navigation',{name:'Ai city 메뉴'}).waitFor()
   await page.waitForTimeout(750)
+  assert.equal(await page.getByRole('tablist',{name:'로그인 및 앱'}).count(),0)
+  assert.equal(await page.getByRole('link',{name:'로그인',exact:true}).getAttribute('href'),'#/login')
+  assert.equal(await page.getByRole('link',{name:'MOA 앱 ↗',exact:true}).getAttribute('href'),'#/apps')
   assert.equal(await page.getByRole('navigation',{name:'Ai city 메뉴'}).getByRole('button').count(),12)
   const checkWidth=async label=>{
    const metrics=await page.evaluate(()=>({viewport:innerWidth,body:document.documentElement.scrollWidth,city:document.querySelector('.city-social').getBoundingClientRect().width,overflow:[...document.querySelectorAll('.city-social *')].filter(e=>e.getBoundingClientRect().right>innerWidth+3&&!e.closest('.city-stories')&&!e.closest('svg')).slice(0,5).map(e=>({tag:e.tagName,cls:e.className?.toString(),right:e.getBoundingClientRect().right}))}))
@@ -52,8 +55,16 @@ try{
   await page.getByRole('button',{name:'건의함',exact:true}).click()
   await page.getByRole('heading',{name:'더 나은 도시를 위한 건의함',exact:true}).waitFor()
   await checkWidth('suggestions')
+  await page.getByRole('link',{name:'로그인',exact:true}).click()
+  await page.getByRole('tab',{name:'Google 로그인',exact:true}).waitFor()
+  await page.getByRole('link',{name:'← AI City로 돌아가기',exact:true}).click()
+  await page.locator('.city-social').waitFor()
+  await page.getByRole('link',{name:'MOA 앱 ↗',exact:true}).click()
+  await page.getByRole('tab',{name:'Google 로그인',exact:true}).waitFor()
+  await page.getByRole('link',{name:'← AI City로 돌아가기',exact:true}).click()
+  await page.locator('.city-social').waitFor()
   assert.deepEqual(errors,[],'uncaught browser errors')
-  console.log('CITY_BROWSER_PASS '+width+' feed/world/suggestions; 12 menus; 6 buildings; observation/follow/pause/zoom; no runtime errors')
+  console.log('CITY_BROWSER_PASS '+width+' public-main/login/MOA-entry/feed/world/suggestions; 12 menus; 6 buildings; observation/follow/pause/zoom; no runtime errors')
   await page.close()
  }
 }catch(error){console.error(error);if(browser)for(const context of browser.contexts())for(const page of context.pages())await page.screenshot({path:'city-browser-artifacts/failure.png',fullPage:true,timeout:5000}).catch(()=>{});throw error}finally{clearTimeout(watchdog);server.close();await Promise.race([browser?.close(),new Promise(r=>setTimeout(r,3000))])}

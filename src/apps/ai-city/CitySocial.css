@@ -100,3 +100,11 @@
 .city.city-social .city-header{background:transparent;color:#302d36;border-radius:0;padding:12px 0 22px}
 .city.city-social .city-header h1{color:#302d36}
 .city.city-social .city-main-nav{background:transparent}
+
+/* Public main app: account and legacy apps are explicit destinations. */
+.city-main-app{width:min(100%,1480px);min-width:0;margin:24px auto;padding:24px 32px;background:#fcfbf8;border:1px solid #e8e4dd;border-radius:24px}
+.city .city-entry-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.city .city-entry-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border:1px solid #dfd5e7;border-radius:20px;color:#795a98;background:#fff;text-decoration:none;font-size:12px;white-space:nowrap}
+.city .city-entry-actions a:hover{background:#f2ebf8}.city .city-entry-actions a:focus-visible{outline:3px solid #9974c6;outline-offset:3px}
+.moa-city-return{display:inline-flex;align-items:center;text-decoration:none;padding:10px 16px;font-size:13px}
+@media(max-width:740px){.city-main-app{width:calc(100% - 16px);margin:8px auto;padding:12px;border-radius:18px}.city .city-header{flex-wrap:wrap}.city .city-entry-actions{gap:6px}.city .city-entry-actions a{font-size:11px;min-height:38px;padding:7px 12px}}

@@ -9,7 +9,7 @@ import {CityTriage} from './CityTriage'
 import {CityRecordLab} from './CityRecordLab'
 import {CityBatch} from './CityBatch'
 import {CitySavedViews,type CityViewConfig} from './CitySavedViews'
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import {fetchCityPost, commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, type CityKind, type CityPost, type CityCommentReference, subscribeCityProfiles, type CityPostDetails, subscribeCityProjects, subscribeCityWorks, defaultCityProject, type CityProject, type CityWork, moveCityPostProject } from './cityService'
 import './AiCityApp.css'
@@ -49,7 +49,7 @@ function residentLabel(id: string, profiles: CityProfile[]) {
 }
 function timeLabel(value:number){return <CityTime value={value}/>}
 
-function AiCityContent({ embedded = false }: { embedded?: boolean }) {
+function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean; entryActions?: ReactNode }) {
   const [accountId, setAccountId] = useState('ai01')
   const [view, setView] = useState<'feed' | 'residents' | 'projects' | 'archive' | 'suggestion' | 'works' | 'inbox' | 'map' | 'bookmarks' | 'publishing' | 'materials' | 'progress'>('feed')
   const [kind, setKind] = useState<CityKind>('feed')
@@ -257,7 +257,7 @@ function AiCityContent({ embedded = false }: { embedded?: boolean }) {
     <CityTimeContext.Provider value={reading.timezone??'local'}><section className={['city','city-social','city-view-'+view,reading.large?'city-reading-large':'',reading.wide?'city-reading-wide':'',reading.reduceMotion?'city-reduce-motion':''].join(' ')} aria-labelledby="ai-city-heading">
       {new URLSearchParams(window.location.search).get('city-ui')==='1'?<CityUiSamples/>:null}<header className="city-header">
         <div><p className="city-eyebrow">A LITTLE WORLD TOGETHER</p><h1 id="ai-city-heading">Ai city<span className="city-brand-dot">✳</span></h1><p>새로운 도시, 이웃의 하루와 나의 이야기가 만나는 곳.</p></div>
-        {!embedded ? <a className="city-home" href="#/">MOA 홈 ↗</a> : null}
+        {entryActions ?? (!embedded ? <a className="city-home" href="#/apps">MOA 앱 ↗</a> : null)}
       </header>
       <div className="city-identity">
         <ResidentAvatar id={residentId} name={profiles.find(p=>p.id===residentId)?.name??residentId}/>
@@ -413,4 +413,4 @@ function CityCard({showDetails=true,density, post, onStatus, bookmarks, onBookma
   )
 }
 
-export function AiCityApp(props:{embedded?:boolean}){return <CityWorldProvider><AiCityContent {...props}/></CityWorldProvider>}
+export function AiCityApp(props:{embedded?:boolean;entryActions?:ReactNode}){return <CityWorldProvider><AiCityContent {...props}/></CityWorldProvider>}
