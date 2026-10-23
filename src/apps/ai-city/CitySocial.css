@@ -95,3 +95,8 @@
 
 .city-quick-avatar{display:none}
 @media(max-width:740px){.city-quick-avatar{display:block;margin:8px 0;color:#85619f;font-size:12px}.city-quick-avatar>summary{cursor:pointer;padding:8px 0}.city-quick-avatar>.city-avatar-editor{margin-top:12px}.city-social-rail>.city-avatar-editor{display:none}}
+
+.auth-panel.auth-panel-city,.city.city-social{font-family:"NanumSquare Neo",system-ui,sans-serif}
+.city.city-social .city-header{background:transparent;color:#302d36;border-radius:0;padding:12px 0 22px}
+.city.city-social .city-header h1{color:#302d36}
+.city.city-social .city-main-nav{background:transparent}

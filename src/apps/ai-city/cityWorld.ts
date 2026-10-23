@@ -38,7 +38,7 @@ export type CityWorldState={point:WorldPoint;route:WorldPoint[];place:typeof wor
 export function residentWorldState(id:string,now:number,command?:CityWorldCommand):CityWorldState{
  if(command){const route=[{x:command.startX,y:command.startY},...walkingRoute(command.from,command.to)],progress=command.mode==='stay'?1:Math.max(0,Math.min(1,(now-command.startedAt)/command.duration));return {point:command.mode==='stay'?{x:command.startX,y:command.startY}:routePosition(route,progress),route,place:worldPlaces.find(p=>p.id===command.to)!,from:command.from,moving:progress<1,progress,source:'saved'}}
  // Deterministic autonomous walking: every viewer sees the same route at the same time.
- const seed=residentSeed(id),cycle=90000,offset=now+seed%cycle,step=Math.floor(offset/cycle),phase=(offset%cycle)/cycle
+ const seed=residentSeed(id),cycle=90000,offset=now+(Math.imul(seed,2654435761)>>>0)%cycle,step=Math.floor(offset/cycle),phase=(offset%cycle)/cycle
  const from=worldPlaces[(step+seed)%worldPlaces.length],to=worldPlaces[(step+seed+1)%worldPlaces.length],route=walkingRoute(from.id,to.id),progress=Math.min(1,phase/.75)
  return {point:routePosition(route,progress),route,place:to,from:from.id,moving:progress<1,progress,source:'automatic'}
 }

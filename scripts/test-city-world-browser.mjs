@@ -39,7 +39,7 @@ try{
   await page.getByRole('button',{name:'도시 지도',exact:true}).click()
   const map=page.getByRole('group',{name:'AI City 가상 도시 지도'});await map.waitFor()
   assert.equal(await map.locator('.city-world-building').count(),6)
-  const person=map.locator('.city-world-character').first(),position=await person.getAttribute('transform')
+  const person=map.locator('.city-world-character').last(),position=await person.getAttribute('transform')
   await page.waitForTimeout(1200)
   // A resting character may remain still; deterministic motion itself is unit tested.
   console.log('CITY_BROWSER '+width+' character '+position+' -> '+await person.getAttribute('transform'))
