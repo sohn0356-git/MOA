@@ -10,13 +10,12 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: city-browser
   cancel-in-progress: true
 jobs:
   browser:
-    environment:
-      name: github-pages
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -32,14 +31,39 @@ jobs:
           cache: npm
       - run: npm ci --prefer-offline --no-audit --no-fund
         timeout-minutes: 3
-      - run: npm run build
+      - name: Find this commit's built Pages artifact
+        id: pages
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          import {appendFileSync} from 'node:fs'
+          const api=async path=>{
+            const res=await fetch('https://api.github.com/repos/'+process.env.GITHUB_REPOSITORY+path,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','User-Agent':'city-browser-check'}})
+            if(!res.ok)throw new Error('GitHub artifact lookup '+res.status)
+            return res.json()
+          }
+          for(let attempt=0;attempt<60;attempt++){
+            const data=await api('/actions/runs?head_sha='+process.env.GITHUB_SHA+'&per_page=20')
+            const build=data.workflow_runs.find(run=>run.path==='.github/workflows/deploy.yml')
+            if(build){
+              const artifacts=await api('/actions/runs/'+build.id+'/artifacts')
+              if(artifacts.artifacts.some(a=>a.name==='github-pages'&&!a.expired)){appendFileSync(process.env.GITHUB_OUTPUT,'run_id='+build.id+'\n');process.exit(0)}
+              if(build.conclusion==='failure')throw new Error('Pages build failed')
+            }
+            await new Promise(resolve=>setTimeout(resolve,3000))
+          }
+          throw new Error('Pages artifact was not ready in three minutes')
+          JS
+      - uses: actions/download-artifact@v5
+        with:
+          name: github-pages
+          run-id: ${{ steps.pages.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: city-pages-artifact
+      - run: |
+          mkdir -p dist
+          tar -xf city-pages-artifact/artifact.tar -C dist
       - run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 --no-audit --no-fund
       - run: npx playwright install chromium --only-shell
         timeout-minutes: 2
