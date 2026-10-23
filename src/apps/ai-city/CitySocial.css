@@ -86,3 +86,9 @@
 .city-social-rail{width:100%;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}.city-social-rail>*{grid-column:1!important;grid-row:auto!important}.city-social-rail .city-avatar-stage{padding:10px}.city-social-rail .city-avatar-editor{margin:0}.city-world-heading{flex-direction:column;gap:10px}.city-world-heading h2{font-size:20px}.city-world-badge{font-size:9px}.city-world-canvas>svg{height:370px}.city-world-layout{gap:16px}.city-world-observer{padding:16px;gap:8px 12px}.city-world-pan{flex-wrap:wrap}.city-world-pan small{flex-basis:100%;margin:4px 0;font-size:9px}.city-world-destination{padding:14px}.city-world-destination h3{font-size:13px}.city-world-destination .city-social-actions>button{flex:1 1 140px}.city-social .city-feed-heading{margin-top:20px}.city-social .city-social-profile-card{padding:16px}.city-social .city-composer-footer{flex-wrap:wrap}}
 
 .city-feed-preferences{margin:12px 0;color:#92829e;font-size:12px}.city-feed-preferences>summary{cursor:pointer;padding:10px 0}.city-feed-preferences .city-saved-views{color:#66536f}.city-view-residents .city-social-rail>.city-avatar-editor{display:none}
+
+.app-shell:has(.city-social){width:min(100%,1480px)}
+.auth-panel.auth-panel-city,#auth-panel-ai-city{min-width:0}
+.auth-panel.auth-panel-city>.brand-mark,.auth-panel.auth-panel-city>div:nth-child(2){display:none}
+.city.city-social h1{font-size:34px;letter-spacing:-1.5px;line-height:1.2}
+@media(max-width:740px){.city.city-social h1{font-size:29px}}
