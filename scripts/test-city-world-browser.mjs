@@ -10,7 +10,10 @@ try{
  await mkdir('city-browser-artifacts',{recursive:true})
  for(const width of [1440,768,360]){
   const page=await browser.newPage({viewport:{width,height:960},reducedMotion:'reduce'})
+  page.setDefaultTimeout(15000);page.setDefaultNavigationTimeout(20000)
+  console.log('CITY_BROWSER_START '+width)
   const errors=[];page.on('pageerror',e=>errors.push(e.message))
+  console.log('CITY_BROWSER_NAVIGATE '+width)
   await page.goto('http://127.0.0.1:4174/MOA/',{waitUntil:'domcontentloaded'})
   const city=page.locator('.city-social');await city.waitFor()
   await page.getByRole('navigation',{name:'Ai city 메뉴'}).waitFor()
@@ -22,6 +25,7 @@ try{
    assert.ok(metrics.body<=metrics.viewport+3,label+' has page horizontal overflow: '+JSON.stringify(metrics))
   }
   await checkWidth('feed');await page.screenshot({path:'city-browser-artifacts/feed-'+width+'.png',fullPage:true})
+  console.log('CITY_BROWSER_OPEN_WORLD '+width)
   await page.getByRole('button',{name:'도시 지도',exact:true}).click()
   const map=page.getByRole('group',{name:'AI City 가상 도시 지도'});await map.waitFor()
   assert.equal(await map.locator('.city-world-building').count(),6)
@@ -42,4 +46,4 @@ try{
   console.log('CITY_BROWSER_PASS '+width+' feed/world/suggestions; 12 menus; 6 buildings; observation/follow/pause/zoom; no runtime errors')
   await page.close()
  }
-}finally{await browser?.close();server.kill()}
+}catch(error){if(browser)for(const context of browser.contexts())for(const page of context.pages())await page.screenshot({path:'city-browser-artifacts/failure.png',fullPage:true,timeout:5000}).catch(()=>{});throw error}finally{await browser?.close();server.kill()}
