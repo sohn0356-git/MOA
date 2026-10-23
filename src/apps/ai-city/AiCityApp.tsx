@@ -266,7 +266,7 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
   function returnToMap(){
     const id=buildingId??lastBuilding.current
     navigation.navigate(()=>setBuildingId(null))
-    setTimeout(()=>document.getElementById('city-building-'+id)?.focus({preventScroll:true}),0)
+    setTimeout(()=>{const target=document.getElementById('city-building-'+id);target?.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'instant'});target?.focus({preventScroll:true})},0)
   }
   useEffect(()=>{if(buildingId){lastBuilding.current=buildingId;if(lowerPane.current)lowerPane.current.scrollTop=0}},[buildingId])
   const currentBuilding=cityBuildings.find(b=>b.id===buildingId)
