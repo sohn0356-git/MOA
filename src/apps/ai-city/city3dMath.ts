@@ -1,13 +1,13 @@
 import type {CityBuilding} from './cityBuildings'
 export type Vec3=[number,number,number]
-export type CityCamera={yaw:number;pitch:number;distance:number;target:Vec3}
+export type CityCamera={yaw:number;pitch:number;distance:number;target:Vec3;eye?:Vec3}
 export const defaultCityCamera:CityCamera={yaw:.42,pitch:.72,distance:118,target:[0,0,0]}
 export const sub=(a:Vec3,b:Vec3):Vec3=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]]
 export const dot=(a:Vec3,b:Vec3)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
 export const cross=(a:Vec3,b:Vec3):Vec3=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]
 export function normalize(a:Vec3):Vec3{const n=Math.hypot(...a)||1;return [a[0]/n,a[1]/n,a[2]/n]}
 export function cameraBasis(camera:CityCamera){
- const eye:Vec3=[camera.target[0]+Math.sin(camera.yaw)*Math.cos(camera.pitch)*camera.distance,camera.target[1]+Math.sin(camera.pitch)*camera.distance,camera.target[2]+Math.cos(camera.yaw)*Math.cos(camera.pitch)*camera.distance]
+ const eye:Vec3=camera.eye??[camera.target[0]+Math.sin(camera.yaw)*Math.cos(camera.pitch)*camera.distance,camera.target[1]+Math.sin(camera.pitch)*camera.distance,camera.target[2]+Math.cos(camera.yaw)*Math.cos(camera.pitch)*camera.distance]
  const forward=normalize(sub(camera.target,eye)),right=normalize(cross(forward,[0,1,0])),up=cross(right,forward)
  return {eye,forward,right,up}
 }
@@ -19,7 +19,7 @@ export function multiply(a:Float32Array,b:Float32Array){
 export function cameraMatrix(camera:CityCamera,aspect:number){
  const {eye,forward:f,right:s,up:u}=cameraBasis(camera)
  const view=new Float32Array([s[0],u[0],-f[0],0,s[1],u[1],-f[1],0,s[2],u[2],-f[2],0,-dot(s,eye),-dot(u,eye),dot(f,eye),1])
- const t=1/Math.tan(Math.PI/7),near=1,far=600
+ const t=1/Math.tan(Math.PI/7),near=camera.eye ? .08 : 1,far=600
  const perspective=new Float32Array([t/aspect,0,0,0,0,t,0,0,0,0,(far+near)/(near-far),-1,0,0,2*far*near/(near-far),0])
  return multiply(perspective,view)
 }
