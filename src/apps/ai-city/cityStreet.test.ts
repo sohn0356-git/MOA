@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import {beforeEach,describe,it,expect} from 'vitest'
 import {loadStreet,saveStreet,moveStreet,streetSpawn,streetWalkable,streetCamera,nearbyStreetBuilding} from './cityStreet'
 import {cameraBasis} from './city3dMath'

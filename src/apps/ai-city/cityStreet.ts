@@ -28,3 +28,9 @@ export function streetCamera(p:StreetPosition):CityCamera{
 export function nearbyStreetBuilding(p:StreetPosition):CityBuilding|undefined{
  return cityBuildings.find(b=>Math.hypot(p.x-(b.x-600)/10,p.z-((b.z-400)/10+b.depth/2+1.2))<4)
 }
+
+export function loadStreetResident():string{
+ try{const id=localStorage.getItem('ai-city:street:resident');if(id&&/^(ai0[1-9]|ai10|resident-[1-9][0-9]*)$/.test(id))return id}catch{/* Storage unavailable. */}
+ return 'ai01'
+}
+export function saveStreetResident(id:string){try{localStorage.setItem('ai-city:street:resident',id)}catch{/* Storage unavailable. */}}

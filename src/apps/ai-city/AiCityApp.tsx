@@ -1,3 +1,4 @@
+import {loadStreetResident,saveStreetResident} from './cityStreet'
 import {CityMap3D} from './CityMap3D'
 import {cityBuildings,type CityBuilding,type CityBuildingId} from './cityBuildings'
 import {Map as CityMapIcon,ArrowUpRight} from 'lucide-react'
@@ -56,7 +57,7 @@ function timeLabel(value:number){return <CityTime value={value}/>}
 function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean; entryActions?: ReactNode }) {
   const [buildingId,setBuildingId]=useState<CityBuildingId|null>(null)
   const lowerPane=useRef<HTMLDivElement>(null),lastBuilding=useRef<CityBuildingId>('plaza')
-  const [accountId, setAccountId] = useState('ai01')
+  const [accountId, setAccountId] = useState(()=>{const id=loadStreetResident();return aiLoginAccounts.some(a=>a.accountId===id)?id:'ai01'})
   const [view, setView] = useState<'feed' | 'residents' | 'projects' | 'archive' | 'suggestion' | 'works' | 'inbox' | 'map' | 'bookmarks' | 'publishing' | 'materials' | 'progress'>('feed')
   const [kind, setKind] = useState<CityKind>('feed')
   const [posts, setPosts] = useState<CityPost[]>([])
@@ -70,7 +71,7 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
   const [retry, setRetry] = useState(0)
   const [project, setProject] = useState(() => { try { return localStorage.getItem('moa:ai-city:project-filter') ?? '' } catch { return '' } })
   const [statusFilter, setStatusFilter] = useState('all')
-  const [residentId, setResidentId] = useState('ai01')
+  const [residentId, setResidentId] = useState(loadStreetResident)
   const viewResident=useRef('')
   useLayoutEffect(()=>{if(viewResident.current&&viewResident.current!==residentId){setProject('');setAuthorSearch('');setScopeFilter('all');setViewSort('newest');setShowDetails(false)}viewResident.current=residentId},[residentId])
   const [switchTarget,setSwitchTarget]=useState('')
@@ -78,7 +79,7 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
   const [switchReason,setSwitchReason]=useState('')
   const [switchError,setSwitchError]=useState('')
   const [handoffs,saveHandoffs,handoffFailed]=useStoredCityState<Record<string,{kind:CityKind;draft:CityDraft}[]>>('handoffs',{})
-  function commitResident(id:string){setResidentId(id);if(aiLoginAccounts.some(account=>account.accountId===id))setAccountId(id)}
+  function commitResident(id:string){saveStreetResident(id);setResidentId(id);if(aiLoginAccounts.some(account=>account.accountId===id))setAccountId(id)}
   function requestResident(id:string){if(id===residentId)return;if(currentDraft.image||currentDraft.body.trim()||currentDraft.suggestion?.title||currentDraft.suggestion?.summary){setSwitchTarget(id);setSwitchMode('keep');setSwitchReason('');setSwitchError('')}else commitResident(id)}
   function confirmResidentSwitch(){if(!saveDrafts(previous=>({...previous}))){setSwitchError('현재 주민 초안을 보관하지 못했습니다. 전환하지 않았습니다.');return}
    if(switchMode==='copy'){if(!switchReason.trim()){setSwitchError('사본 인계 이유를 적어 주세요.');return}
@@ -165,7 +166,7 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
   }, [retry])
   useEffect(() => {
     setProfilesLoading(true);setProfilesFailed(false)
-    try { return subscribeCityProfiles(value=>{setProfiles(value);setProfilesReady(true);setProfilesLoading(false);setProfilesFailed(false);setProfilesConfirmedAt(Date.now())}, () => {setProfilesFailed(true);setProfilesLoading(false)}) }
+    try { return subscribeCityProfiles(value=>{if(!value.some(p=>p.id===loadStreetResident())){saveStreetResident('ai01');setResidentId('ai01');setAccountId('ai01')}setProfiles(value);setProfilesReady(true);setProfilesLoading(false);setProfilesFailed(false);setProfilesConfirmedAt(Date.now())}, () => {setProfilesFailed(true);setProfilesLoading(false)}) }
     catch {setProfilesFailed(true);setProfilesLoading(false)}
   }, [retry])
   useEffect(() => { if (!navigation.restoring.current) setPageSize(targetPost ? posts.length : view==='feed'?3:30) }, [view, kind, project, statusFilter, search, authorSearch, fromDate, toDate])
