@@ -39,8 +39,10 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
       - run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 --no-audit --no-fund
-      - run: google-chrome --version
+      - run: npx playwright install chromium --only-shell
+        timeout-minutes: 2
       - run: node scripts/test-city-world-browser.mjs
+        timeout-minutes: 3
       - uses: actions/upload-artifact@v6
         if: always()
         with:

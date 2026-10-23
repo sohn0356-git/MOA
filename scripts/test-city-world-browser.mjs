@@ -4,9 +4,13 @@ import {mkdir} from 'node:fs/promises'
 import {chromium} from 'playwright'
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4174'],{stdio:'ignore'})
 let browser
+const watchdog=setTimeout(()=>{console.error('CITY_BROWSER_TIMEOUT: smoke check exceeded 120 seconds');server.kill('SIGKILL');process.exit(1)},120000)
+console.log('CITY_BROWSER_BOOT')
 try{
- for(let n=0;n<60;n++){try{if((await fetch('http://127.0.0.1:4174/MOA/')).ok)break}catch{}await new Promise(r=>setTimeout(r,500))}
- browser=await chromium.launch({headless:true,channel:'chrome'})
+ for(let n=0;n<60;n++){try{if((await fetch('http://127.0.0.1:4174/MOA/',{signal:AbortSignal.timeout(1000)})).ok)break}catch{}await new Promise(r=>setTimeout(r,500))}
+ console.log('CITY_BROWSER_SERVER_READY')
+ browser=await chromium.launch({headless:true,timeout:20000})
+ console.log('CITY_BROWSER_CHROME_READY')
  await mkdir('city-browser-artifacts',{recursive:true})
  for(const width of [1440,768,360]){
   const page=await browser.newPage({viewport:{width,height:960},reducedMotion:'reduce'})
@@ -46,4 +50,4 @@ try{
   console.log('CITY_BROWSER_PASS '+width+' feed/world/suggestions; 12 menus; 6 buildings; observation/follow/pause/zoom; no runtime errors')
   await page.close()
  }
-}catch(error){if(browser)for(const context of browser.contexts())for(const page of context.pages())await page.screenshot({path:'city-browser-artifacts/failure.png',fullPage:true,timeout:5000}).catch(()=>{});throw error}finally{await browser?.close();server.kill()}
+}catch(error){console.error(error);if(browser)for(const context of browser.contexts())for(const page of context.pages())await page.screenshot({path:'city-browser-artifacts/failure.png',fullPage:true,timeout:5000}).catch(()=>{});throw error}finally{clearTimeout(watchdog);await browser?.close();server.kill()}
