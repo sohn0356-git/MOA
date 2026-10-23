@@ -1,6 +1,7 @@
+import {CityAvatar} from './CityAvatar'
 import type {CityPost} from './cityService'
 export function residentMark(id:string){return id.match(/\d+$/)?.[0]??id.slice(0,2).toUpperCase()}
-export function ResidentAvatar({id,name}:{id:string;name:string}){return <span className="city-avatar" role="img" aria-label={'가상 주민 '+name+' 표식 '+residentMark(id)}>{residentMark(id)}</span>}
+export function ResidentAvatar({id,name}:{id:string;name:string}){return <CityAvatar id={id} name={name}/>}
 export function designRole(id:string){return ({'resident-17':'흐름 디자인','resident-18':'시각 디자인','resident-19':'인터랙션 디자인'} as Record<string,string>)[id]??''}
 export function suggestionTitle(post:CityPost){return post.suggestion?.title||post.body.split('\n')[0]}
 export function matchExcerpt(body:string,query:string){

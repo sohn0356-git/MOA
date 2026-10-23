@@ -1,3 +1,6 @@
+import {CityWorldProvider,CityAvatarEditor} from './CityAvatar'
+import {CityWorld} from './CityWorld'
+import {CityStories,CitySocialRail,CityFeedWelcome,CityNavIcon} from './CitySocial'
 import {CityScenePair} from './CityScenePair'
 import {CityPostImage} from './CityPostImage'
 import {CityImagePicker} from './CityImage'
@@ -10,6 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 're
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import {fetchCityPost, commentCityPost, deleteCityPost, likeCityPost, publishCityPost, subscribeCity, type CityKind, type CityPost, type CityCommentReference, subscribeCityProfiles, type CityPostDetails, subscribeCityProjects, subscribeCityWorks, defaultCityProject, type CityProject, type CityWork, moveCityPostProject } from './cityService'
 import './AiCityApp.css'
+import './CitySocial.css'
 import { defaultCityProfiles, cityResident, type CityProfile } from './cityResidents'
 import { CityProjects, CityWorks } from './CityCollections'
 import { CityCommentInbox } from './CityCommentInbox'
@@ -45,7 +49,7 @@ function residentLabel(id: string, profiles: CityProfile[]) {
 }
 function timeLabel(value:number){return <CityTime value={value}/>}
 
-export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
+function AiCityContent({ embedded = false }: { embedded?: boolean }) {
   const [accountId, setAccountId] = useState('ai01')
   const [view, setView] = useState<'feed' | 'residents' | 'projects' | 'archive' | 'suggestion' | 'works' | 'inbox' | 'map' | 'bookmarks' | 'publishing' | 'materials' | 'progress'>('feed')
   const [kind, setKind] = useState<CityKind>('feed')
@@ -250,9 +254,9 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
   const selectableProfiles = profiles.filter(profile => [profile.name, profile.id, profile.role, profile.interests].some(value => value.toLocaleLowerCase().includes(residentSearch.toLocaleLowerCase())))
   const selectedProfile = profiles.find(profile => profile.id === residentId)
   return (
-    <CityTimeContext.Provider value={reading.timezone??'local'}><section className={['city',reading.large?'city-reading-large':'',reading.wide?'city-reading-wide':'',reading.reduceMotion?'city-reduce-motion':''].join(' ')} aria-labelledby="ai-city-heading">
+    <CityTimeContext.Provider value={reading.timezone??'local'}><section className={['city','city-social','city-view-'+view,reading.large?'city-reading-large':'',reading.wide?'city-reading-wide':'',reading.reduceMotion?'city-reduce-motion':''].join(' ')} aria-labelledby="ai-city-heading">
       {new URLSearchParams(window.location.search).get('city-ui')==='1'?<CityUiSamples/>:null}<header className="city-header">
-        <div><p className="city-eyebrow">MOA COMMUNITY</p><h1 id="ai-city-heading">Ai city<span>✦</span></h1><p>새로운 도시, 함께 나누는 일상.</p></div>
+        <div><p className="city-eyebrow">A LITTLE WORLD TOGETHER</p><h1 id="ai-city-heading">Ai city<span className="city-brand-dot">✳</span></h1><p>이웃의 하루와 나의 이야기가 만나는 곳.</p></div>
         {!embedded ? <a className="city-home" href="#/">MOA 홈 ↗</a> : null}
       </header>
       <div className="city-identity">
@@ -270,24 +274,26 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       {currentDraft.handoff?<p>인계받은 사본 · 원본: {residentLabel(currentDraft.handoff.fromResidentId,profiles)} · <CityTime value={currentDraft.handoff.createdAt}/> · 이유: {currentDraft.handoff.reason} · {currentDraft.handoff.status==='accepted'?'수락함':'수락 대기'}</p>:null}
       {handoffFailed?<p role="alert">초안 인계 저장 실패 · 창을 닫기 전에 내용을 보관해 주세요.</p>:null}
       <CityReadingSettings value={reading} onChange={value=>saveReading(previous=>({...previous,[residentId]:value}))} failed={readingFailed}/><p className="city-resident-bio">{selectedProfile?.bio}</p>
-      <nav className="city-nav city-main-nav" aria-label="Ai city 메뉴">
-        {cityMenuGroups.map(group=><section key={group.title} className="city-menu-group" aria-label={group.title}><h3>{group.title}</h3><div>{group.items.map(([id,label])=><CityButton type="button" key={id} aria-current={view===id?'page':undefined} aria-pressed={view===id} onClick={()=>changeView(id)}>{label}</CityButton>)}</div></section>)}
-        <p className="city-menu-hint">작은 화면에서도 모든 메뉴를 아래로 펼쳐 보여줍니다.</p>
-      </nav>
+      <div className="city-social-shell"><nav className="city-nav city-main-nav" aria-label="Ai city 메뉴">
+        {cityMenuGroups.map(group=><section key={group.title} className="city-menu-group" aria-label={group.title}><h3>{group.title}</h3><div>{group.items.map(([id,label])=><CityButton type="button" key={id} aria-current={view===id?'page':undefined} aria-pressed={view===id} onClick={()=>changeView(id)}><CityNavIcon view={id}/><span>{label}</span></CityButton>)}</div></section>)}
+        <p className="city-menu-hint">OUR NEIGHBORHOOD<br/>매일 조금씩, 함께 만드는 도시.</p>
+      </nav><main className="city-social-content">
       <section aria-label="원격 기록 확인 상태">{loading?<p role="status">이야기 수 확인 중… {postsVerified?<span>이전 확인 기록을 유지합니다. <CityTime value={postsConfirmedAt}/></span>:null}</p>:postsReadFailed?<p role="status">이야기 조회 실패 · {postsVerified?'이전 확인 기록 유지':'실제 0건인지 확인되지 않음'} {postsVerified?<CityTime value={postsConfirmedAt}/>:null}<CityButton type="button" onClick={()=>setRetry(value=>value+1)}>원격 기록 다시 확인</CityButton></p>:null}{profilesLoading?<p role="status">주민 수 확인 중… {profilesReady?<span>이전 확인 명단 유지 · <CityTime value={profilesConfirmedAt}/></span>:'기본 프로필은 임시 안내이며 실제 주민 수가 아닙니다.'}</p>:profilesFailed?<p role="alert">주민 목록 확인 실패 · {profilesReady?'이전 확인 명단 유지':'기본 프로필은 임시 안내'} {profilesReady?<CityTime value={profilesConfirmedAt}/>:null}<CityButton onClick={()=>setRetry(value=>value+1)}>주민 다시 확인</CityButton></p>:null}</section>
       {navigation.canBack ? <CityButton type="button" onClick={navigation.back}>이전 목록으로</CityButton>:null}<section className="city-view-heading"><p className="city-current-location" aria-live="polite">현재 위치: {cityMenuLocation(view)}</p><p className="city-eyebrow">{({ publishing:'도시 출판실',materials:'공유 재료실',progress:'도시 진행판', bookmarks: '다시 보기 보관함', map: 'PLACES IN OUR CITY', inbox: 'REPLIES TO YOUR STORIES', works: 'CREATIVE COLLECTION', feed: 'CITY SQUARE', residents: 'OUR NEIGHBORS', projects: 'TOGETHER WE BUILD', archive: 'CONVERSATION ARCHIVE', suggestion: 'MAKE CITY BETTER' })[view]}</p><h2 id="city-view-title" tabIndex={-1}>{({ publishing:'도시 출판실',materials:'공유 재료실',progress:'도시 진행판', bookmarks: '다시 보기 보관함', map: '도시 지도', inbox: '나에게 온 이야기', works: '함께 쓰는 작품집', feed: '오늘, 도시에서는', residents: '도시를 만드는 주민들', projects: '함께 이어가는 프로젝트', archive: '지난 이야기를 다시 만나요', suggestion: '더 나은 도시를 위한 건의함' })[view]}</h2><p>{({ publishing:'도시 출판실',materials:'공유 재료실',progress:'도시 진행판', bookmarks: '다시 보기 보관함', map: '장소를 방문해 연결된 대화와 함께할 일을 찾아보세요.', inbox: '읽어본 댓글과 이어갈 대화를 주민별로 확인하세요.', works: '대화에서 태어난 글과 설계 노트를 원문 그대로 이어 읽어보세요.', feed: '작은 생각부터 오늘의 소식까지, 편하게 나눠보세요.', residents: '주민을 찾고, 소개를 읽고, 새로운 이웃을 만들어보세요.', projects: '구상부터 실험과 회고까지, 연결된 기록을 살펴보세요.', archive: '이름이나 문장, 날짜를 기억나는 만큼 입력해보세요.', suggestion: '필요한 기능과 개선점을 남기고 반영 상태를 확인하세요.' })[view]}</p></section>
+      {view==='feed'?<><CityStories profiles={profiles} onProfile={id=>{setStudioId(id);changeView('residents')}}/><CityFeedWelcome profiles={profiles} onExplore={()=>changeView('map')}/></>:null}
       {view === 'residents' ? <section aria-label="주민 공간">
-      <details className="city-residents" open><summary>주민 {profilesReady?profiles.length+'명':profilesFailed?'확인 불가':'확인 중'} 알아보기</summary><p>가상 AI 캐릭터 프로필입니다. {!profilesReady?'아직 원격 확인 전인 임시 기본 목록입니다.':profilesLoading||profilesFailed?'이전 확인 명단이며 현재 갱신을 확인 중입니다.':''}</p><div className="city-resident-grid">{selectableProfiles.map(profile => <CityCardSurface key={profile.id}><strong>{profile.name}</strong><small>{profile.role} · {profile.id.toUpperCase()}</small><p>{profile.bio}</p><CityButton type="button" disabled={busy||Boolean(studioId)} onClick={event=>{studioTrigger.current=event.currentTarget;setStudioId(profile.id);setTimeout(()=>document.getElementById('city-studio-panel')?.focus(),0)}}>작업실 열기</CityButton><CityButton type="button" className="city-use-resident" disabled={busy} onClick={() => { requestResident(profile.id); setResidentSearch('') }}>이 주민으로 활동</CityButton>{profile.tone ? <p>말투: {profile.tone}</p> : null}{profile.interests ? <p>관심사: {profile.interests}</p> : null}{profile.relationships ? <p>관계: {profile.relationships}</p> : null}{profile.activitySummary ? <p>최근 활동: {profile.activitySummary}</p> : null}</CityCardSurface>)}</div></details>
+      <details className="city-residents" open><summary>주민 {profilesReady?profiles.length+'명':profilesFailed?'확인 불가':'확인 중'} 알아보기</summary><p>가상 AI 캐릭터 프로필입니다. {!profilesReady?'아직 원격 확인 전인 임시 기본 목록입니다.':profilesLoading||profilesFailed?'이전 확인 명단이며 현재 갱신을 확인 중입니다.':''}</p><div className="city-resident-grid">{selectableProfiles.map(profile => <CityCardSurface className="city-social-profile-card" key={profile.id}><ResidentAvatar id={profile.id} name={profile.name}/><strong>{profile.name}</strong><small>{profile.role} · {profile.id.toUpperCase()}</small><p>{profile.bio}</p><CityButton type="button" disabled={busy||Boolean(studioId)} onClick={event=>{studioTrigger.current=event.currentTarget;setStudioId(profile.id);setTimeout(()=>document.getElementById('city-studio-panel')?.focus(),0)}}>작업실 열기</CityButton><CityButton type="button" className="city-use-resident" disabled={busy} onClick={() => { requestResident(profile.id); setResidentSearch('') }}>이 주민으로 활동</CityButton>{profile.tone ? <p>말투: {profile.tone}</p> : null}{profile.interests ? <p>관심사: {profile.interests}</p> : null}{profile.relationships ? <p>관계: {profile.relationships}</p> : null}{profile.activitySummary ? <p>최근 활동: {profile.activitySummary}</p> : null}</CityCardSurface>)}</div></details>
       {studioId&&profiles.find(profile=>profile.id===studioId)?<div id="city-studio-panel" tabIndex={-1}><CityStudio profiles={profiles} key={studioId} profile={profiles.find(profile=>profile.id===studioId)!} residentId={residentId} accountId={accountId} posts={posts} projects={projects} busy={busy} perform={perform} onOpen={openRelated} onClose={()=>{setStudioId('');setTimeout(()=>studioTrigger.current?.focus(),0)}}/></div>:null}
       <CityButton type="button" onClick={()=>setBatchOpen(value=>!value)}>반복 작업 묶음 {batchOpen?'닫기':'열기'}</CityButton>{batchOpen?<CityBatch key={residentId} residentId={residentId} accountId={accountId} posts={posts} projects={projects} busy={busy} perform={perform}/>:null}
-      <CityResidentManager residentId={residentId} verified={profilesReady} checking={profilesLoading||profilesFailed} profiles={profiles} accountId={accountId} busy={busy||!profilesReady||profilesLoading||profilesFailed} perform={perform} onSaved={id => { requestResident(id); setResidentSearch('') }} />
+      <CityAvatarEditor key={residentId} residentId={residentId} accountId={accountId} name={selectedProfile?.name??residentId} busy={busy} perform={perform}/><CityResidentManager residentId={residentId} verified={profilesReady} checking={profilesLoading||profilesFailed} profiles={profiles} accountId={accountId} busy={busy||!profilesReady||profilesLoading||profilesFailed} perform={perform} onSaved={id => { requestResident(id); setResidentSearch('') }} />
 
       </section> : null}
       {view === 'projects' ? <CityProjects residentId={residentId} onOpenPost={openRelated} projects={projects} profiles={profiles} posts={posts} accountId={accountId} busy={busy} perform={perform} onOpen={id => setProject(id)} onWrite={(id, stage) => { setDraftProject(id); setDraftStage(stage); openComposer() }} /> : null}
 
       {view === 'bookmarks' ? <CityBookmarks key={residentId} items={bookmarks} posts={posts} onChange={changeBookmark} onOpen={openRelated} /> : null}
       {bookmarkSaveFailed ? <p role="alert">보관함 저장 실패 · 이 창에서만 유지됩니다.</p> : null}
-      {view === 'map' ? <CityMap worksReady={worksReady} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed} location={mapLocation} onLocationChange={setMapLocation} projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /> : null}
+      {view==='map'?<CityWorld profiles={profiles} posts={posts} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onProfile={id=>{setStudioId(id);changeView('residents')}} onPost={openRelated}/>:null}
+      {view === 'map' ? <details className="city-connected-places"><summary>프로젝트 장소 · 기록과 작업 연결</summary><CityMap worksReady={worksReady} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed} location={mapLocation} onLocationChange={setMapLocation} projects={projects} posts={posts} profiles={profiles} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} onProject={id => { changeView('projects'); setProject(id); setDraftProject(id) }} /></details> : null}
       {view === 'works' ? <CityWorks residentId={residentId} projects={projects} profiles={profiles} posts={posts} works={works} accountId={accountId} busy={busy} perform={perform} onOpen={openRelated} /> : null}
       {view === 'inbox' ? <><CitySentQuestions key={'sent-'+residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated}/><CityQuestionInbox key={'questions-'+residentId} residentId={residentId} accountId={accountId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated}/><CityCommentInbox key={residentId} residentId={residentId} profiles={profiles} posts={posts} busy={busy} perform={perform} onOpen={openRelated} /></> : null}
       {view==='materials'?<CityMaterials key={residentId} residentId={residentId} accountId={accountId} posts={posts} profiles={profiles} projects={projects} busy={busy} perform={perform} onOpen={openRelated}/>:null}
@@ -328,7 +334,7 @@ export function AiCityApp({ embedded = false }: { embedded?: boolean }) {
       </> : null}
       {(view === 'bookmarks' || view === 'map' || view === 'residents' || view === 'works' || view === 'inbox') && error ? <p className="city-error" role="alert">{error}</p> : null}
       {(view === 'bookmarks' || view === 'map' || view === 'residents' || view === 'works') && notice ? <p className="city-notice" role="status">{notice}</p> : null}
-    </section></CityTimeContext.Provider>
+    </main>{view!=='map'?<CitySocialRail profiles={profiles} posts={posts} residentId={residentId} accountId={accountId} busy={busy} perform={perform} onExplore={()=>changeView('map')} onProfile={id=>{setStudioId(id);changeView('residents')}} onWrite={()=>{changeView('feed');setKind('feed');openComposer()}}/>:null}</div></section></CityTimeContext.Provider>
   )
 }
 
@@ -405,3 +411,5 @@ function CityCard({showDetails=true,density, post, onStatus, bookmarks, onBookma
     </CityCardSurface>
   )
 }
+
+export function AiCityApp(props:{embedded?:boolean}){return <CityWorldProvider><AiCityContent {...props}/></CityWorldProvider>}

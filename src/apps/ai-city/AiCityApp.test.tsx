@@ -10,6 +10,7 @@ vi.mock('./cityService', () => ({
  subscribeCityStudio:vi.fn(),subscribeCityQuestions:vi.fn(),saveCityStudioWork:vi.fn(),createCityQuestion:vi.fn(),setCityQuestionState:vi.fn(),
   subscribeCityDesignReviews:vi.fn(),createCityDesignReview:vi.fn(),addCityDesignAlternative:vi.fn(),addCityDesignEvent:vi.fn(), changeCityImplementation:vi.fn(),subscribeCityImplementationEvents:vi.fn(), subscribeCityPlaces:vi.fn(),saveCityPlace:vi.fn(),subscribeCitySignboards:vi.fn(),saveCitySignboard:vi.fn(), subscribeCityVisualNotes: vi.fn(), saveCityVisualNote: vi.fn(), subscribeCityContinuations: vi.fn(), saveCityContinuation: vi.fn(), publishCityContinuation: vi.fn(), subscribeCityLabs: vi.fn(), saveCityLabEvent: vi.fn(), subscribeCity: vi.fn(), publishCityPost: vi.fn(), commentCityPost: vi.fn(), likeCityPost: vi.fn(), deleteCityPost: vi.fn(), setCityImplementation: vi.fn(), subscribeCityProfiles: vi.fn(), saveCityProfile: vi.fn(), subscribeCityProjects: vi.fn(), subscribeCityWorks: vi.fn(), saveCityProject: vi.fn(), saveCityWork: vi.fn(), removeCityWork: vi.fn(), moveCityPostProject: vi.fn(), subscribeCityInbox: vi.fn(), setCityInboxState: vi.fn(), subscribeCityProjectTasks: vi.fn(), createCityProjectTask: vi.fn(), addCityTaskEvent: vi.fn(), defaultCityProject: { id: 'first-plaza', name: '첫 광장', description: '주민들의 첫 대화에서 출발한 공동 프로젝트', stage: 'idea', participantIds: {} },
 }))
+vi.mock('./cityWorldService',()=>({watchWorldAvatars:vi.fn((cb:(v:object)=>void)=>{cb({});return()=>{}}),watchWorldCommands:vi.fn((cb:(v:object)=>void)=>{cb({});return()=>{}}),saveWorldAvatar:vi.fn(),saveWorldDestination:vi.fn()}))
 vi.mock('./cityImageService',()=>({uploadCityImage:vi.fn(),readCityImage:vi.fn()}))
 afterEach(cleanup)
 beforeEach(() => {
@@ -665,6 +666,7 @@ it('returns from a map source to the selected place and list mode without switch
  vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'map-source',kind:'feed',accountId:'ai02',authorUid:'u2',projectId:'first-plaza',body:'지도에서 열 원글',createdAt:1}]);return()=>{}})
  renderCity()
  fireEvent.click(screen.getByRole('button',{name:'도시 지도'}))
+ fireEvent.click(screen.getByText('프로젝트 장소 · 기록과 작업 연결'))
  fireEvent.click(screen.getByRole('button',{name:'목록 보기'}))
  fireEvent.click(screen.getByRole('button',{name:/첫 광장.*기본 배치/}))
  expect(screen.getByRole('region',{name:'첫 광장 방문'})).toBeTruthy()
@@ -743,11 +745,11 @@ describe('Approved reading and suggestion UX',()=>{
   vi.mocked(subscribeCityProfiles).mockImplementation(callback=>{callback([...defaultCityProfiles,...profiles]);return()=>{}})
   vi.mocked(subscribeCity).mockImplementation(callback=>{callback([{id:'v',kind:'feed',accountId:'ai01',authorUid:'u1',residentId:'resident-17',body:'지안의 글',createdAt:1,comments:{c:{accountId:'ai01',authorUid:'u1',residentId:'resident-19',body:'윤슬의 댓글',createdAt:2}}}]);return()=>{}})
   render(<AiCityApp/>)
-  expect(screen.getByRole('img',{name:'가상 주민 지안 표식 17'}).textContent).toBe('17')
+  expect(screen.getAllByRole('img',{name:'지안 아바타'})[0].querySelector('svg')).toBeTruthy()
   fireEvent.click(screen.getByRole('button',{name:'댓글 1'}))
-  expect(screen.getByRole('img',{name:'가상 주민 윤슬 표식 19'}).textContent).toBe('19')
+  expect(screen.getAllByRole('img',{name:'윤슬 아바타'})[0].querySelector('svg')).toBeTruthy()
   changeResident('resident-18')
-  expect(screen.getByRole('img',{name:'가상 주민 비비 표식 18'}).textContent).toBe('18')
+  expect(screen.getAllByRole('img',{name:'비비 아바타'})[0].querySelector('svg')).toBeTruthy()
   expect(within(screen.getByLabelText('활동할 AI 선택')).getByRole('option',{name:/비비.*주민 18/})).toBeTruthy()
   expect(likeCityPost).not.toHaveBeenCalled()
  })

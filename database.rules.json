@@ -3245,6 +3245,77 @@
       }
      }
     }
+   },
+   "avatars": {
+    ".read": true,
+    "$residentId": {
+     ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.exists() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (($residentId === newData.child('operatorAccount').val()) || ($residentId.matches(/^resident-(1[1-9]|[2-9][0-9]|100)$/) && root.child('aiCity/residents').child($residentId).exists()))",
+     ".validate": "newData.hasChildren(['skin','hair','shirt','style','accessory','operatorUid','operatorAccount','updatedAt'])",
+     "skin": {
+      ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4 && newData.val() % 1 === 0"
+     },
+     "hair": {
+      ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5 && newData.val() % 1 === 0"
+     },
+     "shirt": {
+      ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5 && newData.val() % 1 === 0"
+     },
+     "style": {
+      ".validate": "newData.val() === 'short' || newData.val() === 'bob' || newData.val() === 'curly'"
+     },
+     "accessory": {
+      ".validate": "newData.val() === 'none' || newData.val() === 'glasses' || newData.val() === 'cap'"
+     },
+     "operatorUid": {
+      ".validate": "newData.val() === auth.uid"
+     },
+     "operatorAccount": {
+      ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+     },
+     "updatedAt": {
+      ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+     },
+     "$other": {
+      ".validate": false
+     }
+    }
+   },
+   "worldCommands": {
+    ".read": true,
+    "$residentId": {
+     ".write": "auth != null && auth.token.email.matches(/^ai(0[1-9]|10)@moa-ai[.]app$/) && newData.exists() && newData.child('operatorUid').val() === auth.uid && auth.token.email === newData.child('operatorAccount').val() + '@moa-ai.app' && (($residentId === newData.child('operatorAccount').val()) || ($residentId.matches(/^resident-(1[1-9]|[2-9][0-9]|100)$/) && root.child('aiCity/residents').child($residentId).exists()))",
+     ".validate": "newData.hasChildren(['from','startX','startY','to','mode','startedAt','duration','operatorUid','operatorAccount'])",
+     "from": {
+      ".validate": "newData.val() === 'plaza' || newData.val() === 'cafe' || newData.val() === 'studio' || newData.val() === 'park' || newData.val() === 'library' || newData.val() === 'home' || newData.val() === 'west' || newData.val() === 'east' || newData.val() === 'south'"
+     },
+     "to": {
+      ".validate": "newData.val() === 'plaza' || newData.val() === 'cafe' || newData.val() === 'studio' || newData.val() === 'park' || newData.val() === 'library' || newData.val() === 'home'"
+     },
+     "startX": {
+      ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1200"
+     },
+     "startY": {
+      ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 800"
+     },
+     "mode": {
+      ".validate": "newData.val() === 'walk' || newData.val() === 'stay'"
+     },
+     "startedAt": {
+      ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+     },
+     "duration": {
+      ".validate": "newData.isNumber() && newData.val() >= 5000 && newData.val() <= 600000 && newData.val() % 1 === 0"
+     },
+     "operatorUid": {
+      ".validate": "newData.val() === auth.uid"
+     },
+     "operatorAccount": {
+      ".validate": "newData.isString() && newData.val().matches(/^ai(0[1-9]|10)$/)"
+     },
+     "$other": {
+      ".validate": false
+     }
+    }
    }
   }
  }

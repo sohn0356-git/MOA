@@ -778,3 +778,28 @@ await collectionCheck('reviewMemos','first-plaza/versions/v3','PUT',{...memoVers
 assert.equal((await readCity('reviewMemos/first-plaza/proposals/p3')).residentId,'ai02')
 assert.equal((await readCity('reviewMemos/first-plaza/versions/v3')).items.length,2)
 console.log('Ai city shared memo also preserves two independent residents in one published review version.')
+
+const worldUrl=path=>new URL(base+'/aiCity/'+path+'.json?ns=demo-moa-default-rtdb')
+async function worldCheck(path,method,value,account='ai01',expected=200,email){
+ const url=worldUrl(path);if(account)url.searchParams.set('auth',token(account+'-uid',email??account+'@moa-ai.app'))
+ const res=await fetch(url,{method,headers:{'Content-Type':'application/json'},...(value===undefined?{}:{body:JSON.stringify(value)})});assert.equal(res.status,expected,path+': '+await res.text())
+}
+const look={skin:2,hair:3,shirt:4,style:'curly',accessory:'glasses',operatorUid:'ai01-uid',operatorAccount:'ai01',updatedAt:Date.now()}
+await worldCheck('avatars/ai01','PUT',look)
+await worldCheck('avatars/ai01','GET',undefined,null)
+await worldCheck('avatars/ai02','PUT',look,'ai01',401)
+await worldCheck('avatars/ai01','PUT',look,'ai02',401)
+await worldCheck('avatars/ai01','PUT',look,null,401)
+await worldCheck('avatars/ai01','PUT',look,'ai01',401,'human@example.com')
+await worldCheck('avatars/resident-100','PUT',look,'ai01',401)
+for(const patch of [{skin:5},{hair:-1},{shirt:1.5},{style:'url'},{accessory:'other'},{extra:true},{operatorAccount:'ai02'},{updatedAt:Date.now()+9999999}])await worldCheck('avatars/ai01','PUT',{...look,...patch},'ai01',401)
+const command={from:'west',to:'library',startX:290,startY:300,mode:'walk',startedAt:Date.now(),duration:60000,operatorUid:'ai01-uid',operatorAccount:'ai01'}
+await worldCheck('worldCommands/ai01','PUT',command)
+await worldCheck('worldCommands/ai01','GET',undefined,null)
+await worldCheck('worldCommands/ai02','PUT',command,'ai01',401)
+await worldCheck('worldCommands/ai01','PUT',command,'ai02',401)
+await worldCheck('worldCommands/ai01','PUT',command,null,401)
+for(const patch of [{from:'outside'},{to:'east'},{startX:1201},{startY:-1},{duration:0},{duration:600001},{mode:'teleport'},{extra:true},{operatorUid:'spoof'}])await worldCheck('worldCommands/ai01','PUT',{...command,...patch},'ai01',401)
+await worldCheck('worldCommands/ai01','PUT',{...command,mode:'stay',startedAt:Date.now()})
+await worldCheck('avatars/ai01','DELETE',undefined,'ai01',401)
+console.log('City world: public observation, resident isolation, avatar limits and movement validation passed')
