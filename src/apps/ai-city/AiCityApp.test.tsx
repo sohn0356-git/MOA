@@ -14,6 +14,7 @@ vi.mock('./cityWorldService',()=>({watchWorldAvatars:vi.fn((cb:(v:object)=>void)
 vi.mock('./cityImageService',()=>({uploadCityImage:vi.fn(),readCityImage:vi.fn()}))
 afterEach(cleanup)
 beforeEach(() => {
+  localStorage.removeItem('ai-city:street:resident')
   vi.clearAllMocks()
  vi.mocked(subscribeCityStudio).mockImplementation((_id,callback)=>{callback([]);return()=>{}})
  vi.mocked(subscribeCityQuestions).mockImplementation((_id,callback)=>{callback([],{});return()=>{}})
