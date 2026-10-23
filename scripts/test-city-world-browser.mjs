@@ -6,7 +6,7 @@ const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','
 let browser
 try{
  for(let n=0;n<60;n++){try{if((await fetch('http://127.0.0.1:4174/MOA/')).ok)break}catch{}await new Promise(r=>setTimeout(r,500))}
- browser=await chromium.launch({headless:true})
+ browser=await chromium.launch({headless:true,channel:'chrome'})
  await mkdir('city-browser-artifacts',{recursive:true})
  for(const width of [1440,768,360]){
   const page=await browser.newPage({viewport:{width,height:960},reducedMotion:'reduce'})

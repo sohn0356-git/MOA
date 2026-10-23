@@ -92,3 +92,6 @@
 .auth-panel.auth-panel-city>.brand-mark,.auth-panel.auth-panel-city>div:nth-child(2){display:none}
 .city.city-social h1{font-size:34px;letter-spacing:-1.5px;line-height:1.2}
 @media(max-width:740px){.city.city-social h1{font-size:29px}}
+
+.city-quick-avatar{display:none}
+@media(max-width:740px){.city-quick-avatar{display:block;margin:8px 0;color:#85619f;font-size:12px}.city-quick-avatar>summary{cursor:pointer;padding:8px 0}.city-quick-avatar>.city-avatar-editor{margin-top:12px}.city-social-rail>.city-avatar-editor{display:none}}
