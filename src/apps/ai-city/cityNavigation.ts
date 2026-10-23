@@ -20,7 +20,7 @@ export function useCityNavigation<T extends {view:string}>(state:T,restore:(stat
  const restoring=useRef(false)
  const index=useRef(0),[canBack,setCanBack]=useState(false)
  const timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined)
- function capture():Entry<T>{return{state:current.current,scrollY:window.scrollY,focus:focusPath(),index:index.current}}
+ function capture():Entry<T>{return{state:current.current,scrollY:document.getElementById('city-lower-pane')?.scrollTop??window.scrollY,focus:focusPath(),index:index.current}}
  function navigate(action:()=>void,heading=false){
   if(timer.current)clearTimeout(timer.current)
   const entry=capture();positions.current[entry.state.view]=entry.state
@@ -44,7 +44,7 @@ export function useCityNavigation<T extends {view:string}>(state:T,restore:(stat
     const element=entry.focus?document.querySelector<HTMLElement>(entry.focus):null
     if(entry.focus&&!element&&attempts++<20){timer.current=setTimeout(focus,100);return}
     ;(element??document.getElementById('city-view-title'))?.focus({preventScroll:true})
-    window.scrollTo({top:entry.scrollY,behavior:'instant'})
+    const pane=document.getElementById('city-lower-pane');if(pane)pane.scrollTop=entry.scrollY;else window.scrollTo({top:entry.scrollY,behavior:'instant'})
     restoring.current=false
    }
    timer.current=setTimeout(focus,0)
