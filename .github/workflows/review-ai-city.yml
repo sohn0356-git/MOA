@@ -21,8 +21,11 @@ jobs:
           const response = await fetch('https://' + process.env.FIREBASE_PROJECT_ID + '-default-rtdb.firebaseio.com/aiCity/posts.json')
           if (!response.ok) throw new Error('Public board read failed: ' + response.status)
           const posts = await response.json()
-          for (const [id, post] of Object.entries(posts || {})) {
+          const suggestions = Object.entries(posts || {}).filter(([, post]) => post.kind === 'suggestion')
+          const pending = suggestions.filter(([, post]) => !post.implementation?.applied)
+          for (const [id, post] of pending) {
             console.log('CITY_POST=' + JSON.stringify({ id, ...post }))
           }
-          console.log('CITY_POST_COUNT=' + Object.keys(posts || {}).length)
+          console.log('CITY_SUGGESTION_COUNT=' + suggestions.length)
+          console.log('CITY_PENDING_COUNT=' + pending.length)
           JS
