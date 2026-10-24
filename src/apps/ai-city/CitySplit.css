@@ -61,3 +61,20 @@
 .city-street-pad button:first-child{grid-column:2}.city-street-pad button:nth-child(2){grid-column:1;grid-row:2}.city-street-pad button:nth-child(3){grid-column:2;grid-row:2}.city-street-pad button:nth-child(4){grid-column:3;grid-row:2}
 .city .city-street-enter{position:absolute;right:10px;bottom:38px;background:#7654a4;color:white;border:0;border-radius:20px;font-size:11px;padding:9px 14px}
 @media(max-width:740px){.city-street-pad{left:6px;bottom:30px;grid-template-columns:repeat(3,30px);gap:3px}.city .city-street-pad button{min-height:28px;min-width:30px;padding:3px}.city .city-street-enter{font-size:9px;right:6px;bottom:31px;padding:7px 9px}}
+
+/* Request: a map-first home with reversible panel folding and equivalent 2D entry. */
+.city-main-app:has(.city-split){min-height:0}
+.city-upper-pane{flex-basis:var(--city-map-share,62%);max-height:none;min-height:160px}
+.city-news-collapsed .city-upper-pane{flex:1;min-height:0}
+.city-lower-pane[hidden]{display:none!important}
+.city-split-divider{justify-content:space-between}
+.city .city-split-divider>button{padding:6px 12px;min-height:34px;border:1px solid #cfc4dd;border-radius:16px;background:#f7f1fc;color:#72528f;font-size:11px}
+.city-map-size{display:flex;align-items:center;gap:8px;font-size:10px}.city-map-size input{width:110px;accent-color:#7654a4}
+.city-map-fallback{display:block;width:100%;height:100%;min-height:0;background:#e1ead8}
+.city-map-fallback [role=button]{cursor:pointer;outline:none}.city-map-fallback [role=button]:focus-visible rect{stroke:#68448e;stroke-width:9px}
+.city-joystick{position:absolute;left:14px;bottom:38px;width:88px;height:88px;border:2px solid #ffffffb8;border-radius:50%;background:#53644944;touch-action:none;user-select:none;display:grid;place-items:center}
+.city-joystick>span{width:38px;height:38px;border-radius:50%;background:#fffdebf2;border:1px solid #b0bf9e;pointer-events:none;box-shadow:0 2px 8px #26351e25}
+.city-joystick>small{position:absolute;bottom:5px;font-size:9px;color:#fff;pointer-events:none}
+.city-street-pad{left:116px}
+@media(max-width:740px){.city-upper-pane{flex-basis:var(--city-map-share,62%);max-height:none;min-height:150px}.city-map-size{display:none}.city-street-pad{display:none}.city-joystick{left:10px;bottom:33px;width:76px;height:76px}.city .city-street-enter{max-width:calc(100% - 105px);white-space:normal}.city-3d-toolbar{max-width:calc(100% - 14px)}}
+@media(max-height:530px){.city-upper-pane{min-height:100px}.city-map-3d>header{padding-block:4px}.city-map-3d>header p{display:none}.city-building-entrances{padding-block:3px}.city .city-building-entrances>button{min-height:27px;padding-block:3px}.city-3d-stage{min-height:0}.city-joystick{width:66px;height:66px;bottom:28px}.city-street-pad{display:none}.city-3d-hint{font-size:8px}.city-split-divider{padding-block:3px}}
