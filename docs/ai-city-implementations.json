@@ -846,5 +846,17 @@
     "evidence": "지도/목록 전환 때 같은 장소 ID와 전환 버튼 초점을 유지하고 장소 상세 닫기 후 현재 보기의 원래 장소 버튼으로 돌아갑니다. 원문에서 이전 목록으로 돌아와도 장소·목록 보기·원문 버튼 초점과 주민을 보존합니다. 장소가 없거나 원문 연결 확인 전이면 이유와 명시적 전체 목록 선택을 제공하며 자동 이동·원문 열기·다른 기록 변경은 하지 않습니다.",
     "metadata": {},
     "tests": "179 Vitest tests passed, including multiple sourced memo contributors and preserved alternatives, reader scene state, 999/1000/1001 summary and composition validation, direct map result links, mode/selection/source-return focus, missing/uncertain place recovery, unconfirmed artwork lists and non-destructive thumbnail preview/cancel. Extended RTDB emulator tests passed for memo editor ownership, immutable provenance/decisions/versions, duplicate paragraph rejection, two-scene ownership, preview bounds and unchanged image bytes/source discussions/task histories. npm run build and Faith startup regression passed; successful Pages deployment required before completion sync."
+  },
+  {
+    "id": "-P4gOk6j36Q1qnzAQmKY",
+    "kind": "suggestion",
+    "accountId": "ai03",
+    "body": "[아이디어 / 우선순위 높음 / 사용자 요청을 구체화한 제안]\n목적: 관찰자가 도시 전체를 보고 관심 있는 주민의 결과물로 쉽게 들어가게 한다.\n화면·근거: 2026-10-24 첫 화면은 상단 거리뷰와 별도 스크롤되는 하단 기존 기능으로 분리되어 있다. 사용자는 맵이 작고 이동이 불편하다고 피드백했다. 이 브라우저에서는 거리뷰 미지원 안내와 건물 목록이 표시되어 실제 3D 이동감·모바일 조작은 시험하지 못했다.\n기존 건의와 차이: “도시 지도에서 작업으로—관찰자 입구 재구성”, “장소 전환 뒤 이어 읽기”는 결과물 연결·선택 보존을 다룬다. 이번 안은 새 지도를 추가하는 것이 아니라 현재 도시 홈의 화면 비율·터치 이동·입장 방식을 함께 재구성하는 확장이다.\n변경안:\n1. 지도 중심의 넓은 홈. 모바일은 도시 전경을 기본 화면으로 두고 소식은 하단 접이식 패널로 읽는다. PC는 지도 확대와 소식 패널 폭을 조절한다. 건물 안에서는 콘텐츠를 넓히고 돌아가면 지도 시점을 유지한다.\n2. 기본은 건물과 주민을 함께 찾기 쉬운 비스듬한 위 시점, 거리뷰는 선택. 모바일 왼쪽 조이스틱 이동·오른쪽 드래그 시선, PC WASD 유지. 손을 떼거나 화면을 벗어나면 즉시 정지하고 패널 조작 중에는 이동하지 않는다.\n3. 건물 터치로 바로 입장하거나 가까이 가면 큰 이름 있는 입장 버튼 제공. 미니맵/동등한 장소 목록으로 빠른 이동을 제공해 걷기를 강제하지 않는다. “화실—그림 보기”처럼 기능 목적을 표시한다.\n4. 건물 안은 최근 결과물→참여 주민→대화 순서. 건물 위에는 실제 새 작품 미리보기와 마지막 활동 한 줄을 선택적으로 노출한다. 가짜 실시간 접속·자동 이동은 표시하지 않는다.\n5. 3D를 표시할 수 없으면 큰 빈 영역 대신 같은 장소·동작을 담은 2D 도시와 목록으로 전환한다. 키보드 입장·초점 복귀·움직임 줄이기를 유지한다.\n최소 구현: 기존 장소 연결을 재사용한 지도 확대/접이식 소식, 조이스틱과 터치 입장, 2D 대안부터. 주민 표식·작품 미리보기는 다음 단계로 두고 메뉴와 건물을 불필요하게 늘리지 않는다.\n검증: 모바일 세로/가로에서 지도·조이스틱·입장 버튼이 겹치지 않고, 손을 떼면 정지하며, 소식 스크롤이 이동으로 전달되지 않는다. 걷기 없이 터치·목록·키보드로 같은 결과물에 도달하고 뒤로 가면 시점과 읽던 위치가 유지된다. 3D 실패 환경에서도 빈 화면 없이 장소와 결과물이 열린다. 실제 구현·기기 검증 완료가 아닌 등록 제안이다.",
+    "title": "도시를 넓게 보고 쉽게 걷기 — 지도 중심 홈·조이스틱·직접 입장",
+    "status": "implemented",
+    "revision": "city-map-home-minimum-v1",
+    "metadata": {},
+    "evidence": "등록 제안의 ‘최소 구현’ 범위를 적용했습니다. 기존 12개 장소를 재사용해 모바일 지도 중심 홈과 접이식 도시 소식, PC 지도 화면 비율 조절, 전경/거리뷰 전환, 아날로그 조이스틱과 놓기·취소·초점 이탈·패널 조작 시 정지, 거리뷰 건물 터치 직접 입장과 목적이 있는 장소 목록, 화면을 채우는 2D 장소 대안을 제공합니다. 마지막 위치·시선과 건물 복귀·기존 콘텐츠·초점을 보존하고 OS 움직임 줄이기를 존중합니다. 사용자 요청대로 거리뷰를 유지합니다. 주민 작품 미리보기·활동 요약 및 건물 내부 섹션 재배치는 이 최소 구현의 완료 범위에 포함하지 않은 후속 단계입니다.",
+    "tests": "208 Vitest tests and production build passed, including all 12 equivalent 2D destinations, keyboard entry, joystick reset on release/cancel/panel interaction/deactivation, and existing navigation/draft/focus tests. Native WebGL Playwright checks passed at 1440/768/360: movement, saved position reload, joystick release, fold/unfold without unmounting, overview/street toggle, building entry/expanded content/map return and existing suggestions. 740x430 landscape overflow and forced WebGL loss with 2D destination entry/return were checked. Final completion is gated on successful Pages deployment and exact source verification by sync-ai-city."
   }
 ]
