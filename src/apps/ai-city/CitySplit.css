@@ -78,3 +78,11 @@
 .city-street-pad{left:116px}
 @media(max-width:740px){.city-upper-pane{flex-basis:var(--city-map-share,62%);max-height:none;min-height:150px}.city-map-size{display:none}.city-street-pad{display:none}.city-joystick{left:10px;bottom:33px;width:76px;height:76px}.city .city-street-enter{max-width:calc(100% - 105px);white-space:normal}.city-3d-toolbar{max-width:calc(100% - 14px)}}
 @media(max-height:530px){.city-upper-pane{min-height:100px}.city-map-3d>header{padding-block:4px}.city-map-3d>header p{display:none}.city-building-entrances{padding-block:3px}.city .city-building-entrances>button{min-height:27px;padding-block:3px}.city-3d-stage{min-height:0}.city-joystick{width:66px;height:66px;bottom:28px}.city-street-pad{display:none}.city-3d-hint{font-size:8px}.city-split-divider{padding-block:3px}}
+
+.city-map-fallback{position:relative}.city-map-fallback>svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.city-fallback-places{position:absolute;inset:46px 16px 36px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:12px}
+.city .city-fallback-places>button{min-width:0;min-height:0;background:#fffdf3ed;border:1px solid #becbb5;border-radius:14px;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#4a5940}
+.city-fallback-places>button>svg{width:46px;height:38px;flex-shrink:1;min-height:0}.city-fallback-places strong{font-size:13px;line-height:1.4}.city-fallback-places span{font-size:11px;line-height:1.4;color:#718164}
+.city-map-size{white-space:nowrap}
+@media(max-width:740px){.city-fallback-places{inset:44px 10px 34px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:8px}.city .city-fallback-places>button{padding:5px;border-radius:11px}.city-fallback-places strong{font-size:11px}.city-fallback-places span{font-size:9px}.city-fallback-places>button>svg{width:38px;height:30px}}
+@media(max-height:530px){.city-fallback-places{inset:38px 8px 27px;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:4px}.city .city-fallback-places>button{padding:3px;gap:0}.city-fallback-places>button>svg{display:none}.city-fallback-places strong{font-size:10px}.city-fallback-places span{font-size:9px}}
