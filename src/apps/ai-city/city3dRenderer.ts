@@ -3,7 +3,7 @@ import {cameraMatrix,type CityCamera,type Vec3,cross,normalize,sub} from './city
 import {avatarColors,defaultAvatar,residentWorldState,worldEdges,worldNodes,type CityAvatarLook,type CityWorldCommand} from './cityWorld'
 type Color=[number,number,number]
 type Mesh=number[]
-export type CitySceneSnapshot={camera:CityCamera;profiles:readonly {id:string}[];avatars:Record<string,CityAvatarLook>;commands:Record<string,CityWorldCommand>;residentId:string;highlight:string|null;now:number;controlled?:{x:number;z:number}}
+export type CitySceneSnapshot={camera:CityCamera;profiles:readonly {id:string}[];avatars:Record<string,CityAvatarLook>;commands:Record<string,CityWorldCommand>;residentId:string;highlight:string|null;now:number;controlled?:{x:number;z:number};overview?:boolean}
 function color(hex:string):Color{return [parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255]}
 function triangle(mesh:Mesh,a:Vec3,b:Vec3,c:Vec3,tint:Color){const n=normalize(cross(sub(b,a),sub(c,a)));for(const p of [a,b,c])mesh.push(...p,...n,...tint)}
 function quad(mesh:Mesh,a:Vec3,b:Vec3,c:Vec3,d:Vec3,tint:Color){triangle(mesh,a,b,c,tint);triangle(mesh,a,c,d,tint)}
@@ -55,8 +55,8 @@ function buildResidents(snapshot:CitySceneSnapshot){
  const mesh:Mesh=[]
  if(snapshot.highlight){const b=cityBuildings.find(b=>b.id===snapshot.highlight);if(b)box(mesh,(b.x-600)/10,.19,(b.z-400)/10,b.width+3,.08,b.depth+3,'#bba4d5')}
  for(const p of snapshot.profiles){
-  if(snapshot.controlled&&p.id===snapshot.residentId)continue
-  const pos=residentWorldState(p.id,snapshot.now,snapshot.commands[p.id]).point,x=(pos.x-600)/10,z=(pos.y-400)/10,look=snapshot.avatars[p.id]??defaultAvatar(p.id)
+  if(snapshot.controlled&&p.id===snapshot.residentId&&!snapshot.overview)continue
+  const pos=residentWorldState(p.id,snapshot.now,snapshot.commands[p.id]).point,controlled=p.id===snapshot.residentId?snapshot.controlled:undefined,x=controlled?.x??(pos.x-600)/10,z=controlled?.z??(pos.y-400)/10,look=snapshot.avatars[p.id]??defaultAvatar(p.id)
   const shirt=avatarColors.shirt[look.shirt],skin=avatarColors.skin[look.skin],hair=avatarColors.hair[look.hair]
   box(mesh,x,.17,z,1.7,.05,1.3,'#bbc5af')
   const moving=residentWorldState(p.id,snapshot.now,snapshot.commands[p.id]).moving,step=moving?Math.sin(snapshot.now/130+p.id.length)*.2:0
@@ -85,6 +85,7 @@ export function createCity3DRenderer(canvas:HTMLCanvasElement){
  gl.bindBuffer(gl.ARRAY_BUFFER,staticBuffer);gl.bufferData(gl.ARRAY_BUFFER,scenery,gl.STATIC_DRAW)
  const position=gl.getAttribLocation(program,'aPosition'),normal=gl.getAttribLocation(program,'aNormal'),tint=gl.getAttribLocation(program,'aColor'),matrix=gl.getUniformLocation(program,'uMatrix')
  gl.enable(gl.DEPTH_TEST);gl.clearColor(.929,.949,.918,1)
+ let lastControlled:CitySceneSnapshot['controlled'],lastOverview:boolean|undefined
  let lastResidentTime=0,residents=new Float32Array(0),disposed=false
  let lastAvatars:CitySceneSnapshot['avatars']|undefined,lastCommands:CitySceneSnapshot['commands']|undefined,lastProfiles:CitySceneSnapshot['profiles']|undefined,lastActor='',lastHighlight:string|null=null
  function bind(buffer:WebGLBuffer){gl!.bindBuffer(gl!.ARRAY_BUFFER,buffer);for(const [location,offset] of [[position,0],[normal,12],[tint,24]]){gl!.enableVertexAttribArray(location);gl!.vertexAttribPointer(location,3,gl!.FLOAT,false,36,offset)}}
@@ -93,7 +94,7 @@ export function createCity3DRenderer(canvas:HTMLCanvasElement){
    if(disposed||gl.isContextLost()||!canvas.width||!canvas.height)return
    gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(program)
    gl.uniformMatrix4fv(matrix,false,cameraMatrix(snapshot.camera,canvas.width/canvas.height));bind(staticBuffer);gl.drawArrays(gl.TRIANGLES,0,scenery.length/9)
-   if(snapshot.now-lastResidentTime>80||lastResidentTime===0||lastAvatars!==snapshot.avatars||lastCommands!==snapshot.commands||lastProfiles!==snapshot.profiles||lastActor!==snapshot.residentId||lastHighlight!==snapshot.highlight){residents=buildResidents(snapshot);lastResidentTime=snapshot.now;lastAvatars=snapshot.avatars;lastCommands=snapshot.commands;lastProfiles=snapshot.profiles;lastActor=snapshot.residentId;lastHighlight=snapshot.highlight}
+   if(lastControlled!==snapshot.controlled||lastOverview!==snapshot.overview||snapshot.now-lastResidentTime>80||lastResidentTime===0||lastAvatars!==snapshot.avatars||lastCommands!==snapshot.commands||lastProfiles!==snapshot.profiles||lastActor!==snapshot.residentId||lastHighlight!==snapshot.highlight){residents=buildResidents(snapshot);lastControlled=snapshot.controlled;lastOverview=snapshot.overview;lastResidentTime=snapshot.now;lastAvatars=snapshot.avatars;lastCommands=snapshot.commands;lastProfiles=snapshot.profiles;lastActor=snapshot.residentId;lastHighlight=snapshot.highlight}
    bind(dynamicBuffer);gl.bufferData(gl.ARRAY_BUFFER,residents,gl.DYNAMIC_DRAW);gl.drawArrays(gl.TRIANGLES,0,residents.length/9)
   },
   dispose(){if(disposed)return;disposed=true;gl.deleteBuffer(staticBuffer);gl.deleteBuffer(dynamicBuffer);gl.deleteProgram(program);gl.deleteShader(vs);gl.deleteShader(fs)}

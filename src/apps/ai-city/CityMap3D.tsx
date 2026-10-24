@@ -13,6 +13,7 @@ export function CityMap3D({profiles,residentId,active,onEnter}:Props){
  const {avatars,commands}=useCityWorld(),canvas=useRef<HTMLCanvasElement>(null)
  const [position,setPosition]=useState<StreetPosition>(()=>loadStreet(residentId)),[hovered,setHovered]=useState<string|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0),[ready,setReady]=useState(false)
  const [overview,setOverview]=useState(false),joystick=useRef({forward:0,side:0})
+ const [reduceMotion]=useState(()=>Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)),stillTime=useRef(Date.now())
  const keys=useRef(new Set<string>()),actor=useRef(residentId)
  const camera=overview?{...defaultCityCamera,target:[position.x,0,position.z] as [number,number,number]}:streetCamera(position),nearby=nearbyStreetBuilding(position)
  const live=useRef({camera,profiles,avatars,commands,residentId,highlight:hovered,active,overview,controlled:position});live.current={camera,profiles,avatars,commands,residentId,highlight:hovered,active,overview,controlled:position}
@@ -41,7 +42,7 @@ export function CityMap3D({profiles,residentId,active,onEnter}:Props){
    if(!live.current.active||document.hidden)return
    const k=keys.current,f=Number(k.has('w')||k.has('ArrowUp'))-Number(k.has('s')||k.has('ArrowDown')),s=Number(k.has('d')||k.has('ArrowRight'))-Number(k.has('a')||k.has('ArrowLeft'))
    if(f||s||joystick.current.forward||joystick.current.side)update(moveStreet(live.current.controlled,f+joystick.current.forward,s+joystick.current.side,dt))
-   try{renderer?.draw({...live.current,now:Date.now()})}catch{setFailed(true)}
+   try{renderer?.draw({...live.current,now:reduceMotion?stillTime.current:Date.now()})}catch{setFailed(true)}
   }
   const lost=(e:Event)=>{e.preventDefault();keys.current.clear();setFailed(true);setReady(false)}
   const restored=()=>setAttempt(n=>n+1)
