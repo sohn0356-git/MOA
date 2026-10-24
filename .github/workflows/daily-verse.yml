@@ -1,6 +1,12 @@
 name: Update Daily Meditation Verse
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/daily-verse.yml'
+      - 'functions/scripts/update-daily-verse.mjs'
+      - 'scripts/test-daily-verse.mjs'
   schedule:
     - cron: '*/10 14-15 * * *'
     - cron: '0 16 * * *'
@@ -38,6 +44,9 @@ jobs:
       - name: Install function dependencies
         run: npm ci
         working-directory: functions
+
+      - name: Test daily verse updater
+        run: node scripts/test-daily-verse.mjs
 
       - name: Update Firebase verse
         env:

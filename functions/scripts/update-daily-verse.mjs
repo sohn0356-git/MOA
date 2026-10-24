@@ -454,7 +454,11 @@ async function fetchGetBibleVerses(language, range) {
   }
 
   const data = await response.json()
-  const sourceBook = data.books?.find((item) => item.name === bookName)
+  // getBible names vary by translation (Song of Songs / Song of Solomon).
+  // Canonical book numbers are stable across translations.
+  const bookNumber = Object.keys(BOOK_SLUGS).indexOf(book) + 1
+  const sourceBook = data.books?.find((item) => Number(item.nr) === bookNumber)
+    ?? data.books?.find((item) => item.name === bookName || (book === '아가' && item.name === 'Song of Solomon'))
   const verses = []
 
   for (let chapter = parts.startChapter; chapter <= parts.endChapter; chapter += 1) {
@@ -563,8 +567,6 @@ async function main() {
       return { number, text: chapterVerses[String(number)] }
     }).filter((verse) => verse.text)
   }
-  await updateLanguageCache('en', range, () => fetchGetBibleVerses('en', range), GETBIBLE_TRANSLATIONS.en.name)
-  await updateLanguageCache('ja', range, () => fetchGetBibleVerses('ja', range), GETBIBLE_TRANSLATIONS.ja.name)
 
   const app = initializeApp({
     credential: cert(serviceAccount),
@@ -596,6 +598,15 @@ async function main() {
     }
   } finally {
     await deleteApp(app)
+  }
+
+  // Translations are supplementary: publish the Korean daily verse first.
+  for (const language of ['en', 'ja']) {
+    try {
+      await updateLanguageCache(language, range, () => fetchGetBibleVerses(language, range), GETBIBLE_TRANSLATIONS[language].name)
+    } catch (error) {
+      console.warn(`::warning::${language} scripture cache update failed; Korean verse is already saved: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   console.log(`Checked verse/${year}/${dayKey}; cron may be delayed; actualRunUtc=${new Date().toISOString()}; runKst=${runKst.isoDate}; targetKst=${isoDate}; range=${JSON.stringify(range)}`)
