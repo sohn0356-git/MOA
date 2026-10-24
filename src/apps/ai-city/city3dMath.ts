@@ -1,7 +1,8 @@
 import type {CityBuilding} from './cityBuildings'
 export type Vec3=[number,number,number]
-export type CityCamera={yaw:number;pitch:number;distance:number;target:Vec3;eye?:Vec3}
+export type CityCamera={yaw:number;pitch:number;distance:number;target:Vec3;eye?:Vec3;zoom?:number}
 export const defaultCityCamera:CityCamera={yaw:.42,pitch:.72,distance:118,target:[0,0,0]}
+export function clampCityZoom(value:number){return Number.isFinite(value)?Math.max(.6,Math.min(2.4,value)):1}
 export const sub=(a:Vec3,b:Vec3):Vec3=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]]
 export const dot=(a:Vec3,b:Vec3)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
 export const cross=(a:Vec3,b:Vec3):Vec3=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]
@@ -19,7 +20,7 @@ export function multiply(a:Float32Array,b:Float32Array){
 export function cameraMatrix(camera:CityCamera,aspect:number){
  const {eye,forward:f,right:s,up:u}=cameraBasis(camera)
  const view=new Float32Array([s[0],u[0],-f[0],0,s[1],u[1],-f[1],0,s[2],u[2],-f[2],0,-dot(s,eye),-dot(u,eye),dot(f,eye),1])
- const t=1/Math.tan(Math.PI/7),near=camera.eye ? .08 : 1,far=600
+ const t=1/Math.tan(Math.PI/7/clampCityZoom(camera.zoom??1)),near=camera.eye ? .08 : 1,far=600
  const perspective=new Float32Array([t/aspect,0,0,0,0,t,0,0,0,0,(far+near)/(near-far),-1,0,0,2*far*near/(near-far),0])
  return multiply(perspective,view)
 }
@@ -29,7 +30,7 @@ export function projectPoint(point:Vec3,matrix:Float32Array){
  return {x:out[0]/out[3],y:out[1]/out[3],visible:out[3]>0&&Math.abs(out[0]/out[3])<1&&Math.abs(out[1]/out[3])<1}
 }
 export function cityRay(camera:CityCamera,x:number,y:number,aspect:number){
- const {eye,forward,right,up}=cameraBasis(camera),t=Math.tan(Math.PI/7)
+ const {eye,forward,right,up}=cameraBasis(camera),t=Math.tan(Math.PI/7/clampCityZoom(camera.zoom??1))
  return {origin:eye,direction:normalize([forward[0]+right[0]*x*t*aspect+up[0]*y*t,forward[1]+right[1]*x*t*aspect+up[1]*y*t,forward[2]+right[2]*x*t*aspect+up[2]*y*t])}
 }
 export function rayBox(origin:Vec3,direction:Vec3,min:Vec3,max:Vec3){

@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest'
 import {cityBuildings} from './cityBuildings'
-import {defaultCityCamera,cameraMatrix,cameraBasis,projectPoint,pickCityBuilding,rayBox,type Vec3} from './city3dMath'
+import {clampCityZoom,defaultCityCamera,cameraMatrix,cameraBasis,projectPoint,pickCityBuilding,rayBox,type Vec3} from './city3dMath'
 import {buildCityScenery} from './city3dRenderer'
 describe('3D city projection and picking',()=>{
  it('projects each building into an exact ray hit from an unobstructed overhead camera',()=>{
@@ -22,6 +22,14 @@ describe('3D city projection and picking',()=>{
   expect(Math.hypot(...cameraBasis(defaultCityCamera).forward)).toBeCloseTo(1)
   expect(new Set(cityBuildings.map(b=>b.view)).size).toBe(12)
   expect(cityBuildings.find(b=>b.id==='hall')?.view).toBe('suggestion')
+ })
+ it('keeps zoomed rendering and building hit testing aligned at every zoom limit',()=>{
+  expect(clampCityZoom(-100)).toBe(.6);expect(clampCityZoom(100)).toBe(2.4);expect(clampCityZoom(NaN)).toBe(1)
+  for(const zoom of [.6,1,2.4])for(const b of cityBuildings){
+   const camera={...defaultCityCamera,zoom,pitch:1.2,distance:55,target:[(b.x-600)/10,0,(b.z-400)/10] as Vec3}
+   const point=projectPoint([(b.x-600)/10,b.height*.5,(b.z-400)/10],cameraMatrix(camera,1.5))
+   expect(pickCityBuilding(cityBuildings,camera,point.x,point.y,1.5)?.id).toBe(b.id)
+  }
  })
  it('builds finite world-space triangles with normals and bounded material colors',()=>{
   const mesh=buildCityScenery();expect(mesh.length).toBeGreaterThan(1000);expect(mesh.length%27).toBe(0)

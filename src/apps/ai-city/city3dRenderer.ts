@@ -1,6 +1,7 @@
+import {cityPaths,cityTrees} from './cityGround'
 import {cityBuildings} from './cityBuildings'
 import {cameraMatrix,type CityCamera,type Vec3,cross,normalize,sub} from './city3dMath'
-import {avatarColors,defaultAvatar,residentWorldState,worldEdges,worldNodes,type CityAvatarLook,type CityWorldCommand} from './cityWorld'
+import {avatarColors,defaultAvatar,residentWorldState,type CityAvatarLook,type CityWorldCommand} from './cityWorld'
 type Color=[number,number,number]
 type Mesh=number[]
 export type CitySceneSnapshot={camera:CityCamera;profiles:readonly {id:string}[];avatars:Record<string,CityAvatarLook>;commands:Record<string,CityWorldCommand>;residentId:string;highlight:string|null;now:number;controlled?:{x:number;z:number};overview?:boolean}
@@ -21,17 +22,12 @@ function octahedron(mesh:Mesh,x:number,y:number,z:number,r:number,hex:string){
  const top:Vec3=[x,y+r,z],bottom:Vec3=[x,y-r,z],ring:Vec3[]=[[x-r,y,z],[x,y,z-r],[x+r,y,z],[x,y,z+r]],k=color(hex)
  for(let i=0;i<4;i++){triangle(mesh,top,ring[i],ring[(i+1)%4],k);triangle(mesh,bottom,ring[(i+1)%4],ring[i],k)}
 }
-function road(mesh:Mesh,a:{x:number;y:number},b:{x:number;y:number}){
- const x=(a.x+b.x)/20-60,z=(a.y+b.y)/20-40,w=Math.max(3.5,Math.abs(a.x-b.x)/10),d=Math.max(3.5,Math.abs(a.y-b.y)/10)
- box(mesh,x,.02,z,w,.08,d,'#c9bfaa');box(mesh,x,.11,z,Math.max(2.8,w-.65),.035,Math.max(2.8,d-.65),'#f3e4cb')
-}
 export function buildCityScenery(){
  const mesh:Mesh=[]
  box(mesh,0,-1.7,0,150,1.63,102,'#cadcc1');box(mesh,0,-.07,0,149,.07,101,'#e1ead8')
  for(let x=-75;x<75;x+=5){const z=-37+Math.sin(x/13)*2.7,next=-37+Math.sin((x+5)/13)*2.7;quad(mesh,[x,.02,z-2.2],[x+5,.02,next-2.2],[x+5,.02,next+2.2],[x,.02,z+2.2],color('#a6d2d5'))}
- for(const [a,b] of worldEdges)road(mesh,worldNodes[a],worldNodes[b])
- const branches=[['hall','plaza'],['post','library'],['press','studio'],['material','cafe'],['tower','west'],['shelf','park']] as const
- for(const [id,node] of branches){const b=cityBuildings.find(b=>b.id===id)!;road(mesh,{x:b.x,y:b.z},{x:worldNodes[node].x,y:b.z});road(mesh,{x:worldNodes[node].x,y:b.z},worldNodes[node])}
+ // Use exactly the same path rectangles for the visible ground and walking checks.
+ for(const p of cityPaths){box(mesh,p.x,.02,p.z,p.width,.08,p.depth,'#c9bfaa');box(mesh,p.x,.11,p.z,Math.max(2.8,p.width-.65),.035,Math.max(2.8,p.depth-.65),'#f3e4cb')}
  for(const b of cityBuildings){
   const x=(b.x-600)/10,z=(b.z-400)/10
   box(mesh,x+.6,.06,z+.8,b.width+2,.03,b.depth+2,'#b8cbb1')
@@ -46,8 +42,7 @@ export function buildCityScenery(){
   }
   box(mesh,x,0,z+b.depth/2+1.2,3.2,.2,2.2,'#ded2c0')
  }
- const trees=[[-47,-9],[-41,5],[-30,-27],[-13,-29],[8,-23],[32,-25],[43,-7],[48,10],[27,29],[-15,32],[-39,29],[-49,23],[15,22],[45,33],[-50,-27],[50,-27],[-6,15],[15,3],[-34,14],[40,3]]
- trees.forEach(([x,z],i)=>{box(mesh,x,0,z,.55,3,.55,'#9d8065');octahedron(mesh,x,4.5,z,2.8,i%2?'#9bbb86':'#83ab7b')})
+ cityTrees.forEach(([x,z],i)=>{box(mesh,x,0,z,.55,3,.55,'#9d8065');octahedron(mesh,x,4.5,z,2.8,i%2?'#9bbb86':'#83ab7b')})
  box(mesh,-3,.15,-4,5,.5,4,'#d7d0bd');box(mesh,-3,.65,-4,4,.15,3,'#93c3d3')
  return new Float32Array(mesh)
 }
