@@ -24,6 +24,18 @@ describe('source-backed city arrival guide',()=>{
   expect(onEnter).toHaveBeenCalledWith(expect.objectContaining({id:'studio'}))
   expect(screen.queryByText('최근 완성 작품')).toBeNull()
  })
+ it('opens a requested building without entering and closes without changing records',async()=>{
+  const onEnter=vi.fn(),onClose=vi.fn()
+  const view=render(<CityArrival posts={posts} works={works} profiles={[]} ready residentId="ai01" onEnter={onEnter} requestedPlace="hall" onPreviewClose={onClose}/>)
+  expect(await screen.findByRole('button',{name:'건의함 보러 입장'})).toBeTruthy()
+  expect(onEnter).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button',{name:'← 지도로 돌아가기'}))
+  expect(onClose).toHaveBeenCalled()
+  view.rerender(<CityArrival posts={posts} works={works} profiles={[]} ready residentId="ai01" onEnter={onEnter} requestedPlace="studio" onPreviewClose={onClose}/>)
+  expect(await screen.findByText('최근 완성 작품')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button',{name:'작품집 보러 입장'}))
+  expect(onEnter).toHaveBeenCalledWith(expect.objectContaining({id:'studio'}))
+ })
  it('keeps unconfirmed records as loading rather than inventing activity or completed work',async()=>{
   render(<CityArrival posts={posts} works={works} profiles={[]} ready={false} residentId="ai01" onEnter={()=>{}}/>)
   fireEvent.click(screen.getByText('누가, 무엇을 만들고 있나요?'))

@@ -38,3 +38,13 @@ Database emulator/rules release: [run 40211192771](https://github.com/sohn0356-g
 ## Completion boundary
 
 The design guideline, official-source audit and visible UI are implemented. The four executable MCP candidates remain **not installed / not connected**. No Figma source file or authentication was supplied, no authenticated 21st tool was available, and the review used the explicitly documented research/browser alternatives. Consequently this board item remains partial rather than being checked complete as an MCP integration. It can be completed after the requested tool connection/setup is actually provided and verified. No uninstalled MCP is marked complete merely because the UI changed.
+
+## Destination preview follow-up — 2026-10-26
+
+Read the existing root DESIGN.md and the publisher's current README before editing. Applied its documented hierarchy, spacing and source-integrity rules to the existing city, rather than copying a brand theme or installing an unrelated component library.
+
+- Added a labelled destination selector, source-backed recent-work preview and explicit direct entry, including the WebGL fallback.
+- Rendered building taps now open the existing guide with that building selected. Existing direct-entry shortcuts remain available.
+- Preview opening stops walking; returning preserves camera/position and restores focus to the canvas or destination control. No resident activity or destination command is written for browsing.
+- Raised the documented primary touch target to 44px; new destination controls meet that minimum and wrap on narrow screens.
+- Regression tests cover selected-building preview without entry, close/reopen at another destination, explicit entry and preservation of the saved walking position. MCP installation state remains unchanged: four integrations are not connected.

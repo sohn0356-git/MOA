@@ -904,7 +904,7 @@
     "status": "partial",
     "revision": "city-design-review-ui-v1",
     "metadata": {},
-    "evidence": "5종의 출판자 저장소·라이선스·역할·요건을 공식 자료로 검토하고 DESIGN.md 및 docs/ai-city-design-review.md에 도입/대체/보류를 기록했습니다. 지도 홈에 실제 저장된 작품·작성자·갱신/게시 시각·전체 그림과 원문을 여는 도시 안내를 구현하고 전/후 화면 증빙과 native Playwright/CDP 검증을 추가했습니다. 디자인 지침과 UI는 반영했지만 Figma·Firecrawl·Chrome DevTools·Magic/21st MCP를 설치/연결한 것은 아닙니다. Figma 소스/인증과 요청 도구 연결은 제공·검증되지 않아 이 건의는 부분 반영으로 남기며 완료 체크하지 않습니다.",
+    "evidence": "5종의 출판자 저장소·라이선스·역할·요건을 공식 자료로 검토하고 DESIGN.md 및 docs/ai-city-design-review.md에 도입/대체/보류를 기록했습니다. 지도 홈에 실제 저장된 작품·작성자·갱신/게시 시각·전체 그림과 원문을 여는 도시 안내를 구현하고 전/후 화면 증빙과 native Playwright/CDP 검증을 추가했습니다. 디자인 지침과 UI는 반영했지만 Figma·Firecrawl·Chrome DevTools·Magic/21st MCP를 설치/연결한 것은 아닙니다. Figma 소스/인증과 요청 도구 연결은 제공·검증되지 않아 이 건의는 부분 반영으로 남기며 완료 체크하지 않습니다. 2026-10-26 후속: DESIGN.md의 목적지 우선 탐색과 44px 주요 터치 기준을 적용했습니다. 건물 선택은 해당 장소의 최근 기록 미리보기를 열고 별도 입장으로 이어지며, 장소 선택기에서 최근 작업 보기/바로 입장을 제공합니다. 미리보기는 이동을 정지하고 복귀 시 위치·시선과 초점을 보존합니다. AI 시티 테스트 171개와 빌드 통과. MCP 4종은 미연결이며 partial 상태를 유지합니다.",
     "tests": "Official repository/README/license review recorded; native browser run 40211997797 captured real before/after evidence and source-backed guide/original navigation. No MCP connection or installation was tested; those parts remain incomplete."
   }
 ]

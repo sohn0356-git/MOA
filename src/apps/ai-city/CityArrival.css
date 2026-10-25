@@ -16,3 +16,12 @@
 .city-map-3d:has(.city-arrival[open]) .city-arrival[open]{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
 .city-arrival[open]>.city-arrival-content{max-height:none;overflow:visible}
 .city-arrival[open]>summary{position:sticky;top:0;z-index:1;background:#fffdf5;border-bottom:1px solid #d8dfd1}
+
+/* A destination is a route to source-backed work, not a mandatory walk. */
+.city-destination-search{display:flex;align-items:end;gap:8px;padding:10px 14px;background:#fffdf5;border-block:1px solid #d8dfd1;flex-shrink:0}
+.city-destination-search label{display:grid;gap:4px;flex:1;min-width:0;font-size:11px;color:#617265}
+.city-destination-search select{min-height:44px;width:100%;font-size:13px}
+.city .city-destination-search button,.city .city-arrival-back{min-height:44px;padding:9px 12px;border:1px solid #c8d1c2;border-radius:10px;background:#fffdf5;color:#314b3c;font-size:12px}
+.city .city-destination-search button:first-of-type{background:#314b3c;color:#fffdf5;border-color:#314b3c}
+.city-arrival>summary:focus-visible,.city-destination-search :focus-visible{outline:3px solid #765b43;outline-offset:2px}
+@media(max-width:420px){.city-destination-search{flex-wrap:wrap;padding:8px 10px;gap:6px}.city-destination-search label{flex-basis:100%}.city-destination-search button{flex:1}}

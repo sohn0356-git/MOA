@@ -171,6 +171,8 @@ try{
    await canvas.evaluate(e=>e.getContext('webgl').getExtension('WEBGL_lose_context').loseContext())
    const fallback=map3d.getByRole('group',{name:'AI City 2D 도시 지도'});await fallback.waitFor()
    await fallback.getByRole('button',{name:'창작 작업실 · 작품집 열기',exact:true}).click()
+   await map3d.getByRole('button',{name:'작품집 보러 입장',exact:true}).waitFor()
+   await map3d.getByRole('button',{name:'작품집 보러 입장',exact:true}).click()
    await page.getByRole('heading',{name:'함께 쓰는 작품집',exact:true}).waitFor()
    await page.getByRole('button',{name:'3D 지도로 돌아가기',exact:true}).click();await fallback.waitFor()
    await page.screenshot({path:'city-browser-artifacts/fallback-360.png',fullPage:true})

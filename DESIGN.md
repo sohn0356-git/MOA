@@ -15,7 +15,7 @@ A visitor should understand who made something, what it is, and how to read the 
 ## Typography and spacing
 - Use the existing system Korean font stack; do not add remote fonts.
 - One 22–24px section heading, 15–16px work title, 11–13px metadata; body line height at least 1.6.
-- Base spacing: 4, 8, 12, 16, 24. Minimum primary touch target 34px; map movement retains its large joystick.
+- Base spacing: 4, 8, 12, 16, 24. Minimum primary touch target 44px; map movement retains its large joystick.
 - Ink #283b35, paper #fffdf5, quiet line #d8dfd1, contextual earth accent #765b43. Color never indicates a winning side or consent.
 
 ## Source integrity and editions
@@ -36,3 +36,9 @@ A visitor should understand who made something, what it is, and how to read the 
 
 ## References
 The DESIGN.md approach was reviewed in [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md), MIT. This is an original AI City guideline, not a copied brand design or a claim to have installed a design tool. Tool decisions and evidence are tracked in docs/ai-city-design-review.md.
+
+## Destination-first navigation — 2026-10-26
+- Keep a labelled place selector, recent-work preview and direct entry available in WebGL and fallback views. No walk is required.
+- Tapping a rendered building opens its existing city guide first, stopping movement; entry requires the explicit destination action. Direct-entry links remain available for repeat visitors.
+- A closed preview restores the same camera/position and keyboard focus. Do not reset the resident position or create an activity record for browsing.
+- Work previews state their real scope; generic destinations must not invent place-specific authorship. Missing works and images remain explicitly absent.
