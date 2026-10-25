@@ -7,7 +7,7 @@ import {useUpdateRecords,RecordReadState,type Perform} from './CityUpdates'
 import {useCityEditor,CityEditorFeedback} from './cityEditor'
 import type {Material} from './cityCollaboration'
 import {publishSpace,respondToSpace,watchSpace,type SpaceSnapshot} from './citySpaceService'
-import {spaceSources,sourceKey,spaceImpact,validateSpace,type SpaceInput,type SpaceReference,type SpaceSource,type SpaceVersion,type SpaceResponse} from './citySpaceModel'
+import {spaceSources,sourceKey,spaceImpact,validateSpace,type SpaceInput,type SpaceReference,type SpaceSource,type SpaceResponse} from './citySpaceModel'
 import './CitySpaceUse.css'
 const freshRef=():SpaceReference=>({kind:'post',sourceId:'',role:'source',conditionKind:'assumption',condition:'',x:0,y:0})
 const fresh=(residentId:string):SpaceInput=>({residentId,parentId:'',title:'',purpose:'',question:'',endScope:'',reason:'',layout:'equal',status:'open',references:[freshRef(),{...freshRef(),x:55}]})
@@ -52,6 +52,7 @@ export function CitySpaceUse({buildingId,accountId,residentId,posts,works,profil
  return <section className="city-space-use" aria-label="이 장소의 임시 용도">
  <p className="space-eyebrow">ONE PLACE · MANY USES</p><h2>이 장소에서, 지금 하는 일</h2>
  <p className="space-meta">공간 방문은 참여나 담당 동의로 기록되지 않습니다. 기존 기능은 아래에서 계속 이용할 수 있습니다.</p>
+ <RecordReadState state={materials}/>
  {!loaded?<p role="status">{failed?'공간 기록을 확인하지 못했습니다.':'공간 기록을 확인하는 중…'}{failed?<button type="button" onClick={()=>setRetry(v=>v+1)}>공간 기록 다시 확인</button>:null}</p>:null}
  {loaded&&!current?<p>아직 공개된 임시 용도가 없습니다. 기존 장소에 두 자료를 연결해 첫 용도를 열어 보세요.</p>:null}
  {historyId&&!state.versions.some(v=>v.id===historyId)&&loaded?<p role="status">요청한 이전 판을 확인할 수 없습니다. 현재 공개판과 기존 연결은 유지합니다.</p>:null}
@@ -88,7 +89,7 @@ export function CitySpaceUse({buildingId,accountId,residentId,posts,works,profil
  </form>:null}
  {error?<p role="alert">{error}</p>:null}
  {preview&&influence?<div className="space-preview" role="region" aria-label="공개 전 영향 미리보기"><h3>공개 전, 달라지는 것</h3><dl><dt>기존 용도</dt><dd>{current?.purpose??'공개판 없음'}</dd><dt>변경 용도</dt><dd>{preview.purpose}</dd><dt>추가 연결</dt><dd>{influence.added.join(' · ')||'없음'}</dd><dt>제외 연결</dt><dd>{influence.removed.join(' · ')||'없음'}</dd><dt>유지 연결</dt><dd>{influence.retained.join(' · ')||'없음'}</dd><dt>계속 열리는 원문</dt><dd>제외한 참조도 이전 판에서 계속 열립니다. 원문 자체는 이동·복제·수정하지 않습니다.</dd><dt>참여·담당</dt><dd>공개와 방문만으로 동의나 담당을 만들지 않습니다. 답하지 않고 쉬거나 계속 읽을 수 있습니다.</dd></dl><h4>{preview.title}</h4><p>{preview.question}</p><p>종료 범위: {preview.endScope}</p><SpaceReading version={preview} sources={sourceList} profiles={profiles} onOpen={onOpen}/>{preview.parentId!==state.currentId?<p role="alert">다른 공개판이 도착했습니다. 이 미리보기로 덮어쓸 수 없습니다. 닫은 뒤 최신 판을 확인해 주세요.</p>:null}
- <div className="space-actions"><button type="button" disabled={!writable||preview.parentId!==state.currentId} onClick={async()=>{const ok=await editor.save(()=>perform(()=>publishSpace(accountId,buildingId,preview,sourceList),'공간을 새 판으로 공개했습니다. 이전 판과 원자료는 보존됩니다.'));if(ok){close();setHistoryId('');editor.saved(preview);setTimeout(()=>launch.current?.focus(),0)}}}>영향 확인 후 새 판 공개</button><button type="button" disabled={busy} onClick={()=>{setPreview(null);setTimeout(()=>previewLaunch.current?.focus(),0)}}>공개 취소 · 계속 편집</button></div></div>:null}
+ <div className="space-actions"><button type="button" disabled={!writable||preview.parentId!==state.currentId} onClick={async()=>{const ok=await editor.save(()=>perform(()=>publishSpace(accountId,buildingId,preview,sourceList).catch(cause=>{setError(cause instanceof Error?cause.message:'공개를 저장하지 못했습니다. 입력은 유지합니다.');throw cause}),'공간을 새 판으로 공개했습니다. 이전 판과 원자료는 보존됩니다.'));if(ok){close();setHistoryId('');editor.saved(preview);setTimeout(()=>launch.current?.focus(),0)}}}>영향 확인 후 새 판 공개</button><button type="button" disabled={busy} onClick={()=>{setPreview(null);setTimeout(()=>previewLaunch.current?.focus(),0)}}>공개 취소 · 계속 편집</button></div></div>:null}
  {editing||editor.phase!=='idle'?<CityEditorFeedback editor={editor} name="공간 편집"/>:null}
  </section>
 }
