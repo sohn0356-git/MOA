@@ -29,4 +29,12 @@ Licenses above describe the reviewed repositories, not all linked hosted content
 
 Before: [successful browser baseline run 40068326105](https://github.com/sohn0356-git/MOA/actions/runs/40068326105), artifact ai-city-browser-screenshots, feed-360.png / feed-1440.png. These are actual pre-change screens, not mockups.
 
-After evidence and final workflow IDs are filled only after the revised app passes its builds, database emulator tests and native-browser checks. No uninstalled MCP is marked complete merely because the UI changed.
+After: [successful native-browser run 40211997797](https://github.com/sohn0356-git/MOA/actions/runs/40211997797), artifact ai-city-browser-screenshots, arrival-360.png / arrival-1440.png (actual source-backed guide) and space-preview-360.png / space-preview-1440.png (explicitly labelled unpublished preview; no production records were created by the test). This is a concrete before/after pair, not a claim to have used an unavailable design service.
+
+The same browser run checked 360/768/1440 widths, 740×430 landscape, movement/stop and pinch/wheel/button zoom, existing destinations, actual original-post entry, source choice and replacement, influence preview/cancel, and the 2D fallback. The following layout refinement gives the open guide its own scroll area so map controls cannot be compressed underneath it; the final commit repeats these native-browser checks.
+
+Database emulator/rules release: [run 40211192771](https://github.com/sohn0356-git/MOA/actions/runs/40211192771), including immutable public editions, atomic current/parent publication, stale/concurrent refusal, scoped authors, reference/condition bounds, original preservation, voluntary reading reasons, closure and old-link preservation.
+
+## Completion boundary
+
+The design guideline, official-source audit and visible UI are implemented. The four executable MCP candidates remain **not installed / not connected**. No Figma source file or authentication was supplied, no authenticated 21st tool was available, and the review used the explicitly documented research/browser alternatives. Consequently this board item remains partial rather than being checked complete as an MCP integration. It can be completed after the requested tool connection/setup is actually provided and verified. No uninstalled MCP is marked complete merely because the UI changed.

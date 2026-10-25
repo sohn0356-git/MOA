@@ -4,10 +4,15 @@ on:
     branches: [main]
     paths: [.github/workflows/review-ai-city.yml]
   workflow_dispatch:
+  workflow_run:
+    workflows: [Sync App Improvement Requests]
+    types: [completed]
+    branches: [main]
 permissions:
   contents: read
 jobs:
   review:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     environment:
       name: github-pages
     runs-on: ubuntu-24.04-arm

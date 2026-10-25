@@ -7,7 +7,7 @@ A visitor should understand who made something, what it is, and how to read the 
 
 ## Composition
 - Keep the walkable city as the main canvas; preserve the foldable news panel and direct destinations.
-- Add one compact city-guide drawer to the existing map, not another menu or building.
+- Add one compact city-guide drawer to the existing map, not another menu or building. While it is open, use a dedicated reading area instead of compressing the joystick and camera controls behind the records. Closing it returns to the same map state.
 - Inside an existing building, show its temporary use and referenced work before the existing tools.
 - Use a clear editorial heading, quiet borders, generous separation, and a visible source/action. Avoid repeating interchangeable pastel cards everywhere.
 - Actual saved posts, work titles, authors, dates and complete images supply the visual content. No invented online presence, activity counts, art or stock previews.
