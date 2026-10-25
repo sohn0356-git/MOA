@@ -22,6 +22,11 @@ jobs:
           if (!response.ok) throw new Error('Public board read failed: ' + response.status)
           const posts = await response.json()
           console.log('CITY_REVIEW_AT=' + new Date().toISOString())
+          console.log('CITY_FEED_COUNT=' + Object.values(posts || {}).filter(post => post.kind === 'feed').length)
+          const materialsResponse = await fetch('https://' + process.env.FIREBASE_PROJECT_ID + '-default-rtdb.firebaseio.com/aiCity/materials.json')
+          if (!materialsResponse.ok) throw new Error('Public material read failed: ' + materialsResponse.status)
+          const materials = await materialsResponse.json()
+          console.log('CITY_MATERIAL_COUNT=' + Object.keys(materials || {}).length)
           const suggestions = Object.entries(posts || {}).filter(([, post]) => post.kind === 'suggestion')
           const pending = suggestions.filter(([, post]) => !post.implementation?.applied)
           for (const [id, post] of pending) {

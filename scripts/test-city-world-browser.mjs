@@ -83,7 +83,8 @@ try{
   const fields=[['임시 공간 이름','화면 검증용 미공개 공간'],['이번 임시 용도','두 원자료의 조건을 동등하게 읽기'],['이번 공간에서 묻는 질문','어느 조건을 먼저 확인하나요?'],['이번 회차 종료 범위','이 브라우저 검증의 미리보기까지만 · 서버 저장 없음'],['제안·검토 이유','원자료와 공개판을 바꾸지 않고 화면 동작만 검증']]
   for(const [name,value]of fields)await space.getByLabel(name,{exact:true}).fill(value)
   const choices=await space.getByLabel('연결 자료 1',{exact:true}).locator('option').evaluateAll(nodes=>nodes.filter(n=>n.value).map(n=>n.value))
-  assert.ok(choices.length>=2,'existing sources available for non-publishing space preview')
+  console.log('CITY_SPACE_SOURCE_OPTIONS '+width+' '+JSON.stringify(choices))
+  assert.ok(choices.length>=2,'existing sources available for non-publishing space preview; count='+choices.length)
   for(const i of [0,1]){
    await space.getByLabel('연결 자료 '+(i+1),{exact:true}).selectOption(choices[i])
    await space.getByRole('button',{name:'내 공간의 참조로 선택',exact:true}).click()
