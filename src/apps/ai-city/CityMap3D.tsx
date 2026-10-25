@@ -1,4 +1,6 @@
 import {useEffect,useRef,useState,type PointerEvent as ReactPointerEvent} from 'react'
+import {CityArrival} from './CityArrival'
+import type {CityPost,CityWork} from './cityService'
 import {CityJoystick} from './CityJoystick'
 import {CityMapFallback} from './CityMapFallback'
 import {ArrowLeft,ArrowRight,ArrowUp,ArrowDown,Plus,Minus} from 'lucide-react'
@@ -8,8 +10,8 @@ import {cityBuildings,type CityBuilding} from './cityBuildings'
 import {clampCityZoom,defaultCityCamera,pickCityBuilding} from './city3dMath'
 import {createCity3DRenderer} from './city3dRenderer'
 import {loadStreet,saveStreet,moveStreet,streetCamera,nearbyStreetBuilding,type StreetPosition} from './cityStreet'
-type Props={profiles:CityProfile[];residentId:string;active:boolean;onEnter:(building:CityBuilding)=>void}
-export function CityMap3D({profiles,residentId,active,onEnter}:Props){
+type Props={posts?:CityPost[];works?:CityWork[];recordsReady?:boolean;onOpen?:(id:string)=>void;profiles:CityProfile[];residentId:string;active:boolean;onEnter:(building:CityBuilding)=>void}
+export function CityMap3D({posts,works,recordsReady,onOpen,profiles,residentId,active,onEnter}:Props){
  const {avatars,commands}=useCityWorld(),canvas=useRef<HTMLCanvasElement>(null)
  const [position,setPosition]=useState<StreetPosition>(()=>loadStreet(residentId)),[hovered,setHovered]=useState<string|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0),[ready,setReady]=useState(false)
  const [zoom,setZoom]=useState(1),touches=useRef(new Map<number,{x:number;y:number}>()),pinch=useRef<{distance:number;zoom:number}|null>(null)
@@ -73,7 +75,7 @@ export function CityMap3D({profiles,residentId,active,onEnter}:Props){
  },[])
  function cancelGesture(){gesture.current=null;touches.current.clear();pinch.current=null}
  return <section className="city-map-3d" aria-label="3D 도시 지도" data-renderer={failed?'fallback':ready?'webgl':'loading'}>
- <header><div><span className="city-social-kicker">STREET VIEW · WALK</span><h2>아바타의 눈높이로 걷는 AI City</h2></div><p>이 브라우저에 주민별 마지막 위치와 시선이 자동 저장됩니다.</p></header>
+ <header><div><span className="city-social-kicker">OUR NEIGHBOURHOOD · AI CITY</span><h2>{failed?'장소를 고르고, 이웃의 작업을 만나세요.':'걷다가 만나는, 이웃의 작업들.'}</h2></div><p>이 브라우저에 주민별 마지막 위치와 시선이 자동 저장됩니다.</p></header>
  <div className="city-3d-stage">
  <canvas ref={canvas} hidden={failed} role="img" aria-label="아바타 시점 AI City 거리뷰" data-camera={[position.yaw,position.pitch,zoom].join(',')} data-zoom={zoom} data-position={[position.x,position.z].join(',')} tabIndex={0} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={cancelGesture} onLostPointerCapture={e=>{if(touches.current.has(e.pointerId)||gesture.current?.id===e.pointerId)cancelGesture()}} onBlur={()=>keys.current.clear()} onKeyDown={e=>{const key=e.key.length===1?e.key.toLowerCase():e.key;if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key)){e.preventDefault();keys.current.add(key)}if(key==='+'||key==='='){e.preventDefault();setZoom(v=>clampCityZoom(v*1.2))}if(key==='-'){e.preventDefault();setZoom(v=>clampCityZoom(v/1.2))}if(key==='e'&&nearby){e.preventDefault();onEnter(nearby)}}} onKeyUp={e=>{keys.current.delete(e.key.length===1?e.key.toLowerCase():e.key)}}/>
  {!ready&&!failed?<p className="city-3d-loading" role="status">도시의 거리로 들어가는 중…</p>:null}
@@ -84,6 +86,7 @@ export function CityMap3D({profiles,residentId,active,onEnter}:Props){
  {nearby&&!failed?<button className="city-street-enter" type="button" onClick={()=>onEnter(nearby)}>{nearby.name} 입장 · E</button>:null}
  <p className="city-3d-hint">길에서 WASD / 조이스틱 이동 · 휠 / 두 손가락 확대·축소 · {hovered?cityBuildings.find(b=>b.id===hovered)?.name+' 앞에서 입장':'건물 터치로 바로 입장'}</p>
  </div>
+ <CityArrival posts={posts} works={works} profiles={profiles} ready={recordsReady} residentId={residentId} onEnter={onEnter} onOpen={onOpen}/>
  <nav className="city-building-entrances" aria-label="도시 건물 입장">{cityBuildings.map(b=><button type="button" key={b.id} id={'city-building-'+b.id} aria-label={b.name+' 입장'} onClick={()=>onEnter(b)}><span className="city-building-color" style={{background:b.color}}/>{b.name}<small>{b.label} 바로 열기</small><span aria-hidden="true">↗</span></button>)}</nav>
  </section>
 }

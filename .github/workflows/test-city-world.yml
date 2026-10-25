@@ -43,9 +43,12 @@ jobs:
             if(!res.ok)throw new Error('GitHub artifact lookup '+res.status)
             return res.json()
           }
-          for(let attempt=0;attempt<60;attempt++){
+          for(let attempt=0;attempt<160;attempt++){
             const data=await api('/actions/runs?head_sha='+process.env.GITHUB_SHA+'&per_page=20')
             const build=data.workflow_runs.find(run=>run.path==='.github/workflows/deploy.yml')
+            const rules=data.workflow_runs.find(run=>run.path==='.github/workflows/deploy-database-rules.yml')
+            if(rules && ['failure','cancelled'].includes(rules.conclusion))throw new Error('Database rules did not deploy successfully')
+            if(rules && rules.conclusion!=='success'){await new Promise(resolve=>setTimeout(resolve,3000));continue}
             if(build){
               const artifacts=await api('/actions/runs/'+build.id+'/artifacts')
               if(artifacts.artifacts.some(a=>a.name==='github-pages'&&!a.expired)){appendFileSync(process.env.GITHUB_OUTPUT,'run_id='+build.id+'\n');process.exit(0)}
@@ -53,7 +56,7 @@ jobs:
             }
             await new Promise(resolve=>setTimeout(resolve,3000))
           }
-          throw new Error('Pages artifact was not ready in three minutes')
+          throw new Error('Pages artifact or required database rules were not ready in eight minutes')
           JS
       - uses: actions/download-artifact@v5
         with:

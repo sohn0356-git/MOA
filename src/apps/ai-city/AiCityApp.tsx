@@ -1,4 +1,5 @@
 import {loadStreetResident,saveStreetResident} from './cityStreet'
+import {CitySpaceUse} from './CitySpaceUse'
 import {CityMap3D} from './CityMap3D'
 import {cityBuildings,type CityBuilding,type CityBuildingId} from './cityBuildings'
 import {Map as CityMapIcon,ArrowUpRight} from 'lucide-react'
@@ -56,11 +57,11 @@ function timeLabel(value:number){return <CityTime value={value}/>}
 
 function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean; entryActions?: ReactNode }) {
   const [newsOpen,setNewsOpen]=useState(()=>!window.matchMedia?.('(max-width: 740px)').matches),[mapShare,setMapShare]=useState(62)
-  const [buildingId,setBuildingId]=useState<CityBuildingId|null>(null)
+  const [buildingId,setBuildingId]=useState<CityBuildingId|null>(()=>cityBuildings.find(b=>b.id===new URLSearchParams(window.location.search).get('space-place'))?.id??null)
   const lowerPane=useRef<HTMLDivElement>(null),lastBuilding=useRef<CityBuildingId>('plaza')
   const [accountId, setAccountId] = useState(()=>{const id=loadStreetResident();return aiLoginAccounts.some(a=>a.accountId===id)?id:'ai01'})
-  const [view, setView] = useState<'feed' | 'residents' | 'projects' | 'archive' | 'suggestion' | 'works' | 'inbox' | 'map' | 'bookmarks' | 'publishing' | 'materials' | 'progress'>('feed')
-  const [kind, setKind] = useState<CityKind>('feed')
+  const [view, setView] = useState<'feed' | 'residents' | 'projects' | 'archive' | 'suggestion' | 'works' | 'inbox' | 'map' | 'bookmarks' | 'publishing' | 'materials' | 'progress'>(()=>cityBuildings.find(b=>b.id===new URLSearchParams(window.location.search).get('space-place'))?.view??'feed')
+  const [kind, setKind] = useState<CityKind>(()=>new URLSearchParams(window.location.search).get('space-place')==='hall'?'suggestion':'feed')
   const [posts, setPosts] = useState<CityPost[]>([])
   const [loading, setLoading] = useState(true)
   const [postsVerified,setPostsVerified]=useState(false),[postsReadFailed,setPostsReadFailed]=useState(false),[postsConfirmedAt,setPostsConfirmedAt]=useState(0)
@@ -81,7 +82,7 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
   const [switchError,setSwitchError]=useState('')
   const [handoffs,saveHandoffs,handoffFailed]=useStoredCityState<Record<string,{kind:CityKind;draft:CityDraft}[]>>('handoffs',{})
   function commitResident(id:string){saveStreetResident(id);setResidentId(id);if(aiLoginAccounts.some(account=>account.accountId===id))setAccountId(id)}
-  function requestResident(id:string){if(id===residentId)return;if(currentDraft.image||currentDraft.body.trim()||currentDraft.suggestion?.title||currentDraft.suggestion?.summary){setSwitchTarget(id);setSwitchMode('keep');setSwitchReason('');setSwitchError('')}else commitResident(id)}
+  function requestResident(id:string){if(id===residentId)return;if(!window.dispatchEvent(new Event('city:before-space-navigation',{cancelable:true})))return;if(currentDraft.image||currentDraft.body.trim()||currentDraft.suggestion?.title||currentDraft.suggestion?.summary){setSwitchTarget(id);setSwitchMode('keep');setSwitchReason('');setSwitchError('')}else commitResident(id)}
   function confirmResidentSwitch(){if(!saveDrafts(previous=>({...previous}))){setSwitchError('현재 주민 초안을 보관하지 못했습니다. 전환하지 않았습니다.');return}
    if(switchMode==='copy'){if(!switchReason.trim()){setSwitchError('사본 인계 이유를 적어 주세요.');return}
     const copy={...currentDraft,image:undefined,handoff:{fromResidentId:residentId,createdAt:Date.now(),reason:switchReason.trim(),status:'pending' as const}}
@@ -179,6 +180,7 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
     setTargetPost('')
   }, [targetPost])
   function changeView(next: typeof view) {
+    if(!window.dispatchEvent(new Event('city:before-space-navigation',{cancelable:true})))return false
     navigation.navigate(()=>{
     const previous=navigation.position(next)
     if(previous){navigation.restoring.current=true;restoreNav({...previous,buildingId:buildingId?(cityBuildings.find(b=>b.view===next)?.id??buildingId):null});return}
@@ -262,10 +264,11 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
 
   function enterBuilding(building:CityBuilding){
     lastBuilding.current=building.id
-    changeView(building.view)
+    if(changeView(building.view)===false)return
     setBuildingId(building.id)
   }
   function returnToMap(){
+    if(!window.dispatchEvent(new Event('city:before-space-navigation',{cancelable:true})))return
     const id=buildingId??lastBuilding.current
     navigation.navigate(()=>setBuildingId(null))
     setTimeout(()=>{const target=document.getElementById('city-building-'+id);target?.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'instant'});target?.focus({preventScroll:true})},0)
@@ -281,9 +284,10 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
         <div><p className="city-eyebrow">A LITTLE WORLD TOGETHER</p><h1 id="ai-city-heading">Ai city<span className="city-brand-dot">✳</span></h1><p>새로운 도시, 이웃의 하루와 나의 이야기가 만나는 곳.</p></div>
         {entryActions ?? (!embedded ? <a className="city-home" href="#/apps">MOA 앱 ↗</a> : null)}
       </header>
-      <div className="city-upper-pane" hidden={Boolean(buildingId)}><CityMap3D profiles={profiles} residentId={residentId} active={!buildingId} onEnter={enterBuilding}/></div>
+      <div className="city-upper-pane" hidden={Boolean(buildingId)}><CityMap3D posts={posts} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed&&worksReady} onOpen={id=>{setNewsOpen(true);openRelated(id)}} profiles={profiles} residentId={residentId} active={!buildingId} onEnter={enterBuilding}/></div>
       <div className="city-split-divider" onPointerDown={stopWalking}>{currentBuilding?<><strong>{currentBuilding.name}</strong><span>{currentBuilding.label} · 하단 화면 확장됨</span></>:<><button type="button" aria-expanded={newsOpen} aria-controls="city-lower-pane" onClick={()=>{stopWalking();setNewsOpen(v=>!v)}}>{newsOpen?'도시 소식 접기':'도시 소식 펼치기'}</button><label className="city-map-size">지도 크기 <input aria-label="지도 화면 비율" type="range" min="45" max="78" value={mapShare} onChange={e=>setMapShare(Number(e.target.value))}/></label></>}</div>
       <div id="city-lower-pane" ref={lowerPane} className="city-lower-pane" hidden={!newsOpen&&!buildingId} onPointerDown={stopWalking} onFocusCapture={stopWalking} role="region" aria-label="AI City 기존 기능" data-expanded={Boolean(buildingId)}>
+      {currentBuilding?<CitySpaceUse key={currentBuilding.id+':'+residentId} buildingId={currentBuilding.id} accountId={accountId} residentId={residentId} posts={posts} works={works} profiles={profiles} ready={postsVerified&&!loading&&!postsReadFailed&&worksReady} busy={busy} perform={perform} onOpen={openRelated}/>:null}
       <div className="city-identity">
         <ResidentAvatar id={residentId} name={profiles.find(p=>p.id===residentId)?.name??residentId}/>
         <div><label htmlFor="city-account">활동할 AI 선택</label>
