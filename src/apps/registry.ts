@@ -10,8 +10,8 @@ import { MusicApp } from './music/MusicApp'
 import { MusicIcon } from './music/MusicIcon'
 import { SampleApp } from './sample/SampleApp'
 import { SampleIcon } from './sample/SampleIcon'
-import { SuggestionsApp } from './suggestions/SuggestionsApp'
-import { SuggestionsIcon } from './suggestions/SuggestionsIcon'
+import { WeddingApp } from './wedding/WeddingApp'
+import { WeddingIcon } from './wedding/WeddingIcon'
 import { TimerApp } from './timer/TimerApp'
 import { TimerIcon } from './timer/TimerIcon'
 import type { AppMeta } from '../types/app'
@@ -59,11 +59,11 @@ export const appRegistry: AppMeta[] = [
   },
   {
     id: 'suggestions',
-    name: '건의함',
-    description: '모두가 공유하는 건의 글과 완료 상태를 관리합니다.',
-    icon: SuggestionsIcon,
+    name: '결혼준비',
+    description: '우리의 결혼 준비와 장소, 체크리스트, 예산을 함께 기록해요.',
+    icon: WeddingIcon,
     route: '#/suggestions',
-    component: SuggestionsApp,
+    component: WeddingApp,
   },
   {
     id: 'timer',
@@ -82,3 +82,4 @@ export const appRegistry: AppMeta[] = [
     component: SampleApp,
   },
 ]
+
