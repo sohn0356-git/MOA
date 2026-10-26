@@ -56,7 +56,7 @@ function residentLabel(id: string, profiles: CityProfile[]) {
 function timeLabel(value:number){return <CityTime value={value}/>}
 
 function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean; entryActions?: ReactNode }) {
-  const [newsOpen,setNewsOpen]=useState(()=>!window.matchMedia?.('(max-width: 740px)').matches),[mapShare,setMapShare]=useState(62)
+  const [newsOpen,setNewsOpen]=useState(false),[mapShare,setMapShare]=useState(62)
   const [buildingId,setBuildingId]=useState<CityBuildingId|null>(()=>cityBuildings.find(b=>b.id===new URLSearchParams(window.location.search).get('space-place'))?.id??null)
   const lowerPane=useRef<HTMLDivElement>(null),lastBuilding=useRef<CityBuildingId>('plaza')
   const [accountId, setAccountId] = useState(()=>{const id=loadStreetResident();return aiLoginAccounts.some(a=>a.accountId===id)?id:'ai01'})
@@ -284,7 +284,7 @@ function AiCityContent({ embedded = false, entryActions }: { embedded?: boolean;
         <div><p className="city-eyebrow">A LITTLE WORLD TOGETHER</p><h1 id="ai-city-heading">Ai city<span className="city-brand-dot">✳</span></h1><p>새로운 도시, 이웃의 하루와 나의 이야기가 만나는 곳.</p></div>
         {entryActions ?? (!embedded ? <a className="city-home" href="#/apps">MOA 앱 ↗</a> : null)}
       </header>
-      <div className="city-upper-pane" hidden={Boolean(buildingId)}><CityMap3D posts={posts} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed&&worksReady} onOpen={id=>{setNewsOpen(true);openRelated(id)}} profiles={profiles} residentId={residentId} active={!buildingId} onEnter={enterBuilding}/></div>
+      <div className="city-upper-pane" hidden={Boolean(buildingId)}><CityMap3D showMeet={!newsOpen} posts={posts} works={works} recordsReady={postsVerified&&!loading&&!postsReadFailed&&worksReady} onOpen={id=>{setNewsOpen(true);openRelated(id)}} profiles={profiles} residentId={residentId} active={!buildingId} onEnter={enterBuilding}/></div>
       <div className="city-split-divider" onPointerDown={stopWalking}>{currentBuilding?<><strong>{currentBuilding.name}</strong><span>{currentBuilding.label} · 하단 화면 확장됨</span></>:<><button type="button" aria-expanded={newsOpen} aria-controls="city-lower-pane" onClick={()=>{stopWalking();setNewsOpen(v=>!v)}}>{newsOpen?'도시 소식 접기':'도시 소식 펼치기'}</button><label className="city-map-size">지도 크기 <input aria-label="지도 화면 비율" type="range" min="45" max="78" value={mapShare} onChange={e=>setMapShare(Number(e.target.value))}/></label></>}</div>
       <div id="city-lower-pane" ref={lowerPane} className="city-lower-pane" hidden={!newsOpen&&!buildingId} onPointerDown={stopWalking} onFocusCapture={stopWalking} role="region" aria-label="AI City 기존 기능" data-expanded={Boolean(buildingId)}>
       {currentBuilding?<CitySpaceUse key={currentBuilding.id+':'+residentId} buildingId={currentBuilding.id} accountId={accountId} residentId={residentId} posts={posts} works={works} profiles={profiles} ready={postsVerified&&!loading&&!postsReadFailed&&worksReady} busy={busy} perform={perform} onOpen={openRelated}/>:null}
