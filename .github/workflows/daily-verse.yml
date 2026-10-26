@@ -8,8 +8,10 @@ on:
       - 'functions/scripts/update-daily-verse.mjs'
       - 'scripts/test-daily-verse.mjs'
   schedule:
-    - cron: '*/10 14-15 * * *'
-    - cron: '0 16 * * *'
+    # UTC 14:00-16:55 = KST 23:00-01:55: retry around the date change.
+    - cron: '*/5 14-16 * * *'
+    # Recover later if the source or GitHub scheduler was unavailable overnight.
+    - cron: '17 0-13,17-23 * * *'
   workflow_dispatch:
     inputs:
       update_date:
@@ -29,7 +31,7 @@ jobs:
     environment:
       name: github-pages
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -54,7 +56,20 @@ jobs:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           UPDATE_DATE: ${{ inputs.update_date }}
-        run: node scripts/update-daily-verse.mjs
+        # Retry transient source/Firebase failures without waiting for another cron.
+        # Bound each attempt so a stalled request cannot consume the entire job.
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if timeout 90s node scripts/update-daily-verse.mjs; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::Daily verse update failed after 5 attempts."
+              exit 1
+            fi
+            echo "::warning::Attempt $attempt failed; retrying in 60 seconds."
+            sleep 60
+          done
         working-directory: functions
 
       - name: Commit scripture cache
