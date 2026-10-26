@@ -1,3 +1,4 @@
+import {CityMeet} from './CityMeet'
 import {useEffect,useRef,useState,type PointerEvent as ReactPointerEvent} from 'react'
 import {CityArrival} from './CityArrival'
 import type {CityPost,CityWork} from './cityService'
@@ -10,13 +11,13 @@ import {cityBuildings,type CityBuilding} from './cityBuildings'
 import {clampCityZoom,defaultCityCamera,pickCityBuilding} from './city3dMath'
 import {createCity3DRenderer} from './city3dRenderer'
 import {loadStreet,saveStreet,moveStreet,streetCamera,nearbyStreetBuilding,type StreetPosition} from './cityStreet'
-type Props={posts?:CityPost[];works?:CityWork[];recordsReady?:boolean;onOpen?:(id:string)=>void;profiles:CityProfile[];residentId:string;active:boolean;onEnter:(building:CityBuilding)=>void}
-export function CityMap3D({posts,works,recordsReady,onOpen,profiles,residentId,active,onEnter}:Props){
+type Props={showMeet?:boolean;posts?:CityPost[];works?:CityWork[];recordsReady?:boolean;onOpen?:(id:string)=>void;profiles:CityProfile[];residentId:string;active:boolean;onEnter:(building:CityBuilding)=>void}
+export function CityMap3D({showMeet=true,posts,works,recordsReady,onOpen,profiles,residentId,active,onEnter}:Props){
  const {avatars,commands}=useCityWorld(),canvas=useRef<HTMLCanvasElement>(null)
  const [position,setPosition]=useState<StreetPosition>(()=>loadStreet(residentId)),[hovered,setHovered]=useState<string|null>(null),[failed,setFailed]=useState(false),[attempt,setAttempt]=useState(0),[ready,setReady]=useState(false)
  const [zoom,setZoom]=useState(1),touches=useRef(new Map<number,{x:number;y:number}>()),pinch=useRef<{distance:number;zoom:number}|null>(null)
  const [previewPlace,setPreviewPlace]=useState<string|null>(null),[destination,setDestination]=useState('plaza'),destinationButton=useRef<HTMLButtonElement>(null)
- const [overview,setOverview]=useState(false),joystick=useRef({forward:0,side:0})
+ const [overview,setOverview]=useState(true),joystick=useRef({forward:0,side:0})
  const [reduceMotion]=useState(()=>Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)),stillTime=useRef(Date.now())
  const keys=useRef(new Set<string>()),actor=useRef(residentId)
  const camera={...(overview?{...defaultCityCamera,target:[position.x,0,position.z] as [number,number,number]}:streetCamera(position)),zoom},nearby=nearbyStreetBuilding(position)
@@ -87,7 +88,7 @@ export function CityMap3D({posts,works,recordsReady,onOpen,profiles,residentId,a
  {!failed?<CityJoystick active={active} onMove={v=>{joystick.current=v}}/>:null}
  {!failed?<div className="city-street-pad" aria-label="아바타 이동">{([['w','앞으로 이동',ArrowUp],['a','왼쪽 이동',ArrowLeft],['s','뒤로 이동',ArrowDown],['d','오른쪽 이동',ArrowRight]] as const).map(([key,label,Icon])=><button key={key} type="button" aria-label={label} onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture?.(e.pointerId);keys.current.add(key)}} onPointerUp={()=>keys.current.delete(key)} onPointerCancel={()=>keys.current.delete(key)} onLostPointerCapture={()=>keys.current.delete(key)} onKeyDown={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();keys.current.add(key)}}} onKeyUp={()=>keys.current.delete(key)} onBlur={()=>keys.current.delete(key)}><Icon size={18}/></button>)}</div>:null}
  {nearby&&!failed?<button className="city-street-enter" type="button" onClick={()=>onEnter(nearby)}>{nearby.name} 입장 · E</button>:null}
- <p className="city-3d-hint">길에서 WASD / 조이스틱 이동 · 휠 / 두 손가락 확대·축소 · {hovered?cityBuildings.find(b=>b.id===hovered)?.name+' 앞에서 입장':'건물 터치로 최근 작업 보기'}</p>
+ {showMeet?<CityMeet profiles={profiles} posts={posts} ready={recordsReady} onOpen={onOpen}/>:null}<p className="city-3d-hint">길에서 WASD / 조이스틱 이동 · 휠 / 두 손가락 확대·축소 · {hovered?cityBuildings.find(b=>b.id===hovered)?.name+' 앞에서 입장':'건물 터치로 최근 작업 보기'}</p>
  </div>
  <CityArrival requestedPlace={previewPlace} onPreviewClose={closePreview} posts={posts} works={works} profiles={profiles} ready={recordsReady} residentId={residentId} onEnter={onEnter} onOpen={onOpen}/>
  <nav className="city-building-entrances" aria-label="도시 건물 입장">{cityBuildings.map(b=><button type="button" key={b.id} id={'city-building-'+b.id} aria-label={b.name+' 입장'} onClick={()=>onEnter(b)}><span className="city-building-color" style={{background:b.color}}/>{b.name}<small>{b.label} 바로 열기</small><span aria-hidden="true">↗</span></button>)}</nav>
