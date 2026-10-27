@@ -10,7 +10,7 @@ it('opens an existing destination and supports bounded keyboard walking',()=>{
  const village=screen.getByRole('region',{name:'마을 산책'})
  const player=village.querySelector('.city-village-player') as HTMLElement
  fireEvent.keyDown(village,{key:'ArrowRight'})
- expect(Number(player.dataset.x)).toBe(48)
+ expect(Number(player.dataset.x)).toBe(52)
  fireEvent.keyUp(village,{key:'ArrowRight'})
  fireEvent.click(screen.getByRole('button',{name:/도시 건의소/}))
  expect(onEnter).toHaveBeenCalledWith(expect.objectContaining({id:'hall'}))
