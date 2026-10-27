@@ -1,3 +1,4 @@
+import {CityVillage} from './CityVillage'
 import {CityMeet} from './CityMeet'
 import {useEffect,useRef,useState,type PointerEvent as ReactPointerEvent} from 'react'
 import {CityArrival} from './CityArrival'
@@ -58,7 +59,7 @@ export function CityMap3D({showMeet=true,posts,works,recordsReady,onOpen,profile
    frame=requestAnimationFrame(draw)
   }catch{setFailed(true)}
   return()=>{disposed=true;keys.current.clear();cancelAnimationFrame(frame);observer?.disconnect();window.removeEventListener('resize',resize);element.removeEventListener('webglcontextlost',lost);element.removeEventListener('webglcontextrestored',restored);renderer?.dispose()}
- },[attempt])
+ },[attempt,showMeet,overview])
  function point(e:ReactPointerEvent<HTMLCanvasElement>){const r=e.currentTarget.getBoundingClientRect();return pickCityBuilding(cityBuildings,live.current.camera,(e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2,r.width/r.height)}
  function down(e:ReactPointerEvent<HTMLCanvasElement>){if(e.button!==0)return;e.currentTarget.focus();if(e.pointerType==='touch'){touches.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.current.size>=2){const [a,b]=[...touches.current.values()];pinch.current={distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),zoom:live.current.camera.zoom??1};gesture.current=null;keys.current.clear();joystick.current={forward:0,side:0};e.currentTarget.setPointerCapture?.(e.pointerId);return}}gesture.current={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:position.yaw,pitch:position.pitch,moved:false};e.currentTarget.setPointerCapture?.(e.pointerId)}
  function move(e:ReactPointerEvent<HTMLCanvasElement>){
@@ -73,10 +74,11 @@ export function CityMap3D({showMeet=true,posts,works,recordsReady,onOpen,profile
   const element=canvas.current;if(!element)return
   const wheel=(e:WheelEvent)=>{if(!live.current.active||!e.deltaY)return;e.preventDefault();setZoom(z=>clampCityZoom(z*Math.exp(-Math.max(-300,Math.min(300,e.deltaY))*.002)))}
   element.addEventListener('wheel',wheel,{passive:false});return()=>element.removeEventListener('wheel',wheel)
- },[])
+ },[showMeet,overview])
  function preview(building:CityBuilding){window.dispatchEvent(new Event('city-stop-walking'));setPreviewPlace(building.id)}
  function closePreview(){setPreviewPlace(null);requestAnimationFrame(()=>{if(!failed)canvas.current?.focus();else destinationButton.current?.focus()})}
  function cancelGesture(){gesture.current=null;touches.current.clear();pinch.current=null}
+ if(showMeet&&overview)return <><CityVillage profiles={profiles} posts={posts} ready={recordsReady} residentId={residentId} onOpen={onOpen} onEnter={onEnter}/><button type="button" onClick={()=>setOverview(false)}>3D 거리뷰로 전환</button></>
  return <section className="city-map-3d" aria-label="3D 도시 지도" data-renderer={failed?'fallback':ready?'webgl':'loading'}>
  <header><div><span className="city-social-kicker">OUR NEIGHBOURHOOD · AI CITY</span><h2>{failed?'장소를 고르고, 이웃의 작업을 만나세요.':'걷다가 만나는, 이웃의 작업들.'}</h2></div><p>이 브라우저에 주민별 마지막 위치와 시선이 자동 저장됩니다.</p></header>
  <div className="city-destination-search"><label>장소 찾기<select aria-label="바로 찾을 장소" value={destination} onChange={e=>{window.dispatchEvent(new Event('city-stop-walking'));setDestination(e.target.value)}}>{cityBuildings.map(b=><option key={b.id} value={b.id}>{b.name} · {b.label}</option>)}</select></label><button ref={destinationButton} type="button" onClick={()=>preview(cityBuildings.find(b=>b.id===destination)??cityBuildings[0])}>최근 작업 보기</button><button type="button" onClick={()=>onEnter(cityBuildings.find(b=>b.id===destination)??cityBuildings[0])}>바로 입장 ↗</button></div>
