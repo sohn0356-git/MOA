@@ -29,3 +29,15 @@
 @keyframes village-limb{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
 @keyframes village-body{0%,50%,100%{transform:translateY(0)}25%,75%{transform:translateY(-1.3px)}}
 @media(prefers-reduced-motion:reduce){.city-village-avatar *{animation:none!important}}
+.city .city-village-gate{position:absolute;z-index:115;transform:translate(-50%,-50%);min-height:40px;padding:7px 12px;border:1px solid #fff2d7;border-radius:12px;background:#486248ed;color:#fff9e8;font-size:11px;box-shadow:0 4px 14px #293d3440;white-space:nowrap}
+.city-village-gate small{display:block;font-size:8px;opacity:.8;margin-top:2px}
+.city-village-minimaps{position:absolute;z-index:140;right:16px;bottom:130px;width:226px;padding:10px;background:#fff9e9ed;border:1px solid #fff7dc;border-radius:18px;box-shadow:0 6px 24px #2f49302b}
+.city-village-minimaps>strong{font-size:10px;display:block;margin-bottom:8px}.city-village-minimaps>div{display:flex;gap:5px}
+.city .city-village-minimaps button{position:relative;flex:1;min-width:0;padding:0;overflow:hidden;height:64px;border:2px solid transparent;border-radius:9px;background:#d3dfc5;color:#fff;box-shadow:none}
+.city .city-village-minimaps button[aria-current]{border-color:#6b8e5a;outline:1px solid #f5e2a1}
+.city-village-minimaps img{width:100%;height:100%;object-fit:cover}.city-village-minimaps svg{position:absolute;inset:0;width:100%;height:100%}
+.city-village-minimaps span{position:absolute;bottom:0;left:0;right:0;background:#334a35d9;font-size:8px;padding:3px 0}.city-village-minimaps>small{display:block;font-size:8px;color:#83785f;margin-top:6px}
+.city-village-arrival{position:absolute;inset:0;z-index:200;pointer-events:none;display:grid;place-items:center;color:#fff9e8;font-size:23px;text-shadow:0 2px 9px #273b2e;opacity:0;transition:opacity .25s;background:#29403222}
+.city-village-arrival.is-visible{opacity:1;backdrop-filter:blur(3px)}
+@media(max-width:740px){.city-village-minimaps{width:176px;right:10px;bottom:110px;padding:7px}.city .city-village-minimaps button{height:50px}.city-village-minimaps>small{font-size:7px}.city-village-minimaps>strong{font-size:9px}.city .city-village-gate{font-size:9px;min-height:34px;padding:5px 8px}}
+@media(prefers-reduced-motion:reduce){.city-village-arrival{transition:none;backdrop-filter:none}}

@@ -1,3 +1,4 @@
+import type {VillageAreaId} from './cityVillageAreas'
 /** Coordinates are feet on the 3:2 illustration, never screen percentages. */
 export type VillagePoint={x:number;y:number}
 export const villageStart:VillagePoint={x:52,y:80}
@@ -7,14 +8,19 @@ const routes:Array<{points:number[][];width:number}>=[
  {points:[[31,34],[46,29],[49,28],[55,25],[60,23]],width:2.8},
  {points:[[34,91],[43,79],[48,80],[59,91],[65,96]],width:4},
 ]
-export function isVillageWalkable(p:VillagePoint){
+const courtyards:Record<'garden'|'atelier',number[][]>={
+ garden:[[44,18],[56,18],[57,25],[75,33],[88,42],[90,57],[78,67],[72,75],[57,81],[57,97],[43,97],[43,81],[29,74],[24,65],[15,53],[16,42],[29,32],[44,25]],
+ atelier:[[44,17],[56,17],[58,25],[73,32],[86,44],[86,59],[77,69],[66,76],[57,82],[57,97],[43,97],[43,82],[32,75],[21,63],[17,49],[24,39],[37,29],[43,25]],
+}
+export function isVillageWalkable(p:VillagePoint,area:VillageAreaId='canal'){
+ if(area!=='canal'){let inside=false;const poly=courtyards[area];for(let i=0,j=poly.length-1;i<poly.length;j=i++){const [xi,yi]=poly[i],[xj,yj]=poly[j];if((yi>p.y)!==(yj>p.y)&&p.x<(xj-xi)*(p.y-yi)/(yj-yi)+xi)inside=!inside}return inside}
  if(p.x<3||p.x>97||p.y<20||p.y>97)return false
  return routes.some(r=>r.points.slice(1).some((b,i)=>{const a=r.points[i],dx=(b[0]-a[0])*1.5,dy=b[1]-a[1],px=(p.x-a[0])*1.5,py=p.y-a[1],t=Math.max(0,Math.min(1,(px*dx+py*dy)/(dx*dx+dy*dy)));return Math.hypot(px-t*dx,py-t*dy)<=r.width}))
 }
 /** Substeps prevent a long frame or a diagonal from tunnelling across the canal. */
-export function moveVillage(p:VillagePoint,dx:number,dy:number){
+export function moveVillage(p:VillagePoint,dx:number,dy:number,area:VillageAreaId='canal'){
  const steps=Math.max(1,Math.ceil(Math.hypot(dx*1.5,dy)/.35));let next={...p}
- for(let i=0;i<steps;i++){const x=dx/steps,y=dy/steps,both={x:next.x+x,y:next.y+y};if(isVillageWalkable(both))next=both;else if(isVillageWalkable({x:next.x+x,y:next.y}))next.x+=x;else if(isVillageWalkable({x:next.x,y:next.y+y}))next.y+=y}
+ for(let i=0;i<steps;i++){const x=dx/steps,y=dy/steps,both={x:next.x+x,y:next.y+y};if(isVillageWalkable(both,area))next=both;else if(isVillageWalkable({x:next.x+x,y:next.y},area))next.x+=x;else if(isVillageWalkable({x:next.x,y:next.y+y},area))next.y+=y}
  return next
 }
 export function villageProjection(p:VillagePoint,width:number,height:number,zoom=1,camera:VillagePoint={x:50,y:50}){const w=Math.max(width,height*1.5),h=w/1.5;return {left:width/2+(p.x-camera.x)*w/100*zoom,top:height/2+(p.y-camera.y)*h/100*zoom}}

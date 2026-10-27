@@ -15,3 +15,14 @@ it('opens an existing destination and supports bounded keyboard walking',()=>{
  fireEvent.click(screen.getByRole('button',{name:/도시 건의소/}))
  expect(onEnter).toHaveBeenCalledWith(expect.objectContaining({id:'hall'}))
 })
+
+it('changes districts through the minimap and lands on the connected entrance',()=>{
+ render(<CityVillage profiles={[]} residentId="ai01" ready onEnter={vi.fn()}/>)
+ fireEvent.click(screen.getByRole('button',{name:'햇살 정원 미니맵으로 이동'}))
+ const village=screen.getByRole('region',{name:'마을 산책'})
+ expect(village.dataset.area).toBe('garden')
+ expect(village.querySelector('.city-village-player')?.getAttribute('data-y')).toBe('86.000')
+ fireEvent.click(screen.getByRole('button',{name:'공방 골목으로 이동'}))
+ expect(village.dataset.area).toBe('atelier')
+ expect(screen.getByRole('button',{name:'공방 골목 미니맵으로 이동'}).getAttribute('aria-current')).toBe('location')
+})
