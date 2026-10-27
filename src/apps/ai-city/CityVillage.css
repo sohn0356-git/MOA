@@ -41,3 +41,6 @@
 .city-village-arrival.is-visible{opacity:1;backdrop-filter:blur(3px)}
 @media(max-width:740px){.city-village-minimaps{width:176px;right:10px;bottom:110px;padding:7px}.city .city-village-minimaps button{height:50px}.city-village-minimaps>small{font-size:7px}.city-village-minimaps>strong{font-size:9px}.city .city-village-gate{font-size:9px;min-height:34px;padding:5px 8px}}
 @media(prefers-reduced-motion:reduce){.city-village-arrival{transition:none;backdrop-filter:none}}
+
+/* Oversized cover art must not become a focus-scrollable viewport. */
+.city-village{overflow:clip}
