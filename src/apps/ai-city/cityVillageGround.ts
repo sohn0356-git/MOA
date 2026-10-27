@@ -17,5 +17,7 @@ export function moveVillage(p:VillagePoint,dx:number,dy:number){
  for(let i=0;i<steps;i++){const x=dx/steps,y=dy/steps,both={x:next.x+x,y:next.y+y};if(isVillageWalkable(both))next=both;else if(isVillageWalkable({x:next.x+x,y:next.y}))next.x+=x;else if(isVillageWalkable({x:next.x,y:next.y+y}))next.y+=y}
  return next
 }
-export function villageProjection(p:VillagePoint,width:number,height:number,zoom=1){const w=Math.max(width,height*1.5),h=w/1.5;return {left:width/2+(p.x-50)*w/100*zoom,top:height/2+(p.y-50)*h/100*zoom}}
+export function villageProjection(p:VillagePoint,width:number,height:number,zoom=1,camera:VillagePoint={x:50,y:50}){const w=Math.max(width,height*1.5),h=w/1.5;return {left:width/2+(p.x-camera.x)*w/100*zoom,top:height/2+(p.y-camera.y)*h/100*zoom}}
 export function villageDepth(y:number){return .7+(y-25)/75*.5}
+
+export function villageCamera(p:VillagePoint,width:number,height:number,zoom=1){const w=Math.max(width,height*1.5)*zoom,h=w/1.5,hx=width/w*50,hy=height/h*50;return {x:hx<35?Math.max(hx,Math.min(100-hx,p.x)):50,y:hy<35?Math.max(hy,Math.min(100-hy,p.y)):50}}

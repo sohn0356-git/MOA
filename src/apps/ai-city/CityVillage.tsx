@@ -3,7 +3,7 @@ import {CityMeet} from './CityMeet'
 import {CityVillageAvatar} from './CityVillageAvatar'
 import {CityJoystick} from './CityJoystick'
 import {cityBuildings,type CityBuilding} from './cityBuildings'
-import {moveVillage,villageStart,villageDepth,villageProjection} from './cityVillageGround'
+import {moveVillage,villageStart,villageDepth,villageProjection,villageCamera} from './cityVillageGround'
 import type {CityProfile} from './cityResidents'
 import type {CityPost} from './cityService'
 import './CityVillage.css'
@@ -14,9 +14,9 @@ export function CityVillage({profiles,posts,ready,residentId,onOpen,onEnter}:{pr
  function stop(){stick.current={x:0,y:0};velocity.current={x:0,y:0};keys.current.clear();cancelAnimationFrame(frame.current);running.current=false;setWalking(false)}
  useEffect(()=>{const el=root.current;if(!el)return;const resize=()=>{const r=el.getBoundingClientRect();if(r.width&&r.height)setSize({width:r.width,height:r.height})};resize();const observer=typeof ResizeObserver!=='undefined'?new ResizeObserver(resize):null;observer?.observe(el);window.addEventListener('resize',resize);window.addEventListener('blur',stop);window.addEventListener('city-stop-walking',stop);document.addEventListener('visibilitychange',stop);return()=>{observer?.disconnect();window.removeEventListener('resize',resize);window.removeEventListener('blur',stop);window.removeEventListener('city-stop-walking',stop);document.removeEventListener('visibilitychange',stop);cancelAnimationFrame(frame.current)}},[])
  function begin(){if(running.current)return;running.current=true;last.current=performance.now();const tick=(t:number)=>{const dt=Math.min(.035,(t-last.current)/1000);last.current=t;let x=stick.current.x,y=stick.current.y;for(const k of keys.current){x+=directions[k]?.[0]??0;y+=directions[k]?.[1]??0}const len=Math.max(1,Math.hypot(x,y)),blend=1-Math.exp(-dt*14);velocity.current.x+=(x/len-velocity.current.x)*blend;velocity.current.y+=(y/len-velocity.current.y)*blend;const v=velocity.current,p=position.current,next=moveVillage(p,v.x*dt*8,v.y*dt*12),moving=Math.hypot(next.x-p.x,next.y-p.y)>.001;position.current=next;setPos(next);setWalking(moving);if(Math.abs(v.x)>.1)setFacing(v.x<0?-1:1);if(Math.hypot(v.x,v.y)>.015||x||y)frame.current=requestAnimationFrame(tick);else{running.current=false;setWalking(false)}};frame.current=requestAnimationFrame(tick)}
- const view={...size,zoom:scale},feet=villageProjection(pos,size.width,size.height,scale),worldWidth=Math.max(size.width,size.height*1.5),depth=villageDepth(pos.y)*scale
+ const camera=villageCamera(pos,size.width,size.height,scale),view={...size,zoom:scale,camera},feet=villageProjection(pos,size.width,size.height,scale,camera),worldWidth=Math.max(size.width,size.height*1.5),depth=villageDepth(pos.y)*scale
  return <section ref={root} className="city-village" aria-label="마을 산책" onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))stop()}} onKeyDown={e=>{if(e.target!==e.currentTarget||!directions[e.key])return;e.preventDefault();keys.current.add(e.key);begin()}} onKeyUp={e=>{keys.current.delete(e.key)}} tabIndex={0}>
- <div className="city-village-world" style={{width:worldWidth,height:worldWidth/1.5,transform:`translate(-50%,-50%) scale(${scale})`}}><div className="city-village-ground"/></div>
+ <div className="city-village-world" style={{width:worldWidth,height:worldWidth/1.5,left:size.width/2+(50-camera.x)*worldWidth/100*scale,top:size.height/2+(50-camera.y)*worldWidth/150*scale,transform:`translate(-50%,-50%) scale(${scale})`}}><div className="city-village-ground"/></div>
  <div className="city-village-player" data-x={pos.x.toFixed(3)} data-y={pos.y.toFixed(3)} style={{left:feet.left,top:feet.top,zIndex:Math.round(pos.y),transform:`translate(-50%,-100%) scale(${depth})`}}><CityVillageAvatar id={residentId} name="내 산책 캐릭터" walking={walking} facing={facing}/><span>나의 산책</span></div>
  <CityMeet village villageView={view} profiles={profiles} posts={posts} ready={ready} onOpen={onOpen}/>
  <header className="city-village-title"><small>OUR LITTLE NEIGHBOURHOOD</small><h2>오늘은 누구를 만날까요?</h2><p>길을 따라 산책하고 이웃을 눌러보세요</p></header>
