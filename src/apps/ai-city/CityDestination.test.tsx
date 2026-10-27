@@ -8,7 +8,7 @@ afterEach(cleanup)
 describe('destination preview without forced walking',()=>{
  it('previews a fallback building and keeps direct entry available without moving the resident',async()=>{
   const onEnter=vi.fn();const before=localStorage.getItem('ai-city:street:v1:ai01')
-  render(<CityMap3D profiles={[]} residentId="ai01" active recordsReady onEnter={onEnter}/>)
+  render(<CityMap3D showMeet={false} profiles={[]} residentId="ai01" active recordsReady onEnter={onEnter}/>)
   fireEvent.click(await screen.findByRole('button',{name:'도시 건의소 · 건의함 열기'}))
   expect(await screen.findByRole('button',{name:'건의함 보러 입장'})).toBeTruthy()
   expect(onEnter).not.toHaveBeenCalled()
