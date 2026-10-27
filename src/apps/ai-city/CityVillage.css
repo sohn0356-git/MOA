@@ -3,3 +3,5 @@
 .city-village{height:calc(100% - 36px);min-height:0}
 .city-village-places{max-width:calc(100% - 150px);left:auto;right:14px;transform:none}
 @media(max-width:740px){.city-village-places{max-width:calc(100% - 105px);right:8px}.city-village-title{max-width:calc(100% - 85px)}.city-village-title small{font-size:7px}.city-village-note{max-width:65%;text-align:right}}
+.city .city-village .city-meet-sheet{position:fixed;left:auto;top:auto;right:24px;bottom:26px}
+@media(max-width:740px){.city .city-village .city-meet-sheet{right:14px;bottom:14px}}
