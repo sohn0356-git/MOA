@@ -107,7 +107,7 @@ export function WeddingPlanner({ storageKey }: { storageKey: string }) {
       <p className="w-storage-note">기록은 현재 브라우저에 계정별로 저장됩니다. 다른 기기와는 동기화되지 않아요.</p>
     </div>
     <nav className="w-bottom-tabs" aria-label="결혼준비 메뉴">{tabs.map((item, index) => <button key={item.name} type="button" aria-current={tab === index ? 'page' : undefined} className={tab === index ? 'active' : ''} onClick={() => setTab(index)}><item.icon size={21}/><span>{item.name}</span></button>)}</nav>
-    <dialog ref={dialog} className="w-dialog" aria-label={place ? '장소 편집' : settings ? '결혼 정보' : '노트 편집'} onCancel={e => { e.preventDefault(); closeDialog() }} onClick={e => { if (e.target === e.currentTarget) closeDialog() }}>
+    <dialog ref={dialog} className="w-dialog" aria-label={place ? '장소 편집' : settings ? '결혼 정보' : '노트 편집'} onCancel={e => { e.preventDefault(); closeDialog() }}>
       <form key={place?.id || note?.id || 'settings'} onSubmit={submit} aria-label={place ? '장소 편집' : settings ? '결혼 정보' : '노트 편집'}>
         <div className="w-dialog-title"><div><span className="w-eyebrow">{place ? 'A PLACE FOR US' : settings ? 'OUR SPECIAL DAY' : 'OUR NOTES'}</span><h2>{place ? (data.places.some(p => p.id === place.id) ? '장소 수정' : '새로운 장소') : settings ? '우리의 결혼 정보' : '준비 노트'}</h2></div><button type="button" className="w-icon-button" aria-label="닫기" onClick={closeDialog}><X size={21}/></button></div>
         {settings ? <><label>우리의 이름<input name="names" defaultValue={data.names} maxLength={80} placeholder="예: 지우 & 서준"/></label><label>결혼 날짜<input name="date" type="date" defaultValue={data.date}/></label></> : <>

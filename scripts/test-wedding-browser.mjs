@@ -16,7 +16,7 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 1000 }, serviceWorkers: 'block' })
     page.setDefaultTimeout(15000)
     const errors = []
-    page.on('pageerror', error => errors.push(error.message))
+    page.on('pageerror', error => { errors.push(error.message); console.log('WEDDING_PAGE_ERROR', error.message) })
     await page.goto('http://127.0.0.1:4175/' + html)
     await page.getByRole('heading', { name: /함께 그리는/ }).waitFor()
     const nav = page.getByRole('navigation', { name: '결혼준비 메뉴' })
@@ -63,6 +63,12 @@ try {
     assert.deepEqual(errors, [])
     await page.close()
   }
+} catch (error) {
+  for (const context of browser?.contexts() || []) for (const page of context.pages()) {
+    console.log('WEDDING_FAILURE_DOM', await page.locator('dialog').evaluateAll(nodes => nodes.map(n => n.outerHTML)))
+    await page.screenshot({ path: 'wedding-browser-artifacts/failure.png', fullPage: true }).catch(() => {})
+  }
+  throw error
 } finally {
   await browser?.close()
   await server?.close()
