@@ -70,7 +70,7 @@ export function WeddingPlanner({ storageKey }: { storageKey: string }) {
   }
   const visiblePlaces = data.places.filter(p => (p.title + ' ' + p.body).toLowerCase().includes(search.toLowerCase()))
   return <section className="wedding-app" aria-label="결혼준비">
-    <header className="w-header"><a href="#/apps" aria-label="MOA 앱으로 돌아가기"><ArrowLeft size={19}/></a><a className="w-wordmark" href="#/suggestions"><Heart size={20}/> our beginning<span>WEDDING PLANNER</span></a><button type="button" className="w-icon-button" aria-label="결혼 정보 설정" onClick={editSettings}><CalendarDays size={20}/></button></header>
+    <header className="w-header"><a href="#/apps" aria-label="MOA 앱으로 돌아가기"><ArrowLeft size={19}/></a><a className="w-wordmark" href="#/suggestions" onClick={() => setTab(0)}><Heart size={20}/> our beginning<span>WEDDING PLANNER</span></a><button type="button" className="w-icon-button" aria-label="결혼 정보 설정" onClick={editSettings}><CalendarDays size={20}/></button></header>
     <div className="w-content">
       {error && <p className="w-error" role="alert">{error}</p>}
       {tab === 0 && <>
@@ -112,7 +112,7 @@ export function WeddingPlanner({ storageKey }: { storageKey: string }) {
         <div className="w-dialog-title"><div><span className="w-eyebrow">{place ? 'A PLACE FOR US' : settings ? 'OUR SPECIAL DAY' : 'OUR NOTES'}</span><h2>{place ? (data.places.some(p => p.id === place.id) ? '장소 수정' : '새로운 장소') : settings ? '우리의 결혼 정보' : '준비 노트'}</h2></div><button type="button" className="w-icon-button" aria-label="닫기" onClick={closeDialog}><X size={21}/></button></div>
         {settings ? <><label>우리의 이름<input name="names" defaultValue={data.names} maxLength={80} placeholder="예: 지우 & 서준"/></label><label>결혼 날짜<input name="date" type="date" defaultValue={data.date}/></label></> : <>
           <label>제목<input name="title" autoFocus required maxLength={80} defaultValue={(place || note)?.title} placeholder={place ? '예: 마음에 든 웨딩홀' : '노트 제목'}/></label>
-          <label>내용<textarea name="body" maxLength={4000} rows={4} defaultValue={(place || note)?.body} placeholder="상담 내용, 연락처, 느낌을 자유롭게 남겨보세요."/></label>
+          <label>내용<textarea aria-label="내용" name="body" maxLength={4000} rows={4} defaultValue={(place || note)?.body} placeholder="상담 내용, 연락처, 느낌을 자유롭게 남겨보세요."/></label>
           {place && <><div className="w-field-row"><label>마커 색상<input name="color" type="color" value={place.color} onChange={e => setPlace({ ...place, color: e.target.value })}/></label><label>아이콘 (이모지 / 문자)<input name="icon" value={place.icon} maxLength={12} onChange={e => setPlace({ ...place, icon: e.target.value })}/></label><span className="w-pin-preview" style={{ background: place.color }}>{place.icon}</span></div><div className="w-icon-options" aria-label="추천 아이콘">{icons.map(icon => <button key={icon} type="button" aria-label={'아이콘 ' + icon} aria-pressed={place.icon === icon} onClick={() => setPlace({ ...place, icon })}>{icon}</button>)}</div><div className="w-field-row"><label>위도<input name="lat" type="number" step="any" min="-85" max="85" required defaultValue={place.lat}/></label><label>경도<input name="lng" type="number" step="any" min="-180" max="180" required defaultValue={place.lng}/></label></div><p className="w-helper">좌표를 수정하면 마커 위치도 함께 바뀝니다.</p></>}
         </>}
         {error && <p className="w-error" role="alert">{error}</p>}
