@@ -10,6 +10,7 @@ const auth=vi.hoisted(()=>({
 }))
 vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
+vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions}:{entryActions?:ReactNode})=><section><h1>MOA Faith</h1>{entryActions}<p>공개 신앙 앱</p></section>}))
 vi.mock('../apps/ai-city/AiCityApp',()=>({AiCityApp:({entryActions}:{entryActions?:ReactNode})=><section><h1>Ai city</h1>{entryActions}<p>공개 도시</p></section>}))
 vi.mock('../apps/registry',()=>({appRegistry:[
  {id:'ai-city',name:'Ai city',route:'#/ai-city',component:()=>null},
@@ -19,30 +20,43 @@ vi.mock('../components/AppGrid',()=>({AppGrid:({onOpenApp}:{onOpenApp:(route:str
 afterEach(cleanup)
 beforeEach(()=>{vi.clearAllMocks();auth.user=null;auth.authError=null;auth.isAuthLoading=false;auth.isAuthMutating=false;history.replaceState(null,'','/')})
 function go(hash:string){act(()=>{window.location.hash=hash;window.dispatchEvent(new HashChangeEvent('hashchange'))})}
-describe('AI City main entry',()=>{
- it('opens the public city immediately while authentication is loading or missing',()=>{
+describe('MOA Faith main entry',()=>{
+ it('lets a guest select an AI account without leaving Faith',()=>{
+  render(<AppShell/>)
+  const picker=screen.getByRole('combobox',{name:'AI 아이디 선택'})
+  fireEvent.change(picker,{target:{value:'ai03'}})
+  expect(auth.signInWithAiAccount).toHaveBeenCalledWith('ai03')
+  expect(screen.getByText('공개 신앙 앱')).toBeTruthy()
+ })
+ it('keeps explicit AI City links available',()=>{
+  history.replaceState(null,'','/#/ai-city')
+  render(<AppShell/>)
+  expect(screen.getByText('공개 도시')).toBeTruthy()
+  expect(screen.getByRole('link',{name:'로그인'})).toBeTruthy()
+ })
+
+ it('opens public Faith while authentication is loading and disables the AI picker',()=>{
   auth.isAuthLoading=true;auth.authError='Firebase configuration is missing: example'
   render(<AppShell/>)
-  expect(screen.getByRole('main',{name:'AI City 메인'})).toBeTruthy()
-  expect(screen.getByText('공개 도시')).toBeTruthy()
+  expect(screen.getByRole('main',{name:'MOA Faith 메인'})).toBeTruthy()
+  expect(screen.getByText('공개 신앙 앱')).toBeTruthy()
   expect(screen.queryByRole('tablist')).toBeNull()
   expect(screen.queryByRole('region',{name:'로그인'})).toBeNull()
-  expect(screen.getByRole('link',{name:'로그인'}).getAttribute('href')).toBe('#/login')
-  expect(screen.getByRole('link',{name:'MOA 앱 ↗'}).getAttribute('href')).toBe('#/apps')
+  expect((screen.getByRole('combobox',{name:'AI 아이디 선택'}) as HTMLSelectElement).disabled).toBe(true)
   expect(auth.signInWithGoogle).not.toHaveBeenCalled()
  })
- it('keeps the city as the main app for signed-in users and the legacy root hash',()=>{
+ it('keeps Faith as the main app for signed-in users and the legacy root hash',()=>{
   auth.user={uid:'u1',email:'person@example.com'} as User
   history.replaceState(null,'','/#/')
   render(<AppShell/>)
-  expect(screen.getByText('공개 도시')).toBeTruthy()
-  expect(screen.getByRole('link',{name:'계정'})).toBeTruthy()
+  expect(screen.getByText('공개 신앙 앱')).toBeTruthy()
+  expect(screen.queryByRole('combobox',{name:'AI 아이디 선택'})).toBeNull()
   expect(screen.queryByRole('heading',{name:'Apps'})).toBeNull()
  })
  it('opens login only after navigation and returns to the city without signing in',()=>{
   render(<AppShell/>);go('#/login')
   expect(screen.getByRole('tab',{name:'Google 로그인'})).toBeTruthy()
-  expect(screen.queryByText('공개 도시')).toBeNull()
+  expect(screen.queryByText('공개 신앙 앱')).toBeNull()
   expect(screen.getByRole('link',{name:'← AI City로 돌아가기'}).getAttribute('href')).toBe('#/ai-city')
   go('#/ai-city')
   expect(screen.getByText('공개 도시')).toBeTruthy()

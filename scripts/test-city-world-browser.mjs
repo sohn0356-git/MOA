@@ -24,7 +24,7 @@ try{
   await page.setContent('<h1>Browser connected</h1>');console.log('CITY_BROWSER_CONTROL_OK '+width)
   const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('CITY_BROWSER_PAGE_ERROR '+e.message)});page.on('domcontentloaded',()=>console.log('CITY_BROWSER_DOM_READY '+width))
   console.log('CITY_BROWSER_NAVIGATE '+width)
-  await page.goto('http://127.0.0.1:4174/MOA/',{waitUntil:'commit',timeout:15000})
+  await page.goto('http://127.0.0.1:4174/MOA/#/ai-city',{waitUntil:'commit',timeout:15000})
   const city=page.locator('.city-social');await city.waitFor()
   const expandNews=page.getByRole('button',{name:'도시 소식 펼치기',exact:true});if(await expandNews.isVisible())await expandNews.click()
   await page.getByRole('navigation',{name:'Ai city 메뉴'}).waitFor()

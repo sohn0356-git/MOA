@@ -2,7 +2,7 @@ import { FirebaseError } from 'firebase/app'
 import { updateProfile } from 'firebase/auth'
 import { get, onValue, push, ref, remove, runTransaction, serverTimestamp, set, update } from 'firebase/database'
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, type UploadTask } from 'firebase/storage'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
 import './QuestionAnswers.css'
 import { useScripturePlan } from './useScripturePlan'
@@ -1186,7 +1186,7 @@ function UploadProgress({
   )
 }
 
-export function MeditationApp() {
+export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {}) {
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
@@ -2684,7 +2684,7 @@ export function MeditationApp() {
             <h2>{renderHeaderTitle()}</h2>
           </div>
         )}
-        {activeTab === 'qna' && qnaView === 'write' ? (
+        {!currentUser && entryActions ? entryActions : activeTab === 'qna' && qnaView === 'write' ? (
           <button className="faith-text-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>취소</button>
         ) : profileView === 'edit' ? (
           <button className="faith-text-button" disabled={isProfileSaving} type="button" onClick={() => void handleProfileSave()}>

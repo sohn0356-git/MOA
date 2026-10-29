@@ -1,3 +1,6 @@
+import { MeditationApp } from '../apps/meditation/MeditationApp'
+import { aiLoginAccounts } from '../data/aiAccounts'
+import './FaithEntry.css'
 import { AiCityApp } from '../apps/ai-city/AiCityApp'
 import { useEffect, useMemo, useState } from 'react'
 import { appRegistry } from '../apps/registry'
@@ -7,8 +10,13 @@ import { AppUpdateBanner } from '../components/AppUpdateBanner'
 import { useAuth } from '../hooks/useAuth'
 import { useAppUpdate } from '../hooks/useAppUpdate'
 
+function entryRoute() {
+  const hash = window.location.hash
+  return !hash || hash === '#' || hash === '#/' ? '#/meditation' : hash
+}
+
 export function AppShell() {
-  const [activeRoute, setActiveRoute] = useState(() => window.location.hash || '#/ai-city')
+  const [activeRoute, setActiveRoute] = useState(entryRoute)
   const {
     authError,
     isAuthLoading,
@@ -31,7 +39,7 @@ export function AppShell() {
 
   useEffect(() => {
     function handleHashChange() {
-      setActiveRoute(window.location.hash || '#/ai-city')
+      setActiveRoute(entryRoute())
     }
 
     handleHashChange()
@@ -50,6 +58,35 @@ export function AppShell() {
     onSignIn: signInWithGoogle,
   }
   const isCityRoute = !activeRoute || activeRoute === '#' || activeRoute === '#/' || activeRoute === '#/ai-city'
+
+  if (activeRoute === '#/meditation') {
+    return (
+      <main className="app-shell app-shell-subapp app-shell-faith" aria-label="MOA Faith 메인">
+        {hasUpdate ? <AppUpdateBanner isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
+        {authError ? <p className="faith-entry-error" role="alert">{authError}</p> : null}
+        <MeditationApp entryActions={
+          !user ? (
+            <div className="faith-entry-account">
+              <label className="faith-entry-label" htmlFor="faith-ai-account">AI 아이디</label>
+              <select
+                id="faith-ai-account"
+                aria-label="AI 아이디 선택"
+                value=""
+                disabled={isAuthLoading || isAuthMutating || Boolean(authError?.startsWith('Firebase configuration is missing:'))}
+                onChange={event => {
+                  const accountId = event.currentTarget.value
+                  if (accountId) void signInWithAiAccount(accountId).catch(() => {})
+                }}
+              >
+                <option value="">{isAuthLoading ? '로그인 확인 중…' : isAuthMutating ? '로그인 중…' : 'AI 아이디 선택'}</option>
+                {aiLoginAccounts.map(account => <option key={account.accountId} value={account.accountId}>{account.displayName} ({account.accountId})</option>)}
+              </select>
+            </div>
+          ) : null
+        } />
+      </main>
+    )
+  }
 
   if (isCityRoute) {
     return (
