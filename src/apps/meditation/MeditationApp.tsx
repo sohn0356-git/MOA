@@ -5,6 +5,8 @@ import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
 import './QuestionAnswers.css'
+import { DevotionImage, DevotionImagePicker } from './DevotionImagePicker'
+import { isDevotionImage } from './devotionImage'
 import { useScripturePlan } from './useScripturePlan'
 import { SuggestionsApp } from '../suggestions/SuggestionsApp'
 import { requestDraftNavigation } from '../suggestions/useSuggestionDraft'
@@ -65,6 +67,7 @@ type ScriptureCache = {
 }
 
 type MeditationEntry = {
+  crossImage?: string
   id: string
   apply: string
   applyDone?: boolean
@@ -1205,6 +1208,8 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   const [fontScale, setFontScale] = useState(() => Number(window.localStorage.getItem('moa.faith.fontScale') ?? 1) || 1)
   const { remotePlan, isLoading: isPlanLoading, error: planError, isFallback: isFallbackPlan, retry: retryPlan } = useScripturePlan(selectedDate, scriptureLanguage, fetchFirebasePlan)
   const [mind, setMind] = useState('')
+  const [devotionImage, setDevotionImage] = useState('')
+  const [isDevotionImagePreparing, setIsDevotionImagePreparing] = useState(false)
   const [apply, setApply] = useState('')
   const [prayerText, setPrayerText] = useState('')
   const [audience, setAudience] = useState<Audience>('private')
@@ -1515,7 +1520,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
       (snapshot) => {
         const remoteEntries = mapList<MeditationEntry>(snapshot.val())
         setEntries(remoteEntries)
-        saveLocalEntries(remoteEntries)
+        try { saveLocalEntries(remoteEntries) } catch { /* The Firebase record remains saved if the device cache is full. */ }
         setSyncState('synced')
       },
       (error) => {
@@ -1620,7 +1625,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
 
   useEffect(() => {
     if (syncState !== 'synced') {
-      saveLocalEntries(entries)
+      try { saveLocalEntries(entries) } catch { setErrorMessage('기기 저장 공간이 부족합니다. 저장 공간을 확보한 뒤 다시 시도해주세요.') }
     }
   }, [entries, syncState])
 
@@ -1950,6 +1955,8 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }
 
   function startWriting() {
+    setDevotionImage('')
+    setIsDevotionImagePreparing(false)
     setMind('')
     setApply('')
     setPrayerText('')
@@ -1966,6 +1973,8 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     setSelectedEntryId(entry.id)
     setSelectedDate(entry.selectedDate)
     setSelectedVerseNumbers(entry.selectedVerseNumbers)
+    setDevotionImage(isDevotionImage(entry.crossImage) ? entry.crossImage : '')
+    setIsDevotionImagePreparing(false)
     setMind(entry.mind)
     setApply(entry.apply)
     setPrayerText(entry.prayer ?? '')
@@ -1975,11 +1984,12 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }
 
   async function handleSaveEntry() {
-    if (!canSave || isSaving) {
+    if (!canSave || isSaving || isDevotionImagePreparing) {
       return
     }
 
     const entry: MeditationEntry = {
+      ...(isDevotionImage(devotionImage) ? { crossImage: devotionImage } : {}),
       id: createLocalId(),
       apply: apply.trim(),
       applyDone: false,
@@ -2014,7 +2024,9 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
           createdAtMs: serverTimestamp(),
         })
       } else {
-        setEntries((currentEntries) => [entry, ...currentEntries])
+        const nextEntries = [entry, ...entries]
+        saveLocalEntries(nextEntries)
+        setEntries(nextEntries)
       }
 
       setMind('')
@@ -2031,12 +2043,13 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }
 
   async function handleUpdateEntry() {
-    if (!selectedEntry || !canSave || isSaving) {
+    if (!selectedEntry || !canSave || isSaving || isDevotionImagePreparing) {
       return
     }
 
     const updatedEntry: MeditationEntry = {
       ...selectedEntry,
+      crossImage: isDevotionImage(devotionImage) ? devotionImage : '',
       apply: apply.trim(),
       audience,
       bookmarked,
@@ -2053,6 +2066,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     try {
       if (currentUser && syncState === 'synced') {
         await update(ref(getRealtimeDb(), `${getUserEntriesPath(currentUser.uid)}/${selectedEntry.id}`), {
+          crossImage: updatedEntry.crossImage || null,
           apply: updatedEntry.apply,
           audience: updatedEntry.audience,
           bookmarked: updatedEntry.bookmarked,
@@ -2064,7 +2078,9 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
           updatedAtMs: serverTimestamp(),
         })
       } else {
-        setEntries((currentEntries) => currentEntries.map((entry) => entry.id === selectedEntry.id ? updatedEntry : entry))
+        const nextEntries = entries.map((entry) => entry.id === selectedEntry.id ? updatedEntry : entry)
+        saveLocalEntries(nextEntries)
+        setEntries(nextEntries)
       }
 
       setSelectedEntryId(updatedEntry.id)
@@ -2981,12 +2997,13 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                     <em aria-live="polite">{mindCharacterCount.toLocaleString('ko-KR')}자</em>
                   </div>
                 </label>
+                <DevotionImagePicker value={devotionImage} onChange={setDevotionImage} onBusyChange={setIsDevotionImagePreparing} disabled={isSaving}/>
                 <div className="faith-segment" aria-label="공개 범위">
                   {(['private', 'public', 'group'] as Audience[]).map((item) => (
                     <button aria-pressed={audience === item} key={item} type="button" onClick={() => setAudience(item)}>{getAudienceLabel(item)}</button>
                   ))}
                 </div>
-                <button className="faith-primary" disabled={!canSave || isSaving} type="button" onClick={() => void (devotionView === 'edit' ? handleUpdateEntry() : handleSaveEntry())}>
+                <button className="faith-primary" disabled={!canSave || isSaving || isDevotionImagePreparing} type="button" onClick={() => void (devotionView === 'edit' ? handleUpdateEntry() : handleSaveEntry())}>
                   {isSaving ? '저장 중' : '저장'}
                 </button>
               </section>
@@ -3049,6 +3066,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                 <h3>{getEntryTitle(selectedEntry)}</h3>
                 <p className="faith-muted">{selectedEntry.reference} · {selectedEntry.authorName ?? authorName} · {getAudienceLabel(selectedEntry.audience)}</p>
                 <blockquote>{selectedEntry.verseText}</blockquote>
+                <DevotionImage value={selectedEntry.crossImage}/>
                 {selectedEntry.apply ? <section><h4>오늘의 적용</h4><p>{selectedEntry.apply}</p></section> : null}
                 {selectedEntry.prayer ? <section><h4>나의 기도</h4><p>{selectedEntry.prayer}</p></section> : null}
                 {selectedEntry.mind ? <section><h4>묵상 메모</h4><p>{selectedEntry.mind}</p></section> : null}
