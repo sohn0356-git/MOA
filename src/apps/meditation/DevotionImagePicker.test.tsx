@@ -14,7 +14,7 @@ function Editor() {
   const [busy, setBusy] = useState(false)
   return <><DevotionImagePicker value={value} onChange={setValue} onBusyChange={setBusy}/><button disabled={busy}>묵상 저장</button><DevotionImage value={value}/></>
 }
-beforeEach(() => mocks.prepare.mockReset())
+beforeEach(() => { mocks.prepare.mockReset() })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 describe('devotion cross attachment', () => {
   it('previews a selected picture, prevents saving during preparation, and allows removal', async () => {
