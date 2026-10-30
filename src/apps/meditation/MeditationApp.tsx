@@ -7,6 +7,7 @@ import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
 import './QuestionAnswers.css'
 import { DevotionImage, DevotionImagePicker } from './DevotionImagePicker'
 import { isDevotionImage } from './devotionImage'
+import { deleteSharedDevotion, persistSharedDevotion } from './devotionSharing'
 import { useScripturePlan } from './useScripturePlan'
 import { SuggestionsApp } from '../suggestions/SuggestionsApp'
 import { requestDraftNavigation } from '../suggestions/useSuggestionDraft'
@@ -88,6 +89,8 @@ type MeditationEntry = {
 }
 
 type CrossPhoto = {
+  sourceType?: 'devotion'
+  sourceEntryId?: string
   id: string
   authorAvatarUrl?: string
   authorName?: string
@@ -451,6 +454,7 @@ function getPhotoExpiresAt(photo: CrossPhoto) {
 
 function isPhotoPublic(photo: CrossPhoto, nowMs: number) {
   const createdAt = getTimestamp(photo.createdAt)
+  if (photo.sourceType === 'devotion') return Boolean(createdAt && createdAt <= nowMs)
   const expiresAt = getPhotoExpiresAt(photo)
   return Boolean(createdAt && expiresAt && createdAt <= nowMs && nowMs < expiresAt)
 }
@@ -1212,7 +1216,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   const [isDevotionImagePreparing, setIsDevotionImagePreparing] = useState(false)
   const [apply, setApply] = useState('')
   const [prayerText, setPrayerText] = useState('')
-  const [audience, setAudience] = useState<Audience>('private')
+  const [audience, setAudience] = useState<Audience>('public')
   const [bookmarked, setBookmarked] = useState(false)
   const [entries, setEntries] = useState<MeditationEntry[]>(loadLocalEntries)
   const [isSaving, setIsSaving] = useState(false)
@@ -1960,7 +1964,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     setMind('')
     setApply('')
     setPrayerText('')
-    setAudience('private')
+    setAudience('public')
     setBookmarked(false)
     setDevotionView('write')
   }
@@ -1984,6 +1988,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }
 
   async function handleSaveEntry() {
+    if (audience === 'public' && !currentUser) { setErrorMessage('십자가 공유 탭에 올리려면 먼저 로그인해주세요.'); return }
     if (!canSave || isSaving || isDevotionImagePreparing) {
       return
     }
@@ -2018,11 +2023,10 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
       if (currentUser) {
         const entryRef = push(ref(getRealtimeDb(), getUserEntriesPath(currentUser.uid)))
         savedEntry = { ...entry, id: entryRef.key ?? entry.id }
-        await set(entryRef, {
-          ...savedEntry,
-          id: null,
-          createdAtMs: serverTimestamp(),
-        })
+        await persistSharedDevotion(currentUser.uid, savedEntry, {
+          ...savedEntry, id: null, createdAtMs: serverTimestamp(),
+        }, async id => (await get(ref(getRealtimeDb(), getPublicCrossPhotosPath() + '/' + id))).val(),
+        updates => update(ref(getRealtimeDb()), updates))
       } else {
         const nextEntries = [entry, ...entries]
         saveLocalEntries(nextEntries)
@@ -2034,7 +2038,8 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
       setPrayerText('')
       setSelectedEntryId(savedEntry.id)
       setDevotionView('detail')
-      setStatusMessage('묵상을 저장했습니다.')
+      if (audience === 'public') { setNowMs(Date.now()); setActiveTab('feed'); setFeedView('list'); setVisibleFeedCount(8) }
+      setStatusMessage(audience === 'public' ? '묵상을 십자가 공유 탭에 공유했습니다.' : '묵상을 저장했습니다.')
     } catch (error) {
       setErrorMessage(error instanceof FirebaseError ? error.message : '저장하지 못했습니다. 작성 내용은 그대로 두었습니다.')
     } finally {
@@ -2043,6 +2048,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }
 
   async function handleUpdateEntry() {
+    if (audience === 'public' && !currentUser) { setErrorMessage('십자가 공유 탭에 올리려면 먼저 로그인해주세요.'); return }
     if (!selectedEntry || !canSave || isSaving || isDevotionImagePreparing) {
       return
     }
@@ -2064,19 +2070,11 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     setStatusMessage('')
 
     try {
-      if (currentUser && syncState === 'synced') {
-        await update(ref(getRealtimeDb(), `${getUserEntriesPath(currentUser.uid)}/${selectedEntry.id}`), {
-          crossImage: updatedEntry.crossImage || null,
-          apply: updatedEntry.apply,
-          audience: updatedEntry.audience,
-          bookmarked: updatedEntry.bookmarked,
-          mind: updatedEntry.mind,
-          prayer: updatedEntry.prayer,
-          selectedVerseNumbers: updatedEntry.selectedVerseNumbers,
-          verseText: updatedEntry.verseText,
-          updatedAt: new Date().toISOString(),
-          updatedAtMs: serverTimestamp(),
-        })
+      if (currentUser) {
+        await persistSharedDevotion(currentUser.uid, updatedEntry, {
+          ...updatedEntry, id: null, updatedAt: new Date().toISOString(), updatedAtMs: serverTimestamp(),
+        }, async id => (await get(ref(getRealtimeDb(), getPublicCrossPhotosPath() + '/' + id))).val(),
+        updates => update(ref(getRealtimeDb()), updates))
       } else {
         const nextEntries = entries.map((entry) => entry.id === selectedEntry.id ? updatedEntry : entry)
         saveLocalEntries(nextEntries)
@@ -2085,7 +2083,8 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
 
       setSelectedEntryId(updatedEntry.id)
       setDevotionView('detail')
-      setStatusMessage('수정 내용을 저장했습니다.')
+      setNowMs(Date.now())
+      setStatusMessage(audience === 'public' ? '묵상과 십자가 공유 내용을 함께 수정했습니다.' : '수정 내용을 저장했습니다.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '수정 내용을 저장하지 못했습니다. 작성 내용은 그대로 두었습니다.')
     } finally {
@@ -2102,8 +2101,12 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
       return
     }
 
-    if (currentUser && syncState === 'synced') {
-      await remove(ref(getRealtimeDb(), `${getUserEntriesPath(currentUser.uid)}/${entry.id}`))
+    if (currentUser) {
+      try {
+        await deleteSharedDevotion(currentUser.uid, entry.id,
+          async id => (await get(ref(getRealtimeDb(), getPublicCrossPhotosPath() + '/' + id))).val(),
+          updates => update(ref(getRealtimeDb()), updates))
+      } catch { setErrorMessage('묵상과 공유 글을 삭제하지 못했습니다. 다시 시도해주세요.'); return }
     } else {
       setEntries((currentEntries) => currentEntries.filter((currentEntry) => currentEntry.id !== entry.id))
     }
@@ -2355,6 +2358,12 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }
 
   async function handlePhotoDelete(photo: CrossPhoto) {
+    if (photo.sourceType === 'devotion') {
+      const entry = entries.find(item => item.id === photo.sourceEntryId)
+      if (entry && photo.ownerUid === currentUser?.uid) await handleDeleteEntry(entry)
+      else setErrorMessage('묵상 원본을 불러온 뒤 다시 시도해주세요.')
+      return
+    }
     if (!currentUser || photo.ownerUid !== currentUser.uid || !window.confirm('이 십자가 사진 기록을 삭제할까요?')) {
       return
     }
@@ -2810,7 +2819,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                       <h3 id="cross-title">오늘의 십자가</h3>
                     </div>
                   </div>
-                  <p className="faith-muted">일상에서 만난 십자가를 사진으로 나눠보세요.</p>
+                  <p className="faith-muted">십자가 그림과 전체 공개 묵상을 함께 나눠보세요.</p>
                   {publicCrossPhotos.length ? (
                     <div className="faith-feed-list">
                       {visiblePublicCrossPhotos.map((photo) => {
@@ -2827,6 +2836,12 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                               canManage={photo.ownerUid === currentUser?.uid}
                               onDelete={() => void handlePhotoDelete(photo)}
                               onEdit={() => {
+                                if (photo.sourceType === 'devotion') {
+                                  const entry = entries.find(item => item.id === photo.sourceEntryId)
+                                  if (entry) { setActiveTab('devotion'); startEdit(entry) }
+                                  else setErrorMessage('묵상 원본을 불러온 뒤 다시 시도해주세요.')
+                                  return
+                                }
                                 setEditingFeedPhotoId(photoKey)
                                 setEditingPhotoCaption(photo.caption)
                                 setEditingPhotoFile(null)
@@ -2834,12 +2849,13 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                                 setEditingPhotoUploadState(idleUploadState)
                               }}
                             />
-                            <div className="faith-photo-frame">
-                              <button aria-label="원본 사진 보기" className="faith-photo-open" type="button" onClick={() => setSelectedFeedPhotoId(photoKey)}>
-                                <img alt={photo.caption || '오늘의 십자가 사진'} src={photo.imageUrl} style={{ objectPosition: photo.objectPosition ?? '50% 50%' }} />
+                            {photo.sourceType === 'devotion' ? <p className="faith-muted">공유 묵상 · {formatDateLabel(photo.selectedDate)}</p> : null}
+                            {photo.imageUrl ? <div className="faith-photo-frame">
+                              <button aria-label={photo.sourceType === 'devotion' ? '묵상 그림 보기' : '원본 사진 보기'} className="faith-photo-open" type="button" onClick={() => setSelectedFeedPhotoId(photoKey)}>
+                                <img alt={photo.sourceType === 'devotion' ? '묵상에 첨부한 십자가 그림' : photo.caption || '오늘의 십자가 사진'} src={photo.imageUrl} style={{ objectPosition: photo.objectPosition ?? '50% 50%' }} />
                               </button>
-                            </div>
-                            {photo.caption ? <p>{photo.caption}</p> : null}
+                            </div> : null}
+                            {photo.caption ? <p style={{ whiteSpace: 'pre-wrap' }}>{photo.caption}</p> : null}
                             <ReactionRow
                               commentCount={comments.length || photo.commentCount || 0}
                               onComment={() => setExpandedPhotoId((currentId) => currentId === photoKey ? '' : photoKey)}
@@ -3003,8 +3019,9 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                     <button aria-pressed={audience === item} key={item} type="button" onClick={() => setAudience(item)}>{getAudienceLabel(item)}</button>
                   ))}
                 </div>
+                <p className="faith-helper">{audience === 'public' ? '전체 공개 묵상은 십자가 공유 탭에 게시됩니다. 공유하려면 로그인이 필요합니다.' : '이 묵상은 십자가 공유 탭에 게시되지 않습니다.'}</p>
                 <button className="faith-primary" disabled={!canSave || isSaving || isDevotionImagePreparing} type="button" onClick={() => void (devotionView === 'edit' ? handleUpdateEntry() : handleSaveEntry())}>
-                  {isSaving ? '저장 중' : '저장'}
+                  {isSaving ? '저장 중' : audience === 'public' ? '저장하고 십자가에 공유' : '저장'}
                 </button>
               </section>
             ) : null}
@@ -3067,6 +3084,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                 <p className="faith-muted">{selectedEntry.reference} · {selectedEntry.authorName ?? authorName} · {getAudienceLabel(selectedEntry.audience)}</p>
                 <blockquote>{selectedEntry.verseText}</blockquote>
                 <DevotionImage value={selectedEntry.crossImage}/>
+                {(!selectedEntry.authorUid || selectedEntry.authorUid === currentUser?.uid) ? <button className="faith-outline-button" type="button" onClick={() => { startEdit(selectedEntry); setAudience('public') }}>십자가 공유 탭에 올리기</button> : null}
                 {selectedEntry.apply ? <section><h4>오늘의 적용</h4><p>{selectedEntry.apply}</p></section> : null}
                 {selectedEntry.prayer ? <section><h4>나의 기도</h4><p>{selectedEntry.prayer}</p></section> : null}
                 {selectedEntry.mind ? <section><h4>묵상 메모</h4><p>{selectedEntry.mind}</p></section> : null}
@@ -3635,10 +3653,10 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
             <button aria-label="사진 원본 닫기" className="faith-icon-button" type="button" onClick={() => setSelectedFeedPhotoId('')}>
               <Icon name="close" />
             </button>
-            <img alt={selectedFeedPhoto.caption || '십자가 사진'} src={selectedFeedPhoto.imageUrl} />
+            {selectedFeedPhoto.imageUrl ? <img alt={selectedFeedPhoto.sourceType === 'devotion' ? '묵상에 첨부한 십자가 그림' : selectedFeedPhoto.caption || '십자가 사진'} src={selectedFeedPhoto.imageUrl} /> : null}
             <div>
               <time>{formatDateTime(selectedFeedPhoto.createdAt)}</time>
-              {selectedFeedPhoto.ownerUid === currentUser?.uid ? (
+              {selectedFeedPhoto.ownerUid === currentUser?.uid && selectedFeedPhoto.sourceType !== 'devotion' ? (
                 <>
                   <label className="faith-field">
                     <span>짧은 문장</span>
@@ -3654,7 +3672,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                   </div>
                 </>
               ) : selectedFeedPhoto.caption ? (
-                <p>{selectedFeedPhoto.caption}</p>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{selectedFeedPhoto.caption}</p>
               ) : null}
             </div>
           </article>
