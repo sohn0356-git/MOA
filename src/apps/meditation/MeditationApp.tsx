@@ -14,6 +14,7 @@ import { requestDraftNavigation } from '../suggestions/useSuggestionDraft'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFaithAuth as getFirebaseAuth, getFaithStorage as getFirebaseStorage, getFaithDb as getRealtimeDb } from '../../services/faithSession'
 import { mergeFaithRecords } from './faithRecords'
+import { normalizeDevotionFields, normalizeVerseNumbers } from './devotionEditing'
 import { FaithIcon, type FaithIconName } from './FaithIcon'
 import {
   extractHashTags,
@@ -523,7 +524,7 @@ function getAudienceLabel(audience: Audience) {
 function loadLocalEntries(): MeditationEntry[] {
   try {
     const parsed: unknown = JSON.parse(window.localStorage.getItem(LOCAL_STORAGE_KEY) ?? '[]')
-    return Array.isArray(parsed) ? parsed.filter((entry) => entry && typeof entry === 'object' && 'id' in entry) as MeditationEntry[] : []
+    return Array.isArray(parsed) ? parsed.filter((entry) => entry && typeof entry === 'object' && typeof entry.id === 'string').map(entry => ({ ...entry, ...normalizeDevotionFields(entry, getTodayKey()) })) as MeditationEntry[] : []
   } catch {
     return []
   }
@@ -787,8 +788,9 @@ async function fetchFirebasePlan(date: string, language: ScriptureLanguage) {
 }
 
 function getSelectedVerses(plan: ScripturePlan, selectedVerseNumbers: VerseKey[]) {
-  const selectedSet = new Set(selectedVerseNumbers)
-  return selectedVerseNumbers.length ? plan.verses.filter((verse) => selectedSet.has(verse.number)) : []
+  const numbers = normalizeVerseNumbers(selectedVerseNumbers)
+  const selectedSet = new Set(numbers)
+  return numbers.length ? plan.verses.filter((verse) => selectedSet.has(verse.number)) : []
 }
 
 function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: VerseKey[]) {
@@ -1542,7 +1544,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     return onValue(
       ref(getRealtimeDb(), getUserEntriesPath(currentUser.uid)),
       (snapshot) => {
-        const remoteEntries = mapList<MeditationEntry>(snapshot.val())
+        const remoteEntries = mapList<MeditationEntry>(snapshot.val()).map(entry => ({ ...entry, ...normalizeDevotionFields(entry, getTodayKey()) }))
         setEntries(remoteEntries)
         try { saveLocalEntries(remoteEntries) } catch { /* The Firebase record remains saved if the device cache is full. */ }
         setSyncState('synced')
@@ -2009,21 +2011,22 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       setErrorMessage('이 묵상은 작성한 로그인 계정에서만 수정할 수 있습니다.')
       return
     }
+    const draft = { ...entry, ...normalizeDevotionFields(entry, selectedDate) }
     setActiveTab('devotion')
-    setEditingEntry({ ...entry })
-    skipVerseReset.current = selectedDate !== entry.selectedDate
+    setEditingEntry(draft)
+    skipVerseReset.current = selectedDate !== draft.selectedDate
     setErrorMessage('')
 
     setSelectedEntryId(entry.id)
-    setSelectedDate(entry.selectedDate)
-    setSelectedVerseNumbers(entry.selectedVerseNumbers)
-    setDevotionImage(isDevotionImage(entry.crossImage) ? entry.crossImage : '')
+    setSelectedDate(draft.selectedDate)
+    setSelectedVerseNumbers(draft.selectedVerseNumbers)
+    setDevotionImage(isDevotionImage(draft.crossImage) ? draft.crossImage : '')
     setIsDevotionImagePreparing(false)
-    setMind(entry.mind)
-    setApply(entry.apply)
-    setPrayerText(entry.prayer ?? '')
-    setAudience(entry.audience)
-    setBookmarked(Boolean(entry.bookmarked))
+    setMind(draft.mind)
+    setApply(draft.apply)
+    setPrayerText(draft.prayer ?? '')
+    setAudience(draft.audience)
+    setBookmarked(Boolean(draft.bookmarked))
     setDevotionView('edit')
     requestAnimationFrame(() => {
       const editor = document.getElementById('write-title')

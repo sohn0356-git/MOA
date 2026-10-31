@@ -47,6 +47,24 @@ async function openEdit() {
   return screen.findByRole('heading', { name: '묵상 수정' })
 }
 describe('real devotion editing and activity authorship', () => {
+  it.each([undefined, null, {}])('edits and saves a Firebase record whose empty verse list is missing (%s)', async selectedVerseNumbers => {
+    const original = state.entries.original as Record<string, unknown>
+    state.entries.original = { ...original, selectedVerseNumbers }
+    if (selectedVerseNumbers === undefined) delete (state.entries.original as Record<string, unknown>).selectedVerseNumbers
+    await openEdit()
+    const memo = screen.getByRole('textbox', { name: /묵상 메모/ })
+    expect((memo as HTMLTextAreaElement).value).toBe('수정 전 묵상')
+    fireEvent.change(memo, { target: { value: '말씀 선택 없이 수정한 묵상' } })
+    fireEvent.click(screen.getByRole('button', { name: '저장' }))
+    await waitFor(() => expect(state.update).toHaveBeenCalled())
+    const payload = state.update.mock.calls.find(call => call[1]['users/owner/meditationEntries/original'])![1]['users/owner/meditationEntries/original']
+    expect(payload.selectedVerseNumbers).toEqual([])
+    expect(payload.mind).toBe('말씀 선택 없이 수정한 묵상')
+    expect(payload.verseText).toBe(original.verseText)
+    expect(payload.crossImage).toBe(image)
+    await waitFor(() => expect(screen.getAllByText('말씀 선택 없이 수정한 묵상').length).toBeGreaterThan(0))
+  })
+
   it('edits an existing AI-owned devotion with the selected AI authentication UID', async () => {
     state.user.uid = 'ai03'
     state.entries.original = { ...(state.entries.original as object), authorUid: 'ai03', authorName: 'AI 03', activityId: 'ai03' }
