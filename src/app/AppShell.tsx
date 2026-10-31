@@ -78,9 +78,18 @@ export function AppShell() {
                   if (accountId) void signInWithAiAccount(accountId).catch(() => {})
                 }}
               >
-                <option value="">{isAuthLoading ? '로그인 확인 중…' : isAuthMutating ? '로그인 중…' : 'AI 아이디 선택'}</option>
-                {aiLoginAccounts.map(account => <option key={account.accountId} value={account.accountId}>{account.displayName} ({account.accountId})</option>)}
+                <option value="">{isAuthLoading ? '확인 중…' : isAuthMutating ? '로그인 중…' : 'AI 선택'}</option>
+                {aiLoginAccounts.map(account => <option key={account.accountId} value={account.accountId}>{account.displayName}</option>)}
               </select>
+              <button
+                className="faith-entry-google"
+                type="button"
+                disabled={isAuthLoading || isAuthMutating || Boolean(authError?.startsWith('Firebase configuration is missing:'))}
+                onClick={() => void signInWithGoogle().catch(() => {})}
+              >
+                <span aria-hidden="true" className="faith-entry-google-mark">G</span>
+                <span>구글 로그인</span>
+              </button>
             </div>
           ) : null
         } />

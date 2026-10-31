@@ -21,6 +21,21 @@ afterEach(cleanup)
 beforeEach(()=>{vi.clearAllMocks();auth.user=null;auth.authError=null;auth.isAuthLoading=false;auth.isAuthMutating=false;history.replaceState(null,'','/')})
 function go(hash:string){act(()=>{window.location.hash=hash;window.dispatchEvent(new HashChangeEvent('hashchange'))})}
 describe('MOA Faith main entry',()=>{
+ it('keeps Google login next to the compact AI picker',()=>{
+  render(<AppShell/>)
+  const picker=screen.getByRole('combobox',{name:'AI 아이디 선택'})
+  const google=screen.getByRole('button',{name:'구글 로그인'})
+  expect(picker.parentElement).toBe(google.parentElement)
+  fireEvent.click(google)
+  expect(auth.signInWithGoogle).toHaveBeenCalledOnce()
+ })
+ it('disables both login methods while another sign-in is pending',()=>{
+  auth.isAuthMutating=true
+  render(<AppShell/>)
+  expect((screen.getByRole('combobox',{name:'AI 아이디 선택'}) as HTMLSelectElement).disabled).toBe(true)
+  expect((screen.getByRole('button',{name:'구글 로그인'}) as HTMLButtonElement).disabled).toBe(true)
+ })
+
  it('lets a guest select an AI account without leaving Faith',()=>{
   render(<AppShell/>)
   const picker=screen.getByRole('combobox',{name:'AI 아이디 선택'})
