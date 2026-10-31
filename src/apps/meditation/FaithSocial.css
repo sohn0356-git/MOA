@@ -1,0 +1,55 @@
+/* MOA Faith social system. Scoped to Faith; other MOA apps retain their UI. */
+.faith-screen.faith-social{--faith-primary:#7353a6;--faith-orchid:#7353a6;--faith-text:#26232c;--faith-muted:#77717f;--faith-border:#ece9ef;--faith-coral:#df766c;background:#fff;color:var(--faith-text);max-width:680px;margin:0 auto;border:0;border-radius:0;min-height:100svh;box-shadow:0 0 0 1px #eeebf1;font-size:15px;line-height:1.7}
+.faith-social .faith-header{position:sticky;top:0;z-index:25;min-height:72px;padding-block:12px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--faith-border);backdrop-filter:blur(16px);flex-wrap:wrap;gap:10px}
+.faith-social .faith-title h2{font-size:22px;letter-spacing:-.8px;font-weight:800}
+.faith-social .faith-entry-account{gap:6px;flex-wrap:wrap}
+.faith-social .faith-entry-account select,.faith-social .faith-entry-google{min-height:40px;border-color:#ece9ef;border-radius:12px;background:#faf9fc;color:#554c61;font-size:11px}
+.faith-social .faith-content{padding-top:20px}
+.faith-social .faith-stack{gap:24px}
+.faith-social .faith-feed-intro{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 20px;border-radius:20px;background:linear-gradient(120deg,#fcf2ed,#f2edf9);border:1px solid #f3e8ec}
+.faith-social-eyebrow{font-size:9px;font-weight:800;letter-spacing:1.6px;color:#9b6d87}
+.faith-social .faith-feed-intro h3{font-size:20px;letter-spacing:-.7px;margin:5px 0}
+.faith-social .faith-feed-intro p{font-size:12px;color:#817387;margin:0}
+.faith-social .faith-primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:46px;padding:12px 18px;background:#7353a6;border:0;border-radius:14px;color:white;font-weight:700;box-shadow:none}
+.faith-social .faith-feed-intro .faith-primary{flex-shrink:0;font-size:12px;padding:12px}
+.faith-social .faith-primary svg{width:18px;height:18px}
+.faith-social .faith-youtube-section{border:1px solid var(--faith-border);border-radius:16px;padding:16px;background:#faf9fc}
+.faith-social .faith-youtube-section h3{font-size:13px;margin:0 0 8px}
+.faith-social .faith-youtube-section p{font-size:12px;margin:0}
+.faith-social .faith-cross-section>.faith-section-head h3{font-size:19px;letter-spacing:-.6px}
+.faith-social .faith-cross-section>.faith-muted{font-size:12px;margin:4px 0 20px}
+.faith-social .faith-feed-list{display:flex;flex-direction:column;gap:0}
+.faith-social .faith-photo-slide{border:0;border-bottom:1px solid var(--faith-border);border-radius:0;background:#fff;box-shadow:none;padding:20px 0 24px;margin:0;display:flex;flex-direction:column;gap:12px;animation:none}
+.faith-social .faith-photo-slide:first-child{padding-top:0}
+.faith-social .faith-author-row{min-height:48px;gap:11px}
+.faith-social .faith-author-row strong{font-size:14px;font-weight:800}
+.faith-social .faith-author-row time{font-size:11px;color:#928a98}
+.faith-social .faith-photo-frame{width:100%;height:auto;aspect-ratio:auto;overflow:hidden;border-radius:16px;background:#f7f5f9;max-height:none}
+.faith-social .faith-photo-open{height:auto}
+.faith-social .faith-photo-frame img{display:block;width:100%;height:auto;max-height:720px;object-fit:contain}
+.faith-social .faith-photo-slide>.faith-muted{font-size:11px;color:#8b7b9a;margin:0}
+.faith-social .faith-photo-slide>.faith-outline-button{align-self:flex-start;min-height:36px;font-size:11px;border:1px solid #ede7f4;background:#faf7fd;color:#7353a6;border-radius:10px;padding:7px 11px}
+.faith-social .faith-feed-caption{font-size:14px;line-height:1.85;white-space:pre-wrap;margin:0;overflow-wrap:anywhere}
+.faith-social .faith-feed-caption summary{list-style:none;cursor:pointer}
+.faith-social .faith-feed-caption summary::-webkit-details-marker{display:none}
+.faith-social .faith-feed-caption summary strong{display:block;color:#8c769f;font-size:12px;font-weight:600;margin-top:8px}
+.faith-social details.faith-feed-caption[open] summary span{display:none}
+.faith-social details.faith-feed-caption[open] summary strong{font-size:0}
+.faith-social details.faith-feed-caption[open] summary strong:after{content:'접기';font-size:12px}
+.faith-social .faith-feed-caption p{margin:8px 0 0}
+.faith-social .faith-reaction-row{border:0;gap:18px;padding-top:6px}
+.faith-social .faith-reaction{min-height:44px;color:#6e6577}
+.faith-social .faith-reaction[aria-pressed=true]{color:#d66d77}
+.faith-social .faith-bottom-nav{left:50%;transform:translateX(-50%);max-width:680px;width:100%;min-height:72px;background:rgba(255,255,255,.97);border-top:1px solid var(--faith-border);box-shadow:0 -4px 24px #44345506;padding-bottom:env(safe-area-inset-bottom)}
+.faith-social .faith-bottom-nav button{min-height:62px;color:#96909c;gap:5px;font-size:10px}
+.faith-social .faith-bottom-nav button[aria-current=page]{color:#7353a6;background:transparent;font-weight:800}
+.faith-social .faith-bottom-nav svg{width:23px;height:23px}
+.faith-social .faith-photo-fab,.faith-social .faith-write-fab{left:auto;right:max(20px,calc((100vw - 640px)/2));bottom:calc(90px + env(safe-area-inset-bottom));background:#7353a6;color:white;border-radius:18px;box-shadow:0 6px 20px #7353a633}
+.faith-social .faith-panel,.faith-social .faith-compose-screen{border:1px solid var(--faith-border);border-radius:20px;background:#fff;box-shadow:none;padding:20px}
+.faith-social .faith-field input,.faith-social .faith-field textarea,.faith-social .faith-field select{border:1px solid #e7e1ec;border-radius:12px;background:#fcfbfd;padding:13px;font:inherit;width:100%;box-sizing:border-box}
+.faith-social textarea{line-height:1.85;min-height:140px}
+.faith-social .faith-prayer-post,.faith-social .faith-question-post{padding:20px 0;border:0;border-bottom:1px solid var(--faith-border);border-radius:0;box-shadow:none;background:white}
+.faith-social .faith-tabs,.faith-social .faith-underline-tabs{border-bottom:1px solid var(--faith-border);gap:16px}
+.faith-social button:focus-visible,.faith-social summary:focus-visible,.faith-social select:focus-visible{outline:3px solid #bba1d9;outline-offset:3px}
+@media(max-width:480px){.faith-social .faith-feed-intro{align-items:flex-start;padding:18px;gap:12px}.faith-social .faith-feed-intro h3{font-size:17px}.faith-social .faith-feed-intro .faith-primary{font-size:11px;padding:10px;min-height:42px}.faith-social .faith-title h2{font-size:20px}.faith-social .faith-header{gap:8px}.faith-social .faith-photo-frame{border-radius:12px}.faith-social .faith-panel{padding:16px}}
+@media(prefers-reduced-motion:reduce){.faith-social *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}

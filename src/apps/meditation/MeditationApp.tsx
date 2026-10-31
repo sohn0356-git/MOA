@@ -5,6 +5,7 @@ import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
 import './QuestionAnswers.css'
+import './FaithSocial.css'
 import { DevotionImage, DevotionImagePicker } from './DevotionImagePicker'
 import { isDevotionImage } from './devotionImage'
 import { deleteSharedDevotion, persistSharedDevotion } from './devotionSharing'
@@ -2742,7 +2743,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }
 
   return (
-    <section className="sub-app faith-screen">
+    <section className="sub-app faith-screen faith-social">
       <header className="faith-header">
         {activeTab === 'feed' || (activeTab === 'qna' && qnaView === 'list') ? (
           <div className="faith-title faith-title-brand">
@@ -2868,6 +2869,10 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
               </section>
             ) : (
               <>
+                <section className="faith-feed-intro" aria-label="오늘의 나눔">
+                  <div><span className="faith-social-eyebrow">FAITH, IN EVERYDAY LIFE</span><h3>작은 묵상, 함께하는 하루</h3><p>말씀에서 시작된 마음을 나눠요.</p></div>
+                  <button className="faith-primary" type="button" onClick={() => { setActiveTab('devotion'); setDevotionView('write') }}><Icon name="edit" />묵상 나누기</button>
+                </section>
                 <section className="faith-youtube-section" aria-labelledby="lunch-praise-title">
                   <h3 id="lunch-praise-title">오찬추</h3>
                   {isTrackLoading ? (
@@ -2885,7 +2890,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                       />
                     </>
                   ) : (
-                    <EmptyState>중앙 설정에 YouTube videoId 또는 링크가 아직 없습니다.</EmptyState>
+                    <p className="faith-muted">오늘의 찬양을 준비하고 있어요.</p>
                   )}
                 </section>
 
@@ -2934,7 +2939,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                                 <img alt={photo.sourceType === 'devotion' ? '묵상에 첨부한 십자가 그림' : photo.caption || '오늘의 십자가 사진'} src={photo.imageUrl} style={{ objectPosition: photo.objectPosition ?? '50% 50%' }} />
                               </button>
                             </div> : null}
-                            {photo.caption ? <p style={{ whiteSpace: 'pre-wrap' }}>{photo.caption}</p> : null}
+                            {photo.caption ? <FeedCaption text={photo.caption} /> : null}
                             <ReactionRow
                               commentCount={comments.length || photo.commentCount || 0}
                               onComment={() => setExpandedPhotoId((currentId) => currentId === photoKey ? '' : photoKey)}
@@ -4008,3 +4013,8 @@ function PhotoComments({
   )
 }
 
+
+function FeedCaption({ text }: { text: string }) {
+  if (text.length <= 180) return <p className="faith-feed-caption">{text}</p>
+  return <details className="faith-feed-caption"><summary><span>{text.slice(0, 150).trimEnd()}…</span><strong>묵상 더 읽기</strong></summary><p>{text}</p></details>
+}
