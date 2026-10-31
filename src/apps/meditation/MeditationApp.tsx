@@ -2022,6 +2022,7 @@ export function MeditationApp({ entryActions, activityId = '' }: { entryActions?
     if (cached) { startEdit(cached); return }
     try {
       const snapshot = await get(ref(getRealtimeDb(), getUserEntriesPath(currentUser.uid) + '/' + photo.sourceEntryId))
+      if (getFirebaseAuth().currentUser?.uid !== currentUser.uid) return
       const value = snapshot.val() as Omit<MeditationEntry, 'id'> | null
       if (!value) { setErrorMessage('원본 묵상을 찾을 수 없습니다. 새로고침 후 다시 확인해주세요.'); return }
       const entry = { ...value, id: photo.sourceEntryId }
