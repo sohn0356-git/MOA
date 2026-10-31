@@ -38,7 +38,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 async function openEdit() {
   render(<MeditationApp activityId="ai03"/>)
-  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상', exact: true }))
+  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상' }))
   fireEvent.click(screen.getByRole('tab', { name: '내 묵상' }))
   fireEvent.click(await screen.findByText('수정 전 묵상'))
   fireEvent.click(screen.getByRole('button', { name: '묵상 수정' }))
@@ -50,7 +50,7 @@ describe('real devotion editing and activity authorship', () => {
     const memo = screen.getByRole('textbox', { name: /묵상 메모/ })
     expect((memo as HTMLTextAreaElement).value).toBe('수정 전 묵상')
     fireEvent.change(memo, { target: { value: '수정한 묵상 본문' } })
-    fireEvent.click(screen.getByRole('button', { name: '저장', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '저장' }))
     await waitFor(() => expect(state.update).toHaveBeenCalled())
     const payload = state.update.mock.calls.find(call => call[1]['users/owner/meditationEntries/original'])![1]['users/owner/meditationEntries/original']
     expect(payload.mind).toBe('수정한 묵상 본문')
@@ -65,18 +65,18 @@ describe('real devotion editing and activity authorship', () => {
     await openEdit()
     state.update.mockRejectedValueOnce(new Error('저장 연결 실패'))
     fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: '다시 저장할 묵상' } })
-    fireEvent.click(screen.getByRole('button', { name: '저장', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '저장' }))
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('저장 연결 실패'))
     expect((screen.getByRole('textbox', { name: /묵상 메모/ }) as HTMLTextAreaElement).value).toBe('다시 저장할 묵상')
   })
   it('uses the selected AI activity name for a new entry without changing the authenticated owner', async () => {
     state.entries = {}
     render(<MeditationApp activityId="ai03"/>)
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상', exact: true }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상' }))
     fireEvent.click(screen.getByRole('button', { name: '묵상 쓰기' }))
     fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: 'AI 03으로 쓴 묵상' } })
     fireEvent.click(screen.getByRole('button', { name: '나만 보기' }))
-    fireEvent.click(screen.getByRole('button', { name: '저장', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '저장' }))
     await waitFor(() => expect(state.update).toHaveBeenCalled())
     const payload = state.update.mock.calls.find(call => call[1]['users/owner/meditationEntries/new-entry'])![1]['users/owner/meditationEntries/new-entry']
     expect(payload.authorUid).toBe('owner')
