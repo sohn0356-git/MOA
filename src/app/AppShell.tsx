@@ -8,6 +8,7 @@ import { AppGrid } from '../components/AppGrid'
 import { AuthGate } from '../components/AuthGate'
 import { AppUpdateBanner } from '../components/AppUpdateBanner'
 import { useAuth } from '../hooks/useAuth'
+import { useFaithActivity } from '../hooks/useFaithActivity'
 import { useAppUpdate } from '../hooks/useAppUpdate'
 
 function entryRoute() {
@@ -17,9 +18,8 @@ function entryRoute() {
 
 export function AppShell() {
   const [activeRoute, setActiveRoute] = useState(entryRoute)
-  const [activityId, setActivityId] = useState(() => {
-    try { const saved = localStorage.getItem('moa.faith.activityId') || ''; return aiLoginAccounts.some(account => account.accountId === saved) ? saved : '' } catch { return '' }
-  })
+  const activity = useFaithActivity()
+  const activityId = activity.activityId
   const {
     authError,
     isAuthLoading,
@@ -54,6 +54,10 @@ export function AppShell() {
     window.location.hash = route.replace(/^#/, '')
   }
 
+  async function handleSignOut() {
+    try { await activity.clearActivity(); if (user) await signOutUser() } catch { /* The corresponding auth hook displays the failure. */ }
+  }
+
   const authProps = {
     authError, isAuthLoading, isAuthMutating, user,
     onAiSignIn: signInWithAiAccount,
@@ -67,7 +71,9 @@ export function AppShell() {
       <main className="app-shell app-shell-subapp app-shell-faith" aria-label="MOA Faith 메인">
         {hasUpdate ? <AppUpdateBanner isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
         {authError ? <p className="faith-entry-error" role="alert">{authError}</p> : null}
-        <MeditationApp activityId={activityId} entryActions={
+        {activity.error ? <p className="faith-entry-error" role="alert">{activity.error}</p> : null}
+        {activity.isLoading || activity.isSwitching ? <p role="status" className="faith-activity-progress">AI 권한을 전환하고 있습니다…</p> : null}
+        <MeditationApp activityId={activityId} activityBusy={activity.isLoading || activity.isSwitching || isAuthMutating} entryActions={
           (
             <div className="faith-entry-account">
               <label className="faith-entry-label" htmlFor="faith-ai-account">활동 아이디</label>
@@ -75,24 +81,21 @@ export function AppShell() {
                 id="faith-ai-account"
                 aria-label="활동 아이디 선택"
                 value={activityId}
-                onChange={event => {
-                  const next = event.currentTarget.value
-                  setActivityId(next)
-                  try { localStorage.setItem('moa.faith.activityId', next) } catch { /* The selected identity remains available for this visit. */ }
-                }}
+                disabled={activity.isLoading || activity.isSwitching || isAuthMutating}
+                onChange={event => { void activity.selectActivity(event.currentTarget.value).catch(() => {}) }}
               >
                 <option value="">내 아이디</option>
                 {aiLoginAccounts.map(account => <option key={account.accountId} value={account.accountId}>{account.displayName}</option>)}
               </select>
-              {user ? <button className="faith-entry-google" type="button" disabled={isAuthMutating} onClick={() => void signOutUser().catch(() => {})}>로그아웃</button> : <button
-                className="faith-entry-google"
-                type="button"
-                disabled={isAuthLoading || isAuthMutating || Boolean(authError?.startsWith('Firebase configuration is missing:'))}
-                onClick={() => void signInWithGoogle().catch(() => {})}
-              >
-                <span aria-hidden="true" className="faith-entry-google-mark">G</span>
-                <span>구글 로그인</span>
-              </button>}
+              {(!user || aiLoginAccounts.some(account => account.email === user.email)) ? <button
+                className="faith-entry-google" type="button"
+                disabled={isAuthLoading || isAuthMutating || activity.isLoading || activity.isSwitching || Boolean(authError?.startsWith('Firebase configuration is missing:'))}
+                onClick={() => { void (async () => { await signInWithGoogle(); await activity.clearActivity() })().catch(() => {}) }}
+              ><span aria-hidden="true" className="faith-entry-google-mark">G</span><span>구글 로그인</span></button> : null}
+              {(user || activityId) ? <button className="faith-entry-google" type="button"
+                disabled={isAuthMutating || activity.isLoading || activity.isSwitching}
+                onClick={() => void handleSignOut()}
+              >로그아웃</button> : null}
             </div>
           )
         } />
@@ -123,7 +126,7 @@ export function AppShell() {
             <p>{user?.displayName || user?.email || 'MOA'} 계정으로 로그인되어 있습니다.</p>
             <a className="back-button" href="#/ai-city">AI City로 돌아가기</a>
             <a className="back-button" href="#/apps">MOA 앱 열기</a>
-            <button className="logout-button" disabled={isAuthMutating} type="button" onClick={() => void signOutUser()}>로그아웃</button>
+            <button className="logout-button" disabled={isAuthMutating} type="button" onClick={() => void handleSignOut()}>로그아웃</button>
           </section>
         </main>
       </AuthGate>
@@ -178,7 +181,7 @@ export function AppShell() {
             className="logout-button"
             disabled={isAuthMutating}
             type="button"
-            onClick={() => void signOutUser()}
+            onClick={() => void handleSignOut()}
           >
             로그아웃
           </button>

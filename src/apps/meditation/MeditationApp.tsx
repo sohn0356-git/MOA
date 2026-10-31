@@ -12,7 +12,8 @@ import { useScripturePlan } from './useScripturePlan'
 import { SuggestionsApp } from '../suggestions/SuggestionsApp'
 import { requestDraftNavigation } from '../suggestions/useSuggestionDraft'
 import { aiLoginAccounts } from '../../data/aiAccounts'
-import { getFirebaseAuth, getFirebaseStorage, getRealtimeDb } from '../../services/firebase'
+import { getFaithAuth as getFirebaseAuth, getFaithStorage as getFirebaseStorage, getFaithDb as getRealtimeDb } from '../../services/faithSession'
+import { mergeFaithRecords } from './faithRecords'
 import { FaithIcon, type FaithIconName } from './FaithIcon'
 import {
   extractHashTags,
@@ -1200,7 +1201,7 @@ function UploadProgress({
   )
 }
 
-export function MeditationApp({ entryActions, activityId = '' }: { entryActions?: ReactNode; activityId?: string } = {}) {
+export function MeditationApp({ entryActions, activityId = '', activityBusy = false }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean } = {}) {
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
@@ -1296,6 +1297,7 @@ export function MeditationApp({ entryActions, activityId = '' }: { entryActions?
   const [editingFeedPhotoId, setEditingFeedPhotoId] = useState('')
   const [editingPhotoCaption, setEditingPhotoCaption] = useState('')
   const [faithProfile, setFaithProfile] = useState<FaithProfile | null>(null)
+  const profileOwner = useRef<string | null>(null)
   const [profileView, setProfileView] = useState<'records' | 'edit'>('records')
   const [profileDraftName, setProfileDraftName] = useState('')
   const [profileDraftBio, setProfileDraftBio] = useState('')
@@ -1318,18 +1320,18 @@ export function MeditationApp({ entryActions, activityId = '' }: { entryActions?
   const aiPrayerRequests = useMemo(() => getAiPrayerRequests(selectedDate), [selectedDate])
   const aiFaithQuestions = useMemo(() => getAiFaithQuestions(selectedDate), [selectedDate])
   const visibleEntries = useMemo(() => (
-    isAiMode ? [...entries, ...aiDevotionEntries].sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt)) : entries
+    isAiMode ? mergeFaithRecords(entries, aiDevotionEntries) : entries
   ), [aiDevotionEntries, entries, isAiMode])
   const visiblePrayerRequests = useMemo(() => (
-    isAiMode ? [...prayerRequests, ...aiPrayerRequests].sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt)) : prayerRequests
+    isAiMode ? mergeFaithRecords(prayerRequests, aiPrayerRequests) : prayerRequests
   ), [aiPrayerRequests, isAiMode, prayerRequests])
   const visibleFaithQuestions = useMemo(() => (
-    isAiMode ? [...faithQuestions, ...aiFaithQuestions].sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt)) : faithQuestions
+    isAiMode ? mergeFaithRecords(faithQuestions, aiFaithQuestions) : faithQuestions
   ), [aiFaithQuestions, faithQuestions, isAiMode])
   const selectedVerses = useMemo(() => getSelectedVerses(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
   const selectedVerseText = useMemo(() => getSelectedVerseText(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
   const currentUser = getFirebaseAuth().currentUser
-  const currentProfile = faithProfile ?? getDefaultProfile(currentUser)
+  const currentProfile = profileOwner.current === currentUser?.uid ? faithProfile ?? getDefaultProfile(currentUser) : getDefaultProfile(currentUser)
   const activeIdentity = aiLoginAccounts.find(account => account.accountId === activityId)
   const authorName = activeIdentity?.displayName || currentProfile.displayName
   const authorAvatarUrl = activeIdentity ? '' : currentProfile.avatarUrl
@@ -1532,6 +1534,10 @@ export function MeditationApp({ entryActions, activityId = '' }: { entryActions?
       return undefined
     }
 
+    setEntries([])
+    setEditingEntry(null)
+    setSelectedEntryId('')
+    setDevotionView('read')
     setSyncState('syncing')
     return onValue(
       ref(getRealtimeDb(), getUserEntriesPath(currentUser.uid)),
@@ -1562,10 +1568,23 @@ export function MeditationApp({ entryActions, activityId = '' }: { entryActions?
       return undefined
     }
 
+    setCrossPhotos([])
+    setPhotoReactionMap({})
+    setPhotoComments({})
+    setPrayerRequests([])
+    setPrayerComments({})
+    setPrayerReactionMap({})
+    setLegacyFaithQuestions([])
+    setLegacyQuestionAnswers({})
+    setFaithProfile(null)
+    setProfileView('records')
+    setPrayerView('list')
+    setQnaView('list')
     const db = getRealtimeDb()
     const subscriptions = [
       onValue(ref(db, getUserCrossPhotosPath(currentUser.uid)), (snapshot) => setCrossPhotos(mapList<CrossPhoto>(snapshot.val()))),
       onValue(ref(db, getUserFaithProfilePath(currentUser.uid)), (snapshot) => {
+        profileOwner.current = currentUser.uid
         const value = snapshot.val() as Partial<FaithProfile> | null
         const fallback = getDefaultProfile(currentUser)
         const nextProfile = {
@@ -2797,7 +2816,7 @@ export function MeditationApp({ entryActions, activityId = '' }: { entryActions?
         )}
       </header>
 
-      <main className="faith-content">
+      <main className="faith-content" inert={activityBusy}>
         <StatusLine error={errorMessage} status={statusMessage} />
 
         {activeTab === 'feed' ? (
@@ -3834,7 +3853,7 @@ export function MeditationApp({ entryActions, activityId = '' }: { entryActions?
       ) : null}
 
       {activeTab === 'qna' && qnaView === 'write' ? null : (
-        <nav className="faith-bottom-nav" aria-label="MOA Faith">
+        <nav className="faith-bottom-nav" aria-label="MOA Faith" inert={activityBusy}>
           {tabs.map((tab) => (
             <button aria-current={activeTab === tab.id ? 'page' : undefined} key={tab.id} type="button" onClick={() => handleTabChange(tab.id)}>
               <Icon name={tab.icon} />

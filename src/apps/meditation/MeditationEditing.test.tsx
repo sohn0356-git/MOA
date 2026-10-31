@@ -11,12 +11,13 @@ const state = vi.hoisted(() => ({
 vi.mock('../../services/firebase', () => ({
   getFirebaseAuth: () => ({ currentUser: state.user }), getRealtimeDb: () => ({}), getFirebaseStorage: () => ({}),
 }))
+vi.mock('../../services/faithSession', () => ({ getFaithAuth: () => ({ currentUser: state.user }), getFaithDb: () => ({}), getFaithStorage: () => ({}) }))
 vi.mock('firebase/auth', () => ({ updateProfile: vi.fn() }))
 vi.mock('firebase/storage', () => ({ deleteObject: vi.fn(), getDownloadURL: vi.fn(), ref: vi.fn(), uploadBytesResumable: vi.fn() }))
 vi.mock('firebase/database', () => ({
   ref: (_db: unknown, path = '') => path,
   onValue: (path: string, callback: (snapshot: { val: () => unknown }) => void) => {
-    callback({ val: () => path === 'users/owner/meditationEntries' ? state.entries : null })
+    callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : null })
     return () => {}
   },
   get: vi.fn(async () => ({ val: () => null })), push: () => ({ key: 'new-entry' }),
@@ -26,6 +27,7 @@ vi.mock('./useScripturePlan', () => ({ useScripturePlan: () => ({ remotePlan: st
 const image = 'data:image/png;base64,AAAA'
 beforeEach(() => {
   localStorage.clear()
+  state.user.uid = 'owner'
   state.update.mockReset().mockResolvedValue(undefined)
   state.entries = { original: {
     authorUid: 'owner', authorName: 'AI 01', activityId: 'ai01',
@@ -45,6 +47,18 @@ async function openEdit() {
   return screen.findByRole('heading', { name: '묵상 수정' })
 }
 describe('real devotion editing and activity authorship', () => {
+  it('edits an existing AI-owned devotion with the selected AI authentication UID', async () => {
+    state.user.uid = 'ai03'
+    state.entries.original = { ...(state.entries.original as object), authorUid: 'ai03', authorName: 'AI 03', activityId: 'ai03' }
+    await openEdit()
+    fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: 'AI 03 기존 글 수정' } })
+    fireEvent.click(screen.getByRole('button', { name: '저장' }))
+    await waitFor(() => expect(state.update).toHaveBeenCalled())
+    const payload = state.update.mock.calls.find(call => call[1]['users/ai03/meditationEntries/original'])![1]['users/ai03/meditationEntries/original']
+    expect(payload.authorUid).toBe('ai03')
+    expect(payload.mind).toBe('AI 03 기존 글 수정')
+  })
+
   it('opens an older record, preserves its verse and cross picture, and immediately shows the saved edit', async () => {
     await openEdit()
     const memo = screen.getByRole('textbox', { name: /묵상 메모/ })

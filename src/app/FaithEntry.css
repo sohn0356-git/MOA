@@ -8,4 +8,4 @@
 .faith-entry-error{padding:12px 16px;margin:0;color:#8d352c;background:#fff0eb;font-size:13px;overflow-wrap:anywhere}
 @media(max-width:400px){.faith-header:has(.faith-entry-account){gap:6px}.faith-header:has(.faith-entry-account) .faith-title-brand{gap:5px;min-width:0}.faith-header:has(.faith-entry-account) .faith-title-brand h2{font-size:17px;white-space:nowrap}.faith-header:has(.faith-entry-account) .faith-brand-mark{width:25px;height:25px;flex-shrink:0}.faith-entry-account select{width:76px;padding-left:6px;font-size:10px}.faith-entry-google{padding:6px;font-size:10px;gap:4px}}
 
-.faith-header:has(.faith-entry-account){flex-wrap:wrap;height:auto;min-height:56px;row-gap:6px;padding-top:8px;padding-bottom:8px}.faith-entry-account select{width:88px}.faith-entry-account{max-width:100%}@media(max-width:400px){.faith-entry-account select{width:76px}}
+.faith-activity-progress{padding:8px 16px;margin:0;background:#f3f5ed;color:#53634d;font-size:12px}
