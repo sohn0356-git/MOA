@@ -1203,7 +1203,7 @@ function UploadProgress({
   )
 }
 
-export function MeditationApp({ entryActions, activityId = '', activityBusy = false }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean } = {}) {
+export function MeditationApp({ entryActions, activityId = '', activityBusy = false, onActivityChange }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown> } = {}) {
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
@@ -2055,7 +2055,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
   async function handleSaveEntry() {
     if (audience === 'public' && !currentUser) { setErrorMessage('십자가 공유 탭에 올리려면 먼저 로그인해주세요.'); return }
-    if (!canSave || isSaving || isDevotionImagePreparing) {
+    if (!canSave || isSaving || isDevotionImagePreparing || activityBusy) {
       return
     }
 
@@ -3059,6 +3059,15 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   </div>
                   <button className="faith-text-button" type="button" onClick={() => setDevotionView(devotionView === 'edit' ? 'detail' : 'read')}>취소</button>
                 </div>
+                {devotionView === 'write' && onActivityChange ? <label className="faith-field">
+                  작성자
+                  <select aria-label="새 묵상 작성자" value={activityId} disabled={activityBusy || isSaving || isDevotionImagePreparing}
+                    onChange={event => { void onActivityChange(event.currentTarget.value).catch(() => {}) }}>
+                    <option value="">내 아이디</option>
+                    {aiLoginAccounts.map(account => <option key={account.accountId} value={account.accountId}>{account.displayName}</option>)}
+                  </select>
+                  <small>{activityBusy ? '작성자 권한을 확인하고 있습니다…' : `${authorName} 이름으로 게시됩니다. 십자가 그림도 함께 첨부할 수 있습니다.`}</small>
+                </label> : null}
                 <section className={selectedVerses.length || (devotionView === 'edit' && selectedEntry?.verseText) ? 'faith-focus' : 'faith-verse-empty'}>
                   {selectedVerses.length || (devotionView === 'edit' && selectedEntry?.verseText) ? (
                     <>
@@ -3099,7 +3108,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   ))}
                 </div>
                 <p className="faith-helper">{audience === 'public' ? '전체 공개 묵상은 십자가 공유 탭에 게시됩니다. 공유하려면 로그인이 필요합니다.' : '이 묵상은 십자가 공유 탭에 게시되지 않습니다.'}</p>
-                <button className="faith-primary" disabled={!canSave || isSaving || isDevotionImagePreparing} type="button" onClick={() => void (devotionView === 'edit' ? handleUpdateEntry() : handleSaveEntry())}>
+                <button className="faith-primary" disabled={!canSave || isSaving || isDevotionImagePreparing || activityBusy} type="button" onClick={() => void (devotionView === 'edit' ? handleUpdateEntry() : handleSaveEntry())}>
                   {isSaving ? '저장 중' : audience === 'public' ? '저장하고 십자가에 공유' : '저장'}
                 </button>
               </section>

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest"
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MeditationApp } from './MeditationApp'
@@ -116,4 +117,15 @@ describe('real devotion editing and activity authorship', () => {
     expect(payload.authorName).toBe('AI 03')
     expect(state.user.uid).toBe('owner')
   })
+})
+
+it('selects an AI author inside the composer and blocks posting during authentication', async () => {
+  const selectActivity = vi.fn().mockResolvedValue(undefined)
+  render(<MeditationApp activityId="ai01" activityBusy onActivityChange={selectActivity}/>)
+  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상' }))
+  fireEvent.click(screen.getByRole('button', { name: '묵상 쓰기' }))
+  fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: '보존할 초안' } })
+  expect(screen.getByRole('combobox', { name: '새 묵상 작성자' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: '저장하고 십자가에 공유' })).toBeDisabled()
+  expect(state.update).not.toHaveBeenCalled()
 })

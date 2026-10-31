@@ -73,7 +73,7 @@ export function AppShell() {
         {authError ? <p className="faith-entry-error" role="alert">{authError}</p> : null}
         {activity.error ? <p className="faith-entry-error" role="alert">{activity.error}</p> : null}
         {activity.isLoading || activity.isSwitching ? <p role="status" className="faith-activity-progress">AI 권한을 전환하고 있습니다…</p> : null}
-        <MeditationApp activityId={activityId} activityBusy={activity.isLoading || activity.isSwitching || isAuthMutating} entryActions={
+        <MeditationApp onActivityChange={activity.selectActivity} activityId={activityId} activityBusy={activity.isLoading || activity.isSwitching || isAuthMutating} entryActions={
           (
             <div className="faith-entry-account">
               <label className="faith-entry-label" htmlFor="faith-ai-account">활동 아이디</label>
