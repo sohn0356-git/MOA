@@ -2924,6 +2924,11 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                               }}
                             />
                             {photo.sourceType === 'devotion' ? <p className="faith-muted">공유 묵상 · {formatDateLabel(photo.selectedDate)}</p> : null}
+                            {photo.sourceType === 'devotion' && currentUser && photo.ownerUid === currentUser.uid ? (
+                              <button className="faith-outline-button" type="button" onClick={() => void openSharedDevotionEditor(photo)}>
+                                <Icon name="edit" />{photo.imageUrl ? '십자가 그림 변경 · 묵상 수정' : '십자가 그림 추가 · 묵상 수정'}
+                              </button>
+                            ) : null}
                             {photo.imageUrl ? <div className="faith-photo-frame">
                               <button aria-label={photo.sourceType === 'devotion' ? '묵상 그림 보기' : '원본 사진 보기'} className="faith-photo-open" type="button" onClick={() => setSelectedFeedPhotoId(photoKey)}>
                                 <img alt={photo.sourceType === 'devotion' ? '묵상에 첨부한 십자가 그림' : photo.caption || '오늘의 십자가 사진'} src={photo.imageUrl} style={{ objectPosition: photo.objectPosition ?? '50% 50%' }} />
