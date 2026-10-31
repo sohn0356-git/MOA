@@ -3,7 +3,7 @@ import { isDevotionImage } from './devotionImage'
 export type ShareableDevotion = {
   id: string; audience: 'private' | 'public' | 'group'; mind: string; apply: string; prayer?: string
   verseText: string; reference: string; selectedDate: string; crossImage?: string
-  authorName?: string; authorAvatarUrl?: string
+  authorName?: string; authorAvatarUrl?: string; activityId?: string
 }
 export function devotionShareId(uid: string, entryId: string) { return 'devotion_' + uid + '_' + entryId }
 export function devotionShareUpdates(uid: string, entry: ShareableDevotion, previous: { createdAt?: string } | null, now = new Date().toISOString()): Record<string, unknown> {
@@ -14,7 +14,7 @@ export function devotionShareUpdates(uid: string, entry: ShareableDevotion, prev
     entry.apply.trim() ? '오늘의 적용\n' + entry.apply.trim() : '', entry.prayer?.trim() ? '기도\n' + entry.prayer.trim() : '',
   ].filter(Boolean).join('\n\n')
   const payload = {
-    ownerUid: uid, authorUid: uid, authorName: entry.authorName || 'MOA 사용자', authorAvatarUrl: entry.authorAvatarUrl || '',
+    ownerUid: uid, authorUid: uid, activityId: entry.activityId || '', authorName: entry.authorName || 'MOA 사용자', authorAvatarUrl: entry.authorAvatarUrl || '',
     sourceType: 'devotion', sourceEntryId: entry.id, publicId: id,
     createdAt: previous?.createdAt || now, selectedDate: entry.selectedDate, updatedAt: now,
     caption, imageUrl: isDevotionImage(entry.crossImage) ? entry.crossImage : '', storagePath: '',

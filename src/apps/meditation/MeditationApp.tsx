@@ -68,6 +68,7 @@ type ScriptureCache = {
 }
 
 type MeditationEntry = {
+  activityId?: string
   crossImage?: string
   id: string
   apply: string
@@ -89,6 +90,7 @@ type MeditationEntry = {
 }
 
 type CrossPhoto = {
+  activityId?: string
   sourceType?: 'devotion'
   sourceEntryId?: string
   id: string
@@ -110,6 +112,7 @@ type CrossPhoto = {
 }
 
 type CrossPhotoComment = {
+  activityId?: string
   id: string
   authorAvatarUrl?: string
   authorName: string
@@ -128,6 +131,7 @@ type LunchPraiseTrack = {
 }
 
 type PrayerComment = {
+  activityId?: string
   id: string
   authorAvatarUrl?: string
   authorName: string
@@ -138,6 +142,7 @@ type PrayerComment = {
 }
 
 type QuestionAnswer = {
+  activityId?: string
   id: string
   authorAvatarUrl?: string
   authorName: string
@@ -148,6 +153,7 @@ type QuestionAnswer = {
 }
 
 type PrayerRequest = {
+  activityId?: string
   id: string
   authorAvatarUrl?: string
   authorName?: string
@@ -162,6 +168,7 @@ type PrayerRequest = {
 }
 
 type FaithQuestion = {
+  activityId?: string
   legacyId?: string
   id: string
   answerCount?: number
@@ -1193,7 +1200,7 @@ function UploadProgress({
   )
 }
 
-export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {}) {
+export function MeditationApp({ entryActions, activityId = '' }: { entryActions?: ReactNode; activityId?: string } = {}) {
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
@@ -1221,6 +1228,8 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   const [entries, setEntries] = useState<MeditationEntry[]>(loadLocalEntries)
   const [isSaving, setIsSaving] = useState(false)
   const [selectedEntryId, setSelectedEntryId] = useState('')
+  const [editingEntry, setEditingEntry] = useState<MeditationEntry | null>(null)
+  const skipVerseReset = useRef(false)
   const [searchTerm, setSearchTerm] = useState('')
   const filterBookmarked = false
   const [statusMessage, setStatusMessage] = useState('')
@@ -1321,11 +1330,12 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   const selectedVerseText = useMemo(() => getSelectedVerseText(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
   const currentUser = getFirebaseAuth().currentUser
   const currentProfile = faithProfile ?? getDefaultProfile(currentUser)
-  const authorName = currentProfile.displayName
-  const authorAvatarUrl = currentProfile.avatarUrl
+  const activeIdentity = aiLoginAccounts.find(account => account.accountId === activityId)
+  const authorName = activeIdentity?.displayName || currentProfile.displayName
+  const authorAvatarUrl = activeIdentity ? '' : currentProfile.avatarUrl
   const canSave = devotionView === 'edit' ? Boolean(mind.trim() || apply.trim() || prayerText.trim()) : Boolean(mind.trim())
   const mindCharacterCount = getCharacterCount(mind)
-  const selectedEntry = visibleEntries.find((entry) => entry.id === selectedEntryId) ?? null
+  const selectedEntry = devotionView === 'edit' && editingEntry ? editingEntry : visibleEntries.find((entry) => entry.id === selectedEntryId) ?? null
   const todayKey = currentTodayKey
   const allQuestionTags = useMemo(() => normalizeFaithTags(visibleFaithQuestions.flatMap((question) => question.tags)), [visibleFaithQuestions])
   const tagSuggestions = useMemo(
@@ -1508,6 +1518,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }, [isLicenseOpen, licenseText])
 
   useEffect(() => {
+    if (skipVerseReset.current) { skipVerseReset.current = false; return }
     setSelectedVerseNumbers([])
   }, [selectedDate, scriptureLanguage])
 
@@ -1515,6 +1526,9 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   useEffect(() => {
     if (!currentUser) {
       setSyncState('local')
+      setEntries(current => current.filter(entry => !entry.authorUid))
+      setEditingEntry(null)
+      setDevotionView('read')
       return undefined
     }
 
@@ -1850,6 +1864,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     const updates: Record<string, string> = {}
 
     crossPhotos.forEach((photo) => {
+      if (photo.activityId) return
       updates[`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/authorName`] = displayName
       updates[`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/authorAvatarUrl`] = avatarUrl
       if (photo.publicId) {
@@ -1859,14 +1874,14 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     })
 
     prayerRequests.forEach((request) => {
-      if (request.authorUid === currentUser.uid || !request.authorUid) {
+      if (!request.activityId && (request.authorUid === currentUser.uid || !request.authorUid)) {
         updates[`${getUserPrayerRequestsPath(currentUser.uid)}/${request.id}/authorName`] = displayName
         updates[`${getUserPrayerRequestsPath(currentUser.uid)}/${request.id}/authorAvatarUrl`] = avatarUrl
       }
     })
 
     faithQuestions.forEach((question) => {
-      if (question.authorUid === currentUser.uid || !question.authorUid) {
+      if (!question.activityId && (question.authorUid === currentUser.uid || !question.authorUid)) {
         updates[`${getQuestionPath(question)}/authorName`] = displayName
         updates[`${getQuestionPath(question)}/authorAvatarUrl`] = avatarUrl
       }
@@ -1874,7 +1889,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
 
     Object.entries(prayerComments).forEach(([prayerId, comments]) => {
       comments.forEach((comment) => {
-        if (comment.authorUid === currentUser.uid) {
+        if (!comment.activityId && comment.authorUid === currentUser.uid) {
           updates[`${getUserPrayerCommentsPath(currentUser.uid, prayerId)}/${comment.id}/authorName`] = displayName
           updates[`${getUserPrayerCommentsPath(currentUser.uid, prayerId)}/${comment.id}/authorAvatarUrl`] = avatarUrl
         }
@@ -1883,7 +1898,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
 
     Object.entries(questionAnswers).forEach(([questionId, answers]) => {
       answers.forEach((answer) => {
-        if (answer.authorUid === currentUser.uid) {
+        if (!answer.activityId && answer.authorUid === currentUser.uid) {
           updates[`${questionId.startsWith('legacy_') ? getUserQuestionAnswersPath(currentUser.uid, questionId.slice(7)) : 'faithQuestionAnswers/' + questionId}/${answer.id}/authorName`] = displayName
           updates[`${questionId.startsWith('legacy_') ? getUserQuestionAnswersPath(currentUser.uid, questionId.slice(7)) : 'faithQuestionAnswers/' + questionId}/${answer.id}/authorAvatarUrl`] = avatarUrl
         }
@@ -1959,6 +1974,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
   }
 
   function startWriting() {
+    setEditingEntry(null)
     setDevotionImage('')
     setIsDevotionImagePreparing(false)
     setMind('')
@@ -1971,8 +1987,13 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
 
   function startEdit(entry: MeditationEntry) {
     if (entry.authorUid && entry.authorUid !== currentUser?.uid) {
+      setErrorMessage('이 묵상은 작성한 로그인 계정에서만 수정할 수 있습니다.')
       return
     }
+    setActiveTab('devotion')
+    setEditingEntry({ ...entry })
+    skipVerseReset.current = selectedDate !== entry.selectedDate
+    setErrorMessage('')
 
     setSelectedEntryId(entry.id)
     setSelectedDate(entry.selectedDate)
@@ -1985,6 +2006,28 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     setAudience(entry.audience)
     setBookmarked(Boolean(entry.bookmarked))
     setDevotionView('edit')
+    requestAnimationFrame(() => {
+      const editor = document.getElementById('write-title')
+      editor?.scrollIntoView?.({ block: 'start' })
+      editor?.focus({ preventScroll: true })
+    })
+  }
+
+  async function openSharedDevotionEditor(photo: CrossPhoto) {
+    if (!currentUser || photo.ownerUid !== currentUser.uid || !photo.sourceEntryId) {
+      setErrorMessage('작성한 로그인 계정에서만 수정할 수 있습니다.')
+      return
+    }
+    const cached = entries.find(entry => entry.id === photo.sourceEntryId)
+    if (cached) { startEdit(cached); return }
+    try {
+      const snapshot = await get(ref(getRealtimeDb(), getUserEntriesPath(currentUser.uid) + '/' + photo.sourceEntryId))
+      const value = snapshot.val() as Omit<MeditationEntry, 'id'> | null
+      if (!value) { setErrorMessage('원본 묵상을 찾을 수 없습니다. 새로고침 후 다시 확인해주세요.'); return }
+      const entry = { ...value, id: photo.sourceEntryId }
+      setEntries(current => [...current.filter(item => item.id !== entry.id), entry])
+      startEdit(entry)
+    } catch { setErrorMessage('묵상을 불러오지 못했습니다. 다시 시도해주세요.') }
   }
 
   async function handleSaveEntry() {
@@ -2000,6 +2043,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
       applyDone: false,
       authorAvatarUrl,
       authorName,
+      activityId,
       authorUid: currentUser?.uid,
       audience,
       bookmarked,
@@ -2081,6 +2125,8 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
         setEntries(nextEntries)
       }
 
+      setEntries(current => current.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry))
+      setEditingEntry(null)
       setSelectedEntryId(updatedEntry.id)
       setDevotionView('detail')
       setNowMs(Date.now())
@@ -2154,6 +2200,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
       const photoPayload = {
         authorAvatarUrl,
         authorName,
+        activityId,
         authorUid: currentUser.uid,
         caption: crossCaption.trim(),
         commentCount: 0,
@@ -2251,6 +2298,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     await set(commentRef, {
       authorAvatarUrl,
       authorName,
+      activityId,
       authorUid: currentUser.uid,
       body,
       createdAt: new Date().toISOString(),
@@ -2413,6 +2461,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     await set(prayerRef, {
       authorAvatarUrl,
       authorName,
+      activityId,
       authorUid: currentUser.uid,
       body: prayerBody.trim(),
       commentCount: 0,
@@ -2492,6 +2541,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
     await set(commentRef, {
       authorAvatarUrl,
       authorName,
+      activityId,
       authorUid: currentUser.uid,
       body,
       createdAt: new Date().toISOString(),
@@ -2553,7 +2603,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
         })
       } else {
         await set(push(ref(getRealtimeDb(), 'faithQuestions')), {
-          authorAvatarUrl, authorName, authorUid: currentUser.uid,
+          authorAvatarUrl, authorName, activityId, authorUid: currentUser.uid,
           body: questionBody.trim(), createdAt: new Date().toISOString(), createdAtMs: serverTimestamp(),
           tags, title: questionTitle.trim() || '신앙 질문',
         })
@@ -2596,7 +2646,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
         setEditingAnswer(null)
       } else {
         await set(push(ref(getRealtimeDb(), path)), {
-          authorAvatarUrl, authorName, authorUid: currentUser.uid, body,
+          authorAvatarUrl, authorName, activityId, authorUid: currentUser.uid, body,
           createdAt: new Date().toISOString(), createdAtMs: serverTimestamp(),
         })
       }
@@ -2709,12 +2759,15 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
             <h2>{renderHeaderTitle()}</h2>
           </div>
         )}
-        {!currentUser && entryActions ? entryActions : activeTab === 'qna' && qnaView === 'write' ? (
+        {entryActions}
+        {activeTab === 'qna' && qnaView === 'write' ? (
           <button className="faith-text-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>취소</button>
         ) : profileView === 'edit' ? (
           <button className="faith-text-button" disabled={isProfileSaving} type="button" onClick={() => void handleProfileSave()}>
             {isProfileSaving ? '저장 중' : '저장'}
           </button>
+        ) : entryActions ? (
+          activeTab === 'profile' ? <button aria-label="설정" className="faith-icon-button" type="button" onClick={() => setIsSettingsSheetOpen(true)}><Icon name="settings"/></button> : null
         ) : (
           <div className="faith-header-actions">
             <button
@@ -2837,9 +2890,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                               onDelete={() => void handlePhotoDelete(photo)}
                               onEdit={() => {
                                 if (photo.sourceType === 'devotion') {
-                                  const entry = entries.find(item => item.id === photo.sourceEntryId)
-                                  if (entry) { setActiveTab('devotion'); startEdit(entry) }
-                                  else setErrorMessage('묵상 원본을 불러온 뒤 다시 시도해주세요.')
+                                  void openSharedDevotionEditor(photo)
                                   return
                                 }
                                 setEditingFeedPhotoId(photoKey)
@@ -2975,7 +3026,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
               <section className="faith-panel" aria-labelledby="write-title">
                 <div className="faith-section-head">
                   <div>
-                    <h3 id="write-title">{devotionView === 'edit' ? '묵상 수정' : '묵상 작성'}</h3>
+                    <h3 id="write-title" tabIndex={-1} style={{ scrollMarginTop: 100 }}>{devotionView === 'edit' ? '묵상 수정' : '묵상 작성'}</h3>
                     <p>{plan.reference} · {getAudienceLabel(audience)}</p>
                   </div>
                   <button className="faith-text-button" type="button" onClick={() => setDevotionView(devotionView === 'edit' ? 'detail' : 'read')}>취소</button>
@@ -3074,7 +3125,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
                   <button className="faith-text-button" type="button" onClick={() => setDevotionView('records')}>목록</button>
                   {(!selectedEntry.authorUid || selectedEntry.authorUid === currentUser?.uid) ? (
                     <div className="faith-icon-group">
-                      <button aria-label="묵상 수정" className="faith-icon-button" type="button" onClick={() => startEdit(selectedEntry)}><Icon name="edit" /></button>
+                      <button aria-label="묵상 수정" className="faith-outline-button" type="button" onClick={() => startEdit(selectedEntry)}><Icon name="edit" />수정</button>
                       <button aria-label="묵상 삭제" className="faith-icon-button" type="button" onClick={() => void handleDeleteEntry(selectedEntry)}><Icon name="close" /></button>
                     </div>
                   ) : <span />}
@@ -3747,6 +3798,7 @@ export function MeditationApp({ entryActions }: { entryActions?: ReactNode } = {
       {isSettingsSheetOpen ? (
         <div className="faith-sheet-backdrop" role="presentation" onClick={() => setIsSettingsSheetOpen(false)}>
           <section className="faith-action-sheet" aria-label="설정" onClick={(event) => event.stopPropagation()}>
+            <button type="button" onClick={() => setIsAiMode(enabled => !enabled)}>{isAiMode ? 'AI 예시 글 숨기기' : 'AI 예시 글 보기'}</button>
             <button type="button" onClick={() => {
               setIsSettingsSheetOpen(false)
               setIsLicenseOpen(true)
