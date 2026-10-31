@@ -1034,8 +1034,8 @@ function EmptyState({ children }: { children: string }) {
 function StatusLine({ error, status }: { error: string; status: string }) {
   return (
     <>
-      {error ? <p className="faith-alert faith-alert-error">{error}</p> : null}
-      {status ? <p className="faith-alert faith-alert-success">{status}</p> : null}
+      {error ? <p className="faith-alert faith-alert-error" role="alert">{error}</p> : null}
+      {status ? <p className="faith-alert faith-alert-success" role="status">{status}</p> : null}
     </>
   )
 }
