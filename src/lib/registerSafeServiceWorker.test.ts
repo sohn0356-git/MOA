@@ -12,7 +12,7 @@ it('detects a waiting deployment without activating it or reloading any tab', as
   vi.stubGlobal('navigator', { serviceWorker })
   registerSafeServiceWorker()
   await Promise.resolve()
-  expect(serviceWorker.register).toHaveBeenCalledWith('/MOA/sw.js', { scope: '/MOA/' })
+  expect(serviceWorker.register).toHaveBeenCalledWith(import.meta.env.BASE_URL + 'sw.js', { scope: import.meta.env.BASE_URL })
   expect(getAvailableUpdate()).toBeTypeOf('function')
   expect(worker.postMessage).not.toHaveBeenCalled()
   await vi.advanceTimersByTimeAsync(120000)

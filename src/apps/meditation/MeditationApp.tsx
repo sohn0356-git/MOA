@@ -1571,7 +1571,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
     observer.observe(target)
     return () => observer.disconnect()
-  }, [publicCrossPhotos.length, visibleFeedCount])
+  }, [publicCrossPhotos.length, visibleFeedCount, activeTab, feedView, selectedFeedGroup])
 
   useEffect(() => {
     const refreshToday = () => {
@@ -2192,6 +2192,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
       if ((getFirebaseAuth().currentUser?.uid || 'guest') !== draftOwner) return
       draftStore.clear()
+      addFeedGroup(groupName)
       setMind('')
       setApply('')
       setPrayerText('')
@@ -2243,6 +2244,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
       if ((getFirebaseAuth().currentUser?.uid || 'guest') !== draftOwner) return
       draftStore.clear()
+      addFeedGroup(groupName)
       setEntries(current => current.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry))
       setEditingEntry(null)
       setSelectedEntryId(updatedEntry.id)
@@ -2340,6 +2342,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       await set(photoRef, photoPayload)
       await set(ref(getRealtimeDb(), `${getPublicCrossPhotosPath()}/${publicId}`), photoPayload)
       setCrossUploadState((state) => ({ ...state, metrics: { ...state.metrics, saveMs: performance.now() - saveStart }, percent: 100, stage: 'success' }))
+      addFeedGroup(groupName)
       setCrossCaption('')
       setCrossFile(null)
       setCrossPreviewUrl('')
@@ -2507,6 +2510,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       }
 
       await update(ref(getRealtimeDb()), updates)
+      addFeedGroup(editingPhotoGroup)
       setEditingPhotoUploadState((state) => ({ ...state, percent: 100, stage: 'success' }))
       setEditingPhotoFile(null)
       setEditingPhotoPreviewUrl('')
@@ -2960,10 +2964,10 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   <span>짧은 문장</span>
                   <textarea maxLength={80} rows={4} value={crossCaption} onChange={(event) => setCrossCaption(event.target.value)} />
                 </label>
+                <label className="faith-field"><span>피드 그룹</span><input list="faith-feed-group-options" maxLength={40} value={groupName} onChange={event => setGroupName(event.target.value)} placeholder="미분류" /><datalist id="faith-feed-group-options">{[...new Set([DEFAULT_FEED_GROUP, ...savedGroups, ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])].map(group => <option key={group} value={group} />)}</datalist></label><p className="faith-helper">사진을 모아볼 피드 그룹입니다.</p>
                 <button className="faith-primary" disabled={!currentUser || !crossFile || isPhotoUploading} type="button" onClick={() => void handlePhotoUpload()}>
                   {isPhotoUploading ? '업로드 중' : '피드에 올리기'}
                 </button>
-                <label className="faith-field"><span>피드 그룹</span><input list="faith-feed-group-options" maxLength={40} value={groupName} onChange={event => setGroupName(event.target.value)} placeholder="미분류" /><datalist id="faith-feed-group-options">{[...new Set([DEFAULT_FEED_GROUP, ...savedGroups, ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])].map(group => <option key={group} value={group} />)}</datalist></label><p className="faith-helper">피드에서 모아볼 그룹 이름입니다. 공개 범위는 아래에서 따로 선택하세요.</p>
                 <UploadProgress
                   disabled={!crossFile || isPhotoUploading}
                   onCancel={cancelPhotoUpload}

@@ -18,7 +18,7 @@ export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, o
   const close = () => { dialog.current?.close(); setOpened('') }
   useEffect(() => {
     if (photo && !dialog.current?.open) dialog.current?.showModal()
-    if (!photo) dialog.current?.close()
+    if (!photo && dialog.current?.open) dialog.current.close()
   }, [photo])
   return <div className="faith-gallery-layout">
     <nav className="faith-bookshelf" aria-label="피드 그룹">
