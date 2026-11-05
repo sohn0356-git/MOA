@@ -32,7 +32,7 @@ createRoot(document.getElementById('root')!).render(<App/>)
 `)
 const server = await createServer({ configFile: false, root: process.cwd(), base: '/MOA/', plugins: [react()], server: { host: '127.0.0.1', port: 4179, strictPort: true } })
 await server.listen()
-const browser = await chromium.launch({ headless: true })
+const browser = await chromium.launch({ headless: true, channel: 'chrome' })
 try {
  const page = await browser.newPage()
  page.on('dialog', dialog => dialog.accept())

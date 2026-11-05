@@ -19,7 +19,6 @@ jobs:
       - run: npm test
       - run: npm run test:faith-startup
       - run: npm install --no-save --package-lock=false playwright
-      - run: npx playwright install --with-deps chromium
       - run: node scripts/test-faith-gallery.mjs
       - uses: actions/upload-artifact@v6
         if: always()
