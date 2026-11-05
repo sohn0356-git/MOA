@@ -1415,6 +1415,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     return `${first.year}년 ${first.month}월`
   }, [selectedDate, weekDateKeys])
   const lunchPraise = lunchPraiseTracks.find(track => track.id === todayKey)
+  const [isPraiseFormOpen, setIsPraiseFormOpen] = useState(false)
   const [praiseUrl, setPraiseUrl] = useState('')
   const [praiseSaving, setPraiseSaving] = useState(false)
   const [praiseFeedback, setPraiseFeedback] = useState('')
@@ -1435,6 +1436,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         youtubeUrl, videoId, updatedAt: serverTimestamp(),
       })
       setPraiseUrl('')
+      setIsPraiseFormOpen(false)
       setPraiseFeedback('오늘의 찬송을 저장했습니다.')
     } catch {
       setPraiseFeedback('찬송을 저장하지 못했습니다. 로그인 상태와 연결을 확인해 주세요.')
@@ -2902,8 +2904,17 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   <button className="faith-primary" type="button" onClick={() => { setActiveTab('devotion'); setDevotionView('write') }}><Icon name="edit" />묵상 나누기</button>
                 </section>
                 <section className="faith-youtube-section" aria-labelledby="lunch-praise-title">
-                  <h3 id="lunch-praise-title">하루의 시작 · 오늘의 찬송 추천</h3>
-                  {canEditPraise && (
+                  <div className="faith-section-head">
+                    <h3 id="lunch-praise-title">하루의 시작 · 오늘의 찬송 추천</h3>
+                    {canEditPraise && (
+                      <button className="faith-icon-button" type="button" aria-label="찬송 URL 등록"
+                        title="찬송 URL 등록" aria-expanded={isPraiseFormOpen}
+                        onClick={() => setIsPraiseFormOpen(open => !open)}>
+                        <Icon name="edit" />
+                      </button>
+                    )}
+                  </div>
+                  {canEditPraise && isPraiseFormOpen && (
                     <form onSubmit={event => { event.preventDefault(); void saveTodayPraise() }}>
                       <label className="faith-field">
                         <span>YouTube 영상 URL</span>
@@ -2911,9 +2922,9 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                           placeholder="https://www.youtube.com/watch?v=…" disabled={praiseSaving} />
                       </label>
                       <button className="faith-outline-button" type="submit" disabled={praiseSaving || !praiseUrl.trim()}>찬송 URL 저장</button>
-                      {praiseFeedback && <p role="status">{praiseFeedback}</p>}
                     </form>
                   )}
+                  {praiseFeedback && <p role="status">{praiseFeedback}</p>}
                   {isTrackLoading ? (
                     <EmptyState>영상을 불러오고 있습니다.</EmptyState>
                   ) : lunchPraiseEmbedUrl ? (
