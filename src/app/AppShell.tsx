@@ -30,7 +30,7 @@ export function AppShell() {
     signOutUser,
     user,
   } = useAuth()
-  const { applyUpdate, hasUpdate, isUpdating } = useAppUpdate()
+  const { applyUpdate, hasUpdate, isUpdating, updateError } = useAppUpdate()
   const activeApp = useMemo(() => {
     if (activeRoute.startsWith('#/home/')) {
       return appRegistry.find((app) => app.id === 'mini-room')
@@ -68,8 +68,8 @@ export function AppShell() {
 
   if (activeRoute === '#/meditation') {
     return (
-      <main className="app-shell app-shell-subapp app-shell-faith" aria-label="MOA Faith 메인">
-        {hasUpdate ? <AppUpdateBanner isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
+      <main inert={isUpdating} className="app-shell app-shell-subapp app-shell-faith" aria-label="MOA Faith 메인">
+        {hasUpdate ? <AppUpdateBanner error={updateError} isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
         {authError ? <p className="faith-entry-error" role="alert">{authError}</p> : null}
         {activity.error ? <p className="faith-entry-error" role="alert">{activity.error}</p> : null}
         {activity.isLoading || activity.isSwitching ? <p role="status" className="faith-activity-progress">AI 권한을 전환하고 있습니다…</p> : null}
@@ -105,8 +105,8 @@ export function AppShell() {
 
   if (isCityRoute) {
     return (
-      <main className="city-main-app" aria-label="AI City 메인">
-        {hasUpdate ? <AppUpdateBanner isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
+      <main inert={isUpdating} className="city-main-app" aria-label="AI City 메인">
+        {hasUpdate ? <AppUpdateBanner error={updateError} isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
         <AiCityApp embedded entryActions={
           <nav className="city-entry-actions" aria-label="계정 및 MOA 앱">
             <a href="#/login">{user ? '계정' : '로그인'}</a>
@@ -120,7 +120,7 @@ export function AppShell() {
   if (activeRoute === '#/login') {
     return (
       <AuthGate {...authProps}>
-        <main className="auth-screen">
+        <main inert={isUpdating} className="auth-screen">
           <section className="auth-panel" aria-label="내 계정">
             <h1>내 계정</h1>
             <p>{user?.displayName || user?.email || 'MOA'} 계정으로 로그인되어 있습니다.</p>
@@ -144,9 +144,9 @@ export function AppShell() {
         onEmailSignIn={signInWithEmail}
         onSignIn={signInWithGoogle}
       >
-        <main className={`app-shell app-shell-subapp ${activeApp.id === 'mini-room' ? 'app-shell-minihome' : ''} ${activeApp.id === 'meditation' ? 'app-shell-faith' : ''}`}>
+        <main inert={isUpdating} className={`app-shell app-shell-subapp ${activeApp.id === 'mini-room' ? 'app-shell-minihome' : ''} ${activeApp.id === 'meditation' ? 'app-shell-faith' : ''}`}>
           {hasUpdate ? (
-            <AppUpdateBanner
+            <AppUpdateBanner error={updateError}
               isUpdating={isUpdating}
               onUpdate={() => void applyUpdate()}
             />
@@ -167,7 +167,7 @@ export function AppShell() {
         onEmailSignIn={signInWithEmail}
       onSignIn={signInWithGoogle}
     >
-      <main className="app-shell">
+      <main inert={isUpdating} className="app-shell">
         <a className="back-button moa-city-return" href="#/ai-city">← AI City로 돌아가기</a>
         <header className="brand-header">
           <div className="brand-mark" aria-hidden="true">
@@ -188,7 +188,7 @@ export function AppShell() {
         </header>
 
         {hasUpdate ? (
-          <AppUpdateBanner
+          <AppUpdateBanner error={updateError}
             isUpdating={isUpdating}
             onUpdate={() => void applyUpdate()}
           />

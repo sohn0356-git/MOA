@@ -1,6 +1,8 @@
+import { normalizeFeedGroup } from './feedGroups'
 import { isDevotionImage } from './devotionImage'
 
 export type ShareableDevotion = {
+  groupName?: string
   id: string; audience: 'private' | 'public' | 'group'; mind: string; apply: string; prayer?: string
   verseText: string; reference: string; selectedDate: string; crossImage?: string
   authorName?: string; authorAvatarUrl?: string; activityId?: string
@@ -14,6 +16,7 @@ export function devotionShareUpdates(uid: string, entry: ShareableDevotion, prev
     entry.apply.trim() ? '오늘의 적용\n' + entry.apply.trim() : '', entry.prayer?.trim() ? '기도\n' + entry.prayer.trim() : '',
   ].filter(Boolean).join('\n\n')
   const payload = {
+    groupName: normalizeFeedGroup(entry.groupName),
     ownerUid: uid, authorUid: uid, activityId: entry.activityId || '', authorName: entry.authorName || 'MOA 사용자', authorAvatarUrl: entry.authorAvatarUrl || '',
     sourceType: 'devotion', sourceEntryId: entry.id, publicId: id,
     createdAt: previous?.createdAt || now, selectedDate: entry.selectedDate, updatedAt: now,
