@@ -1415,19 +1415,10 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     return `${first.year}년 ${first.month}월`
   }, [selectedDate, weekDateKeys])
   const lunchPraise = lunchPraiseTracks.find(track => track.id === todayKey)
-  const [praiseEditorUid, setPraiseEditorUid] = useState('')
   const [praiseUrl, setPraiseUrl] = useState('')
   const [praiseSaving, setPraiseSaving] = useState(false)
   const [praiseFeedback, setPraiseFeedback] = useState('')
-  const canEditPraise = Boolean(currentUser && praiseEditorUid === currentUser.uid)
-
-  useEffect(() => {
-    let active = true
-    currentUser?.getIdTokenResult?.().then(result => {
-      if (active) setPraiseEditorUid(result.claims.admin === true ? currentUser.uid : '')
-    }).catch(() => { if (active) setPraiseEditorUid('') })
-    return () => { active = false }
-  }, [currentUser])
+  const canEditPraise = Boolean(currentUser)
 
   async function saveTodayPraise() {
     if (!canEditPraise || praiseSaving || activityBusy) return
@@ -1446,7 +1437,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       setPraiseUrl('')
       setPraiseFeedback('오늘의 찬송을 저장했습니다.')
     } catch {
-      setPraiseFeedback('찬송을 저장하지 못했습니다. 관리자 권한과 연결을 확인해 주세요.')
+      setPraiseFeedback('찬송을 저장하지 못했습니다. 로그인 상태와 연결을 확인해 주세요.')
     } finally {
       setPraiseSaving(false)
     }
