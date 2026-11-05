@@ -1,15 +1,18 @@
 // @vitest-environment node
-import { MessageChannel } from 'node:worker_threads'
 import { afterEach, expect, it, vi } from 'vitest'
 vi.mock('workbox-precaching', () => ({ cleanupOutdatedCaches: vi.fn(), precacheAndRoute: vi.fn(), createHandlerBoundToURL: vi.fn() }))
 vi.mock('workbox-routing', () => ({ NavigationRoute: vi.fn(), registerRoute: vi.fn() }))
 vi.mock('workbox-core', () => ({ clientsClaim: vi.fn() }))
 afterEach(() => { vi.unstubAllGlobals(); vi.resetModules() })
+class TestMessageChannel {
+  port1 = { onmessage: null as ((event: { data: unknown }) => void) | null, close() {} }
+  port2 = { postMessage: (data: unknown) => queueMicrotask(() => this.port1.onmessage?.({ data })) }
+}
 async function setup(safe: boolean) {
   const client = { url: 'https://example.com/MOA/', postMessage: vi.fn((_message, ports) => ports?.[0]?.postMessage({ safe })) }
   let listener: (event: { data: { type: string }; waitUntil: (promise: Promise<unknown>) => void; ports: { postMessage: ReturnType<typeof vi.fn> }[] }) => void = () => {}
   const worker = { __WB_MANIFEST: [], clients: { matchAll: vi.fn().mockResolvedValue([client]) }, skipWaiting: vi.fn().mockResolvedValue(undefined), addEventListener: vi.fn((type, callback) => { if (type === 'message') listener = callback }) }
-  vi.stubGlobal('self', worker); vi.stubGlobal('MessageChannel', MessageChannel)
+  vi.stubGlobal('self', worker); vi.stubGlobal('MessageChannel', TestMessageChannel)
   await import('../sw')
   return { worker, client, message(type: string) {
     let work = Promise.resolve()
