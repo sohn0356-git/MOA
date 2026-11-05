@@ -2190,6 +2190,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         setEntries(nextEntries)
       }
 
+      if ((getFirebaseAuth().currentUser?.uid || 'guest') !== draftOwner) return
       draftStore.clear()
       setMind('')
       setApply('')
@@ -2212,8 +2213,8 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     }
 
     const updatedEntry: MeditationEntry = {
-      groupName: normalizeFeedGroup(groupName),
       ...selectedEntry,
+      groupName: normalizeFeedGroup(groupName),
       crossImage: isDevotionImage(devotionImage) ? devotionImage : '',
       apply: apply.trim(),
       audience,
@@ -2240,6 +2241,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         setEntries(nextEntries)
       }
 
+      if ((getFirebaseAuth().currentUser?.uid || 'guest') !== draftOwner) return
       draftStore.clear()
       setEntries(current => current.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry))
       setEditingEntry(null)
@@ -2922,7 +2924,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
           <button className="faith-outline-button" type="button" onClick={() => restoreDraft(draftStore.drafts[0])}>최근 묵상 이어쓰기</button>
           <details><summary>보관된 임시저장 보기</summary><ul>{draftStore.drafts.map(record => <li key={record.id}><span>{record.values.mind.slice(0, 45) || '작성 중인 묵상'} · {new Date(record.updatedAt).toLocaleString('ko-KR')}</span><br />
             <button type="button" onClick={() => restoreDraft(record)}>복원</button><button type="button" onClick={() => { if (window.confirm('이 임시저장을 삭제할까요?')) draftStore.discard(record.id) }}>임시저장 삭제</button></li>)}</ul></details>
-        </aside>
+        </aside>}
 
         {activeTab === 'feed' ? (
           <section className="faith-stack">

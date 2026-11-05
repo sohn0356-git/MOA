@@ -34,6 +34,7 @@ export function useDevotionDraft(owner: string, active: boolean, value: DraftCon
   const ownedIds = useRef(new Set<string>())
   const suppressed = useRef(false)
   const lastSaved = useRef('')
+  const restoredFrom = useRef<{ key: string; raw: string | null } | null>(null)
   const latest = useRef({ owner, active, value, preparing })
   latest.current = { owner, active, value, preparing }
   const [drafts, setDrafts] = useState<DevotionDraft[]>([])
@@ -52,7 +53,7 @@ export function useDevotionDraft(owner: string, active: boolean, value: DraftCon
   useLayoutEffect(() => {
     currentId.current = ''
     try { currentId.current = sessionStorage.getItem(pointer) || '' } catch { /* A fresh draft still gets a unique ID. */ }
-    suppressed.current = false; lastSaved.current = ''; setSavedAt(null); setError(''); refresh()
+    suppressed.current = false; lastSaved.current = ''; restoredFrom.current = null; setSavedAt(null); setError(''); refresh()
   }, [pointer, refresh])
   const flush = useCallback((patch?: Partial<DraftValues>) => {
     const state = latest.current
@@ -100,14 +101,25 @@ export function useDevotionDraft(owner: string, active: boolean, value: DraftCon
     }
   }, [flush, prefix, refresh])
   function activate(draft?: DevotionDraft) {
+    restoredFrom.current = null
+    if (draft) {
+      try { restoredFrom.current = { key: prefix + draft.id, raw: localStorage.getItem(prefix + draft.id) } } catch { /* Keep the original backup if inaccessible. */ }
+    }
     currentId.current = draft && ownedIds.current.has(draft.id) ? draft.id : crypto.randomUUID()
     ownedIds.current.add(currentId.current)
     suppressed.current = false; lastSaved.current = ''; setError('')
     try { sessionStorage.setItem(pointer, currentId.current) } catch { /* The local draft remains readable. */ }
   }
   function clear() {
+    if (latest.current.owner !== owner) return
     suppressed.current = true
-    try { if (currentId.current) localStorage.removeItem(prefix + currentId.current); sessionStorage.removeItem(pointer); refresh(); setSavedAt(null) }
+    try {
+      if (currentId.current) localStorage.removeItem(prefix + currentId.current)
+      const original = restoredFrom.current
+      if (original && localStorage.getItem(original.key) === original.raw) localStorage.removeItem(original.key)
+      restoredFrom.current = null
+      sessionStorage.removeItem(pointer); refresh(); setSavedAt(null)
+    }
     catch { setError('임시저장 정리에 실패했습니다. 게시한 내용은 저장됐습니다.') }
   }
   function discard(id: string) {
