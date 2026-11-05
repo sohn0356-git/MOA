@@ -35,6 +35,7 @@ await server.listen()
 const browser = await chromium.launch({ headless: true })
 try {
  const page = await browser.newPage()
+ page.on('dialog', dialog => dialog.accept())
  const errors = []
  page.on('pageerror', error=>errors.push(error.message))
  for (const width of [360,768,1440]) {
