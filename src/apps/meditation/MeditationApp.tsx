@@ -21,6 +21,7 @@ import {
   extractHashTags,
   getRelatedQuestions,
   getTagSuggestions,
+  extractYouTubeVideoId,
   getYouTubeEmbedUrl,
   normalizeFaithTags,
 } from './faithUtils'
@@ -1413,7 +1414,43 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     const first = getKstDateParts(weekDateKeys[0] ?? selectedDate)
     return `${first.year}년 ${first.month}월`
   }, [selectedDate, weekDateKeys])
-  const lunchPraise = lunchPraiseTracks[0]
+  const lunchPraise = lunchPraiseTracks.find(track => track.id === todayKey)
+  const [praiseEditorUid, setPraiseEditorUid] = useState('')
+  const [praiseUrl, setPraiseUrl] = useState('')
+  const [praiseSaving, setPraiseSaving] = useState(false)
+  const [praiseFeedback, setPraiseFeedback] = useState('')
+  const canEditPraise = Boolean(currentUser && praiseEditorUid === currentUser.uid)
+
+  useEffect(() => {
+    let active = true
+    currentUser?.getIdTokenResult?.().then(result => {
+      if (active) setPraiseEditorUid(result.claims.admin === true ? currentUser.uid : '')
+    }).catch(() => { if (active) setPraiseEditorUid('') })
+    return () => { active = false }
+  }, [currentUser])
+
+  async function saveTodayPraise() {
+    if (!canEditPraise || praiseSaving || activityBusy) return
+    const videoId = extractYouTubeVideoId(praiseUrl)
+    if (!videoId || !/^https?:\/\//i.test(praiseUrl.trim())) {
+      setPraiseFeedback('올바른 YouTube 영상 URL을 입력해 주세요.')
+      return
+    }
+    setPraiseSaving(true)
+    setPraiseFeedback('')
+    try {
+      const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`
+      await set(ref(getRealtimeDb(), `lunchPraiseTracks/${todayKey}`), {
+        youtubeUrl, videoId, updatedAt: serverTimestamp(),
+      })
+      setPraiseUrl('')
+      setPraiseFeedback('오늘의 찬송을 저장했습니다.')
+    } catch {
+      setPraiseFeedback('찬송을 저장하지 못했습니다. 관리자 권한과 연결을 확인해 주세요.')
+    } finally {
+      setPraiseSaving(false)
+    }
+  }
   const lunchPraiseEmbedUrl = lunchPraise ? getYouTubeEmbedUrl(lunchPraise.videoId || lunchPraise.youtubeUrl) : null
   const selectedDateLabel = useMemo(() => {
     const date = new Date(`${selectedDate}T00:00:00+09:00`)
@@ -2874,20 +2911,31 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   <button className="faith-primary" type="button" onClick={() => { setActiveTab('devotion'); setDevotionView('write') }}><Icon name="edit" />묵상 나누기</button>
                 </section>
                 <section className="faith-youtube-section" aria-labelledby="lunch-praise-title">
-                  <h3 id="lunch-praise-title">오찬추</h3>
+                  <h3 id="lunch-praise-title">하루의 시작 · 오늘의 찬송 추천</h3>
+                  {canEditPraise && (
+                    <form onSubmit={event => { event.preventDefault(); void saveTodayPraise() }}>
+                      <label className="faith-field">
+                        <span>YouTube 영상 URL</span>
+                        <input type="url" required value={praiseUrl} onChange={event => setPraiseUrl(event.currentTarget.value)}
+                          placeholder="https://www.youtube.com/watch?v=…" disabled={praiseSaving} />
+                      </label>
+                      <button className="faith-outline-button" type="submit" disabled={praiseSaving || !praiseUrl.trim()}>찬송 URL 저장</button>
+                      {praiseFeedback && <p role="status">{praiseFeedback}</p>}
+                    </form>
+                  )}
                   {isTrackLoading ? (
                     <EmptyState>영상을 불러오고 있습니다.</EmptyState>
                   ) : lunchPraiseEmbedUrl ? (
                     <>
                       <iframe
-                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                         className="faith-youtube"
-                        loading="lazy"
                         referrerPolicy="strict-origin-when-cross-origin"
-                        src={lunchPraiseEmbedUrl}
-                        title={lunchPraise?.title ? `오찬추: ${lunchPraise.title}` : '오늘의 찬송 추천 YouTube 영상'}
+                        src={`${lunchPraiseEmbedUrl}?autoplay=1&mute=1&playsinline=1`}
+                        title="오늘의 찬송 추천 YouTube 영상"
                       />
+                      <a href={`https://www.youtube.com/watch?v=${extractYouTubeVideoId(lunchPraise?.videoId || lunchPraise?.youtubeUrl || '')}`} target="_blank" rel="noreferrer">YouTube에서 재생</a>
                     </>
                   ) : (
                     <p className="faith-muted">오늘의 찬양을 준비하고 있어요.</p>
