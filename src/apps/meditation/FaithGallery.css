@@ -41,4 +41,7 @@
 .faith-bookmark-toggle svg{width:19px;height:19px}
 .faith-bookmark-toggle:hover{background:#eee7f6;color:#70508f}
 .faith-bookmark-toggle:focus-visible{outline:2px solid #9272b9;outline-offset:3px}
-.faith-gallery-layout[data-bookmarks-open=false]{grid-template-columns:36px minmax(0,1fr);gap:10px}
+.faith-gallery-layout[data-bookmarks-open=false]{grid-template-columns:0 minmax(0,1fr);gap:0}
+.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-rail{width:0;overflow:visible;z-index:2}
+.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle{position:absolute;top:6px;left:-12px;width:22px;height:36px;border-radius:0 9px 9px 0;background:#faf8fdf2;box-shadow:2px 2px 8px #70508f14}
+.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle svg{width:15px;height:15px}
