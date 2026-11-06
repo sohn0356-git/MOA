@@ -7,14 +7,17 @@ export type ShareableDevotion = {
   verseText: string; reference: string; selectedDate: string; crossImage?: string
   authorName?: string; authorAvatarUrl?: string; activityId?: string
 }
+export function getDevotionCaption(entry: ShareableDevotion) {
+  return [
+    entry.reference, entry.verseText, entry.mind.trim() ? '묵상\n' + entry.mind.trim() : '',
+    entry.apply.trim() ? '오늘의 적용\n' + entry.apply.trim() : '', entry.prayer?.trim() ? '기도\n' + entry.prayer.trim() : '',
+  ].filter(Boolean).join('\n\n')
+}
 export function devotionShareId(uid: string, entryId: string) { return 'devotion_' + uid + '_' + entryId }
 export function devotionShareUpdates(uid: string, entry: ShareableDevotion, previous: { createdAt?: string } | null, now = new Date().toISOString()): Record<string, unknown> {
   const id = devotionShareId(uid, entry.id), base = 'crossPhotos/' + id
   if (entry.audience !== 'public') return previous ? { [base]: null } : {}
-  const caption = [
-    entry.reference, entry.verseText, entry.mind.trim() ? '묵상\n' + entry.mind.trim() : '',
-    entry.apply.trim() ? '오늘의 적용\n' + entry.apply.trim() : '', entry.prayer?.trim() ? '기도\n' + entry.prayer.trim() : '',
-  ].filter(Boolean).join('\n\n')
+  const caption = getDevotionCaption(entry)
   const payload = {
     groupName: normalizeFeedGroup(entry.groupName),
     ownerUid: uid, authorUid: uid, activityId: entry.activityId || '', authorName: entry.authorName || 'MOA 사용자', authorAvatarUrl: entry.authorAvatarUrl || '',

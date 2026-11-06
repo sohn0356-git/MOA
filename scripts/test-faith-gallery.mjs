@@ -15,18 +15,19 @@ import { FaithGallery } from '../src/apps/meditation/FaithGallery'
 import { useDevotionDraft } from '../src/apps/meditation/useDevotionDraft'
 import { normalizeDevotionFields } from '../src/apps/meditation/devotionEditing'
 function App() {
+ const [view,setView] = useState<'public'|'mine'>('public')
  const [group,setGroup] = useState('')
  const [groups,setGroups] = useState(['매일 묵상','기도','주일'])
  const [editing,setEditing] = useState(false)
  const [mind,setMind] = useState('')
  const draft = useDevotionDraft('smoke-user',editing,{mode:'write',entryId:'',values:{...normalizeDevotionFields({mind},'2026-11-05'),groupName:'매일 묵상'}})
  const photos = Array.from({length:8},(_,i)=>({id:String(i),caption:'함께 걷는 하루 '+i+'\\n사진을 눌러 읽는 묵상 본문',imageUrl:'',authorName:'AI 01',groupName:i%2?'기도':'매일 묵상'}))
- return <div style={{maxWidth:850,margin:'auto',fontFamily:'sans-serif',padding:12}}>
+ return <div style={{maxWidth:850,margin:'auto',fontFamily:'NanumSquare Neo',padding:12}}>
   <h1>MOA Faith</h1>
   <button onClick={()=>{draft.activate();setEditing(true)}}>묵상 작성</button>
   {!editing && draft.drafts.length>0 && <button onClick={()=>{draft.activate(draft.drafts[0]);setMind(draft.drafts[0].values.mind);setEditing(true)}}>이어서 쓰기</button>}
   {editing && <label>묵상 메모<textarea value={mind} onChange={e=>{draft.flush({mind:e.target.value});setMind(e.target.value)}} /></label>}
-  <FaithGallery photos={photos} groups={groups} selectedGroup={group} onSelectGroup={setGroup} onAddGroup={name=>{setGroups([...groups,name]);setGroup(name)}} limit={8} sentinelRef={null} header={<p>작은 묵상, 함께하는 하루</p>} renderDetail={(photo)=> <article><h2>{photo.caption.split('\\n')[0]}</h2><p>사진을 눌러 읽는 묵상 본문</p></article>}/>
+  <FaithGallery view={view} onViewChange={next=>{setView(next);setGroup('')}} photos={view==='mine'?photos.slice(0,2):photos} groups={groups} selectedGroup={group} onSelectGroup={setGroup} onAddGroup={name=>{setGroups([...groups,name]);setGroup(name)}} limit={8} sentinelRef={null} header={<p>작은 묵상, 함께하는 하루</p>} renderDetail={(photo)=> <article><h2>{photo.caption.split('\\n')[0]}</h2><p>사진을 눌러 읽는 묵상 본문</p></article>}/>
  </div>
 }
 createRoot(document.getElementById('root')!).render(<App/>)
@@ -47,6 +48,9 @@ try {
   assert.equal(positions[0].y,positions[1].y,'first row has two columns')
   assert.ok(positions[1].x>positions[0].x)
   assert.ok(positions[2].y>positions[0].y)
+  const style = await page.locator('.faith-gallery-art').first().evaluate(el=>({radius:getComputedStyle(el).borderRadius,border:getComputedStyle(el).borderWidth}))
+  assert.equal(style.radius,'0px'); assert.equal(style.border,'0px')
+  assert.ok(await page.locator('.faith-gallery-grid').evaluate(el=>parseFloat(getComputedStyle(el).gap)<=1))
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow')
   assert.equal(await page.locator('.faith-gallery-tile').first().innerText(),'','album tiles contain no metadata')
   assert.equal(await page.locator('.faith-gallery-heading,.faith-gallery-caption,.faith-gallery-group').count(),0)
@@ -57,6 +61,9 @@ try {
   assert.equal(await page.getByRole('dialog').count(),0)
   await page.getByRole('navigation',{name:'피드 그룹'}).getByRole('button',{name:'기도',exact:true}).click()
   assert.equal(await page.locator('.faith-gallery-tile').count(),4)
+  await page.getByRole('button',{name:'내 글',exact:true}).click()
+  assert.equal(await page.locator('.faith-gallery-tile').count(),2)
+  await page.getByRole('button',{name:'공개 피드',exact:true}).click()
   await page.screenshot({path:'test-results/faith-gallery/gallery-'+width+'.png',fullPage:true})
  }
  await page.getByRole('button',{name:'묵상 작성',exact:true}).click()

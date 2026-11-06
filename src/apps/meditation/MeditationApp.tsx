@@ -1,3 +1,4 @@
+import { buildPersonalFeed } from './personalFeed'
 import { FirebaseError } from 'firebase/app'
 import { updateProfile } from 'firebase/auth'
 import { get, onValue, push, ref, remove, runTransaction, serverTimestamp, set, update } from 'firebase/database'
@@ -99,6 +100,7 @@ type MeditationEntry = {
 }
 
 type CrossPhoto = {
+  audience?: Audience
   groupName?: string
   activityId?: string
   sourceType?: 'devotion'
@@ -470,6 +472,7 @@ function getPhotoExpiresAt(photo: CrossPhoto) {
 }
 
 function isPhotoPublic(photo: CrossPhoto, nowMs: number) {
+  if (photo.audience && photo.audience !== 'public') return false
   const createdAt = getTimestamp(photo.createdAt)
   if (photo.sourceType === 'devotion') return Boolean(createdAt && createdAt <= nowMs)
   const expiresAt = getPhotoExpiresAt(photo)
@@ -1231,6 +1234,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   const { remotePlan, isLoading: isPlanLoading, error: planError, isFallback: isFallbackPlan, retry: retryPlan } = useScripturePlan(selectedDate, scriptureLanguage, fetchFirebasePlan)
   const composerOwner = useRef('')
   const [groupName, setGroupName] = useState(DEFAULT_FEED_GROUP)
+  const [feedScope, setFeedScope] = useState<'public' | 'mine'>('public')
   const [selectedFeedGroup, setSelectedFeedGroup] = useState('')
   const [savedGroups, setSavedGroups] = useState<string[]>([])
   const [mind, setMind] = useState('')
@@ -1373,7 +1377,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       const stored = JSON.parse(localStorage.getItem('moa.faith.feedGroups:' + draftOwner) || '[]')
       setSavedGroups(Array.isArray(stored) ? stored.filter((item): item is string => typeof item === 'string').map(normalizeFeedGroup) : [])
     } catch { setSavedGroups([]) }
-    setSelectedFeedGroup('')
+    setSelectedFeedGroup(''); setFeedScope('public')
   }, [draftOwner])
   function addFeedGroup(name: string) {
     const next = [...new Set([...savedGroups, normalizeFeedGroup(name)])]
@@ -1427,9 +1431,12 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       .filter((photo) => isPhotoPublic(photo, nowMs))
       .sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt))
   }, [crossPhotos, currentUser?.uid, nowMs, publicFeedPhotos])
+  const ownFeedPhotos = useMemo(() => buildPersonalFeed([...publicCrossPhotos, ...crossPhotos], entries, currentUser?.uid), [publicCrossPhotos, crossPhotos, entries, currentUser?.uid])
+  const galleryPhotos: CrossPhoto[] = feedScope === 'mine' ? ownFeedPhotos : publicCrossPhotos
+  const publicGroupNames = [...new Set([...savedGroups.map(normalizeFeedGroup), ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])]
   const selectedProfilePhoto = crossPhotos.find((photo) => photo.id === selectedProfilePhotoId) ?? null
   const selectedFeedPhoto = publicCrossPhotos.find((photo) => (photo.publicId ?? photo.id) === selectedFeedPhotoId) ?? null
-  const editingFeedPhoto = publicCrossPhotos.find((photo) => (photo.publicId ?? photo.id) === editingFeedPhotoId) ?? null
+  const editingFeedPhoto = galleryPhotos.find((photo) => (photo.publicId ?? photo.id) === editingFeedPhotoId) ?? null
   const selectedPrayer = visiblePrayerRequests.find((request) => request.id === selectedPrayerId) ?? null
   const selectedQuestion = visibleFaithQuestions.find((question) => question.id === selectedQuestionId) ?? null
   const selectedQuestionAnswers = selectedQuestion ? (questionAnswers[selectedQuestion.id] ?? []) : []
@@ -1554,24 +1561,24 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
   useEffect(() => {
     setVisibleFeedCount(8)
-  }, [publicCrossPhotos.length])
+  }, [galleryPhotos.length])
 
   useEffect(() => {
     const target = feedLoadMoreRef.current
 
-    if (!target || visibleFeedCount >= publicCrossPhotos.length) {
+    if (!target || visibleFeedCount >= galleryPhotos.length) {
       return undefined
     }
 
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
-        setVisibleFeedCount((count) => Math.min(count + 6, publicCrossPhotos.length))
+        setVisibleFeedCount((count) => Math.min(count + 6, galleryPhotos.length))
       }
     }, { rootMargin: '300px 0px' })
 
     observer.observe(target)
     return () => observer.disconnect()
-  }, [publicCrossPhotos.length, visibleFeedCount, activeTab, feedView, selectedFeedGroup])
+  }, [galleryPhotos.length, visibleFeedCount, activeTab, feedView, selectedFeedGroup, feedScope])
 
   useEffect(() => {
     const refreshToday = () => {
@@ -1628,7 +1635,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     return onValue(
       ref(getRealtimeDb(), getUserEntriesPath(currentUser.uid)),
       (snapshot) => {
-        const remoteEntries = mapList<MeditationEntry>(snapshot.val()).map(entry => ({ ...entry, ...normalizeDevotionFields(entry, getTodayKey()) }))
+        const remoteEntries = mapList<MeditationEntry>(snapshot.val()).map(entry => ({ ...entry, authorUid: entry.authorUid || currentUser.uid, ...normalizeDevotionFields(entry, getTodayKey()) }))
         setEntries(remoteEntries)
         try { saveLocalEntries(remoteEntries) } catch { /* The Firebase record remains saved if the device cache is full. */ }
         setSyncState('synced')
@@ -1668,7 +1675,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     setQnaView('list')
     const db = getRealtimeDb()
     const subscriptions = [
-      onValue(ref(db, getUserCrossPhotosPath(currentUser.uid)), (snapshot) => setCrossPhotos(mapList<CrossPhoto>(snapshot.val()))),
+      onValue(ref(db, getUserCrossPhotosPath(currentUser.uid)), (snapshot) => setCrossPhotos(mapList<CrossPhoto>(snapshot.val()).map(photo => ({ ...photo, ownerUid: currentUser.uid })))),
       onValue(ref(db, getUserFaithProfilePath(currentUser.uid)), (snapshot) => {
         profileOwner.current = currentUser.uid
         const value = snapshot.val() as Partial<FaithProfile> | null
@@ -2125,6 +2132,11 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }
 
   async function openSharedDevotionEditor(photo: CrossPhoto) {
+    if (!currentUser && !photo.ownerUid && photo.sourceEntryId) {
+      const local = entries.find(entry => entry.id === photo.sourceEntryId && !entry.authorUid)
+      if (local) startEdit(local)
+      return
+    }
     if (!currentUser || photo.ownerUid !== currentUser.uid || !photo.sourceEntryId) {
       setErrorMessage('작성한 로그인 계정에서만 수정할 수 있습니다.')
       return
@@ -2964,7 +2976,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   <span>짧은 문장</span>
                   <textarea maxLength={80} rows={4} value={crossCaption} onChange={(event) => setCrossCaption(event.target.value)} />
                 </label>
-                <label className="faith-field"><span>피드 그룹</span><input list="faith-feed-group-options" maxLength={40} value={groupName} onChange={event => setGroupName(event.target.value)} placeholder="미분류" /><datalist id="faith-feed-group-options">{[...new Set([DEFAULT_FEED_GROUP, ...savedGroups, ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])].map(group => <option key={group} value={group} />)}</datalist></label><p className="faith-helper">사진을 모아볼 피드 그룹입니다.</p>
+                <label className="faith-field"><span>공개 그룹</span><input list="faith-feed-group-options" maxLength={40} value={groupName} onChange={event => setGroupName(event.target.value)} placeholder="전체 공개" /><datalist id="faith-feed-group-options">{[...new Set([DEFAULT_FEED_GROUP, ...savedGroups, ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])].map(group => <option key={group} value={group} />)}</datalist></label><p className="faith-helper">공개 사진을 함께 모아볼 그룹을 선택하거나 새 이름을 입력하세요.</p>
                 <button className="faith-primary" disabled={!currentUser || !crossFile || isPhotoUploading} type="button" onClick={() => void handlePhotoUpload()}>
                   {isPhotoUploading ? '업로드 중' : '피드에 올리기'}
                 </button>
@@ -2977,13 +2989,10 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
               </section>
             ) : (
               <>
-                <FaithGallery photos={publicCrossPhotos} groups={savedGroups} selectedGroup={selectedFeedGroup}
+                <FaithGallery photos={galleryPhotos} groups={publicGroupNames} selectedGroup={feedScope === 'mine' ? '' : selectedFeedGroup}
+                  view={feedScope} onViewChange={scope => { setFeedScope(scope); setVisibleFeedCount(8) }}
                   onSelectGroup={group => { setSelectedFeedGroup(group); setVisibleFeedCount(8) }} onAddGroup={addFeedGroup}
-                  limit={visibleFeedCount} sentinelRef={feedLoadMoreRef} header={<>                <section className="faith-feed-intro" aria-label="오늘의 나눔">
-                  <div><span className="faith-social-eyebrow">FAITH, IN EVERYDAY LIFE</span><h3>작은 묵상, 함께하는 하루</h3><p>말씀에서 시작된 마음을 나눠요.</p></div>
-                  <button className="faith-primary" type="button" onClick={() => { setActiveTab('devotion'); startWriting() }}><Icon name="edit" />묵상 나누기</button>
-                </section>
-                <section className="faith-youtube-section" aria-labelledby="lunch-praise-title">
+                  limit={visibleFeedCount} sentinelRef={feedLoadMoreRef} header={<>                <section className="faith-youtube-section" aria-labelledby="lunch-praise-title">
                   <div className="faith-section-head">
                     <h3 id="lunch-praise-title">하루의 시작 · 오늘의 찬송 추천</h3>
                     {canEditPraise && (
@@ -3049,7 +3058,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                                 setEditingPhotoUploadState(idleUploadState)
                               }}
                             />
-                            {photo.sourceType === 'devotion' ? <p className="faith-muted">공유 묵상 · {formatDateLabel(photo.selectedDate)}</p> : null}
+                            {photo.sourceType === 'devotion' ? <p className="faith-muted">{photo.audience && photo.audience !== 'public' ? '나만 보기 묵상' : '공유 묵상'} · {formatDateLabel(photo.selectedDate)}</p> : null}
                             {photo.sourceType === 'devotion' && currentUser && photo.ownerUid === currentUser.uid ? (
                               <button className="faith-outline-button" type="button" onClick={() => { close(); void openSharedDevotionEditor(photo) }}>
                                 <Icon name="edit" />{photo.imageUrl ? '십자가 그림 변경 · 묵상 수정' : '십자가 그림 추가 · 묵상 수정'}
@@ -3060,14 +3069,14 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                                 <img alt={photo.sourceType === 'devotion' ? '묵상에 첨부한 십자가 그림' : photo.caption || '오늘의 십자가 사진'} src={photo.imageUrl} style={{ objectPosition: photo.objectPosition ?? '50% 50%' }} />
                             </div> : null}
                             {photo.caption ? <FeedCaption text={photo.caption} /> : null}
-                            <ReactionRow
+                            {photo.audience && photo.audience !== 'public' ? null : <ReactionRow
                               commentCount={comments.length || photo.commentCount || 0}
                               onComment={() => setExpandedPhotoId((currentId) => currentId === photoKey ? '' : photoKey)}
                               onPrayer={() => void handlePhotoPrayerToggle(photo)}
                               prayerCount={photo.prayerCount ?? 0}
                               pressed={reacted}
-                            />
-                            {expandedPhotoId === photoKey ? (
+                            />}
+                            {(!photo.audience || photo.audience === 'public') && expandedPhotoId === photoKey ? (
                               <PhotoComments
                                 comments={comments}
                                 currentUserId={currentUser?.uid}
@@ -3221,10 +3230,10 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                     <em aria-live="polite">{mindCharacterCount.toLocaleString('ko-KR')}자</em>
                   </div>
                 </label>
-                <label className="faith-field"><span>피드 그룹</span><input list="faith-feed-group-options" maxLength={40} value={groupName} onChange={event => setGroupName(event.target.value)} placeholder="미분류" /><datalist id="faith-feed-group-options">{[...new Set([DEFAULT_FEED_GROUP, ...savedGroups, ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])].map(group => <option key={group} value={group} />)}</datalist></label><p className="faith-helper">피드에서 모아볼 그룹 이름입니다. 공개 범위는 아래에서 따로 선택하세요.</p>
+                <label className="faith-field"><span>공개 그룹</span><input list="faith-feed-group-options" maxLength={40} value={groupName} onChange={event => setGroupName(event.target.value)} placeholder="전체 공개" /><datalist id="faith-feed-group-options">{[...new Set([DEFAULT_FEED_GROUP, ...savedGroups, ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])].map(group => <option key={group} value={group} />)}</datalist></label><p className="faith-helper">공개 글에 지정한 그룹은 다른 사용자도 선택할 수 있어요. 나만 보기 묵상은 내 글에만 표시됩니다.</p>
                 <DevotionImagePicker value={devotionImage} onChange={setDevotionImage} onBusyChange={setIsDevotionImagePreparing} disabled={isSaving}/>
                 <div className="faith-segment" aria-label="공개 범위">
-                  {(['private', 'public', 'group'] as Audience[]).map((item) => (
+                  {(['private', 'public'] as Audience[]).map((item) => (
                     <button aria-pressed={audience === item} key={item} type="button" onClick={() => setAudience(item)}>{getAudienceLabel(item)}</button>
                   ))}
                 </div>
@@ -3831,7 +3840,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                 <span>짧은 문장</span>
                 <textarea rows={3} value={editingPhotoCaption} onChange={(event) => setEditingPhotoCaption(event.target.value)} />
               </label>
-              <label className="faith-field"><span>피드 그룹</span><input maxLength={40} value={editingPhotoGroup} onChange={event => setEditingPhotoGroup(event.target.value)} placeholder="미분류" /></label>
+              <label className="faith-field"><span>공개 그룹</span><input maxLength={40} value={editingPhotoGroup} onChange={event => setEditingPhotoGroup(event.target.value)} placeholder="전체 공개" /></label>
               <UploadProgress
                 disabled={!editingPhotoFile}
                 onCancel={cancelEditingPhotoUpload}
@@ -3872,7 +3881,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                     <span>짧은 문장</span>
                     <textarea rows={3} value={editingPhotoCaption} onChange={(event) => setEditingPhotoCaption(event.target.value)} />
                   </label>
-              <label className="faith-field"><span>피드 그룹</span><input maxLength={40} value={editingPhotoGroup} onChange={event => setEditingPhotoGroup(event.target.value)} placeholder="미분류" /></label>
+              <label className="faith-field"><span>공개 그룹</span><input maxLength={40} value={editingPhotoGroup} onChange={event => setEditingPhotoGroup(event.target.value)} placeholder="전체 공개" /></label>
                   <div className="faith-detail-actions">
                     <button className="faith-outline-button" type="button" onClick={() => void handlePhotoCaptionUpdate(selectedFeedPhoto)}>
                       <Icon name="edit" /> 수정
@@ -3914,7 +3923,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                 <span>짧은 문장</span>
                 <textarea rows={3} value={editingPhotoCaption} onChange={(event) => setEditingPhotoCaption(event.target.value)} />
               </label>
-              <label className="faith-field"><span>피드 그룹</span><input maxLength={40} value={editingPhotoGroup} onChange={event => setEditingPhotoGroup(event.target.value)} placeholder="미분류" /></label>
+              <label className="faith-field"><span>공개 그룹</span><input maxLength={40} value={editingPhotoGroup} onChange={event => setEditingPhotoGroup(event.target.value)} placeholder="전체 공개" /></label>
               <UploadProgress
                 disabled={!editingPhotoFile}
                 onCancel={cancelEditingPhotoUpload}

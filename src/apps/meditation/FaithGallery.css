@@ -25,3 +25,10 @@
 .faith-gallery-body .faith-youtube-section{margin-top:16px;border-radius:22px;border-color:#eee9f3;background:linear-gradient(145deg,#fff,#f9f6fc);box-shadow:0 6px 24px #65497c06}
 @media(max-width:480px){.faith-gallery-layout{grid-template-columns:61px minmax(0,1fr);gap:12px}.faith-bookshelf{padding:12px 3px;border-radius:23px;gap:16px}.faith-book-spine{width:53px}.faith-group-avatar{width:43px;height:43px;border-radius:15px}.faith-group-avatar svg{width:20px;height:20px}.faith-book-spine .faith-group-label{max-width:51px;font-size:9px}.faith-group-add{width:39px;height:39px;border-radius:14px}.faith-gallery-grid{gap:10px;margin-top:18px}.faith-gallery-tile,.faith-gallery-art{border-radius:17px}.faith-gallery-art{border-width:2px}}
 @media(prefers-reduced-motion:reduce){.faith-gallery-tile,.faith-group-avatar{transition:none}.faith-gallery-tile:hover,.faith-book-spine:hover .faith-group-avatar{transform:none}}
+
+/* Edge-to-edge photo album: keep only a one-pixel separation. */
+.faith-gallery-grid{gap:1px}
+.faith-gallery-tile,.faith-gallery-art,.faith-gallery-tile:focus-visible{border:0;border-radius:0;box-shadow:none}
+.faith-gallery-art:after{border-radius:0;box-shadow:none;background:none}
+.faith-gallery-tile:hover{transform:none;box-shadow:none}
+.faith-gallery-tile:hover img{transform:none}

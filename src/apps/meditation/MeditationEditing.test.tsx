@@ -27,6 +27,8 @@ vi.mock('firebase/database', () => ({
 vi.mock('./useScripturePlan', () => ({ useScripturePlan: () => ({ remotePlan: state.plan, isLoading: false, error: '', isFallback: false, retry: vi.fn() }) }))
 const image = 'data:image/png;base64,AAAA'
 beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') }
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new Event('close')) }
   localStorage.clear()
   state.user.uid = 'owner'
   state.update.mockReset().mockResolvedValue(undefined)
@@ -133,15 +135,28 @@ it('selects an AI author inside the composer and blocks posting during authentic
 it('recovers actual editing fields after a reload and removes the restored draft only after successful save', async () => {
   await openEdit()
   fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: '새로고침 직전의 묵상' } })
-  fireEvent.change(screen.getByRole('combobox', { name: '피드 그룹' }), { target: { value: '주일 묵상' } })
+  fireEvent.change(screen.getByRole('combobox', { name: '공개 그룹' }), { target: { value: '주일 묵상' } })
   cleanup()
   render(<MeditationApp activityId="ai03"/>)
   fireEvent.click(await screen.findByRole('button', { name: '최근 묵상 이어쓰기' }))
   expect((screen.getByRole('textbox', { name: /묵상 메모/ }) as HTMLTextAreaElement).value).toBe('새로고침 직전의 묵상')
-  expect((screen.getByRole('combobox', { name: '피드 그룹' }) as HTMLInputElement).value).toBe('주일 묵상')
+  expect((screen.getByRole('combobox', { name: '공개 그룹' }) as HTMLInputElement).value).toBe('주일 묵상')
   expect(screen.getByAltText('첨부한 십자가 그림 미리보기')).toHaveAttribute('src', image)
   fireEvent.click(screen.getByRole('button', { name: '저장' }))
   await waitFor(() => expect(state.update).toHaveBeenCalled())
   await waitFor(() => expect(screen.queryByRole('heading', { name: '묵상 수정' })).toBeNull())
   expect(Object.keys(localStorage).filter(key => key.startsWith('moa.faith.devotionDraft.v1:'))).toHaveLength(0)
+})
+
+it('shows private devotions only through My posts and does not publish when filtering or reading', async () => {
+  render(<MeditationApp activityId="ai03"/>)
+  expect(screen.queryByRole('button', { name: /의 묵상 보기:/ })).toBeNull()
+  expect(screen.queryByRole('button', { name: '묵상 나누기' })).toBeNull()
+  fireEvent.click(within(screen.getByRole('navigation', { name: '피드 그룹' })).getByRole('button', { name: '내 글' }))
+  const tile = screen.getByRole('button', { name: /의 묵상 보기:/ })
+  expect(tile).toHaveTextContent('')
+  fireEvent.click(tile)
+  expect(screen.getByText(/수정 전 묵상/)).toBeInTheDocument()
+  expect(screen.getByText(/나만 보기 묵상/)).toBeInTheDocument()
+  expect(state.update).not.toHaveBeenCalled()
 })
