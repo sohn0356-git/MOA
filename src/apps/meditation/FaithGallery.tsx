@@ -1,5 +1,5 @@
-import { Images, FolderHeart, Plus, UserRound } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
+import { Images, FolderHeart, Plus, UserRound, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react'
 import { normalizeFeedGroup, DEFAULT_FEED_GROUP } from './feedGroups'
 import './FaithGallery.css'
 
@@ -9,6 +9,8 @@ export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, o
   onAddGroup: (group: string) => void; header: ReactNode; renderDetail: (photo: T, close: () => void) => ReactNode
   limit: number; sentinelRef: Ref<HTMLDivElement>; view?: 'public' | 'mine'; onViewChange?: (view: 'public' | 'mine') => void
 }) {
+  const [bookmarksOpen, setBookmarksOpen] = useState(true)
+  const bookmarksId = useId()
   const [opened, setOpened] = useState('')
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
@@ -21,14 +23,21 @@ export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, o
     if (photo && !dialog.current?.open) dialog.current?.showModal()
     if (!photo && dialog.current?.open) dialog.current.close()
   }, [photo])
-  return <div className="faith-gallery-layout">
-    <nav className="faith-bookshelf" aria-label="피드 그룹">
+  return <div className="faith-gallery-layout" data-bookmarks-open={bookmarksOpen}>
+    <aside className="faith-bookmark-rail">
+      <button type="button" className="faith-bookmark-toggle" aria-label={bookmarksOpen ? '책갈피 접기' : '책갈피 펼치기'}
+        title={bookmarksOpen ? '책갈피 접기' : '책갈피 펼치기'} aria-expanded={bookmarksOpen} aria-controls={bookmarksId}
+        onClick={() => setBookmarksOpen(open => !open)}>
+        {bookmarksOpen ? <PanelLeftClose aria-hidden="true" /> : <PanelLeftOpen aria-hidden="true" />}
+      </button>
+    <nav id={bookmarksId} hidden={!bookmarksOpen} className="faith-bookshelf" aria-label="피드 그룹">
       
       {onViewChange && <button type="button" className="faith-book-spine" aria-pressed={view === 'mine'} onClick={() => onViewChange('mine')}><span className="faith-group-avatar"><UserRound aria-hidden="true" /></span><span className="faith-group-label">내 글</span></button>}
       {['', ...allGroups].map(group => <button type="button" key={group} className="faith-book-spine" aria-pressed={view === 'public' && selectedGroup === group}
         onClick={() => { onViewChange?.('public'); onSelectGroup(group) }}><span className="faith-group-avatar">{group ? <FolderHeart aria-hidden="true" /> : <Images aria-hidden="true" />}</span><span className="faith-group-label">{group || '공개 피드'}</span></button>)}
       <button type="button" className="faith-group-add" aria-label="피드 그룹 추가" title="피드 그룹 추가" onClick={() => setAdding(!adding)}><Plus aria-hidden="true" /></button>
     </nav>
+    </aside>
     <div className="faith-gallery-body">
       {header}
       {adding && <form className="faith-group-form" onSubmit={event => { event.preventDefault(); if (!name.trim()) return; onViewChange?.('public'); onAddGroup(normalizeFeedGroup(name)); setName(''); setAdding(false) }}>

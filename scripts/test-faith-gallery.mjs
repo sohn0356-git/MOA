@@ -64,6 +64,13 @@ try {
   await page.getByRole('button',{name:'내 글',exact:true}).click()
   assert.equal(await page.locator('.faith-gallery-tile').count(),2)
   await page.getByRole('button',{name:'공개 피드',exact:true}).click()
+  const groupBeforeCollapse = await page.getByRole('navigation',{name:'피드 그룹'}).getByRole('button',{pressed:true}).innerText()
+  const widthBeforeCollapse = await page.locator('.faith-gallery-body').evaluate(el=>el.getBoundingClientRect().width)
+  await page.getByRole('button',{name:'책갈피 접기'}).click()
+  assert.equal(await page.getByRole('navigation',{name:'피드 그룹'}).count(),0)
+  assert.ok(await page.locator('.faith-gallery-body').evaluate(el=>el.getBoundingClientRect().width)>widthBeforeCollapse)
+  await page.getByRole('button',{name:'책갈피 펼치기'}).click()
+  assert.equal(await page.getByRole('navigation',{name:'피드 그룹'}).getByRole('button',{pressed:true}).innerText(),groupBeforeCollapse)
   await page.screenshot({path:'test-results/faith-gallery/gallery-'+width+'.png',fullPage:true})
  }
  await page.getByRole('button',{name:'묵상 작성',exact:true}).click()

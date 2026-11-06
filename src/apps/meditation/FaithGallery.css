@@ -32,3 +32,13 @@
 .faith-gallery-art:after{border-radius:0;box-shadow:none;background:none}
 .faith-gallery-tile:hover{transform:none;box-shadow:none}
 .faith-gallery-tile:hover img{transform:none}
+
+/* Keep the disclosure reachable while the group rail is folded. */
+.faith-bookmark-rail{position:sticky;top:76px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.faith-bookmark-rail .faith-bookshelf{position:static;max-height:calc(100dvh - 220px);width:100%;box-sizing:border-box}
+.faith-bookmark-rail .faith-bookshelf[hidden]{display:none}
+.faith-bookmark-toggle{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;padding:0;border:1px solid #e8e1f0;border-radius:12px;background:#faf8fd;color:#8a73a9;cursor:pointer}
+.faith-bookmark-toggle svg{width:19px;height:19px}
+.faith-bookmark-toggle:hover{background:#eee7f6;color:#70508f}
+.faith-bookmark-toggle:focus-visible{outline:2px solid #9272b9;outline-offset:3px}
+.faith-gallery-layout[data-bookmarks-open=false]{grid-template-columns:36px minmax(0,1fr);gap:10px}
