@@ -9,6 +9,7 @@ await mkdir('test-results/faith-gallery', { recursive: true })
 await writeFile(folder + '/index.html', '<html lang="ko"><meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script type="module" src="./main.tsx"></script></html>')
 await writeFile(folder + '/main.tsx', `
 import React, { useState } from 'react'
+import '../src/index.css'
 import { createRoot } from 'react-dom/client'
 import { FaithGallery } from '../src/apps/meditation/FaithGallery'
 import { useDevotionDraft } from '../src/apps/meditation/useDevotionDraft'
@@ -47,6 +48,8 @@ try {
   assert.ok(positions[1].x>positions[0].x)
   assert.ok(positions[2].y>positions[0].y)
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow')
+  assert.equal(await page.locator('.faith-gallery-tile').first().innerText(),'','album tiles contain no metadata')
+  assert.equal(await page.locator('.faith-gallery-heading,.faith-gallery-caption,.faith-gallery-group').count(),0)
   await page.locator('.faith-gallery-tile').first().click()
   await page.getByRole('dialog').waitFor()
   assert.ok(await page.getByRole('dialog').getByText('사진을 눌러 읽는 묵상 본문').isVisible())

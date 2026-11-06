@@ -3,7 +3,7 @@ import { updateProfile } from 'firebase/auth'
 import { get, onValue, push, ref, remove, runTransaction, serverTimestamp, set, update } from 'firebase/database'
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, type UploadTask } from 'firebase/storage'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link2, Save, ExternalLink } from 'lucide-react'
+import { Link2, Save } from 'lucide-react'
 import { FaithGallery } from './FaithGallery'
 import { useDevotionDraft, type DevotionDraft } from './useDevotionDraft'
 import { normalizeFeedGroup, DEFAULT_FEED_GROUP } from './feedGroups'
@@ -3017,7 +3017,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                         src={`${lunchPraiseEmbedUrl}?autoplay=1&mute=1&playsinline=1`}
                         title="오늘의 찬송 추천 YouTube 영상"
                       />
-                      <a href={`https://www.youtube.com/watch?v=${extractYouTubeVideoId(lunchPraise?.videoId || lunchPraise?.youtubeUrl || '')}`} target="_blank" rel="noreferrer" className="faith-icon-attach" aria-label="YouTube에서 재생" title="YouTube에서 재생"><ExternalLink aria-hidden="true" /></a>
                     </>
                   ) : (
                     <p className="faith-muted">오늘의 찬양을 준비하고 있어요.</p>
