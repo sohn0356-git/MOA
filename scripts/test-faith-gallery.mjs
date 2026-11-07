@@ -69,6 +69,7 @@ try {
   await page.getByRole('button',{name:'책갈피 접기'}).click()
   assert.equal(await page.getByRole('navigation',{name:'피드 그룹'}).count(),0)
   assert.ok(await page.locator('.faith-gallery-body').evaluate(el=>el.getBoundingClientRect().width)>widthBeforeCollapse)
+  await page.screenshot({path:'test-results/faith-gallery/handle-folded-'+width+'.png',fullPage:true})
   await page.getByRole('button',{name:'책갈피 펼치기'}).click()
   assert.equal(await page.getByRole('navigation',{name:'피드 그룹'}).getByRole('button',{pressed:true}).innerText(),groupBeforeCollapse)
   await page.screenshot({path:'test-results/faith-gallery/gallery-'+width+'.png',fullPage:true})
