@@ -43,8 +43,8 @@
 .faith-bookmark-toggle:focus-visible{outline:2px solid #9272b9;outline-offset:3px}
 .faith-gallery-layout[data-bookmarks-open=false]{grid-template-columns:0 minmax(0,1fr);gap:0}
 .faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-rail{width:0;overflow:visible;z-index:30}
-.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle{position:fixed;top:50%;top:50dvh;left:0;transform:translateY(-50%);width:20px;height:80px;border:0;border-radius:0;background:transparent;box-shadow:none;touch-action:manipulation}
-.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:after{content:"";position:absolute;left:0;top:12px;width:4px;height:56px;border-radius:0 4px 4px 0;background:#9b92a8b3;box-shadow:1px 0 4px #45365512;transition:background .2s,width .2s}
-.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:hover:after,.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:focus-visible:after{width:6px;background:#8c70ad}
+.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle{position:fixed;top:34%;top:34dvh;left:0;transform:translateY(-50%);width:28px;height:124px;border:0;border-radius:0;background:transparent;box-shadow:none;touch-action:manipulation}
+.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:after{content:"";position:absolute;left:0;top:12px;width:7px;height:100px;border-radius:0 6px 6px 0;background:#8c67b0;box-shadow:2px 0 8px #7d5a9a33;transition:background .2s,width .2s}
+.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:hover:after,.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:focus-visible:after{width:9px;background:#70458f}
 @media(prefers-reduced-motion:reduce){.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:after{transition:none}}
 .faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle svg{display:none}
