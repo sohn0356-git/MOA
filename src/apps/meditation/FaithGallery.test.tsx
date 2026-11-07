@@ -27,6 +27,8 @@ it('opens the full devotion from its gallery tile and closes without navigating 
 })
 it('filters by the book-spine group and creates an assignable custom group', () => {
   render(<Gallery />)
+  expect(screen.queryByRole('navigation', { name: '피드 그룹' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: '책갈피 펼치기' }))
   fireEvent.click(within(screen.getByRole('navigation', { name: '피드 그룹' })).getByRole('button', { name: '기도' }))
   expect(screen.queryByRole('button', { name: /AI 01의 묵상 보기/ })).toBeNull()
   expect(screen.getByRole('button', { name: /이웃의 묵상 보기/ })).toBeInTheDocument()

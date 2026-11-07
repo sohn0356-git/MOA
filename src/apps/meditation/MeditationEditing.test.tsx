@@ -152,6 +152,8 @@ it('shows private devotions only through My posts and does not publish when filt
   render(<MeditationApp activityId="ai03"/>)
   expect(screen.queryByRole('button', { name: /의 묵상 보기:/ })).toBeNull()
   expect(screen.queryByRole('button', { name: '묵상 나누기' })).toBeNull()
+  expect(screen.queryByRole('navigation', { name: '피드 그룹' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: '책갈피 펼치기' }))
   fireEvent.click(within(screen.getByRole('navigation', { name: '피드 그룹' })).getByRole('button', { name: '내 글' }))
   const tile = screen.getByRole('button', { name: /의 묵상 보기:/ })
   expect(tile).toHaveTextContent('')

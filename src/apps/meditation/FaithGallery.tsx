@@ -9,7 +9,7 @@ export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, o
   onAddGroup: (group: string) => void; header: ReactNode; renderDetail: (photo: T, close: () => void) => ReactNode
   limit: number; sentinelRef: Ref<HTMLDivElement>; view?: 'public' | 'mine'; onViewChange?: (view: 'public' | 'mine') => void
 }) {
-  const [bookmarksOpen, setBookmarksOpen] = useState(true)
+  const [bookmarksOpen, setBookmarksOpen] = useState(false)
   const bookmarksId = useId()
   const [opened, setOpened] = useState('')
   const [adding, setAdding] = useState(false)

@@ -44,6 +44,8 @@ try {
   await page.setViewportSize({ width, height: 900 })
   await page.goto('http://127.0.0.1:4179/MOA/' + folder + '/index.html')
   await page.locator('.faith-gallery-tile').first().waitFor()
+  assert.equal(await page.getByRole('navigation',{name:'피드 그룹'}).count(),0,'bookmarks start folded')
+  await page.getByRole('button',{name:'책갈피 펼치기'}).click()
   const positions = await page.locator('.faith-gallery-tile').evaluateAll(tiles=>tiles.slice(0,3).map(tile=>({x:tile.getBoundingClientRect().x,y:tile.getBoundingClientRect().y})))
   assert.equal(positions[0].y,positions[1].y,'first row has two columns')
   assert.ok(positions[1].x>positions[0].x)
