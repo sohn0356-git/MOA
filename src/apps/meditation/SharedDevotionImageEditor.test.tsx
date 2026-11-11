@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { SharedDevotionImageEditor } from './SharedDevotionImageEditor'
 import { canApplyAppUpdate } from '../../lib/appUpdateProtocol'
 const state=vi.hoisted(()=>({uid:'bob',update:vi.fn()}))
@@ -34,7 +34,9 @@ it('keeps an image draft after a permission failure or refresh and blocks update
  expect(await screen.findByRole('alert')).toHaveTextContent('그림을 저장하지 못했습니다')
  expect(screen.getByRole('button',{name:'그림 수정 저장'})).toBeEnabled()
  // The editor protects the durable draft while an application update is offered.
- expect(canApplyAppUpdate()).toBe(false)
+ let permitted=true
+ act(()=>{permitted=canApplyAppUpdate()})
+ expect(permitted).toBe(false)
  first.unmount()
  render(<SharedDevotionImageEditor actorUid="bob" target={target} image={original} onSaved={vi.fn()}/>)
  fireEvent.click(screen.getByRole('button',{name:'공개 묵상 그림 수정'}))

@@ -56,5 +56,5 @@ await denied(plain+'/imageUrl','PUT',changed,editor)
 const emptySource='users/'+author+'/meditationEntries/empty', emptyShare='crossPhotos/devotion_'+author+'_empty'
 await allowed('', 'PATCH',{[emptySource]:{...original,crossImage:null},[emptyShare]:{...published,sourceEntryId:'empty',publicId:'devotion_'+author+'_empty',imageUrl:''}})
 await allowed('', 'PATCH',{[emptySource+'/crossImage']:changed,[emptyShare+'/imageUrl']:changed},editor)
-await allowed('', 'PATCH',{[source]:null,[emptySource]:null,[share]:null,[emptyShare]:null,[plain]:null})
+await allowed('', 'PATCH',{[source]:null,[emptySource]:null,[emptyShare]:null,[plain]:null})
 console.log('Public devotion images: cross-account add/replace/remove, atomic mirroring, private/read/text/delete isolation, stale-public revocation and image validation passed.')
