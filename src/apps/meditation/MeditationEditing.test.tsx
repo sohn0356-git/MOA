@@ -6,6 +6,7 @@ import { MeditationApp } from './MeditationApp'
 const state = vi.hoisted(() => ({
   user: { uid: 'owner', displayName: 'Google 사용자', email: 'owner@example.com', photoURL: '' },
   entries: {} as Record<string, unknown>,
+  publicPhotos: {} as Record<string, unknown>,
   update: vi.fn(),
   plan: { date: '2026-10-31', title: '말씀', theme: '사랑', reference: '요한복음 13:34', question: '오늘의 적용은?', verses: [{ number: 1, text: '서로 사랑하라' }] },
 }))
@@ -18,7 +19,7 @@ vi.mock('firebase/storage', () => ({ deleteObject: vi.fn(), getDownloadURL: vi.f
 vi.mock('firebase/database', () => ({
   ref: (_db: unknown, path = '') => path,
   onValue: (path: string, callback: (snapshot: { val: () => unknown }) => void) => {
-    callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : null })
+    callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : path === 'crossPhotos' ? state.publicPhotos : null })
     return () => {}
   },
   get: vi.fn(async () => ({ val: () => null })), push: () => ({ key: 'new-entry' }),
@@ -31,6 +32,7 @@ beforeEach(() => {
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new Event('close')) }
   localStorage.clear()
   state.user.uid = 'owner'
+  state.publicPhotos = {}
   state.update.mockReset().mockResolvedValue(undefined)
   state.entries = { original: {
     authorUid: 'owner', authorName: 'AI 01', activityId: 'ai01',
@@ -161,4 +163,18 @@ it('shows private devotions only through My posts and does not publish when filt
   expect(screen.getByText(/수정 전 묵상/)).toBeInTheDocument()
   expect(screen.getByText(/나만 보기 묵상/)).toBeInTheDocument()
   expect(state.update).not.toHaveBeenCalled()
+})
+
+it('offers image-only editing on another user’s public devotion without exposing author controls',()=>{
+ state.user.uid='bob';state.entries={}
+ state.publicPhotos={devotion_alice_shared:{ownerUid:'alice',authorUid:'alice',authorName:'Alice',sourceType:'devotion',sourceEntryId:'shared',publicId:'devotion_alice_shared',imageUrl:image,caption:'Alice의 전체 공개 묵상',selectedDate:'2026-11-11',createdAt:'2026-10-15T01:00:00.000Z',storagePath:''}}
+ render(<MeditationApp activityId="ai03"/>)
+ fireEvent.click(screen.getByRole('button',{name:/Alice의 묵상 보기/}))
+ expect(screen.getByRole('button',{name:'공개 묵상 그림 수정'})).toBeEnabled()
+ expect(screen.queryByRole('button',{name:'묵상 수정'})).toBeNull()
+ expect(screen.queryByRole('button',{name:'삭제'})).toBeNull()
+ fireEvent.click(screen.getByRole('button',{name:'공개 묵상 그림 수정'}))
+ expect(screen.getByRole('button',{name:'그림 수정 저장'})).toBeDisabled()
+ expect(screen.getByRole('button',{name:'닫기',exact:true})).toBeInTheDocument()
+ expect(state.update).not.toHaveBeenCalled()
 })

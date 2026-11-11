@@ -1,3 +1,4 @@
+import { SharedDevotionImageEditor } from './SharedDevotionImageEditor'
 import { buildPersonalFeed } from './personalFeed'
 import { FirebaseError } from 'firebase/app'
 import { updateProfile } from 'firebase/auth'
@@ -3063,6 +3064,15 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                               <button className="faith-outline-button" type="button" onClick={() => { close(); void openSharedDevotionEditor(photo) }}>
                                 <Icon name="edit" />{photo.imageUrl ? '십자가 그림 변경 · 묵상 수정' : '십자가 그림 추가 · 묵상 수정'}
                               </button>
+                            ) : null}
+                            {photo.sourceType === 'devotion' && currentUser && photo.ownerUid && photo.sourceEntryId && (!photo.audience || photo.audience === 'public') ? (
+                              <SharedDevotionImageEditor key={currentUser.uid + ':' + photoKey} actorUid={currentUser.uid}
+                                target={{ ownerUid: photo.ownerUid, sourceEntryId: photo.sourceEntryId, publicId: photoKey }} image={photo.imageUrl} disabled={activityBusy}
+                                onSaved={image => {
+                                  setPublicFeedPhotos(photos => photos.map(item => (item.publicId ?? item.id) === photoKey ? { ...item, imageUrl: image } : item))
+                                  if (photo.ownerUid === currentUser.uid) setEntries(items => items.map(item => item.id === photo.sourceEntryId ? { ...item, crossImage: image } : item))
+                                  setStatusMessage('공개 묵상의 그림을 수정했습니다.')
+                                }} />
                             ) : null}
                             {photo.imageUrl ? <div className="faith-photo-frame">
                               

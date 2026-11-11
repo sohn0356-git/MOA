@@ -7,7 +7,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -15,6 +15,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Test shared devotion image permissions
+        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs"
       - run: npm run build
       - run: npm test
       - run: npm run test:faith-startup
