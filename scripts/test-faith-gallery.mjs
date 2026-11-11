@@ -14,7 +14,9 @@ import { createRoot } from 'react-dom/client'
 import { FaithGallery } from '../src/apps/meditation/FaithGallery'
 import { useDevotionDraft } from '../src/apps/meditation/useDevotionDraft'
 import { normalizeDevotionFields } from '../src/apps/meditation/devotionEditing'
+import { SharedDevotionImageEditor } from '../src/apps/meditation/SharedDevotionImageEditor'
 function App() {
+ const [sharedImage,setSharedImage] = useState('')
  const [view,setView] = useState<'public'|'mine'>('public')
  const [group,setGroup] = useState('')
  const [groups,setGroups] = useState(['매일 묵상','기도','주일'])
@@ -27,12 +29,17 @@ function App() {
   <button onClick={()=>{draft.activate();setEditing(true)}}>묵상 작성</button>
   {!editing && draft.drafts.length>0 && <button onClick={()=>{draft.activate(draft.drafts[0]);setMind(draft.drafts[0].values.mind);setEditing(true)}}>이어서 쓰기</button>}
   {editing && <label>묵상 메모<textarea value={mind} onChange={e=>{draft.flush({mind:e.target.value});setMind(e.target.value)}} /></label>}
-  <FaithGallery view={view} onViewChange={next=>{setView(next);setGroup('')}} photos={view==='mine'?photos.slice(0,2):photos} groups={groups} selectedGroup={group} onSelectGroup={setGroup} onAddGroup={name=>{setGroups([...groups,name]);setGroup(name)}} limit={8} sentinelRef={null} header={<p>작은 묵상, 함께하는 하루</p>} renderDetail={(photo)=> <article><h2>{photo.caption.split('\\n')[0]}</h2><p>사진을 눌러 읽는 묵상 본문</p></article>}/>
+  <FaithGallery view={view} onViewChange={next=>{setView(next);setGroup('')}} photos={view==='mine'?photos.slice(0,2):photos} groups={groups} selectedGroup={group} onSelectGroup={setGroup} onAddGroup={name=>{setGroups([...groups,name]);setGroup(name)}} limit={8} sentinelRef={null} header={<p>작은 묵상, 함께하는 하루</p>} renderDetail={(photo)=> <article><h2>{photo.caption.split('\\n')[0]}</h2><p>사진을 눌러 읽는 묵상 본문</p><SharedDevotionImageEditor actorUid="bob" target={{ownerUid:'alice',sourceEntryId:'entry',publicId:'devotion_alice_entry'}} image={sharedImage} onSaved={setSharedImage}/></article>}/>
  </div>
 }
 createRoot(document.getElementById('root')!).render(<App/>)
 `)
-const server = await createServer({ configFile: false, root: process.cwd(), base: '/MOA/', plugins: [react()], server: { host: '127.0.0.1', port: 4179, strictPort: true } })
+await writeFile(folder + '/fake-db.ts', "export const ref=()=>({}); export const update=async (_ref,data)=>{window.__collabImageWrites=data}")
+await writeFile(folder + '/fake-session.ts', "export const getFaithAuth=()=>({currentUser:{uid:'bob'}}); export const getFaithDb=()=>({})")
+const server = await createServer({ configFile: false, root: process.cwd(), base: '/MOA/', plugins: [react()], resolve: { alias: [
+ { find: 'firebase/database', replacement: process.cwd() + '/' + folder + '/fake-db.ts' },
+ { find: '../../services/faithSession', replacement: process.cwd() + '/' + folder + '/fake-session.ts' },
+] }, server: { host: '127.0.0.1', port: 4179, strictPort: true } })
 await server.listen()
 const browser = await chromium.launch({ headless: true, channel: 'chrome' })
 try {
@@ -76,6 +83,19 @@ try {
   assert.equal(await page.getByRole('navigation',{name:'피드 그룹'}).getByRole('button',{pressed:true}).innerText(),groupBeforeCollapse)
   await page.screenshot({path:'test-results/faith-gallery/gallery-'+width+'.png',fullPage:true})
  }
+ await page.locator('.faith-gallery-tile').first().click()
+ await page.getByRole('button',{name:'공개 묵상 그림 추가'}).click()
+ const png = await page.evaluate(()=>{ const canvas=document.createElement('canvas');canvas.width=8;canvas.height=8;const context=canvas.getContext('2d');context.fillStyle='#9a78c4';context.fillRect(0,0,8,8);return canvas.toDataURL('image/png').split(',')[1] })
+ await page.getByLabel('십자가 그림 파일').setInputFiles({name:'cross.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')})
+ await page.getByRole('button',{name:'그림 수정 저장'}).click()
+ await page.waitForFunction(()=>Boolean(window.__collabImageWrites))
+ const writes=await page.evaluate(()=>window.__collabImageWrites)
+ assert.deepEqual(Object.keys(writes).sort(),['crossPhotos/devotion_alice_entry/imageUrl','users/alice/meditationEntries/entry/crossImage'].sort())
+ assert.equal(writes['crossPhotos/devotion_alice_entry/imageUrl'],writes['users/alice/meditationEntries/entry/crossImage'])
+ assert.ok(writes['crossPhotos/devotion_alice_entry/imageUrl'].startsWith('data:image/webp;base64,'))
+ await page.getByRole('button',{name:'공개 묵상 그림 수정'}).waitFor()
+ await page.screenshot({path:'test-results/faith-gallery/shared-image-edit-saved.png',fullPage:true})
+ await page.keyboard.press('Escape')
  await page.getByRole('button',{name:'묵상 작성',exact:true}).click()
  await page.getByRole('textbox',{name:'묵상 메모'}).fill('새로고침해도 남아야 하는 실제 입력')
  await page.reload()
