@@ -175,6 +175,6 @@ it('offers image-only editing on another user’s public devotion without exposi
  expect(screen.queryByRole('button',{name:'삭제'})).toBeNull()
  fireEvent.click(screen.getByRole('button',{name:'공개 묵상 그림 수정'}))
  expect(screen.getByRole('button',{name:'그림 수정 저장'})).toBeDisabled()
- expect(screen.getByRole('button',{name:'닫기',exact:true})).toBeInTheDocument()
+ expect(screen.getByRole('button',{name:'닫기'})).toBeInTheDocument()
  expect(state.update).not.toHaveBeenCalled()
 })
