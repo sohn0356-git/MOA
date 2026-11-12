@@ -49,8 +49,10 @@ try{
   await page.getByRole('button',{name:'촛불 켜기'}).click()
   await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).fill('이 계정에 남기는 조용한 기도')
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow')
+  await page.evaluate(()=>window.scrollTo(0,0))
   await page.screenshot({path:'test-results/faith-sanctuary/evening-'+width+'.png',fullPage:true})
   await page.getByRole('button',{name:'새벽',exact:true}).click()
+  await page.evaluate(()=>window.scrollTo(0,0))
   await page.screenshot({path:'test-results/faith-sanctuary/sanctuary-'+width+'.png',fullPage:true})
  }
  await page.getByRole('button',{name:'기도 시작'}).click()

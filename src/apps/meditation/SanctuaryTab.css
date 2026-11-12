@@ -100,3 +100,10 @@
 @media(min-width:620px){.sanctuary h2{font-size:36px}.sanctuary-practices{gap:18px}.sanctuary-timer-card,.sanctuary-candle-card{padding:24px}.sanctuary-room{max-height:420px}.sanctuary-timer-face{max-width:180px}.sanctuary-timer-face>span{font-size:42px}}
 @media(max-width:380px){.sanctuary h2{font-size:27px}.sanctuary-practices{gap:9px}.sanctuary-timer-card,.sanctuary-candle-card{padding:17px 12px}.sanctuary-duration button{padding:5px 8px}.sanctuary-timer-face>span{font-size:29px}.sanctuary-note-card{padding:20px 17px}.sanctuary-room-bottom>small{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.sanctuary *{animation:none!important;transition:none!important}}
+
+/* Keep time controls readable on narrow phones. */
+.sanctuary .sanctuary-duration button{flex:1;min-width:0;white-space:nowrap;padding:5px 3px}
+.sanctuary-lead,.sanctuary-login-card p{color:#74806a}
+.sanctuary .sanctuary-card-head small,.sanctuary .sanctuary-timer-face>small,.sanctuary .sanctuary-note-footer{color:#7e896f}
+.sanctuary-candle-card>p,.sanctuary-candle-card>small{color:#8a805f}
+.sanctuary-footer{color:#8b987e}
