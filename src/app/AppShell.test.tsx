@@ -15,7 +15,7 @@ const activity=vi.hoisted(()=>({
 vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
-vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId}:{entryActions?:ReactNode;activityId?:string})=><section><h1>MOA Faith</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p></section>}))
+vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>})=><section><h1>MOA Faith</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.()}>예배당 로그인</button></section>}))
 vi.mock('../apps/ai-city/AiCityApp',()=>({AiCityApp:({entryActions}:{entryActions?:ReactNode})=><section><h1>Ai city</h1>{entryActions}<p>공개 도시</p></section>}))
 vi.mock('../apps/registry',()=>({appRegistry:[
  {id:'ai-city',name:'Ai city',route:'#/ai-city',component:()=>null},
@@ -110,4 +110,16 @@ describe('Faith activity permissions and account controls',()=>{
   await waitFor(()=>expect(auth.signOutUser).toHaveBeenCalledOnce())
   expect(activity.clearActivity).toHaveBeenCalledOnce()
  })
+})
+
+it('uses primary account authentication for sanctuary access and clears AI activity after signing in',async()=>{
+ activity.activityId='ai03'
+ const view=render(<AppShell/>)
+ expect(screen.getByLabelText('예배당 로그인 계정').textContent).toBe('로그인 필요')
+ fireEvent.click(screen.getByRole('button',{name:'예배당 로그인'}))
+ await waitFor(()=>expect(activity.clearActivity).toHaveBeenCalledOnce())
+ expect(auth.signInWithGoogle).toHaveBeenCalledOnce()
+ auth.user={uid:'google-member',displayName:'회원'} as User
+ view.rerender(<AppShell/>)
+ expect(screen.getByLabelText('예배당 로그인 계정').textContent).toBe('google-member')
 })

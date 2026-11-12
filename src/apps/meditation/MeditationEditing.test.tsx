@@ -45,7 +45,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 async function openEdit() {
   render(<MeditationApp activityId="ai03"/>)
-  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상' }))
+  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상·기도' }))
   fireEvent.click(screen.getByRole('tab', { name: '내 묵상' }))
   fireEvent.click(await screen.findByText('수정 전 묵상'))
   fireEvent.click(screen.getByRole('button', { name: '묵상 수정' }))
@@ -109,7 +109,7 @@ describe('real devotion editing and activity authorship', () => {
   it('uses the selected AI activity name for a new entry without changing the authenticated owner', async () => {
     state.entries = {}
     render(<MeditationApp activityId="ai03"/>)
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상' }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상·기도' }))
     fireEvent.click(screen.getByRole('button', { name: '묵상 쓰기' }))
     fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: 'AI 03으로 쓴 묵상' } })
     fireEvent.click(screen.getByRole('button', { name: '나만 보기' }))
@@ -126,7 +126,7 @@ describe('real devotion editing and activity authorship', () => {
 it('selects an AI author inside the composer and blocks posting during authentication', async () => {
   const selectActivity = vi.fn().mockResolvedValue(undefined)
   render(<MeditationApp activityId="ai01" activityBusy onActivityChange={selectActivity}/>)
-  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상' }))
+  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상·기도' }))
   fireEvent.click(screen.getByRole('button', { name: '묵상 쓰기' }))
   fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: '보존할 초안' } })
   expect(screen.getByRole('combobox', { name: '새 묵상 작성자' })).toBeDisabled()
@@ -177,4 +177,23 @@ it('offers image-only editing on another user’s public devotion without exposi
  expect(screen.getByRole('button',{name:'그림 수정 저장'})).toBeDisabled()
  expect(screen.getByRole('button',{name:'닫기'})).toBeInTheDocument()
  expect(state.update).not.toHaveBeenCalled()
+})
+
+it('combines devotion and prayer under one bottom tab and places the gated sanctuary in the center',async()=>{
+ const login=vi.fn().mockResolvedValue(undefined)
+ render(<MeditationApp activityId="ai03" onChurchSignIn={login}/>)
+ const nav=screen.getByRole('navigation',{name:'MOA Faith'})
+ expect(within(nav).getAllByRole('button').map(button=>button.textContent)).toEqual(['피드','묵상·기도','예배당','질문','내 기록'])
+ fireEvent.click(within(nav).getByRole('button',{name:'묵상·기도'}))
+ fireEvent.click(within(screen.getByRole('navigation',{name:'묵상과 기도'})).getByRole('button',{name:'기도'}))
+ expect(screen.getByRole('tab',{name:'함께 기도'})).toBeInTheDocument()
+ expect(within(nav).getByRole('button',{name:'묵상·기도'})).toHaveAttribute('aria-current','page')
+ fireEvent.click(screen.getByRole('button',{name:'기도 작성'}))
+ expect(screen.getByRole('heading',{name:'기도제목 작성'})).toBeInTheDocument()
+ fireEvent.click(within(nav).getByRole('button',{name:'예배당'}))
+ // An AI activity UID already exists in this test; it does not bypass primary account login.
+ expect(screen.getByRole('heading',{name:'로그인하고 들어오세요'})).toBeInTheDocument()
+ expect(screen.queryByRole('textbox',{name:'예배당 개인 기도 메모'})).toBeNull()
+ fireEvent.click(screen.getByRole('button',{name:'로그인하고 예배당 입장'}))
+ await waitFor(()=>expect(login).toHaveBeenCalledOnce())
 })

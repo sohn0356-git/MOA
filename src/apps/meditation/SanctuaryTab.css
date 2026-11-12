@@ -1,0 +1,102 @@
+
+.sanctuary{--sanctuary-ink:#30473c;--sanctuary-muted:#8a9284;--room-wall-top:#ded9c7;--room-wall:#eae4d3;--room-side:#c7c5b4;--room-trim:#a89c77;--room-window-top:#fff8de;--room-window:#e5cc93;--room-floor-top:#c9c5ad;--room-floor:#aaa98d;--room-aisle:#f3ead2;--room-wood:#898570;--room-pew-top:#aaa58c;font-family:"NanumSquare Neo",sans-serif;color:var(--sanctuary-ink);padding:4px 0 0}
+.sanctuary[data-light=day]{--room-wall-top:#e8e8db;--room-wall:#f3eedf;--room-side:#d0d3c4;--room-trim:#a4a582;--room-window-top:#f8fcf0;--room-window:#d3e1c3;--room-floor-top:#dbd6bb;--room-floor:#b9b89c;--room-aisle:#fff5d7}
+.sanctuary[data-light=evening]{--room-wall-top:#313d3c;--room-wall:#4a5148;--room-side:#293b36;--room-trim:#8d876c;--room-window-top:#a59c85;--room-window:#deb87d;--room-floor-top:#5b6454;--room-floor:#3a4c40;--room-aisle:#a5a081;--room-wood:#454f42;--room-pew-top:#777b60}
+.faith-screen[data-church-active=true]{background:#f6f4ee}
+.faith-screen[data-church-active=true]>.faith-header{background:#f6f4eef5;border-color:#e6e5d9}
+.faith-screen[data-church-active=true]>.faith-content{background:radial-gradient(ellipse at 100% 0,#e8ebdf80,transparent 55%),#f6f4ee;padding-top:18px}
+.sanctuary-eyebrow{font-size:9px;letter-spacing:.16em;font-weight:700;display:flex;align-items:center;gap:8px;color:#929782}
+.sanctuary-eyebrow>span{height:5px;width:5px;background:#a9b19a;border-radius:50%}
+.sanctuary-welcome{display:flex;justify-content:space-between;align-items:start;gap:12px;padding:8px 4px 0}
+.sanctuary h2{font-size:30px;line-height:1.5;letter-spacing:-1.2px;font-weight:400;margin:13px 0 0}
+.sanctuary h2 em{font-style:normal;font-weight:800}
+.sanctuary-open-badge{font-size:9px;white-space:nowrap;padding:6px 10px;border:1px solid #dce0d1;color:#78856d;border-radius:20px;margin-top:5px;background:#f9faf4}
+.sanctuary-lead{font-size:12px;line-height:1.9;color:#8b9284;margin:14px 4px 25px}
+.sanctuary-room-card{overflow:hidden;border:1px solid #dfe1d4;border-radius:24px;background:#e7e5d9;box-shadow:0 18px 45px #46543a0c}
+.sanctuary-room-top,.sanctuary-room-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;color:#6e7966;background:#f2f1e8}
+.sanctuary-room-top>span{font-size:11px;font-weight:700;display:flex;align-items:center;gap:10px}
+.sanctuary-room-top i{display:inline-block;height:10px;width:1px;background:#c7cebb}
+.sanctuary-room-top>button{display:flex;align-items:center;gap:5px;border:0;background:transparent;font-size:10px;color:#7b876e;padding:5px}
+.sanctuary-room-bottom{padding:13px 16px;background:#eeeee3}
+.sanctuary-room-bottom>span{display:flex;align-items:center;gap:6px;font-size:10px}
+.sanctuary-room-bottom>small{font-size:9px;color:#939b88}
+.sanctuary-dot{width:5px;height:5px;border-radius:50%;background:#78916a}
+.sanctuary-room{position:relative;aspect-ratio:4/3;overflow:hidden;isolation:isolate}
+.sanctuary-room-art{display:block;width:100%;height:100%}
+.sanctuary-seat{position:absolute;width:44px;height:44px;border:0;background:transparent;border-radius:50%;display:grid;place-items:center;transform:translate(-50%,-50%);padding:0;color:#fff}
+.sanctuary-seat>span{width:7px;height:7px;border-radius:50%;background:#ffffff75;box-shadow:0 0 0 5px #ffffff0a}
+.sanctuary-seat[aria-pressed=true]{background:#f8f5db;box-shadow:0 0 0 6px #f7f3cb22,0 3px 14px #343c2525;width:32px;height:32px;color:#7a8662}
+.sanctuary-seat-0{left:31%;top:65%}.sanctuary-seat-1{left:69%;top:65%}.sanctuary-seat-2{left:28%;top:87%}.sanctuary-seat-3{left:72%;top:87%}
+.sanctuary-seat:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.sanctuary-scene-candle{animation:sanctuary-glow 3s ease-in-out infinite}
+.sanctuary-light-switch{display:flex;justify-content:center;gap:8px;margin:16px 0 24px}
+.sanctuary-light-switch button{display:flex;align-items:center;gap:7px;padding:8px 16px;border:1px solid transparent;background:none;border-radius:30px;color:#929988;font-size:11px}
+.sanctuary-light-switch button[aria-pressed=true]{background:#fffdf7;border-color:#dfe2d2;color:#4f6646;box-shadow:0 3px 8px #4d58350a}
+.sanctuary-verse-card{padding:26px 24px;border:1px solid #e0e4d7;border-radius:22px;background:linear-gradient(135deg,#eef1e7,#e4e9db);position:relative;overflow:hidden}
+.sanctuary-verse-card:after{content:'“';position:absolute;right:14px;top:-24px;font-family:Georgia,serif;font-size:150px;color:#d0dac530;pointer-events:none}
+.sanctuary-verse-card>p{position:relative;z-index:1;font-size:14px;font-weight:500;line-height:2.1;margin:18px 0;color:#4d6248}
+.sanctuary-verse-card>div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:10px;color:#8b967f}
+.sanctuary-verse-card button{display:flex;gap:4px;align-items:center;border:0;background:none;color:#6d805f;font-size:10px;padding:5px 0}
+.sanctuary-practices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}
+.sanctuary-timer-card,.sanctuary-candle-card{padding:20px 18px;border:1px solid #e6e5d9;border-radius:22px;background:#fcfbf5;min-width:0}
+.sanctuary-card-head{display:flex;align-items:start;justify-content:space-between;gap:8px;color:#7c896d;font-size:12px;font-weight:700}
+.sanctuary-card-head>div{display:flex;flex-direction:column;gap:5px}
+.sanctuary-card-head small{font-size:10px;font-weight:400;color:#9aa18f}
+.sanctuary-timer-face{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;aspect-ratio:1;margin:21px auto 16px;border-radius:50%;max-width:160px;background:radial-gradient(circle at center,#fcfbf5 66%,transparent 67%),conic-gradient(#9ead85 calc(var(--prayer-progress)*360deg),#ebeee1 0)}
+.sanctuary-timer-face>span{font-size:34px;letter-spacing:-1px;font-weight:400;font-variant-numeric:tabular-nums;color:#4e6246}
+.sanctuary-timer-face>small{font-size:9px;color:#a1a88f}
+.sanctuary-timer-face[data-running=true]{animation:sanctuary-breathe 5s ease-in-out infinite}
+.sanctuary-duration{display:flex;justify-content:center;gap:4px;margin-bottom:14px}
+.sanctuary-duration button{border:0;background:transparent;border-radius:7px;color:#a0a88f;padding:5px 10px;font-size:10px}
+.sanctuary-duration button[aria-pressed=true]{background:#edf0e4;color:#657950}
+.sanctuary-timer-actions{display:flex;align-items:center;gap:6px}
+.sanctuary-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:0;border-radius:12px;background:#526a4a;color:#fff;padding:11px 18px;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer}
+.sanctuary-primary:disabled{opacity:.55;cursor:wait}
+.sanctuary-timer-actions .sanctuary-primary{flex:1;font-size:10px;padding:10px 7px;white-space:nowrap}
+.sanctuary-reset{display:grid;place-items:center;min-width:30px;height:35px;border:0;border-radius:10px;background:#eff1e6;color:#8b977d}
+.sanctuary-candle-card{display:flex;flex-direction:column;align-items:center;background:linear-gradient(150deg,#faf8ef,#f2eee0)}
+.sanctuary-candle-card>.sanctuary-card-head{width:100%}
+.sanctuary-candle{position:relative;height:125px;width:76px;margin-top:10px;display:flex;align-items:center;flex-direction:column;justify-content:end}
+.sanctuary-wax{height:62px;width:30px;background:linear-gradient(90deg,#e7d9b4,#f4ebd4 45%,#e5d5ac);border-radius:4px 4px 3px 3px;box-shadow:7px 7px 15px #9a82591c}
+.sanctuary-wick{width:2px;height:7px;background:#897552}
+.sanctuary-flame{width:13px;height:25px;border-radius:65% 35% 65% 35%;background:linear-gradient(#f7bd69,#fbe1a0);margin-bottom:2px;opacity:.2;transform:rotate(-10deg)}
+.sanctuary-candle[data-lit=true] .sanctuary-flame{opacity:1;box-shadow:0 0 24px 13px #f3ce702a;animation:sanctuary-glow 2.5s ease-in-out infinite}
+.sanctuary-candle-card>p{font-size:10px;line-height:1.9;color:#9a947b;text-align:center;margin:16px 0}
+.sanctuary-candle-button{display:flex;align-items:center;gap:5px;justify-content:center;width:100%;padding:9px 5px;min-height:40px;border:1px solid #ddd4b9;background:#fbf8ed;border-radius:11px;font-size:11px;color:#9b865b}
+.sanctuary-candle-card>small{font-size:9px;color:#aaa18b;margin-top:9px}
+.sanctuary-candle-card strong{color:#8a754d;padding-left:4px;font-weight:500}
+.sanctuary-note-card{padding:23px 22px;background:#fcfbf6;border:1px solid #e6e5d9;border-radius:22px}
+.sanctuary-note-card textarea{display:block;box-sizing:border-box;resize:vertical;width:100%;border:0;border-bottom:1px solid #e9e8dd;border-radius:0;background:transparent;padding:19px 0 12px;outline:none;line-height:1.9;font-family:inherit;font-size:12px;color:#5f7054}
+.sanctuary-note-card textarea:focus{border-color:#92a278}
+.sanctuary-note-card textarea::placeholder{color:#b0b5a4}
+.sanctuary-note-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:9px;color:#a7ad99}
+.sanctuary-note-footer>span{color:#8b9e77;white-space:nowrap}
+.sanctuary-prayer-link{display:flex;align-items:center;gap:5px;border:0;background:none;color:#80946a;font-size:11px;padding:18px 0 0}
+.sanctuary-notice{padding:12px 16px;border:1px solid #dce6cd;border-radius:12px;background:#f0f5e8;font-size:11px;color:#6d805a}
+.sanctuary-error{padding:12px 16px;border:1px solid #ead8c0;border-radius:12px;background:#fbf2e6;font-size:11px;color:#a47d4e}
+.sanctuary-footer{text-align:center;padding:34px 0 10px;color:#b7bdab}
+.sanctuary-footer>span{font-size:9px;letter-spacing:.2em}
+.sanctuary-footer p{font-size:10px;margin:8px 0}
+.sanctuary-footer small{font-size:9px}
+.sanctuary-gate{text-align:center;padding:12px 0 22px}
+.sanctuary-gate>.sanctuary-eyebrow{justify-content:center}
+.sanctuary-gate h2{font-size:32px;margin-top:22px}
+.sanctuary-gate .sanctuary-lead{margin:15px 0 23px}
+.sanctuary-gate-scene{position:relative;max-width:480px;margin:auto}
+.sanctuary-gate-scene .sanctuary-room{border-radius:24px;max-height:300px;opacity:.85;filter:saturate(.7)}
+.sanctuary-gate-seal{display:grid;place-items:center;position:absolute;left:50%;bottom:-25px;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;background:#f9faf3;border:5px solid #f6f4ee;color:#8b9b76;box-shadow:0 5px 14px #5f6a4012}
+.sanctuary-login-card{padding:30px 12px 0}
+.sanctuary-login-card h3{font-size:16px;color:#526a4a;margin:16px 0 10px}
+.sanctuary-login-card p{font-size:11px;line-height:1.9;color:#929b85;margin-bottom:20px}
+.faith-spiritual-switch{display:flex;gap:5px;padding:5px;background:#f3f0f7;border:1px solid #ece7f2;border-radius:15px;margin-bottom:22px}
+.faith-spiritual-switch button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;border:0;background:transparent;border-radius:11px;font-size:13px;color:#a091af}
+.faith-spiritual-switch button[aria-pressed=true]{background:#fff;color:#7653a3;font-weight:700;box-shadow:0 2px 9px #70568e0d}
+.faith-social .faith-bottom-nav button[data-sanctuary=true]{position:relative}
+.faith-social .faith-bottom-nav button[data-sanctuary=true] .faith-sanctuary-nav-icon{display:grid;place-items:center;width:43px;height:38px;margin-top:-12px;margin-bottom:3px;border-radius:15px;background:#e9eee1;border:3px solid #fff;color:#748961;box-shadow:0 3px 10px #4c673218}
+.faith-social .faith-bottom-nav button[data-sanctuary=true][aria-current=page] .faith-sanctuary-nav-icon{background:#526b48;color:#fff}
+.faith-social .faith-bottom-nav button[data-sanctuary=true][aria-current=page]{color:#526b48}
+@keyframes sanctuary-breathe{50%{box-shadow:0 0 0 7px #a9b78f0c}}
+@keyframes sanctuary-glow{50%{opacity:.7;filter:brightness(1.12)}}
+@media(min-width:620px){.sanctuary h2{font-size:36px}.sanctuary-practices{gap:18px}.sanctuary-timer-card,.sanctuary-candle-card{padding:24px}.sanctuary-room{max-height:420px}.sanctuary-timer-face{max-width:180px}.sanctuary-timer-face>span{font-size:42px}}
+@media(max-width:380px){.sanctuary h2{font-size:27px}.sanctuary-practices{gap:9px}.sanctuary-timer-card,.sanctuary-candle-card{padding:17px 12px}.sanctuary-duration button{padding:5px 8px}.sanctuary-timer-face>span{font-size:29px}.sanctuary-note-card{padding:20px 17px}.sanctuary-room-bottom>small{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.sanctuary *{animation:none!important;transition:none!important}}

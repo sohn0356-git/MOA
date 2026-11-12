@@ -1,3 +1,6 @@
+import { Church } from 'lucide-react'
+import { SanctuaryTab } from './SanctuaryTab'
+import type { SanctuaryMember } from './sanctuaryState'
 import { SharedDevotionImageEditor } from './SharedDevotionImageEditor'
 import { buildPersonalFeed } from './personalFeed'
 import { FirebaseError } from 'firebase/app'
@@ -35,7 +38,7 @@ import {
 const LOCAL_STORAGE_KEY = 'moa.meditation.entries.v4'
 
 type Audience = 'private' | 'public' | 'group'
-type FaithTab = 'feed' | 'devotion' | 'prayer' | 'qna' | 'profile'
+type FaithTab = 'feed' | 'devotion' | 'prayer' | 'church' | 'qna' | 'profile'
 type DevotionView = 'read' | 'write' | 'records' | 'detail' | 'edit'
 type FeedView = 'list' | 'write'
 type PrayerView = 'list' | 'write' | 'detail'
@@ -365,8 +368,8 @@ const scriptureBookSlugs: Record<string, string> = {
 
 const tabs: Array<{ id: FaithTab; icon: FaithIconName; label: string }> = [
   { id: 'feed', icon: 'home', label: '피드' },
-  { id: 'devotion', icon: 'scripture', label: '묵상' },
-  { id: 'prayer', icon: 'prayer', label: '기도' },
+  { id: 'devotion', icon: 'scripture', label: '묵상·기도' },
+  { id: 'church', icon: 'brand-mark', label: '예배당' },
   { id: 'qna', icon: 'question', label: '질문' },
   { id: 'profile', icon: 'user', label: '내 기록' },
 ]
@@ -1215,7 +1218,7 @@ function UploadProgress({
   )
 }
 
-export function MeditationApp({ entryActions, activityId = '', activityBusy = false, onActivityChange }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown> } = {}) {
+export function MeditationApp({ entryActions, activityId = '', activityBusy = false, onActivityChange, churchMember = null, churchAuthBusy = false, onChurchSignIn }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown>; churchMember?: SanctuaryMember | null; churchAuthBusy?: boolean; onChurchSignIn?: () => Promise<unknown> } = {}) {
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
@@ -2849,14 +2852,15 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }
 
   function renderHeaderTitle() {
-    if (activeTab === 'devotion') return '묵상'
+    if (activeTab === 'church') return '예배당'
+    if (activeTab === 'devotion') return '묵상·기도'
     if (activeTab === 'prayer') return '기도'
     if (activeTab === 'qna') return '질문'
     return '내 기록'
   }
 
   return (
-    <section className="sub-app faith-screen faith-social">
+    <section className="sub-app faith-screen faith-social" data-church-active={activeTab === 'church'}>
       <header className="faith-header">
         {activeTab === 'feed' || (activeTab === 'qna' && qnaView === 'list') ? (
           <div className="faith-title faith-title-brand">
@@ -3108,6 +3112,14 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
             )}
           </section>
         ) : null}
+
+        {activeTab === 'church' ? <SanctuaryTab member={churchMember} authBusy={churchAuthBusy} onSignIn={onChurchSignIn}
+          scripture={{reference:plan.reference,text:plan.verses[0]?.text || ''}}
+          onRead={() => handleTabChange('devotion')} onPrayer={() => { if(!requestDraftNavigation()) return; setActiveTab('prayer'); setPrayerView('write') }} /> : null}
+        {(activeTab === 'devotion' || activeTab === 'prayer') ? <nav className="faith-spiritual-switch" aria-label="묵상과 기도">
+          <button type="button" aria-pressed={activeTab === 'devotion'} onClick={() => handleTabChange('devotion')}><Icon name="scripture"/>묵상</button>
+          <button type="button" aria-pressed={activeTab === 'prayer'} onClick={() => handleTabChange('prayer')}><Icon name="prayer"/>기도</button>
+        </nav> : null}
 
         {activeTab === 'devotion' ? (
           <section className="faith-stack">
@@ -4015,8 +4027,8 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       {activeTab === 'qna' && qnaView === 'write' ? null : (
         <nav className="faith-bottom-nav" aria-label="MOA Faith" inert={activityBusy}>
           {tabs.map((tab) => (
-            <button aria-current={activeTab === tab.id ? 'page' : undefined} key={tab.id} type="button" onClick={() => handleTabChange(tab.id)}>
-              <Icon name={tab.icon} />
+            <button aria-current={activeTab === tab.id || tab.id === 'devotion' && activeTab === 'prayer' ? 'page' : undefined} data-sanctuary={tab.id === 'church' || undefined} key={tab.id} type="button" onClick={() => handleTabChange(tab.id)}>
+              {tab.id === 'church' ? <span className="faith-sanctuary-nav-icon"><Church size={22} aria-hidden="true"/></span> : <Icon name={tab.icon} />}
               <span>{tab.label}</span>
             </button>
           ))}
