@@ -1,3 +1,4 @@
+import { ensurePersistentAuth } from '../services/authPersistence'
 import { useEffect, useRef, useState } from 'react'
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
 import { aiLoginAccounts } from '../data/aiAccounts'
@@ -21,6 +22,7 @@ export function useFaithActivity() {
     try {
       const auth = getAiActivityAuth()
       if (!account) { await signOut(auth); apply(''); return }
+      await ensurePersistentAuth(auth)
       const result = await signInWithEmailAndPassword(auth, account.email, account.password)
       if (result.user.uid !== account.accountId || result.user.email !== account.email) {
         await signOut(auth)
@@ -34,8 +36,13 @@ export function useFaithActivity() {
   }
   useEffect(() => {
     let stop: (() => void) | undefined
-    try {
-      stop = onAuthStateChanged(getAiActivityAuth(), user => {
+    let alive=true
+    void (async()=>{try {
+      const auth=getAiActivityAuth()
+      await ensurePersistentAuth(auth)
+      await auth.authStateReady()
+      if(!alive)return
+      stop = onAuthStateChanged(auth, user => {
         const account = aiLoginAccounts.find(item => item.accountId === user?.uid && item.email === user?.email)
         const wasRestored = restored.current
         restored.current = true
@@ -51,8 +58,8 @@ export function useFaithActivity() {
         }
         setLoading(false)
       }, () => { setFaithAiActivity(false); setActivityId(''); setLoading(false); setError('AI 활동 권한을 확인하지 못했습니다. 다시 선택해주세요.') })
-    } catch { setLoading(false); setError('AI 활동 연결을 준비하지 못했습니다. 연결 상태를 확인해주세요.') }
-    return () => stop?.()
+    } catch { if(alive){setLoading(false); setError('AI 활동 연결을 준비하지 못했습니다. 브라우저 저장 설정과 연결 상태를 확인해주세요.')} }})()
+    return () => {alive=false;stop?.()}
   }, [])
   return { activityId, isLoading, isSwitching, error, selectActivity, clearActivity: () => selectActivity('') }
 }

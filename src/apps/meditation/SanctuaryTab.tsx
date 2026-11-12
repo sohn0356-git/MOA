@@ -7,6 +7,7 @@ import './SanctuaryTab.css'
 type Props = { member:SanctuaryMember|null; authBusy?:boolean; onSignIn?:()=>Promise<unknown>; onRead:()=>void; onPrayer:()=>void; scripture:{reference:string;text:string} }
 export function SanctuaryTab(props: Props) {
  const [signing,setSigning]=useState(false),[error,setError]=useState('')
+ if(props.authBusy && !props.member) return <section className="sanctuary sanctuary-session-restore" role="status"><LockKeyhole size={24}/><h3>로그인 상태를 복원하고 있습니다</h3><p>저장된 계정을 확인하는 동안 잠시만 기다려주세요.</p></section>
  if(props.member) return <SanctuaryExperience key={props.member.uid} {...props} member={props.member}/>
  async function signIn() {
   if(!props.onSignIn || signing || props.authBusy)return
@@ -81,8 +82,8 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
   <p className="sanctuary-lead">말씀을 가까이, 마음은 가볍게.<br/>오늘의 속도를 잠시 내려놓는 곳.</p>
   <div className="sanctuary-room-card">
    <div className="sanctuary-room-top"><span>01 <i/> 고요한 본당</span><button type="button" onClick={()=>void ring()} aria-label="예배당 종소리 듣기"><Volume2 size={16}/>종소리</button></div>
-   <SanctuaryScene seat={record.seat} onSeat={seat=>save({seat})} candle={candles>0}/>
-   <div className="sanctuary-room-bottom"><span><span className="sanctuary-dot"/>{sanctuarySeats[record.seat]}에 앉아 있어요</span><small>동그란 자리를 눌러 이동</small></div>
+   <SanctuaryScene seat={record.seat} onSeat={seat=>save({seat})} candle={candles>0} initialPosition={record.avatarPosition} onPosition={point=>save({avatarPosition:point})}/>
+   <div className="sanctuary-room-bottom"><span><span className="sanctuary-dot"/>선택한 자리 · {sanctuarySeats[record.seat]}</span><small>자리를 누르면 아바타가 걸어가요</small></div>
   </div>
   <div className="sanctuary-light-switch" role="group" aria-label="예배당 빛 분위기">
    {([{id:'dawn',label:'새벽',Icon:Sunrise},{id:'day',label:'낮',Icon:Sun},{id:'evening',label:'저녁',Icon:Moon}] as const).map(({id,label,Icon})=><button key={id} type="button" aria-pressed={record.light===id} onClick={()=>save({light:id})}><Icon size={16}/>{label}</button>)}

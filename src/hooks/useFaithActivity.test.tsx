@@ -2,11 +2,12 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
-  auth: { currentUser: null as null | { uid: string; email: string } },
+  auth: { authStateReady: async () => {}, currentUser: null as null | { uid: string; email: string } },
   primaryUser: { uid: 'google-owner' },
   callback: null as null | ((user: null | { uid: string; email: string }) => void),
   signIn: vi.fn(), signOut: vi.fn(), activate: vi.fn(),
 }))
+vi.mock('../services/authPersistence', () => ({ ensurePersistentAuth: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../services/faithSession', () => ({ getAiActivityAuth: () => mocks.auth, setFaithAiActivity: mocks.activate }))
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: (_auth: unknown, callback: typeof mocks.callback) => { mocks.callback = callback; callback?.(mocks.auth.currentUser); return () => {} },

@@ -1,3 +1,4 @@
+import { ensurePersistentAuth } from '../services/authPersistence'
 import { useEffect, useMemo, useState } from 'react'
 import { FirebaseError } from 'firebase/app'
 import {
@@ -73,18 +74,28 @@ export function useAuth() {
       return undefined
     }
 
-    return onAuthStateChanged(
-      getFirebaseAuth(),
-      (nextUser) => {
-        setUser(nextUser)
-        setAuthError(null)
-        setIsAuthLoading(false)
-      },
-      (error) => {
-        setAuthError(getAuthErrorMessage(error))
-        setIsAuthLoading(false)
-      },
-    )
+    let alive=true
+    let stop: (()=>void)|undefined
+    const auth=getFirebaseAuth()
+    void (async()=>{
+      try{
+        await ensurePersistentAuth(auth)
+        await auth.authStateReady()
+        if(!alive)return
+        stop=onAuthStateChanged(auth,nextUser=>{
+          if(!alive)return
+          setUser(nextUser);setAuthError(null);setIsAuthLoading(false)
+        },error=>{
+          if(!alive)return
+          setAuthError(getAuthErrorMessage(error));setIsAuthLoading(false)
+        })
+      }catch(error){
+        if(!alive)return
+        setUser(auth.currentUser);setAuthError(getAuthErrorMessage(error));setIsAuthLoading(false)
+      }
+    })()
+    return()=>{alive=false;stop?.()}
+
   }, [configError])
 
   async function signInWithGoogle() {
@@ -93,6 +104,7 @@ export function useAuth() {
 
     try {
       const auth = getFirebaseAuth()
+      await ensurePersistentAuth(auth)
       const provider = new GoogleAuthProvider()
 
       try {
@@ -116,7 +128,9 @@ export function useAuth() {
     setIsAuthMutating(true)
     setAuthError(null)
     try {
-      await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password)
+      const auth=getFirebaseAuth()
+      await ensurePersistentAuth(auth)
+      await signInWithEmailAndPassword(auth, email.trim(), password)
     } catch (error) {
       setAuthError(getAuthErrorMessage(error))
       throw error
@@ -137,6 +151,7 @@ export function useAuth() {
         throw new Error('Invalid AI account.')
       }
 
+      await ensurePersistentAuth(auth)
       await signInWithEmailAndPassword(auth, account.email, account.password)
     } catch (error) {
       setAuthError(getAuthErrorMessage(error))

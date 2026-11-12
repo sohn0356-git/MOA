@@ -13,8 +13,9 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
   signOut: vi.fn(),
 }))
+vi.mock('../services/authPersistence', () => ({ ensurePersistentAuth: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../services/firebase', () => ({
-  getFirebaseAuth: () => ({ name: 'test-auth' }),
+  getFirebaseAuth: () => ({ name: 'test-auth', authStateReady: async () => {} }),
   getFirebaseConfigError: () => null,
 }))
 
@@ -25,7 +26,7 @@ describe('email authentication', () => {
     vi.mocked(signInWithEmailAndPassword).mockResolvedValue({} as Awaited<ReturnType<typeof signInWithEmailAndPassword>>)
     const { result } = renderHook(() => useAuth())
     await act(async () => { await result.current.signInWithEmail(' ai01@moa-ai.app ', ' pass ') })
-    expect(signInWithEmailAndPassword).toHaveBeenCalledWith({ name: 'test-auth' }, 'ai01@moa-ai.app', ' pass ')
+    expect(signInWithEmailAndPassword).toHaveBeenCalledWith(expect.objectContaining({ name: 'test-auth' }), 'ai01@moa-ai.app', ' pass ')
     expect(result.current.isAuthMutating).toBe(false)
   })
 
