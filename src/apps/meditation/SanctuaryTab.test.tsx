@@ -54,10 +54,12 @@ it('runs, pauses and completes an actual prayer countdown once',()=>{
 })
 it('keeps unsaved notes visible and guards updates if local persistence fails',()=>{
  render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>)
+ fireEvent.click(screen.getByRole('button',{name:'낮'}))
  vi.spyOn(Storage.prototype,'setItem').mockImplementation(()=>{throw new Error('quota')})
  fireEvent.change(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'}),{target:{value:'잃지 않을 메모'}})
  expect(screen.getByRole('textbox')).toHaveValue('잃지 않을 메모')
  expect(screen.getByRole('alert')).toHaveTextContent('임시저장하지 못했습니다')
+ expect(screen.getByRole('status')).not.toHaveTextContent('자동 저장됨')
  let allowed=true;act(()=>{allowed=canApplyAppUpdate()})
  expect(allowed).toBe(false)
 })

@@ -37,7 +37,7 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
  const save=useCallback((patch:Partial<SanctuaryRecord>)=>{
   const next={...latest.current,...patch};latest.current=next;setRecord(next)
   try{localStorage.setItem(storageKey,JSON.stringify(next));unsaved.current=false;setSavedAt(Date.now());setError('')}
-  catch{unsaved.current=true;setError('예배당 기록을 임시저장하지 못했습니다. 저장 공간을 확인하고 메모를 복사해두세요.')}
+  catch{unsaved.current=true;setSavedAt(null);setError('예배당 기록을 임시저장하지 못했습니다. 저장 공간을 확인하고 메모를 복사해두세요.')}
  },[storageKey])
  useEffect(()=>{
   mounted.current=true
