@@ -25,6 +25,8 @@ jobs:
       - run: npm test
       - run: npm run test:faith-startup
       - run: npm install --no-save --package-lock=false playwright
+      - name: Verify durable login across browser restarts
+        run: npx firebase-tools@latest emulators:exec --only auth --project demo-moa --config firebase.auth-test.json "node scripts/test-faith-session.mjs"
       - run: node scripts/test-faith-gallery.mjs
       - run: node scripts/test-faith-sanctuary.mjs
       - uses: actions/upload-artifact@v6
