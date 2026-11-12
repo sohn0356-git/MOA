@@ -43,7 +43,7 @@ try{
   await page.getByRole('button',{name:'로그인하고 예배당 입장'}).click()
   await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).waitFor()
   const avatar=page.locator('.sanctuary-avatar-anchor')
-  await avatar.waitFor()
+  await page.getByRole('img',{name:'나의 3D 픽셀 아바타'}).waitFor()
   const before=Number(await avatar.getAttribute('data-avatar-z'))
   await page.getByRole('group',{name:'아바타 이동이 가능한 예배당',exact:true}).focus()
   await page.keyboard.down('w');await page.clock.runFor(500);await page.keyboard.up('w')
