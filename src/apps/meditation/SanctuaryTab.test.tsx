@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { SanctuaryTab } from './SanctuaryTab'
 import { sanctuaryKey } from './sanctuaryState'
 import { canApplyAppUpdate } from '../../lib/appUpdateProtocol'

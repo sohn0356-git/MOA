@@ -26,9 +26,12 @@ jobs:
       - run: npm run test:faith-startup
       - run: npm install --no-save --package-lock=false playwright
       - run: node scripts/test-faith-gallery.mjs
+      - run: node scripts/test-faith-sanctuary.mjs
       - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: faith-gallery-screenshots
-          path: test-results/faith-gallery
+          path: |
+            test-results/faith-gallery
+            test-results/faith-sanctuary
           if-no-files-found: ignore
