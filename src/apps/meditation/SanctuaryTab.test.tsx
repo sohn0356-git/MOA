@@ -63,3 +63,12 @@ it('keeps unsaved notes visible and guards updates if local persistence fails',(
  let allowed=true;act(()=>{allowed=canApplyAppUpdate()})
  expect(allowed).toBe(false)
 })
+
+it('shows restoration instead of a login prompt while Firebase initializes',()=>{
+ const reads=vi.spyOn(Storage.prototype,'getItem')
+ render(<SanctuaryTab {...props} member={null} authBusy onSignIn={vi.fn()}/>)
+ expect(screen.getByRole('status')).toHaveTextContent('로그인 상태를 복원')
+ expect(screen.queryByRole('button',{name:'로그인하고 예배당 입장'})).toBeNull()
+ expect(screen.queryByRole('img',{name:'나의 3D 픽셀 아바타'})).toBeNull()
+ expect(reads).not.toHaveBeenCalled()
+})
