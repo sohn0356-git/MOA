@@ -46,7 +46,7 @@ export function useSanctuaryMovement(initial:FloorPoint,onCommit?:(point:FloorPo
   if(frame.current!==null)dropFrame(frame.current);frame.current=null
   setMoving(false);if(save)persist()
  },[persist])
- useEffect(()=>{alive.current=true;const blur=()=>stop();const hide=()=>{if(document.hidden)stop()};window.addEventListener('blur',blur);document.addEventListener('visibilitychange',hide);return()=>{alive.current=false;if(frame.current!==null)dropFrame(frame.current);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',hide)}},[stop])
+ useEffect(()=>{alive.current=true;motion.current?.(current.current,angle.current,false);const blur=()=>stop();const hide=()=>{if(document.hidden)stop()};window.addEventListener('blur',blur);document.addEventListener('visibilitychange',hide);return()=>{alive.current=false;if(frame.current!==null)dropFrame(frame.current);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',hide)}},[stop])
  function press(direction:WalkDirection,token:string=direction){
   if(pressed.current.has(token))return
   path.current=[];seatGoal.current=false;setSeated(false);pressed.current.set(token,direction)

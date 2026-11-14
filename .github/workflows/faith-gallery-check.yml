@@ -29,6 +29,8 @@ jobs:
         run: npx firebase-tools@latest emulators:exec --only auth --project demo-moa --config firebase.auth-test.json "node scripts/test-faith-session.mjs"
       - run: node scripts/test-faith-gallery.mjs
       - run: node scripts/test-faith-sanctuary.mjs
+      - name: Verify two-account sanctuary community
+        run: npx firebase-tools@latest emulators:exec --only auth,database --project demo-moa --config firebase.sanctuary-test.json "node scripts/test-sanctuary-community.mjs"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
