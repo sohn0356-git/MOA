@@ -38,3 +38,5 @@
 .pixel-avatar .voxel-arm .voxel-face-front,.pixel-avatar .voxel-arm .voxel-face-left,.pixel-avatar .voxel-arm .voxel-face-right{background:linear-gradient(var(--avatar-shirt) 0 11px,var(--avatar-skin) 11px)}
 @media(max-width:620px),(pointer:coarse){.sanctuary-walk-arrows,.sanctuary-desktop-hint{display:none}.sanctuary-walk-controls{justify-content:center;padding:13px}.sanctuary-community-card{padding:18px}.sanctuary-community-heading h3{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.sanctuary-peer{transition:none}}
+
+.sanctuary-community{margin:0 0 24px}

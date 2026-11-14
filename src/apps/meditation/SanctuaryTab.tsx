@@ -92,6 +92,7 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
   <div className="sanctuary-light-switch" role="group" aria-label="예배당 빛 분위기">
    {([{id:'dawn',label:'새벽',Icon:Sunrise},{id:'day',label:'낮',Icon:Sun},{id:'evening',label:'저녁',Icon:Moon}] as const).map(({id,label,Icon})=><button key={id} type="button" aria-pressed={record.light===id} onClick={()=>save({light:id})}><Icon size={16}/>{label}</button>)}
   </div>
+  <SanctuaryCommunityPanel room={room} uid={member.uid}/>
   <section className="sanctuary-verse-card" aria-label="마음에 두는 말씀"><span className="sanctuary-eyebrow">A WORD TO REST IN</span><p>{scripture.text||'말씀을 불러오는 동안 조용히 마음을 준비해보세요.'}</p><div><span>{scripture.reference}</span><button type="button" onClick={onRead}>말씀 읽기<ArrowUpRight size={15}/></button></div></section>
   <div className="sanctuary-practices">
    <section className="sanctuary-timer-card" aria-label="고요한 기도 시간">
@@ -105,7 +106,6 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
   <section className="sanctuary-note-card" aria-label="나의 기도 메모"><div className="sanctuary-card-head"><div><span>마음에 남은 한 줄</span><small>기도 중 떠오른 마음을 남겨보세요.</small></div><BookOpen size={20}/></div><textarea aria-label="예배당 개인 기도 메모" value={record.note} maxLength={4000} rows={4} placeholder="오늘, 제 마음은…" onChange={event=>save({note:event.target.value})}/><div className="sanctuary-note-footer"><small>이 계정의 메모는 이 기기에만 보관됩니다.</small><span role="status">{savedAt?'자동 저장됨':''}</span></div><button className="sanctuary-prayer-link" type="button" onClick={onPrayer}>함께 나눌 기도 작성하기<ArrowUpRight size={16}/></button></section>
   {notice&&<p className="sanctuary-notice" role="status">{notice}</p>}
   {error&&<p className="sanctuary-error" role="alert">{error}</p>}
-  <SanctuaryCommunityPanel room={room} uid={member.uid}/>
   <footer className="sanctuary-footer"><span>MOA FAITH</span><p>오늘도, 마음에 평안이 머물기를.</p><small>이 기기에서 마친 기도 {record.sessions}회</small></footer>
  </section>
 }

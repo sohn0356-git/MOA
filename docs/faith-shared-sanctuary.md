@@ -1,0 +1,8 @@
+# Shared sanctuary
+- Mobile joystick supports proportional movement, diagonal motion, pointer capture, release/cancel and keyboard accessibility. Desktop keys and floor-tap routing remain.
+- Primary authenticated Firebase identity owns its server-saved avatar (name, skin, hair and shirt). Secondary AI activity identity does not grant another primary identity's avatar ownership.
+- Realtime Database stores independent presence connections per UID. onDisconnect removes a connection; visibility/unmount cleanup removes it explicitly. Online names/avatars deduplicate connections by UID and stale entries expire from the UI after 65 seconds. Motion is published at most every 150 ms while changing; idle heartbeat is every 20 seconds.
+- Today's count queries one last-visit server timestamp per UID using Asia/Seoul day bounds and Firebase server clock offset. Multiple tabs or reconnects do not create multiple visitors. This measures authenticated visitors to the sanctuary, not all app visitors.
+- Shared prayers are visible to authenticated sanctuary members. Author alone edits, marks answered or deletes. Unique intercession records are keyed by the interceding UID and cannot be forged or added twice. Shared form drafts persist per UID on the device; private notes remain private/local.
+- Recent 100 prayers are shown. Network/permission failures show unavailable/error states instead of fabricated counts. Prayer and profile failures keep the form contents.
+- Validation: build, existing unit/startup/browser checks, new RTDB permission assertions and a real Auth+RTDB emulator two-account browser scenario cover custom appearance, motion, presence disconnect, tab deduplication, Korean-day visits, prayer edits, persistent intercession and draft restoration.
