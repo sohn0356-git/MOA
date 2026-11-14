@@ -20,7 +20,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Test shared devotion image permissions
-        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs"
+        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs && node scripts/test-sanctuary-rules.mjs"
       - run: npm run build
       - run: npm test
       - run: npm run test:faith-startup
@@ -29,6 +29,8 @@ jobs:
         run: npx firebase-tools@latest emulators:exec --only auth --project demo-moa --config firebase.auth-test.json "node scripts/test-faith-session.mjs"
       - run: node scripts/test-faith-gallery.mjs
       - run: node scripts/test-faith-sanctuary.mjs
+      - name: Verify two-account sanctuary community
+        run: npx firebase-tools@latest emulators:exec --only auth,database --project demo-moa --config firebase.sanctuary-test.json "node scripts/test-sanctuary-community.mjs"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
