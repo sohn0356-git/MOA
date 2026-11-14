@@ -4,6 +4,9 @@ import { BEFORE_APP_UPDATE } from '../../lib/appUpdateProtocol'
 import { SanctuaryScene, sanctuarySeats } from './SanctuaryScene'
 import { normalizeSanctuaryRecord, sanctuaryDay, sanctuaryKey, type SanctuaryMember, type SanctuaryRecord } from './sanctuaryState'
 import './SanctuaryTab.css'
+import './SanctuaryCommunity.css'
+import {useSanctuaryCommunity} from './useSanctuaryCommunity'
+import {SanctuaryCommunityPanel} from './SanctuaryCommunityPanel'
 type Props = { member:SanctuaryMember|null; authBusy?:boolean; onSignIn?:()=>Promise<unknown>; onRead:()=>void; onPrayer:()=>void; scripture:{reference:string;text:string} }
 export function SanctuaryTab(props: Props) {
  const [signing,setSigning]=useState(false),[error,setError]=useState('')
@@ -27,6 +30,7 @@ export function SanctuaryTab(props: Props) {
  </section>
 }
 function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:SanctuaryMember}) {
+ const room=useSanctuaryCommunity(member)
  const storageKey=sanctuaryKey(member.uid)
  const [loadError]=useState(()=>{try{JSON.parse(localStorage.getItem(storageKey)||'null');return ''}catch{return '예배당 기록을 읽지 못했습니다. 이 기기의 저장 설정을 확인해주세요.'}})
  const [record,setRecord]=useState<SanctuaryRecord>(()=>{try{return normalizeSanctuaryRecord(JSON.parse(localStorage.getItem(storageKey)||'null'))}catch{return normalizeSanctuaryRecord(null)}})
@@ -82,7 +86,7 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
   <p className="sanctuary-lead">말씀을 가까이, 마음은 가볍게.<br/>오늘의 속도를 잠시 내려놓는 곳.</p>
   <div className="sanctuary-room-card">
    <div className="sanctuary-room-top"><span>01 <i/> 고요한 본당</span><button type="button" onClick={()=>void ring()} aria-label="예배당 종소리 듣기"><Volume2 size={16}/>종소리</button></div>
-   <SanctuaryScene seat={record.seat} onSeat={seat=>save({seat})} candle={candles>0} initialPosition={record.avatarPosition} onPosition={point=>save({avatarPosition:point})}/>
+   <SanctuaryScene profile={room.profile} peers={room.peers} onMotion={room.move} seat={record.seat} onSeat={seat=>save({seat})} candle={candles>0} initialPosition={record.avatarPosition} onPosition={point=>save({avatarPosition:point})}/>
    <div className="sanctuary-room-bottom"><span><span className="sanctuary-dot"/>선택한 자리 · {sanctuarySeats[record.seat]}</span><small>자리를 누르면 아바타가 걸어가요</small></div>
   </div>
   <div className="sanctuary-light-switch" role="group" aria-label="예배당 빛 분위기">
@@ -101,6 +105,7 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
   <section className="sanctuary-note-card" aria-label="나의 기도 메모"><div className="sanctuary-card-head"><div><span>마음에 남은 한 줄</span><small>기도 중 떠오른 마음을 남겨보세요.</small></div><BookOpen size={20}/></div><textarea aria-label="예배당 개인 기도 메모" value={record.note} maxLength={4000} rows={4} placeholder="오늘, 제 마음은…" onChange={event=>save({note:event.target.value})}/><div className="sanctuary-note-footer"><small>이 계정의 메모는 이 기기에만 보관됩니다.</small><span role="status">{savedAt?'자동 저장됨':''}</span></div><button className="sanctuary-prayer-link" type="button" onClick={onPrayer}>함께 나눌 기도 작성하기<ArrowUpRight size={16}/></button></section>
   {notice&&<p className="sanctuary-notice" role="status">{notice}</p>}
   {error&&<p className="sanctuary-error" role="alert">{error}</p>}
+  <SanctuaryCommunityPanel room={room} uid={member.uid}/>
   <footer className="sanctuary-footer"><span>MOA FAITH</span><p>오늘도, 마음에 평안이 머물기를.</p><small>이 기기에서 마친 기도 {record.sessions}회</small></footer>
  </section>
 }

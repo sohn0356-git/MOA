@@ -1,16 +1,18 @@
 import { useId, useRef } from 'react'
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
+import { SanctuaryJoystick } from './SanctuaryJoystick'
+import type {AvatarProfile,RoomPresence} from './sanctuaryCommunity'
 import { PixelAvatar } from './PixelAvatar'
 import { useSanctuaryMovement } from './useSanctuaryMovement'
 import { floorPointFromScene, projectSanctuaryPoint, sanctuarySeatPoints, sanctuarySpawn, type FloorPoint, type WalkDirection } from './sanctuaryMovement'
 import './PixelAvatar.css'
 export const sanctuarySeats = ['앞쪽 왼편','앞쪽 오른편','뒤쪽 왼편','뒤쪽 오른편']
-export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition = sanctuarySpawn, onPosition }: {
- seat:number; onSeat?:(seat:number)=>void; candle?:boolean; initialPosition?:FloorPoint; onPosition?:(point:FloorPoint,facing:number)=>void
+export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition = sanctuarySpawn, onPosition, onMotion, profile, peers=[] }: {
+ seat:number; onSeat?:(seat:number)=>void; candle?:boolean; initialPosition?:FloorPoint; onPosition?:(point:FloorPoint,facing:number)=>void; onMotion?:(point:FloorPoint,facing:number,moving:boolean)=>void; profile?:AvatarProfile; peers?:RoomPresence[]
 }) {
  const id=useId().replace(/:/g,'')
  const svg=useRef<SVGSVGElement>(null)
- const walk=useSanctuaryMovement(initialPosition,onPosition)
+ const walk=useSanctuaryMovement(initialPosition,onPosition,onMotion)
  const screen=projectSanctuaryPoint(walk.position)
  const directions:[WalkDirection,string,typeof ArrowUp][]=[['west','왼쪽',ArrowLeft],['north','앞쪽',ArrowUp],['south','뒤쪽',ArrowDown],['east','오른쪽',ArrowRight]]
  return <div className="sanctuary-interactive" role={onSeat?'group':undefined} aria-label={onSeat?'아바타 이동이 가능한 예배당':undefined} tabIndex={onSeat?0:undefined}
@@ -61,10 +63,13 @@ export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition =
   </button>)}
   {onSeat&&<div className="sanctuary-avatar-anchor" data-avatar-x={walk.position.x.toFixed(3)} data-avatar-z={walk.position.z.toFixed(3)}
     style={{left:screen.x/640*100+'%',top:screen.y/480*100+'%',zIndex:10+Math.round(walk.position.z*100)}}>
-    <PixelAvatar facing={walk.facing} moving={walk.moving} seated={walk.seated} scale={.55+walk.position.z*.35}/>
+    <PixelAvatar profile={profile} facing={walk.facing} moving={walk.moving} seated={walk.seated} scale={.55+walk.position.z*.35}/>
   </div>}
+  {onSeat&&peers.map(peer=>{const p=projectSanctuaryPoint(peer);return <div key={peer.uid} className="sanctuary-avatar-anchor sanctuary-peer" data-peer-uid={peer.uid} style={{left:p.x/640*100+'%',top:p.y/480*100+'%',zIndex:10+Math.round(peer.z*100)}}>
+   <span className="sanctuary-avatar-name">{peer.name}</span><PixelAvatar profile={peer} facing={peer.facing} moving={peer.moving} seated={false} scale={.55+peer.z*.35} label={peer.name+'의 아바타'}/>
+  </div>})}
   </div>
-  {onSeat&&<div className="sanctuary-walk-controls">
+  {onSeat&&<div className="sanctuary-walk-controls"><SanctuaryJoystick onVector={walk.joystick}/>
    <div className="sanctuary-walk-arrows" role="group" aria-label="아바타 이동 버튼">{directions.map(([direction,label,Icon])=><button key={direction} type="button" aria-label={'아바타 '+label+' 이동'}
     onPointerDown={event=>{event.stopPropagation();event.currentTarget.setPointerCapture?.(event.pointerId);walk.press(direction,'pointer:'+event.pointerId)}}
     onPointerUp={event=>{event.stopPropagation();walk.release('pointer:'+event.pointerId)}}
@@ -72,7 +77,7 @@ export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition =
     onLostPointerCapture={event=>walk.release('pointer:'+event.pointerId)}
     onClick={event=>{event.stopPropagation();if(event.detail===0)walk.nudge(direction)}}>
     <Icon size={15} aria-hidden="true"/>
-   </button>)}</div><small>바닥을 눌러 걷기<br/>WASD · 방향키 이동</small>
+   </button>)}</div><small className="sanctuary-desktop-hint">바닥을 눌러 걷기<br/>WASD · 방향키 이동</small>
   </div>}
  </div>
 }

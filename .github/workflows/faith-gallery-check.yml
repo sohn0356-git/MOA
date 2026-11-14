@@ -20,7 +20,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Test shared devotion image permissions
-        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs"
+        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs && node scripts/test-sanctuary-rules.mjs"
       - run: npm run build
       - run: npm test
       - run: npm run test:faith-startup
