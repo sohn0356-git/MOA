@@ -1,7 +1,6 @@
 import { getApps, initializeApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
 import { getDatabase, type Database } from 'firebase/database'
-import { getFunctions, type Functions } from 'firebase/functions'
 import { getStorage, type FirebaseStorage } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -24,7 +23,6 @@ const requiredConfigEntries = [
 
 let firebaseApp: FirebaseApp | null = null
 let firebaseAuth: Auth | null = null
-let firebaseFunctions: Functions | null = null
 let realtimeDb: Database | null = null
 let firebaseStorage: FirebaseStorage | null = null
 
@@ -71,11 +69,6 @@ export function getRealtimeDb() {
 export function getFirebaseAuth() {
   firebaseAuth ??= getAuth(getFirebaseApp())
   return firebaseAuth
-}
-
-export function getFirebaseFunctions() {
-  firebaseFunctions ??= getFunctions(getFirebaseApp())
-  return firebaseFunctions
 }
 
 export function getFirebaseStorage() {

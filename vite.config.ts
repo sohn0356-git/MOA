@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/MOA/',
+  build: { manifest: true },
   plugins: [
     react(),
     VitePWA({
@@ -16,9 +17,9 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
       manifest: {
         id: '/MOA/',
-        name: 'MOA - My Own Apps',
-        short_name: 'MOA',
-        description: 'My Own Apps',
+        name: 'MOA Faith',
+        short_name: 'MOA Faith',
+        description: '말씀과 묵상, 기도를 함께 나누는 신앙 공간',
         start_url: '/MOA/',
         scope: '/MOA/',
         display: 'standalone',

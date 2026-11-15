@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest'
-import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
+import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
 import type {User} from 'firebase/auth'
 import type {ReactNode} from 'react'
 import {AppShell} from './AppShell'
@@ -16,12 +16,6 @@ vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
 vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>})=><section><h1>MOA Faith</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.()}>예배당 로그인</button></section>}))
-vi.mock('../apps/ai-city/AiCityApp',()=>({AiCityApp:({entryActions}:{entryActions?:ReactNode})=><section><h1>Ai city</h1>{entryActions}<p>공개 도시</p></section>}))
-vi.mock('../apps/registry',()=>({appRegistry:[
- {id:'ai-city',name:'Ai city',route:'#/ai-city',component:()=>null},
- {id:'sample',name:'Sample',route:'#/sample',component:()=><h2>Sample content</h2>}
-]}))
-vi.mock('../components/AppGrid',()=>({AppGrid:({onOpenApp}:{onOpenApp:(route:string)=>void})=><button onClick={()=>onOpenApp('#/sample')}>Sample 열기</button>}))
 afterEach(cleanup)
 beforeEach(()=>{
  localStorage.clear();vi.clearAllMocks()
@@ -31,7 +25,6 @@ beforeEach(()=>{
  activity.clearActivity.mockReset().mockImplementation(async()=>{activity.activityId=''})
  history.replaceState(null,'','/')
 })
-function go(hash:string){act(()=>{window.location.hash=hash;window.dispatchEvent(new HashChangeEvent('hashchange'))})}
 describe('Faith activity permissions and account controls',()=>{
  it('requests AI permissions while keeping the dropdown and separate Google login available',()=>{
   const view=render(<AppShell/>)
@@ -77,10 +70,11 @@ describe('Faith activity permissions and account controls',()=>{
   expect(screen.getByRole('alert').textContent).toContain('권한')
   expect((screen.getByRole('combobox',{name:'활동 아이디 선택'}) as HTMLSelectElement).value).toBe('ai03')
  })
- it('keeps explicit AI City links available',()=>{
-  history.replaceState(null,'','/#/ai-city');render(<AppShell/>)
-  expect(screen.getByText('공개 도시')).toBeTruthy()
-  expect(screen.getByRole('link',{name:'로그인'})).toBeTruthy()
+ it.each(['#/ai-city','#/apps','#/suggestions','#/timer','#/home/old','#/login'])('opens only Faith for the retired route %s',(route)=>{
+  history.replaceState(null,'','/'+route);render(<AppShell/>)
+  expect(screen.getByRole('main',{name:'MOA Faith 메인'})).toBeTruthy()
+  expect(location.hash).toBe('#/meditation')
+  expect(screen.queryByText('공개 도시')).toBeNull()
  })
  it('opens Faith during account restoration and for the legacy root hash',()=>{
   auth.isAuthLoading=true;history.replaceState(null,'','/#/');render(<AppShell/>)
@@ -93,15 +87,6 @@ describe('Faith activity permissions and account controls',()=>{
   expect(screen.getByRole('combobox',{name:'활동 아이디 선택'})).toBeTruthy()
   expect(screen.getByRole('button',{name:'로그아웃'})).toBeTruthy()
   expect(screen.queryByRole('button',{name:'구글 로그인'})).toBeNull()
- })
- it('retains protection for other apps',()=>{
-  const view=render(<AppShell/>);go('#/apps')
-  expect(screen.getByRole('tab',{name:'Google 로그인'})).toBeTruthy()
-  auth.user={uid:'u1',email:'person@example.com'} as User;view.rerender(<AppShell/>)
-  expect(screen.getByRole('heading',{name:'Apps'})).toBeTruthy()
-  fireEvent.click(screen.getByRole('button',{name:'Sample 열기'}))
-  act(()=>window.dispatchEvent(new HashChangeEvent('hashchange')))
-  expect(screen.getByRole('heading',{name:'Sample content'})).toBeTruthy()
  })
  it('clears activity permissions from the account page logout as well',async()=>{
   auth.user={uid:'u1',email:'person@example.com'} as User;history.replaceState(null,'','/#/login')

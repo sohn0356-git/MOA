@@ -19,8 +19,8 @@ import { DevotionImage, DevotionImagePicker } from './DevotionImagePicker'
 import { isDevotionImage } from './devotionImage'
 import { deleteSharedDevotion, persistSharedDevotion } from './devotionSharing'
 import { useScripturePlan } from './useScripturePlan'
-import { SuggestionsApp } from '../suggestions/SuggestionsApp'
-import { requestDraftNavigation } from '../suggestions/useSuggestionDraft'
+import { SuggestionsApp } from '../../features/improvements/SuggestionsApp'
+import { requestDraftNavigation } from '../../features/improvements/useSuggestionDraft'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFaithAuth as getFirebaseAuth, getFaithStorage as getFirebaseStorage, getFaithDb as getRealtimeDb } from '../../services/faithSession'
 import { mergeFaithRecords } from './faithRecords'
@@ -1804,12 +1804,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       unsubscribePublicPhotoReactions()
     }
   }, [currentUser?.uid])
-
-  function handleBackHome() {
-    if (!requestDraftNavigation()) return
-    history.pushState('', document.title, window.location.pathname + window.location.search + '#/apps')
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
-  }
 
   function handleTabChange(tab: FaithTab) {
     if (tab !== activeTab && !requestDraftNavigation()) return
@@ -3995,7 +3989,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
               setIsSettingsSheetOpen(false)
               setIsLicenseOpen(true)
             }}>오픈소스 라이선스</button>
-            <button type="button" onClick={handleBackHome}>MOA 홈으로 돌아가기</button>
             <button type="button" onClick={() => setIsSettingsSheetOpen(false)}>취소</button>
           </section>
         </div>
