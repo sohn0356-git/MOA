@@ -8,6 +8,13 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VITE_FIREBASE_API_KEY: demo-key
+      VITE_FIREBASE_AUTH_DOMAIN: demo-moa.firebaseapp.com
+      VITE_FIREBASE_PROJECT_ID: demo-moa
+      VITE_FIREBASE_STORAGE_BUCKET: demo-moa.firebasestorage.app
+      VITE_FIREBASE_MESSAGING_SENDER_ID: '1234567890'
+      VITE_FIREBASE_APP_ID: '1:1234567890:web:demo'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

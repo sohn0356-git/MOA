@@ -7,11 +7,12 @@ const server=await preview({preview:{host:'127.0.0.1',port:4183,strictPort:true}
 const browser=await chromium.launch({headless:true,channel:'chrome'})
 try{
  const context=await browser.newContext({viewport:{width:390,height:950},hasTouch:true,isMobile:true})
- const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message))
+ const page=await context.newPage(),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error('Production page error:',e.message)})
  const times=[]
  for(const route of ['', '#/ai-city','#/apps','#/suggestions','#/mini-room','#/home/legacy','#/timer','#/login']){
   const start=Date.now();await page.goto('http://127.0.0.1:4183/MOA/'+route)
   await page.getByRole('main',{name:'MOA Faith 메인'}).waitFor()
+  await page.waitForURL('**/#/meditation')
   await page.locator('.faith-bottom-nav button').first().waitFor()
   times.push({route,milliseconds:Date.now()-start})
   assert.equal(new URL(page.url()).hash,'#/meditation','all retired routes resolve to Faith')
