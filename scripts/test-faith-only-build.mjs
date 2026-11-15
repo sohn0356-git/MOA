@@ -5,6 +5,8 @@ import path from 'node:path'
 const removed=['ai-city','do-list','memo','mini-room','music','sample','suggestions','timer','wedding']
 const dirs=await readdir('src/apps')
 assert.deepEqual(dirs,['meditation'],'only the Faith app directory remains')
+const sync=await readFile('.github/workflows/sync-improvements.yml','utf8')
+assert.ok(!sync.includes('sync-ai-city'),'post-deploy cannot invoke retired app synchronization')
 const shell=await readFile('src/app/AppShell.tsx','utf8')
 assert.ok(!shell.includes('registry')&&!shell.includes('AiCity')&&!shell.includes('AuthGate'),'entry cannot initialize other apps')
 const manifest=JSON.parse(await readFile('dist/.vite/manifest.json','utf8'))
