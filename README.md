@@ -1,258 +1,28 @@
-# MOA
+# MOA Faith
+말씀, 묵상, 기도와 예배당을 함께 이용하는 신앙 앱입니다.
 
-MOA means **My Own Apps**. It is a personal web app platform designed to host many small, independent sub apps in one installable PWA.
-
-This initial setup focuses on the platform foundation: React, TypeScript, Vite, PWA support, GitHub Pages deployment, and an app registry that makes future sub apps easy to add.
-
-## Tech Stack
-
-- React
-- TypeScript
-- Vite
-- vite-plugin-pwa
-- Firebase
-- Firebase Realtime Database
-- GitHub Pages
-- GitHub Actions
-- npm
-
-## Local Development
-
-```bash
-npm install
+## 실행
+```sh
+npm ci
 npm run dev
 ```
 
-The development server will print a local URL, usually `http://localhost:5173/MOA/`.
-
-For Firebase-backed apps, create a local `.env` file from `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Then fill in the six Vite Firebase variables. Do not commit `.env`.
-
-## Build
-
-```bash
+## 검사
+```sh
 npm run build
+npm test
+npm run test:faith-startup
 ```
 
-The production build is written to `dist/`.
+`.env.example`의 Firebase 웹 설정을 사용합니다. 로그인은 기본 계정과 AI 활동 계정을 별도로 유지합니다. 예배당의 접속 정보·캐릭터·공동 기도는 로그인 계정으로 공유됩니다.
 
-## Lint
+## 구조
+- `src/app`: Faith 진입 화면과 계정·업데이트 처리
+- `src/apps/meditation`: 피드, 묵상·기도, 예배당, 질문, 내 기록
+- `src/features/improvements`: Faith 질문 탭에 포함된 앱 개선 기능
+- `src/services`: Firebase 연결과 세션 저장
+- `scripts`: 시작·브라우저·데이터 권한 검사
 
-```bash
-npm run lint
-```
+앱 목록과 다른 앱의 화면·소스는 제거했습니다. 예전 앱 주소도 Faith로 연결됩니다. 기존 서버 데이터는 삭제하지 않습니다. PWA는 작성 중인 초안을 확인한 뒤 사용자가 업데이트를 적용하는 방식을 유지합니다.
 
-## GitHub Pages Deployment
-
-This repository is named `MOA`, so Vite is configured with:
-
-```ts
-base: '/MOA/'
-```
-
-The PWA manifest also uses `/MOA/` for `start_url` and `scope`, so the deployed app works at:
-
-```text
-https://sohn0356-git.github.io/MOA/
-```
-
-Deployment is handled by `.github/workflows/deploy.yml`. On every push to `main`, GitHub Actions runs:
-
-1. Checkout
-2. Setup Node
-3. `npm ci`
-4. `npm run build`
-5. Upload the `dist` artifact
-6. Deploy to GitHub Pages
-
-## PWA
-
-MOA is configured as an installable PWA through `vite-plugin-pwa`.
-
-Current PWA defaults:
-
-- `name`: `MOA - My Own Apps`
-- `short_name`: `MOA`
-- `display`: `standalone`
-- `theme_color`: `#146c43`
-- `background_color`: `#f6f7f4`
-- Offline support through Workbox precaching
-- App icons in `public/`
-
-To install it in Chrome after deployment, open the GitHub Pages URL and use Chrome's install button in the address bar or app menu.
-
-## Project Structure
-
-```text
-src/
-  app/          Root application shell
-  apps/         Independent sub apps and app registry
-  components/   Shared UI components
-  hooks/        Shared React hooks
-  services/     Shared service modules
-  store/        Shared state modules
-  types/        Shared TypeScript types
-  utils/        Shared utilities
-```
-
-## Adding a Sub App
-
-Create a new folder under `src/apps/`.
-
-Example:
-
-```text
-src/apps/memo/
-  MemoApp.tsx
-  MemoIcon.tsx
-```
-
-Then register it in `src/apps/registry.ts`:
-
-```ts
-import { MemoApp } from './memo/MemoApp'
-import { MemoIcon } from './memo/MemoIcon'
-
-export const appRegistry: AppMeta[] = [
-  {
-    id: 'memo',
-    name: 'Memo',
-    description: 'Capture quick notes.',
-    icon: MemoIcon,
-    route: '#/memo',
-    component: MemoApp,
-  },
-]
-```
-
-Each registry item supports:
-
-- `id`
-- `name`
-- `description`
-- `icon`
-- `route`
-- `component`
-
-The home screen renders the app grid from this registry.
-
-## Firebase Configuration
-
-Firebase initialization lives in `src/services/firebase.ts`.
-
-The project uses exactly these six environment variables:
-
-```text
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-```
-
-Local values belong in `.env`, which is ignored by Git. The committed template is `.env.example`.
-
-For GitHub Pages production builds, `.github/workflows/deploy.yml` maps the same six GitHub Actions Secrets into the `npm run build` step so Vite exposes them through `import.meta.env.VITE_FIREBASE_*`.
-
-Firebase Console must also be configured for Authentication:
-
-1. Open **Authentication > Get started**.
-2. Open **Sign-in method** and enable **Google**.
-3. Open **Settings > Authorized domains** and add:
-   - `localhost`
-   - `sohn0356-git.github.io`
-4. Confirm the six `VITE_FIREBASE_*` values come from the same Firebase Web app and project.
-
-If login shows `auth/configuration-not-found`, Google Authentication is not enabled for the Firebase project behind the deployed API key, or the deployed secrets point at the wrong project.
-
-## Do List Realtime Database Structure
-
-The Do List app stores tasks and categories by authenticated user in Firebase Realtime Database:
-
-```text
-users
-  {uid}
-    categories
-      {categoryId}
-        name
-        parentId
-        order
-        createdAt
-        updatedAt
-    tasks
-      {taskId}
-        categoryId
-        completedAt
-        content
-        description
-        dueDate
-        recurringOccurrenceKey
-        recurringTaskId
-        status
-        title
-        createdAt
-        updatedAt
-    recurringTasks
-      {recurringTaskId}
-        categoryId
-        completedCount
-        description
-        intervalDays
-        isActive
-        lastGeneratedDate
-        nextDueDate
-        scheduleType
-        startDate
-        title
-        createdAt
-        updatedAt
-```
-
-Allowed task statuses:
-
-```ts
-type TaskStatus = 'todo' | 'doing' | 'blocked' | 'done'
-type RecurringScheduleType = 'daily' | 'weekly' | 'monthly' | 'interval'
-```
-
-Realtime Database access is separated from UI code:
-
-```text
-src/apps/do-list/
-  components/
-  hooks/useTasks.ts
-  services/taskService.ts
-  types/task.ts
-  DoListApp.tsx
-```
-
-`taskService.ts` uses `push()`, `set()`, `update()`, `remove()`, `serverTimestamp()`, and `onValue()` for realtime synchronization.
-
-The project intentionally keeps the Firebase environment contract to the six existing Vite variables. Realtime Database is initialized from `VITE_FIREBASE_PROJECT_ID` using the default instance URL pattern:
-
-```text
-https://{projectId}-default-rtdb.firebaseio.com
-```
-
-Create the default Realtime Database instance in Firebase Console before using the Do List app.
-
-## GitHub Repository Settings
-
-In GitHub, open **Settings > Pages** and set:
-
-- Source: **GitHub Actions**
-
-For Firebase-backed production builds, add these **Actions Secrets**:
-
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
+운영: https://sohn0356-git.github.io/MOA/

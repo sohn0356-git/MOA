@@ -22,9 +22,18 @@ jobs:
       - name: Test shared devotion image permissions
         run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs && node scripts/test-sanctuary-rules.mjs"
       - run: npm run build
+      - name: Compare boot assets against the previous multi-app build
+        env:
+          MOA_BOOT_BASELINE: ${{ runner.temp }}/moa-boot-baseline
+        run: |
+          git worktree add --detach "$MOA_BOOT_BASELINE" f1036d8541541675369d70ae8c2ed1c4ead0c403
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$MOA_BOOT_BASELINE/node_modules"
+          npm --prefix "$MOA_BOOT_BASELINE" run build > "$RUNNER_TEMP/moa-boot-baseline.log" 2>&1
+          node scripts/test-faith-only-build.mjs
       - run: npm test
       - run: npm run test:faith-startup
       - run: npm install --no-save --package-lock=false playwright
+      - run: node scripts/test-faith-only-browser.mjs
       - name: Verify durable login across browser restarts
         run: npx firebase-tools@latest emulators:exec --only auth --project demo-moa --config firebase.auth-test.json "node scripts/test-faith-session.mjs"
       - run: node scripts/test-faith-gallery.mjs
@@ -36,6 +45,7 @@ jobs:
         with:
           name: faith-gallery-screenshots
           path: |
+            test-results/faith-boot
             test-results/faith-gallery
             test-results/faith-sanctuary
           if-no-files-found: ignore

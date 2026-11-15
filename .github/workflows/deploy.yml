@@ -51,6 +51,7 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: |
           npm run build
+          node scripts/test-faith-only-build.mjs
           npm test
           npm run test:faith-startup
           node scripts/test-daily-verse.mjs

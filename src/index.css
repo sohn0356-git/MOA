@@ -114,6 +114,23 @@ select:disabled {
 }
 
 
+
+.utility-panel,
+.update-banner{
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.update-banner button:focus-visible,
+.utility-panel input:focus,
+.utility-panel textarea:focus,
+.utility-panel select:focus{
+  outline: 3px solid rgb(0 122 255 / 24%);
+  outline-offset: 3px;
+}
 .update-banner{
   display: flex;
   align-items: center;
@@ -154,6 +171,10 @@ select:disabled {
 }
 .sub-app{
   padding-top: 0;
+}
+
+.utility-app{
+  min-height: calc(100svh - 32px);
 }
 .utility-app{
   display: grid;
@@ -354,6 +375,7 @@ select:disabled {
   color: var(--text-muted);
   background: rgb(255 255 255 / 62%);
 }
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 .faith-screen {
   --faith-orchid: #a53eb5;
   --faith-primary: #863292;
