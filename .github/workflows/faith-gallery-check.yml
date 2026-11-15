@@ -26,6 +26,7 @@ jobs:
         env:
           MOA_BOOT_BASELINE: ${{ runner.temp }}/moa-boot-baseline
         run: |
+          git fetch --depth=1 origin f1036d8541541675369d70ae8c2ed1c4ead0c403
           git worktree add --detach "$MOA_BOOT_BASELINE" f1036d8541541675369d70ae8c2ed1c4ead0c403
           ln -s "$GITHUB_WORKSPACE/node_modules" "$MOA_BOOT_BASELINE/node_modules"
           npm --prefix "$MOA_BOOT_BASELINE" run build > "$RUNNER_TEMP/moa-boot-baseline.log" 2>&1
