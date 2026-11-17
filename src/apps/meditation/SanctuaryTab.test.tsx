@@ -7,6 +7,7 @@ import { sanctuaryKey } from './sanctuaryState'
 import { canApplyAppUpdate } from '../../lib/appUpdateProtocol'
 const scripture={reference:'요한복음 14:27',text:'평안을 너희에게 끼치노니'}
 const props={onRead:vi.fn(),onPrayer:vi.fn(),scripture}
+const openNote=()=>fireEvent.click(document.querySelector('summary')!)
 beforeEach(()=>{localStorage.clear();vi.clearAllMocks()})
 afterEach(()=>{cleanup();vi.restoreAllMocks();vi.useRealTimers()})
 it('requires a real signed-in member before mounting personal sanctuary content',async()=>{
@@ -21,15 +22,15 @@ it('requires a real signed-in member before mounting personal sanctuary content'
  await waitFor(()=>expect(login).toHaveBeenCalledOnce())
 })
 it('isolates notes and candles by account and restores them after returning',()=>{
- const view=render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>)
+ const view=render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>);openNote()
  fireEvent.change(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'}),{target:{value:'Alice만의 기도'}})
  fireEvent.click(screen.getByRole('button',{name:'촛불 켜기'}))
  fireEvent.click(screen.getByRole('button',{name:'뒤쪽 오른편 자리 선택'}))
  expect(JSON.parse(localStorage.getItem(sanctuaryKey('alice'))!).note).toBe('Alice만의 기도')
- view.rerender(<SanctuaryTab {...props} member={{uid:'bob',displayName:'Bob'}}/>)
+ view.rerender(<SanctuaryTab {...props} member={{uid:'bob',displayName:'Bob'}}/>);openNote()
  expect(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'})).toHaveValue('')
  expect(screen.getByRole('button',{name:'앞쪽 왼편 자리 선택'})).toHaveAttribute('aria-pressed','true')
- view.rerender(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>)
+ view.rerender(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>);openNote()
  expect(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'})).toHaveValue('Alice만의 기도')
  expect(screen.getByRole('button',{name:'뒤쪽 오른편 자리 선택'})).toHaveAttribute('aria-pressed','true')
  view.rerender(<SanctuaryTab {...props} member={null}/>)
@@ -54,6 +55,7 @@ it('runs, pauses and completes an actual prayer countdown once',()=>{
 })
 it('keeps unsaved notes visible and guards updates if local persistence fails',()=>{
  render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>)
+ openNote()
  fireEvent.click(screen.getByRole('button',{name:'낮'}))
  vi.spyOn(Storage.prototype,'setItem').mockImplementation(()=>{throw new Error('quota')})
  fireEvent.change(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'}),{target:{value:'잃지 않을 메모'}})

@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react'
 import {ref,onValue,onDisconnect,push,set,remove,serverTimestamp,query,orderByValue,startAt,endAt,orderByChild,limitToLast,type DatabaseReference} from 'firebase/database'
 import {getRealtimeDb} from '../../services/firebase'
-import {defaultAvatar,normalizeAvatar,onlineMembers,koreanDayBounds,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
+import {defaultAvatar,normalizeAvatar,onlineMembers,koreanDayBounds,type AvatarPose,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
 import {sanctuarySpawn,type FloorPoint} from './sanctuaryMovement'
 import type {SanctuaryMember} from './sanctuaryState'
 export function useSanctuaryCommunity(member:SanctuaryMember){
@@ -9,7 +9,7 @@ export function useSanctuaryCommunity(member:SanctuaryMember){
  const [prayers,setPrayers]=useState<SharedPrayer[]>([]),[intercessions,setIntercessions]=useState<Record<string,Record<string,{at:number}>>>({}),[visitors,setVisitors]=useState<number|null>(null)
  const [error,setError]=useState(''),[connected,setConnected]=useState(false),[loaded,setLoaded]=useState(false),[offset,setOffset]=useState(0),[clock,setClock]=useState(Date.now())
  const profileRef=useRef(profile);profileRef.current=profile
- const position=useRef({point:sanctuarySpawn,facing:-25,moving:false}),live=useRef<DatabaseReference|null>(null),dirty=useRef(false)
+ const position=useRef({point:sanctuarySpawn,facing:-25,moving:false,pose:'standing' as AvatarPose}),live=useRef<DatabaseReference|null>(null),dirty=useRef(false)
  const day=Math.floor((clock+offset+32400000)/86400000)
  useEffect(()=>{const timer=window.setInterval(()=>setClock(Date.now()),1000);return()=>window.clearInterval(timer)},[])
  useEffect(()=>{
@@ -26,7 +26,7 @@ export function useSanctuaryCommunity(member:SanctuaryMember){
     if(!alive||document.hidden||epoch!==generation){void remove(node).catch(()=>{});return}
     live.current=node
     const p=position.current
-    await set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,updatedAt:serverTimestamp()})
+    await set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,pose:p.pose,updatedAt:serverTimestamp()})
     if(alive&&epoch===generation){setConnected(true);setError('')}
    }catch{if(connection===node){connection=null;live.current=null}fail()}
   }
@@ -42,7 +42,7 @@ export function useSanctuaryCommunity(member:SanctuaryMember){
    },fail),
    onValue(ref(db,'sanctuary/intercessions'),s=>{if(alive)setIntercessions(s.val()||{})},fail),
   ]
-  const publish=()=>{const node=live.current;if(!node||document.hidden)return;const p=position.current;void set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,updatedAt:serverTimestamp()}).catch(fail)}
+  const publish=()=>{const node=live.current;if(!node||document.hidden)return;const p=position.current;void set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,pose:p.pose,updatedAt:serverTimestamp()}).catch(fail)}
   const motion=window.setInterval(()=>{if(dirty.current){dirty.current=false;publish()}},150)
   const heartbeat=window.setInterval(publish,20000)
   document.addEventListener('visibilitychange',visible)
@@ -56,7 +56,7 @@ export function useSanctuaryCommunity(member:SanctuaryMember){
   return off
  },[member.uid,day,connected,offset])
  async function saveProfile(next:AvatarProfile){await set(ref(getRealtimeDb(),'sanctuary/avatars/'+member.uid),normalizeAvatar(next));dirty.current=true}
- function move(point:FloorPoint,facing:number,moving=false){position.current={point,facing,moving};dirty.current=true}
+ function move(point:FloorPoint,facing:number,moving=false,pose:AvatarPose='standing'){position.current={point,facing,moving,pose};dirty.current=true}
  async function savePrayer(title:string,body:string,id?:string){
   const trimmed=title.trim(),text=body.trim();if(!trimmed||!text||trimmed.length>80||text.length>1500)throw new Error('제목 80자, 내용 1500자 이내로 입력해주세요.')
   const db=getRealtimeDb(),existing=id?prayers.find(p=>p.id===id):null,node=id?ref(db,'sanctuary/prayers/'+id):push(ref(db,'sanctuary/prayers'))
