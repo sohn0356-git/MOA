@@ -87,6 +87,7 @@ try{
   assert.equal(await page.locator('[aria-label="나의 예배당"]').getAttribute('data-light'),'evening')
   await page.getByRole('button',{name:'촛불 켜기'}).click()
   await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).fill('이 계정에 남기는 조용한 기도')
+  await page.locator('.sanctuary-private-note summary').click()
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow')
   await page.evaluate(()=>window.scrollTo(0,0))
   await page.screenshot({path:'test-results/faith-sanctuary/evening-'+width+'.png',fullPage:true})
