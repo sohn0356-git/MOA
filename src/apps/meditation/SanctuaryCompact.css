@@ -66,3 +66,5 @@
 .sanctuary-seat[aria-pressed=true]{width:44px;height:44px;background:transparent;box-shadow:none}
 .sanctuary-seat[aria-pressed=true]>span{background:#fff8dc;border-color:#b8a36a;box-shadow:none}
 .sanctuary-seat:disabled{opacity:.45;cursor:default}.sanctuary-seat:disabled>span{background:#a19b87;border-color:#d2cbb6;box-shadow:none}
+
+.pixel-avatar[data-pose=kneeling] .voxel-shoe{transform:translateZ(-2px) rotateX(90deg) translateZ(2px)}
