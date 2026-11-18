@@ -44,13 +44,25 @@
 .sanctuary-board-empty{text-align:center;padding:35px 10px;color:#a38e64;font-size:12px;line-height:2}.sanctuary-board-empty button{display:block;margin:15px auto;border:0;background:#e0d0aa;padding:10px 14px;border-radius:9px;color:#77613f}
 .sanctuary-prayer-detail{background:#fffcdf;border:1px solid #dfd2a6;border-radius:5px 5px 16px 5px;padding:21px;box-shadow:2px 5px 8px #826d4818}.sanctuary-prayer-detail.is-answered{background:#eef0d5}.sanctuary-prayer-detail .sanctuary-board-back{border:0;background:transparent;color:#9b8b63;padding:0 0 18px;font-size:10px;cursor:pointer}.sanctuary-prayer-detail>div{font-size:9px;color:#9a8966}.sanctuary-prayer-detail h4{font-size:19px;line-height:1.6;color:#59613f;margin:15px 0}.sanctuary-prayer-detail>p{font-size:13px;line-height:2;color:#80765c}.sanctuary-prayer-detail footer{margin-top:24px}.sanctuary-prayer-detail footer button{padding:11px 12px;min-height:36px;background:#e5e8ca;font-size:10px}.sanctuary-prayer-board .sanctuary-community-hint{color:#a08d65;font-size:9px}
 .sanctuary-paper-composer{padding:18px;background:#fff9e5;border:1px solid #ddcda5;border-radius:5px 5px 16px 5px;margin:5px 0}.sanctuary-paper-composer textarea{min-height:165px}.sanctuary-paper-composer input,.sanctuary-paper-composer textarea{background:#fffdf3;border-color:#e0d4b6;border-radius:8px}.sanctuary-prayer-board .sanctuary-community-feedback{background:#e0e7c9;color:#697c4c}.sanctuary-prayer-board .sanctuary-community-error{color:#a06d4b}
-.pixel-avatar[data-pose=sitting] .pixel-avatar-model{bottom:0;transform:translateY(16px) rotateX(-9deg) rotateY(var(--avatar-facing))}
-.pixel-avatar[data-pose=sitting] .pixel-arm-left,.pixel-avatar[data-pose=sitting] .pixel-arm-right{transform:rotateX(-45deg) translateZ(6px)}
-.pixel-avatar[data-pose=kneeling] .pixel-avatar-model{transform:translateY(22px) rotateX(8deg) rotateY(var(--avatar-facing));transform-origin:50% 100%}
-.pixel-avatar[data-pose=kneeling] .voxel-head{transform:rotateX(24deg);transform-origin:50% 100%}
-.pixel-avatar[data-pose=kneeling] .pixel-leg-left,.pixel-avatar[data-pose=kneeling] .pixel-leg-right{transform:rotateX(-88deg)}
-.pixel-avatar[data-pose=kneeling] .pixel-arm-left{transform:rotateX(-55deg) rotateZ(-17deg) translateZ(9px)}
-.pixel-avatar[data-pose=kneeling] .pixel-arm-right{transform:rotateX(-55deg) rotateZ(17deg) translateZ(9px)}
+
+.pixel-avatar[data-pose=sitting] .pixel-avatar-model{bottom:0;transform:translateY(12px) rotateX(-9deg) rotateY(var(--avatar-facing))}
+.pixel-avatar[data-pose=sitting] .pixel-thigh{transform:rotateX(90deg)}
+.pixel-avatar[data-pose=sitting] .pixel-shin{transform:rotateX(-90deg)}
+.pixel-avatar[data-pose=sitting] .pixel-arm-left,.pixel-avatar[data-pose=sitting] .pixel-arm-right{transform:rotateX(42deg)}
+.pixel-avatar[data-pose=sitting] .voxel-head{transform:rotateX(-5deg);transform-origin:50% 100%}
+.pixel-avatar[data-pose=kneeling] .pixel-avatar-model{transform:translateY(14px) rotateX(-9deg) rotateY(var(--avatar-facing))}
+.pixel-avatar[data-pose=kneeling] .pixel-thigh{transform:none}
+.pixel-avatar[data-pose=kneeling] .pixel-shin{transform:rotateX(-90deg)}
+.pixel-avatar[data-pose=kneeling] .pixel-upper-body{transform:rotateX(-28deg)}
+.pixel-avatar[data-pose=kneeling] .voxel-head{transform:rotateX(-25deg);transform-origin:50% 100%}
+.pixel-avatar[data-pose=kneeling] .pixel-arm-left{transform:rotateX(70deg) rotateZ(-16deg)}
+.pixel-avatar[data-pose=kneeling] .pixel-arm-right{transform:rotateX(70deg) rotateZ(16deg)}
 @media(min-width:620px){.sanctuary-prayer-notes{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 16px}.sanctuary-dialog{max-height:85dvh}.sanctuary-compact .sanctuary-interactive{max-width:500px}}
 @media(max-width:360px){.sanctuary-prayer-board .sanctuary-dialog-body{padding:14px 12px}.sanctuary-dialog-heading h3{font-size:18px}.sanctuary-prayer-note>button{padding:18px 10px 10px;min-height:166px}.sanctuary-prayer-note h4{font-size:13px}.sanctuary-prayer-note footer{font-size:7px}.sanctuary-timer-line small{display:none}}
 @media(prefers-reduced-motion:reduce){.sanctuary-prayer-box>svg,.pixel-avatar-model,.voxel-head,.pixel-limb{transition:none}.sanctuary-prayer-note{transform:none}}
+
+.sanctuary-seat{width:44px;height:44px;background:transparent;box-shadow:none}
+.sanctuary-seat>span{width:14px;height:14px;border:1px solid #fbf5dcdd;background:#fff9e47a;box-shadow:none}
+.sanctuary-seat[aria-pressed=true]{width:44px;height:44px;background:transparent;box-shadow:none}
+.sanctuary-seat[aria-pressed=true]>span{background:#fff8dc;border-color:#b8a36a;box-shadow:none}
+.sanctuary-seat:disabled{opacity:.45;cursor:default}.sanctuary-seat:disabled>span{background:#a19b87;border-color:#d2cbb6;box-shadow:none}

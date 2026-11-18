@@ -27,13 +27,8 @@
 .voxel-arm .voxel-face-left,.voxel-arm .voxel-face-right{background:linear-gradient(#526a47 0 11px,#b98360 11px)}
 .pixel-leg-left{left:9px;top:43px;width:7px;height:22px}
 .pixel-leg-right{left:18px;top:43px;width:7px;height:22px}
-.voxel-leg{--voxel-front:#cfbc97;--voxel-side:#a39578;--voxel-top:#d9caa9}
-.voxel-leg .voxel-face-front{background:linear-gradient(#cfbc97 0 17px,#655e50 17px)}
-.voxel-leg .voxel-face-left,.voxel-leg .voxel-face-right{background:linear-gradient(#a39578 0 17px,#4b493f 17px)}
-.pixel-avatar[data-moving=true] .pixel-leg-left,.pixel-avatar[data-moving=true] .pixel-arm-right{animation:voxel-step .38s ease-in-out infinite alternate}
-.pixel-avatar[data-moving=true] .pixel-leg-right,.pixel-avatar[data-moving=true] .pixel-arm-left{animation:voxel-step .38s ease-in-out infinite alternate-reverse}
-.pixel-avatar[data-seated=true] .pixel-avatar-model{bottom:-6px}
-.pixel-avatar[data-seated=true] .pixel-leg-left,.pixel-avatar[data-seated=true] .pixel-leg-right{transform:rotateX(-65deg)}
+.pixel-avatar[data-moving=true] .pixel-leg-left,.pixel-avatar[data-moving=true] .pixel-arm-right{animation:voxel-step .46s ease-in-out infinite alternate}
+.pixel-avatar[data-moving=true] .pixel-leg-right,.pixel-avatar[data-moving=true] .pixel-arm-left{animation:voxel-step .46s ease-in-out infinite alternate-reverse}
 .sanctuary-interactive:focus-visible{outline:2px solid #91a27b;outline-offset:3px;border-radius:5px}
 .sanctuary-walk-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:#eeeee3;border-top:1px solid #dadfce}
 .sanctuary-walk-arrows{display:flex;gap:5px}
@@ -43,8 +38,19 @@
 .sanctuary-room-bottom>small{max-width:48%;text-align:right}
 .sanctuary-session-restore{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;min-height:340px;text-align:center;color:#748568}
 .sanctuary-session-restore h3{font-size:16px;margin:0}.sanctuary-session-restore p{font-size:11px;margin:0;color:#8b977c}
-@keyframes voxel-step{from{transform:rotateX(-24deg)}to{transform:rotateX(24deg)}}
+@keyframes voxel-step{from{transform:rotateX(-20deg)}to{transform:rotateX(20deg)}}
 @media(prefers-reduced-motion:reduce){.pixel-avatar-model,.pixel-limb{transition:none}.pixel-avatar[data-moving=true] .pixel-limb{animation:none}}
 
 .sanctuary-interactive{max-width:560px;margin-inline:auto}
 .sanctuary-interactive[tabindex] .sanctuary-room{max-height:none}
+
+.pixel-upper-body{position:absolute;width:34px;height:43px;transform-style:preserve-3d;transform-origin:50% 100%;transition:transform .18s ease}
+.pixel-thigh,.pixel-shin{position:absolute;left:0;top:0;width:7px;height:11px;transform-style:preserve-3d;transform-origin:50% 0;transition:transform .18s ease}
+.pixel-shin{top:11px}
+.voxel-thigh,.voxel-shin{--voxel-front:#cfbc97;--voxel-side:#a39578;--voxel-top:#d9caa9}
+.voxel-shoe{--voxel-front:#655e50;--voxel-side:#4b493f;--voxel-top:#807664;transform:translateZ(2px)}
+.pixel-avatar-model{transition:transform .08s linear}
+.pixel-avatar[data-moving=true] .pixel-leg-left .pixel-shin{animation:voxel-knee .46s ease-in-out infinite alternate}
+.pixel-avatar[data-moving=true] .pixel-leg-right .pixel-shin{animation:voxel-knee .46s ease-in-out infinite alternate-reverse}
+@keyframes voxel-knee{from{transform:rotateX(0deg)}to{transform:rotateX(-22deg)}}
+@media(prefers-reduced-motion:reduce){.pixel-upper-body,.pixel-thigh,.pixel-shin{transition:none}.pixel-avatar[data-moving=true] .pixel-shin{animation:none}}

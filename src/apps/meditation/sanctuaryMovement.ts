@@ -2,6 +2,7 @@ export type FloorPoint={x:number;z:number}
 export type WalkDirection='north'|'south'|'west'|'east'
 export const sanctuarySpawn:FloorPoint={x:0,z:.94}
 export const sanctuarySeatPoints:FloorPoint[]=[{x:-.56,z:.27},{x:.56,z:.27},{x:-.49,z:.77},{x:.49,z:.77}]
+export const sanctuaryPrayerBoxPoint:FloorPoint={x:.93,z:.14}
 const rows=[.045,.205,.365,.525,.685,.845]
 export function isSanctuaryWalkable(p:FloorPoint) {
  if(!Number.isFinite(p.x)||!Number.isFinite(p.z)||Math.abs(p.x)>.96||p.z<.06||p.z>.97)return false
@@ -27,29 +28,40 @@ export function stepSanctuaryPoint(start:FloorPoint,dx:number,dz:number):FloorPo
  if(isSanctuaryWalkable({x:start.x,z:next.z}))return{x:start.x,z:next.z}
  return start
 }
+export function sanctuarySegmentClear(a:FloorPoint,b:FloorPoint):boolean {
+ const steps=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.009))
+ for(let i=0;i<=steps;i++){const t=i/steps;if(!isSanctuaryWalkable({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t}))return false}
+ return true
+}
 export function sanctuaryPath(start:FloorPoint,target:FloorPoint):FloorPoint[] {
- const size=41
+ if(!isSanctuaryWalkable(start))return[]
+ if(isSanctuaryWalkable(target)&&sanctuarySegmentClear(start,target))return[{...target}]
+ const size=41,total=size*size
  const point=(index:number)=>({x:-.95+(index%size)*1.9/(size-1),z:.06+Math.floor(index/size)*.9/(size-1)})
- const available=Array.from({length:size*size},(_,i)=>isSanctuaryWalkable(point(i)))
- const closest=(p:FloorPoint)=>{
-  let best=-1,dist=Infinity
-  for(let i=0;i<available.length;i++){if(!available[i])continue;const q=point(i),d=(p.x-q.x)**2+(p.z-q.z)**2;if(d<dist){best=i;dist=d}}
+ const points=Array.from({length:total},(_,i)=>point(i)),available=points.map(isSanctuaryWalkable)
+ function closest(p:FloorPoint,visible:boolean){let best=-1,distance=Infinity
+  for(let i=0;i<total;i++){if(!available[i])continue;const q=points[i],d=Math.hypot(p.x-q.x,p.z-q.z);if(d<distance&&(!visible||sanctuarySegmentClear(p,q))){best=i;distance=d}}
   return best
  }
- const from=closest(start),to=closest(target)
- if(from<0||to<0)return[]
- const parents=new Int32Array(size*size).fill(-1),queue=[from];parents[from]=from
- for(let head=0;head<queue.length;head++){
-  const at=queue[head];if(at===to)break
+ const from=closest(start,true),to=closest(target,isSanctuaryWalkable(target));if(from<0||to<0)return[]
+ const goal=isSanctuaryWalkable(target)?target:points[to]
+ const g=new Float64Array(total).fill(Infinity),parents=new Int32Array(total).fill(-1),closed=new Uint8Array(total)
+ const heap:{id:number;score:number}[]=[]
+ function push(id:number,score:number){let i=heap.length;heap.push({id,score});while(i>0){const p=(i-1)>>1;if(heap[p].score<=score)break;heap[i]=heap[p];i=p}heap[i]={id,score}}
+ function pop(){const first=heap[0],last=heap.pop()!;if(heap.length){let i=0;while(i*2+1<heap.length){let c=i*2+1;if(c+1<heap.length&&heap[c+1].score<heap[c].score)c++;if(heap[c].score>=last.score)break;heap[i]=heap[c];i=c}heap[i]=last}return first.id}
+ g[from]=0;parents[from]=from;push(from,Math.hypot(points[from].x-goal.x,points[from].z-goal.z))
+ while(heap.length){const at=pop();if(closed[at])continue;closed[at]=1;if(at===to)break
   const col=at%size,row=Math.floor(at/size)
-  for(const [cx,cz] of [[0,-1],[0,1],[-1,0],[1,0]]){
-   const x=col+cx,z=row+cz;if(x<0||x>=size||z<0||z>=size)continue
-   const next=z*size+x;if(!available[next]||parents[next]!==-1)continue
-   parents[next]=at;queue.push(next)
+  for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]]){
+   const x=col+dx,z=row+dz;if(x<0||x>=size||z<0||z>=size)continue
+   const next=z*size+x;if(!available[next]||closed[next]||!sanctuarySegmentClear(points[at],points[next]))continue
+   const cost=g[at]+Math.hypot(points[at].x-points[next].x,points[at].z-points[next].z)
+   if(cost>=g[next])continue;g[next]=cost;parents[next]=at;push(next,cost+Math.hypot(points[next].x-goal.x,points[next].z-goal.z))
   }
  }
  if(parents[to]===-1)return[]
- const result:FloorPoint[]=[]
- for(let at=to;at!==from;at=parents[at])result.push(point(at))
- result.push(point(from));return result.reverse()
+ const raw:FloorPoint[]=[goal];for(let at=to;at!==from;at=parents[at])raw.push(points[at]);raw.push(points[from],start);raw.reverse()
+ const result:FloorPoint[]=[];let anchor=0
+ while(anchor<raw.length-1){let next=raw.length-1;while(next>anchor+1&&!sanctuarySegmentClear(raw[anchor],raw[next]))next--;result.push(raw[next]);anchor=next}
+ return result
 }
