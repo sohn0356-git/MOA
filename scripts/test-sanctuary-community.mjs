@@ -147,7 +147,7 @@ try{
  await bob.screenshot({path:'test-results/faith-sanctuary/prayer-board-tablet.png',fullPage:true})
  await bob.getByRole('button',{name:'중보기도 게시판 닫기'}).click()
  await bob.getByRole('button',{name:'앉아 기도'}).click()
- await bob.waitForFunction(()=>{const leg=document.querySelector('.sanctuary-avatar-anchor:not(.sanctuary-peer) .pixel-leg-left');return leg&&Math.abs(new DOMMatrix(getComputedStyle(leg).transform).m22)<.08})
+ await bob.waitForFunction(()=>{const leg=document.querySelector('.sanctuary-avatar-anchor:not(.sanctuary-peer) .pixel-thigh');return leg&&Math.abs(new DOMMatrix(getComputedStyle(leg).transform).m22)<.08})
  await bob.evaluate(()=>scrollTo(0,0));await bob.screenshot({path:'test-results/faith-sanctuary/community-tablet.png',fullPage:true})
  assert.deepEqual(errors,[])
  console.log('Two real accounts: touch joystick, synced custom avatars/motion, tab-deduplicated online/daily visits, disconnect cleanup, shared prayer edits, unique intercession, draft restore and answered state passed.')
