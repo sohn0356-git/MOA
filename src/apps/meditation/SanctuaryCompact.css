@@ -18,13 +18,18 @@
 .sanctuary-prayer-box{position:absolute;left:83%;top:51%;transform:translate(-50%,-50%);width:55px;min-height:70px;padding:0;border:0;background:transparent;cursor:pointer;z-index:8;filter:drop-shadow(0 4px 3px #48442e18)}
 .sanctuary-prayer-box>svg{width:48px;display:block;margin:auto;transition:transform .15s}.sanctuary-prayer-box:hover>svg,.sanctuary-prayer-box:focus-visible>svg{transform:translateY(-3px)}.sanctuary-prayer-box:focus-visible{outline:2px solid #fff3c5;outline-offset:5px;border-radius:12px}
 .sanctuary-prayer-box>span{display:flex;gap:4px;align-items:center;justify-content:center;font-size:8px;white-space:nowrap;font-weight:600;color:#645338;background:#fff6ddf5;border:1px solid #c5ac74;border-radius:7px;padding:3px 5px;margin-top:-3px;position:relative}
-.sanctuary-prayer-box b{font-size:8px;min-width:12px;line-height:13px;border-radius:50%;background:#9d7451;color:#fff8df}
-.sanctuary-community-compact{margin:9px 0 12px;gap:0}
-.sanctuary-presence-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:7px 10px;padding:7px 2px}
-.sanctuary-presence-strip>div{display:flex;align-items:center;gap:9px}.sanctuary-presence-strip .sanctuary-live{font-size:8px!important;white-space:nowrap}
-.sanctuary-presence-strip .sanctuary-community-stats{display:flex;gap:9px;margin:0}.sanctuary-presence-strip .sanctuary-community-stats>span{font-size:9px;color:#879777;white-space:nowrap}.sanctuary-presence-strip .sanctuary-community-stats strong{font-size:11px;font-weight:600;color:#586e49}
-.sanctuary-character-button{border:1px solid #dfe6d5;color:#738761;background:#f7f9f0;border-radius:20px;padding:7px 9px;font:inherit;font-size:9px;cursor:pointer;white-space:nowrap}
-.sanctuary-presence-strip .sanctuary-community-error{width:100%;margin:0;font-size:9px}.sanctuary-presence-strip .sanctuary-people{width:100%;margin:0;gap:4px}.sanctuary-presence-strip .sanctuary-people span{padding:3px 7px;font-size:8px}
+.sanctuary-prayer-box b{position:absolute;top:-8px;left:50%;transform:translateX(-50%);min-width:20px;padding:0 5px;border-radius:20px;background:#874a35;color:#fff8ed;font-size:11px;line-height:20px;z-index:1}
+.sanctuary-presence-strip{display:grid;grid-template-columns:minmax(94px,1fr) minmax(0,2fr);align-items:center;gap:10px 14px;padding:14px;border:1px solid #dfe6d5;border-radius:16px;background:#f7f9f0}
+.sanctuary-presence-character{min-width:0;display:grid;justify-items:center;gap:6px;color:#405538;font-size:12px;font-weight:600;text-align:center}
+.sanctuary-presence-character .pixel-avatar{position:relative;transform:scale(var(--avatar-scale))}
+.sanctuary-presence-character>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sanctuary-presence-stats,.sanctuary-presence-stats dl{display:grid;gap:8px;margin:0;color:#405538}
+.sanctuary-presence-stats dt{font-size:12px}
+.sanctuary-presence-stats dd{margin:0;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.sanctuary-presence-stats dl>div:first-child dd{font-size:clamp(28px,7vw,40px);line-height:1.15}
+.sanctuary-presence-stats .sanctuary-live{justify-self:start}
+.sanctuary-character-button{border:1px solid #c7d3bd;color:#405538;background:#fff;border-radius:20px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.sanctuary-presence-strip .sanctuary-community-error,.sanctuary-presence-strip .sanctuary-people{grid-column:1/-1;margin:0}
 .sanctuary-compact .sanctuary-verse-card{padding:13px 15px;border-radius:14px}.sanctuary-compact .sanctuary-verse-card>p{font-size:11px;line-height:1.8;margin:0 0 8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.sanctuary-compact .sanctuary-verse-card>div,.sanctuary-compact .sanctuary-verse-card button{font-size:9px}
 .sanctuary-compact .sanctuary-compact-timer{margin:10px 0 8px;padding:12px 14px;border-radius:14px;background:#fcfcf6}.sanctuary-timer-line{display:flex;justify-content:space-between;align-items:center;gap:12px}.sanctuary-timer-line>div:first-child{display:flex;align-items:center;gap:10px}.sanctuary-timer-line small{font-size:10px;color:#879777}.sanctuary-timer-line strong{font-size:24px;line-height:1.2;font-weight:400;color:#4f6c45;font-variant-numeric:tabular-nums}.sanctuary-compact-timer .sanctuary-timer-actions{gap:5px}.sanctuary-compact-timer .sanctuary-primary{padding:9px 11px;font-size:10px;min-height:34px}.sanctuary-compact-timer .sanctuary-reset{width:31px;height:31px}.sanctuary-compact-timer .sanctuary-duration{margin:8px 0 0;gap:4px}.sanctuary-compact-timer .sanctuary-duration button{font-size:9px;padding:4px 8px;min-height:25px}
 .sanctuary-private-note{border-top:1px solid #e1e6d8;margin-top:5px}.sanctuary-private-note>summary{display:flex;align-items:center;gap:7px;padding:12px 3px;font-size:11px;color:#738365;cursor:pointer;list-style:none}.sanctuary-private-note>summary::-webkit-details-marker{display:none}.sanctuary-private-note>summary:after{content:'+';margin-left:auto;font-size:17px;color:#99a38c}.sanctuary-private-note[open]>summary:after{content:'−'}.sanctuary-private-note>summary small{font-size:8px;color:#a0a68e}.sanctuary-private-note .sanctuary-note-card{padding:10px 13px;border-radius:12px}.sanctuary-private-note textarea{min-height:75px;font-size:12px}.sanctuary-private-note .sanctuary-prayer-link{font-size:10px}.sanctuary-compact .sanctuary-notice,.sanctuary-compact .sanctuary-error{font-size:10px;padding:9px 11px;margin:8px 0}
@@ -61,9 +66,9 @@
 @media(max-width:360px){.sanctuary-prayer-board .sanctuary-dialog-body{padding:14px 12px}.sanctuary-dialog-heading h3{font-size:18px}.sanctuary-prayer-note>button{padding:18px 10px 10px;min-height:166px}.sanctuary-prayer-note h4{font-size:13px}.sanctuary-prayer-note footer{font-size:7px}.sanctuary-timer-line small{display:none}}
 @media(prefers-reduced-motion:reduce){.sanctuary-prayer-box>svg,.pixel-avatar-model,.voxel-head,.pixel-limb{transition:none}.sanctuary-prayer-note{transform:none}}
 
-.sanctuary-seat{width:44px;height:44px;background:transparent;box-shadow:none}
+.sanctuary-seat{width:44px;height:min(44px,6%);background:transparent;box-shadow:none}
 .sanctuary-seat>span{width:14px;height:14px;border:1px solid #fbf5dcdd;background:#fff9e47a;box-shadow:none}
-.sanctuary-seat[aria-pressed=true]{width:44px;height:44px;background:transparent;box-shadow:none}
+.sanctuary-seat[aria-pressed=true]{width:44px;height:min(44px,6%);background:transparent;box-shadow:none}
 .sanctuary-seat[aria-pressed=true]>span{background:#fff8dc;border-color:#b8a36a;box-shadow:none}
 .sanctuary-seat:disabled{opacity:.45;cursor:default}.sanctuary-seat:disabled>span{background:#a19b87;border-color:#d2cbb6;box-shadow:none}
 

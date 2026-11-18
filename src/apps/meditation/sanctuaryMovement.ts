@@ -1,7 +1,22 @@
 export type FloorPoint={x:number;z:number}
 export type WalkDirection='north'|'south'|'west'|'east'
 export const sanctuarySpawn:FloorPoint={x:0,z:.94}
-export const sanctuarySeatPoints:FloorPoint[]=[{x:-.56,z:.27},{x:.56,z:.27},{x:-.49,z:.77},{x:.49,z:.77}]
+// Keep the first four indices stable for existing saved seat selections.
+export const sanctuarySeats = [
+ {label:'앞쪽 왼편', point:{x:-.56,z:.27}},
+ {label:'앞쪽 오른편', point:{x:.56,z:.27}},
+ {label:'뒤쪽 왼편', point:{x:-.49,z:.77}},
+ {label:'뒤쪽 오른편', point:{x:.49,z:.77}},
+ {label:'맨 앞 왼편', point:{x:-.56,z:.11}},
+ {label:'맨 앞 오른편', point:{x:.56,z:.11}},
+ {label:'가운데 앞 왼편', point:{x:-.53,z:.43}},
+ {label:'가운데 앞 오른편', point:{x:.53,z:.43}},
+ {label:'가운데 뒤 왼편', point:{x:-.51,z:.59}},
+ {label:'가운데 뒤 오른편', point:{x:.51,z:.59}},
+ {label:'맨 뒤 왼편', point:{x:-.48,z:.92}},
+ {label:'맨 뒤 오른편', point:{x:.48,z:.92}},
+]
+export const sanctuarySeatPoints = sanctuarySeats.map(({point})=>point)
 export const sanctuaryPrayerBoxPoint:FloorPoint={x:.93,z:.14}
 const rows=[.045,.205,.365,.525,.685,.845]
 export function isSanctuaryWalkable(p:FloorPoint) {

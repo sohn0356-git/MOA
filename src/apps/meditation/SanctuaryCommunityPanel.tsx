@@ -23,14 +23,27 @@ export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose}:{room:
   try{await fn();setMessage(success)}catch{setMessage('저장하지 못했습니다. 연결 상태를 확인하고 다시 시도해주세요.')}finally{lock.current=false;setBusy(false)}
  }
  useEffect(()=>{if(boardOpen){setView('list');setMessage('')}},[boardOpen])
- function read(p:SharedPrayer){setSelectedId(p.id);setView('read');setMessage('')}
+ function read(p:SharedPrayer){
+  setSelectedId(p.id);setView('read');setMessage('')
+  void room.markPrayerRead(p).catch(()=>setMessage('읽음 상태를 저장하지 못했습니다. 기도제목을 다시 열어주세요.'))
+ }
  const selected=room.prayers.find(p=>p.id===selectedId)
  const visible=room.prayers.filter(p=>filter==='mine'?p.uid===uid:filter==='answered'?p.answered:!p.answered)
  const counts={active:room.prayers.filter(p=>!p.answered).length,answered:room.prayers.filter(p=>p.answered).length,mine:room.prayers.filter(p=>p.uid===uid).length}
  return <div className="sanctuary-community sanctuary-community-compact">
   <section className="sanctuary-presence-strip" aria-label="예배당 접속 현황">
-   <div><span className={'sanctuary-live '+(room.connected?'is-online':'')}>{room.connected?'실시간 연결':'연결 확인 중'}</span><div className="sanctuary-community-stats"><span>함께 <strong>{room.connected?room.online:'—'}</strong></span><span>오늘 <strong>{room.visitors??'—'}</strong></span></div></div>
-   <button type="button" className="sanctuary-character-button" onClick={()=>{setAvatar(room.profile);setMessage('');setEditing(true)}}>{room.created?'캐릭터 수정':'캐릭터 만들기'}</button>
+   <div className="sanctuary-presence-character">
+    <PixelAvatar profile={room.profile} facing={-25} moving={false} seated={false} scale={.9} label="내 캐릭터 미리보기"/>
+    <span>{room.profile.name}</span>
+    <button type="button" className="sanctuary-character-button" onClick={()=>{setAvatar(room.profile);setMessage('');setEditing(true)}}>캐릭터 수정</button>
+   </div>
+   <div className="sanctuary-presence-stats">
+    <span className={'sanctuary-live '+(room.connected?'is-online':'')}>{room.connected?'실시간 연결':'연결 확인 중'}</span>
+    <dl>
+    <div><dt>현재 입장 인원</dt><dd>{room.connected?room.online+'명':'—'}</dd></div>
+    <div><dt>오늘 총 입장 인원</dt><dd>{room.visitors===null?'—':room.visitors+'명'}</dd></div>
+    </dl>
+   </div>
    {room.error&&<p className="sanctuary-community-error">{room.error}</p>}
    {room.peers.length>0&&<p className="sanctuary-people">{room.peers.map(p=><span key={p.uid}>{p.name}</span>)}</p>}
   </section>

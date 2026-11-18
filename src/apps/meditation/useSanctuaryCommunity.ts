@@ -5,8 +5,9 @@ import {defaultAvatar,normalizeAvatar,onlineMembers,koreanDayBounds,type AvatarP
 import {sanctuarySpawn,type FloorPoint} from './sanctuaryMovement'
 import type {SanctuaryMember} from './sanctuaryState'
 export function useSanctuaryCommunity(member:SanctuaryMember){
- const [profile,setProfile]=useState(()=>defaultAvatar(member.displayName)),[created,setCreated]=useState(false),[raw,setRaw]=useState<Record<string,Record<string,unknown>>|null>(null)
+ const [profile,setProfile]=useState(()=>defaultAvatar(member.displayName)),[raw,setRaw]=useState<Record<string,Record<string,unknown>>|null>(null)
  const [prayers,setPrayers]=useState<SharedPrayer[]>([]),[intercessions,setIntercessions]=useState<Record<string,Record<string,{at:number}>>>({}),[visitors,setVisitors]=useState<number|null>(null)
+ const [readPrayers,setReadPrayers]=useState<Record<string,true>|null>(null)
  const [error,setError]=useState(''),[connected,setConnected]=useState(false),[loaded,setLoaded]=useState(false),[offset,setOffset]=useState(0),[clock,setClock]=useState(Date.now())
  const profileRef=useRef(profile);profileRef.current=profile
  const position=useRef({point:sanctuarySpawn,facing:-25,moving:false,pose:'standing' as AvatarPose}),live=useRef<DatabaseReference|null>(null),dirty=useRef(false)
@@ -35,11 +36,12 @@ export function useSanctuaryCommunity(member:SanctuaryMember){
   const subscriptions=[
    onValue(ref(db,'.info/serverTimeOffset'),s=>{if(alive)setOffset(Number(s.val())||0)}),
    onValue(ref(db,'.info/connected'),s=>{online=s.val()===true;if(online)void join();else stop()}),
-   onValue(ref(db,'sanctuary/avatars/'+member.uid),s=>{if(alive){setProfile(normalizeAvatar(s.val(),member.displayName));setCreated(s.exists())}},fail),
+   onValue(ref(db,'sanctuary/avatars/'+member.uid),s=>{if(alive){setProfile(normalizeAvatar(s.val(),member.displayName))}},fail),
    onValue(ref(db,'sanctuary/presence'),s=>{if(alive)setRaw(s.val())},fail),
    onValue(query(ref(db,'sanctuary/prayers'),orderByChild('createdAt'),limitToLast(100)),s=>{
     if(!alive)return;setPrayers(Object.entries(s.val()||{}).map(([id,p])=>({...p as Omit<SharedPrayer,'id'>,id})).sort((a,b)=>b.createdAt-a.createdAt));setLoaded(true)
    },fail),
+   onValue(ref(db,'users/'+member.uid+'/sanctuaryPrayerReads'),s=>{if(alive)setReadPrayers(s.val()||{})},fail),
    onValue(ref(db,'sanctuary/intercessions'),s=>{if(alive)setIntercessions(s.val()||{})},fail),
   ]
   const publish=()=>{const node=live.current;if(!node||document.hidden)return;const p=position.current;void set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,pose:p.pose,updatedAt:serverTimestamp()}).catch(fail)}
@@ -66,6 +68,11 @@ export function useSanctuaryCommunity(member:SanctuaryMember){
  async function answerPrayer(p:SharedPrayer){await set(ref(getRealtimeDb(),'sanctuary/prayers/'+p.id),{uid:p.uid,name:p.name,title:p.title,body:p.body,createdAt:p.createdAt,updatedAt:serverTimestamp(),answered:!p.answered})}
  async function deletePrayer(id:string){await remove(ref(getRealtimeDb(),'sanctuary/prayers/'+id))}
  async function pray(id:string){await set(ref(getRealtimeDb(),'sanctuary/intercessions/'+id+'/'+member.uid),{at:serverTimestamp()})}
- return{profile,created,saveProfile,move,peers:connected?onlineMembers(raw,clock+offset).filter(p=>p.uid!==member.uid):[],online:connected?onlineMembers(raw,clock+offset).length:0,visitors,connected,loaded,prayers,intercessions,error,savePrayer,answerPrayer,deletePrayer,pray}
+ async function markPrayerRead(prayer:SharedPrayer){
+  if(prayer.uid===member.uid||readPrayers?.[prayer.id]===true)return
+  await set(ref(getRealtimeDb(),'users/'+member.uid+'/sanctuaryPrayerReads/'+prayer.id),true)
+ }
+ const unreadCount=readPrayers===null?0:prayers.filter(p=>p.uid!==member.uid&&readPrayers[p.id]!==true).length
+ return{profile,saveProfile,move,unreadCount,markPrayerRead,peers:connected?onlineMembers(raw,clock+offset).filter(p=>p.uid!==member.uid):[],online:connected?onlineMembers(raw,clock+offset).length:0,visitors,connected,loaded,prayers,intercessions,error,savePrayer,answerPrayer,deletePrayer,pray}
 }
 export type SanctuaryCommunity=ReturnType<typeof useSanctuaryCommunity>

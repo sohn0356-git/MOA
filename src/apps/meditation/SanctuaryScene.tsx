@@ -3,9 +3,8 @@ import { SanctuaryJoystick } from './SanctuaryJoystick'
 import type {AvatarPose,AvatarProfile,RoomPresence} from './sanctuaryCommunity'
 import { PixelAvatar } from './PixelAvatar'
 import { useSanctuaryMovement } from './useSanctuaryMovement'
-import { floorPointFromScene, projectSanctuaryPoint, sanctuarySeatPoints, sanctuaryPrayerBoxPoint, sanctuarySpawn, type FloorPoint } from './sanctuaryMovement'
+import { floorPointFromScene, projectSanctuaryPoint, sanctuarySeats, sanctuarySeatPoints, sanctuaryPrayerBoxPoint, sanctuarySpawn, type FloorPoint } from './sanctuaryMovement'
 import './PixelAvatar.css'
-export const sanctuarySeats = ['앞쪽 왼편','앞쪽 오른편','뒤쪽 왼편','뒤쪽 오른편']
 export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition = sanctuarySpawn, onPosition, onMotion, profile, peers=[], onPrayerBox, prayerCount=0 }: {
  seat:number; onSeat?:(seat:number)=>void; candle?:boolean; initialPosition?:FloorPoint; onPosition?:(point:FloorPoint,facing:number)=>void; onMotion?:(point:FloorPoint,facing:number,moving:boolean,pose?:AvatarPose)=>void; onPrayerBox?:()=>void; prayerCount?:number; profile?:AvatarProfile; peers?:RoomPresence[]
 }) {
@@ -60,11 +59,12 @@ export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition =
    <path d="M291 275V299M349 275V299" stroke="var(--room-trim)" strokeWidth="4"/>
    {candle && <g className="sanctuary-scene-candle"><ellipse cx="349" cy="261" rx="16" ry="20" fill="#ffcf6a" opacity=".2"/><rect x="346" y="249" width="6" height="15" rx="1" fill="#fff1ce"/><path d="M349 235Q340 247 349 250Q358 247 349 235" fill="#ffc96f"/></g>}
   </svg>
-  {onSeat&&onPrayerBox&&<button type="button" className="sanctuary-prayer-box" aria-label="중보기도함 열기" title="기도함 앞으로 걸어가 기도 쪽지를 읽어요" onClick={event=>{event.stopPropagation();walk.goTo(sanctuaryPrayerBoxPoint,false,onPrayerBox,145)}}>
+  {onSeat&&onPrayerBox&&<button type="button" className="sanctuary-prayer-box" aria-label="중보기도함 열기" aria-description={prayerCount>0?`읽지 않은 기도 ${prayerCount}개`:undefined} title="기도함 앞으로 걸어가 기도 쪽지를 읽어요" onClick={event=>{event.stopPropagation();walk.goTo(sanctuaryPrayerBoxPoint,false,onPrayerBox,145)}}>
    <svg viewBox="0 0 64 76" aria-hidden="true"><ellipse cx="34" cy="70" rx="19" ry="4" fill="#3f412222"/><path d="M28 40h9v29h-9z" fill="#9b7950"/><path d="M22 69h22v4H22z" fill="#8b704f"/><path d="M8 14L32 3l25 11v36H8z" fill="#a77d4e"/><path d="M8 14h49v36H8z" fill="#bf9862"/><path d="M5 14L32 1l29 13-3 5-26-12L8 19z" fill="#725b3f"/><path d="M17 23h30v4H17z" fill="#5c513b"/><path d="M20 33h25v13H20z" fill="#fff1ce"/><path d="M24 36l9 6 8-6" fill="none" stroke="#a78c58" strokeWidth="1.5"/><path d="M51 19v26M12 20v25" stroke="#d6b887" opacity=".5"/></svg>
-   <span>중보기도함 <b>{prayerCount}</b></span>
+   {prayerCount>0&&<b aria-hidden="true">{prayerCount}</b>}
+   <span>중보기도함</span>
   </button>}
-  {onSeat && sanctuarySeats.map((label,index)=><button type="button" key={label} className={'sanctuary-seat sanctuary-seat-'+index}
+  {onSeat && sanctuarySeats.map(({label},index)=><button type="button" key={label} className="sanctuary-seat"
    style={{left:projectSanctuaryPoint(sanctuarySeatPoints[index]).x/640*100+'%',top:projectSanctuaryPoint(sanctuarySeatPoints[index]).y/480*100+'%'}}
    aria-label={label+' 자리 선택'} disabled={occupied(index)} title={occupied(index)?label+' · 사용 중':label+'에 가서 앉기'} aria-pressed={seat===index} onClick={event=>{event.stopPropagation();onSeat(index);walk.goTo(sanctuarySeatPoints[index],true,undefined,180)}}>
    <span aria-hidden="true"/>
