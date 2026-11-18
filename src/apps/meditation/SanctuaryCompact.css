@@ -50,13 +50,13 @@
 .pixel-avatar[data-pose=sitting] .pixel-shin{transform:rotateX(-90deg)}
 .pixel-avatar[data-pose=sitting] .pixel-arm-left,.pixel-avatar[data-pose=sitting] .pixel-arm-right{transform:rotateX(42deg)}
 .pixel-avatar[data-pose=sitting] .voxel-head{transform:rotateX(-5deg);transform-origin:50% 100%}
-.pixel-avatar[data-pose=kneeling] .pixel-avatar-model{transform:translateY(14px) rotateX(-9deg) rotateY(var(--avatar-facing))}
-.pixel-avatar[data-pose=kneeling] .pixel-thigh{transform:none}
-.pixel-avatar[data-pose=kneeling] .pixel-shin{transform:rotateX(-90deg)}
-.pixel-avatar[data-pose=kneeling] .pixel-upper-body{transform:rotateX(-28deg)}
+.pixel-avatar[data-pose=kneeling] .pixel-avatar-model{transform:translateY(21px) rotateX(-9deg) rotateY(var(--avatar-facing))}
+.pixel-avatar[data-pose=kneeling] .pixel-thigh{transform:rotateX(70deg)}
+.pixel-avatar[data-pose=kneeling] .pixel-shin{transform:rotateX(-160deg)}
+.pixel-avatar[data-pose=kneeling] .pixel-upper-body{transform:rotateX(-38deg)}
 .pixel-avatar[data-pose=kneeling] .voxel-head{transform:rotateX(-25deg);transform-origin:50% 100%}
-.pixel-avatar[data-pose=kneeling] .pixel-arm-left{transform:rotateX(70deg) rotateZ(-16deg)}
-.pixel-avatar[data-pose=kneeling] .pixel-arm-right{transform:rotateX(70deg) rotateZ(16deg)}
+.pixel-avatar[data-pose=kneeling] .pixel-arm-left{transform:rotateX(85deg) rotateZ(-20deg)}
+.pixel-avatar[data-pose=kneeling] .pixel-arm-right{transform:rotateX(85deg) rotateZ(20deg)}
 @media(min-width:620px){.sanctuary-prayer-notes{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 16px}.sanctuary-dialog{max-height:85dvh}.sanctuary-compact .sanctuary-interactive{max-width:500px}}
 @media(max-width:360px){.sanctuary-prayer-board .sanctuary-dialog-body{padding:14px 12px}.sanctuary-dialog-heading h3{font-size:18px}.sanctuary-prayer-note>button{padding:18px 10px 10px;min-height:166px}.sanctuary-prayer-note h4{font-size:13px}.sanctuary-prayer-note footer{font-size:7px}.sanctuary-timer-line small{display:none}}
 @media(prefers-reduced-motion:reduce){.sanctuary-prayer-box>svg,.pixel-avatar-model,.voxel-head,.pixel-limb{transition:none}.sanctuary-prayer-note{transform:none}}

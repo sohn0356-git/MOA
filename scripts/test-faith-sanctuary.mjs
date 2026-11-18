@@ -12,9 +12,11 @@ import {createRoot} from 'react-dom/client'
 import '../src/index.css'
 import '../src/apps/meditation/FaithSocial.css'
 import {SanctuaryTab} from '../src/apps/meditation/SanctuaryTab'
+import {PixelAvatar} from '../src/apps/meditation/PixelAvatar'
 function App(){
  const [member,setMember]=useState<{uid:string;displayName:string}|null>(null)
  const [destination,setDestination]=useState('')
+ if(location.search.includes('pose-review'))return <main style={{display:'flex',gap:20,padding:25,background:'#f3f0df',minHeight:350}}>{(['standing','sitting','kneeling'] as const).map((pose,i)=><section key={pose} style={{position:'relative',width:195,height:285,border:'1px solid #d3d9c0',borderRadius:18,background:'#fbfcf3'}}><h2 style={{fontSize:15,textAlign:'center',marginTop:18}}>{['서기','의자에 앉기','무릎 꿇기'][i]}</h2><div style={{position:'absolute',left:12,right:12,bottom:25,borderTop:'1px solid #b4c39e'}}/><div style={{position:'absolute',left:'50%',bottom:25}}><PixelAvatar pose={pose} scale={2.6} facing={-25} moving={false} seated={pose==='sitting'}/></div></section>)}</main>
  return <main className="faith-screen faith-social" data-church-active="true" style={{minHeight:'100vh',paddingBottom:24}}>
   <header className="faith-header"><h2>예배당</h2>{member&&<button onClick={()=>setMember(null)}>로그아웃 검사</button>}</header>
   <div className="faith-content" style={{padding:'20px'}}>
@@ -132,5 +134,8 @@ try{
  await page.getByRole('button',{name:'로그아웃 검사'}).click()
  assert.equal(await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).count(),0,'logout removes private notes immediately')
  assert.deepEqual(errors,[])
+ await page.setViewportSize({width:760,height:370})
+ await page.goto('http://127.0.0.1:4180/MOA/'+folder+'/index.html?pose-review')
+ await page.screenshot({path:'test-results/faith-sanctuary/pose-comparison.png',animations:'disabled'})
  console.log('Sanctuary passed at 360/768/1440px: authentication gate, seating, lighting, candle, note restoration, timer pause and bell playback.')
 }finally{await browser.close();await server.close();await rm(folder,{recursive:true,force:true})}
