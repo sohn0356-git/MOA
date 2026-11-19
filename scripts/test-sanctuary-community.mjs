@@ -25,7 +25,7 @@ import '../src/index.css'
 import '../src/apps/meditation/FaithSocial.css'
 import {SanctuaryTab} from '../src/apps/meditation/SanctuaryTab'
 import {login} from './firebase'
-function App(){const [member,setMember]=useState<any>(null);useEffect(()=>{login().then(u=>setMember({uid:u.uid,displayName:new URLSearchParams(location.search).get('name')||'방문자'}))},[]);return <main className="faith-screen faith-social" style={{padding:20}}><SanctuaryTab member={member} authBusy={!member} onRead={()=>{}} onPrayer={()=>{}} scripture={{reference:'요한복음 14:27',text:'평안을 너희에게 주노라'}}/></main>}
+function App(){const [member,setMember]=useState<any>(null);useEffect(()=>{login().then(u=>setMember({uid:u.uid,displayName:new URLSearchParams(location.search).get('name')||'방문자'}))},[]);return <main className="faith-screen faith-social" data-church-active="true"><SanctuaryTab member={member} authBusy={!member} onRead={()=>{}} onPrayer={()=>{}} scripture={{reference:'요한복음 14:27',text:'평안을 너희에게 주노라'}}/></main>}
 createRoot(document.getElementById('root')!).render(<App/>)
 `)
 const server=await createServer({configFile:false,root:process.cwd(),plugins:[react()],resolve:{alias:[{find:'../../services/firebase',replacement:path.resolve(folder+'/firebase.ts')}]},server:{host:'127.0.0.1',port:4182,strictPort:true}})
@@ -50,10 +50,12 @@ try{
  await alice.getByRole('button',{name:'머리 색상 2'}).click()
  await alice.getByRole('button',{name:'옷 색상 2'}).click()
  await alice.getByRole('button',{name:'바지 색상 4'}).click()
+ await alice.getByRole('combobox',{name:'캐릭터 성별'}).selectOption('female')
  await alice.getByRole('combobox',{name:'머리 모양'}).selectOption({label:'올림머리'})
  await alice.getByRole('combobox',{name:'상의 모양'}).selectOption({label:'줄무늬'})
  await alice.getByRole('combobox',{name:'액세서리'}).selectOption({label:'안경'})
  const preview=alice.locator('.sanctuary-avatar-preview .pixel-avatar')
+ assert.equal(await preview.getAttribute('data-gender'),'female')
  assert.equal(await preview.getAttribute('data-hair-style'),'2')
  await alice.getByRole('button',{name:'캐릭터 저장'}).click()
  await enter(alice)
@@ -66,6 +68,7 @@ try{
  await bob.locator('.sanctuary-avatar-name',{hasText:'하늘'}).waitFor()
  assert.ok((await bob.locator('.sanctuary-peer .pixel-avatar').getAttribute('style')).includes('#7495b6'),'custom appearance reaches the other account')
  const peer=bob.locator('.sanctuary-peer .pixel-avatar')
+ assert.equal(await peer.getAttribute('data-gender'),'female')
  assert.equal(await peer.getAttribute('data-hair-style'),'2')
  assert.equal(await peer.getAttribute('data-top-style'),'2')
  assert.equal(await peer.getAttribute('data-accessory'),'1')
@@ -139,7 +142,7 @@ try{
  assert.equal(await alice.getByRole('textbox',{name:'공동 기도제목'}).inputValue(),'임시 기도제목','closing the board preserves draft')
  await alice.reload();await ready(alice)
  await alice.getByRole('button',{name:'캐릭터 수정'}).waitFor()
- await alice.waitForFunction(()=>document.querySelector('.sanctuary-presence-character .pixel-avatar')?.getAttribute('data-hair-style')==='2')
+ await alice.waitForFunction(()=>document.querySelector('.sanctuary-presence-character .pixel-avatar')?.getAttribute('data-gender')==='female')
  await enter(alice)
  await alice.getByRole('button',{name:'중보기도함 열기'}).click()
  await alice.getByRole('button',{name:'작성 이어쓰기'}).click()

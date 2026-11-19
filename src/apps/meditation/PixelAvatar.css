@@ -54,3 +54,6 @@
 .pixel-avatar[data-moving=true] .pixel-leg-right .pixel-shin{animation:voxel-knee .46s ease-in-out infinite alternate-reverse}
 @keyframes voxel-knee{from{transform:rotateX(0deg)}to{transform:rotateX(-22deg)}}
 @media(prefers-reduced-motion:reduce){.pixel-upper-body,.pixel-thigh,.pixel-shin{transition:none}.pixel-avatar[data-moving=true] .pixel-shin{animation:none}}
+
+.pixel-avatar[data-gender=female] .pixel-arm-left{left:4px}
+.pixel-avatar[data-gender=female] .pixel-arm-right{left:24px}

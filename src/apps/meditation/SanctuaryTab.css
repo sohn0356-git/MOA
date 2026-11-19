@@ -2,7 +2,9 @@
 .sanctuary{--sanctuary-ink:#30473c;--sanctuary-muted:#8a9284;--room-wall-top:#ded9c7;--room-wall:#eae4d3;--room-side:#c7c5b4;--room-trim:#a89c77;--room-window-top:#fff8de;--room-window:#e5cc93;--room-floor-top:#c9c5ad;--room-floor:#aaa98d;--room-aisle:#f3ead2;--room-wood:#898570;--room-pew-top:#aaa58c;font-family:"NanumSquare Neo",sans-serif;color:var(--sanctuary-ink);padding:4px 0 0}
 .sanctuary[data-light=day]{--room-wall-top:#e8e8db;--room-wall:#f3eedf;--room-side:#d0d3c4;--room-trim:#a4a582;--room-window-top:#f8fcf0;--room-window:#d3e1c3;--room-floor-top:#dbd6bb;--room-floor:#b9b89c;--room-aisle:#fff5d7}
 .sanctuary[data-light=evening]{--room-wall-top:#313d3c;--room-wall:#4a5148;--room-side:#293b36;--room-trim:#8d876c;--room-window-top:#a59c85;--room-window:#deb87d;--room-floor-top:#5b6454;--room-floor:#3a4c40;--room-aisle:#a5a081;--room-wood:#454f42;--room-pew-top:#777b60}
-.faith-screen[data-church-active=true]{background:#f6f4ee}
+.app-shell-faith:has(.faith-screen[data-church-active=true]){padding:0;background:#f6f4ee}
+.faith-screen.faith-social[data-church-active=true]{--sanctuary-page-gutter:16px;background:#f6f4ee;max-width:none;min-height:100svh;padding-inline:var(--sanctuary-page-gutter);border:0;border-radius:0;box-shadow:none}
+.faith-screen[data-church-active=true] .faith-bottom-nav{max-width:none}
 .faith-screen[data-church-active=true]>.faith-header{background:#f6f4eef5;border-color:#e6e5d9}
 .faith-screen[data-church-active=true]>.faith-content{background:radial-gradient(ellipse at 100% 0,#e8ebdf80,transparent 55%),#f6f4ee;padding-top:18px}
 .sanctuary-eyebrow{font-size:9px;letter-spacing:.16em;font-weight:700;display:flex;align-items:center;gap:8px;color:#929782}

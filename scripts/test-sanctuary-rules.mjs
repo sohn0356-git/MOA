@@ -12,9 +12,11 @@ await check(false,'sanctuary/avatars/room-alice','PUT',{...profile,shirt:.5})
 await check(true,'sanctuary/presence/room-alice/tab-a','PUT',presence)
 await check(true,'sanctuary/presence/room-alice/tab-b','PUT',presence)
 for(const pose of ['standing','sitting','kneeling'])await check(true,'sanctuary/presence/room-alice/tab-b','PUT',{...presence,pose})
-const custom={skin:7,hair:7,shirt:8,pants:5,hairStyle:3,topStyle:2,accessory:3}
+const custom={skin:7,hair:7,shirt:8,pants:5,hairStyle:3,topStyle:2,accessory:3,gender:'female'}
 for(const [path,data] of [['sanctuary/avatars/room-alice',profile],['sanctuary/presence/room-alice/tab-b',presence]]){
  await check(true,path,'PUT',{...data,...custom})
+ await check(true,path,'PUT',{...data,...custom,gender:'male'})
+ await check(false,path,'PUT',{...data,...custom,gender:'unknown'})
  await check(false,path,'PUT',{...data,...custom,accessory:4})
  await check(false,path,'PUT',{...data,...custom,hairStyle:1.5})
 }

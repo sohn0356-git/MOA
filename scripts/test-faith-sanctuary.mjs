@@ -19,7 +19,7 @@ function App(){
  if(location.search.includes('pose-review'))return <main style={{display:'flex',gap:20,padding:25,background:'#f3f0df',minHeight:350}}>{(['standing','sitting','kneeling'] as const).map((pose,i)=><section key={pose} style={{position:'relative',width:195,height:285,border:'1px solid #d3d9c0',borderRadius:18,background:'#fbfcf3'}}><h2 style={{fontSize:15,textAlign:'center',marginTop:18}}>{['Standing','Sitting','Kneeling'][i]}</h2><div style={{position:'absolute',left:12,right:12,bottom:25,borderTop:'1px solid #b4c39e'}}/><div style={{position:'absolute',left:'50%',bottom:25}}><PixelAvatar pose={pose} scale={2.6} facing={-25} moving={false} seated={pose==='sitting'}/></div></section>)}</main>
  return <main className="faith-screen faith-social" data-church-active="true" style={{minHeight:'100vh',paddingBottom:24}}>
   <header className="faith-header"><h2>예배당</h2>{member&&<button onClick={()=>setMember(null)}>로그아웃 검사</button>}</header>
-  <div className="faith-content" style={{padding:'20px'}}>
+  <div className="faith-content">
    <SanctuaryTab member={member} onSignIn={async()=>setMember({uid:'visual-member',displayName:'하늘'})}
     scripture={{reference:'요한복음 14:27',text:'평안을 너희에게 끼치노니 곧 나의 평안을 너희에게 주노라'}}
     onRead={()=>setDestination('말씀')} onPrayer={()=>setDestination('기도 작성')}/>
@@ -44,6 +44,8 @@ try{
   await page.screenshot({path:'test-results/faith-sanctuary/gate-'+width+'.png',fullPage:true})
   await page.getByRole('button',{name:'로그인하고 예배당 입장'}).click()
   await page.getByRole('button',{name:'입장하기',exact:true}).click()
+  const roomEdges=await page.locator('.sanctuary-room-art').evaluate(el=>{const {left,right}=el.getBoundingClientRect();return {left,right,viewport:document.documentElement.clientWidth}})
+  assert.ok(Math.abs(roomEdges.left)<1&&Math.abs(roomEdges.right-roomEdges.viewport)<1,'sanctuary artwork fills the viewport width')
   await page.locator('.sanctuary-private-note summary').click()
   await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).waitFor()
   const avatar=page.locator('.sanctuary-avatar-anchor')
