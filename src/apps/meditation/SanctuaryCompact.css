@@ -58,12 +58,12 @@
 .pixel-avatar[data-pose=sitting] .pixel-thigh{transform:rotateX(90deg)}
 .pixel-avatar[data-pose=sitting] .pixel-shin{transform:rotateX(-90deg)}
 .pixel-avatar[data-pose=sitting] .pixel-arm-left,.pixel-avatar[data-pose=sitting] .pixel-arm-right{transform:rotateX(42deg)}
-.pixel-avatar[data-pose=sitting] .voxel-head{transform:rotateX(-5deg);transform-origin:50% 100%}
+.pixel-avatar[data-pose=sitting] .pixel-head-rig{transform:rotateX(-5deg);transform-origin:50% 100%}
 .pixel-avatar[data-pose=kneeling] .pixel-avatar-model{transform:translateY(21px) rotateX(-9deg) rotateY(var(--avatar-facing))}
 .pixel-avatar[data-pose=kneeling] .pixel-thigh{transform:rotateX(70deg)}
 .pixel-avatar[data-pose=kneeling] .pixel-shin{transform:rotateX(-160deg)}
 .pixel-avatar[data-pose=kneeling] .pixel-upper-body{transform:rotateX(-38deg)}
-.pixel-avatar[data-pose=kneeling] .voxel-head{transform:rotateX(-25deg);transform-origin:50% 100%}
+.pixel-avatar[data-pose=kneeling] .pixel-head-rig{transform:rotateX(-25deg);transform-origin:50% 100%}
 .pixel-avatar[data-pose=kneeling] .pixel-arm-left{transform:rotateX(85deg) rotateZ(-20deg)}
 .pixel-avatar[data-pose=kneeling] .pixel-arm-right{transform:rotateX(85deg) rotateZ(20deg)}
 @media(min-width:620px){.sanctuary-prayer-notes{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 16px}.sanctuary-dialog{max-height:85dvh}}

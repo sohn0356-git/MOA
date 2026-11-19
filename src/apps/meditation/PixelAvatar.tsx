@@ -8,13 +8,25 @@ function Block({name,x,y,width,height,depth}:{name:string;x:number;y:number;widt
 export function PixelAvatar({facing,moving,seated,scale,profile=defaultAvatar(),pose,label='나의 3D 픽셀 아바타'}:{facing:number;moving:boolean;seated:boolean;scale:number;profile?:AvatarProfile;pose?:AvatarPose;label?:string}) {
  const gender=profile.gender??'male'
  const narrow=gender==='female'
+ const hairStyle=profile.hairStyle??0,longHair=narrow&&(hairStyle===0||hairStyle===3),bob=hairStyle===1
  return <div className="pixel-avatar" role="img" aria-label={label} data-gender={gender} data-hair-style={profile.hairStyle??0} data-top-style={profile.topStyle??0} data-accessory={profile.accessory??0} data-moving={moving} data-seated={pose?pose==='sitting':seated} data-pose={pose||(seated?'sitting':'standing')} style={{'--avatar-facing':facing+'deg','--avatar-scale':scale,'--avatar-skin':avatarSkins[profile.skin],'--avatar-hair':avatarHairs[profile.hair],'--avatar-shirt':avatarShirts[profile.shirt],'--avatar-pants':avatarPants[profile.pants??0]} as CSSProperties}>
   <span className="pixel-avatar-shadow"/>
   <div className="pixel-avatar-model">
    <div className="pixel-upper-body">
-    <Block name="head" x={8} y={0} width={18} height={18} depth={16}/>
-    {profile.hairStyle===2&&<Block name="hair-bun" x={15} y={-5} width={9} height={7} depth={9}/>}
+    <div className="pixel-head-rig">
+     <Block name="head" x={8} y={0} width={18} height={18} depth={16}/>
+     {hairStyle===2&&<Block name="hair-bun" x={15} y={-5} width={9} height={7} depth={9}/>}
+     {(longHair||bob)&&<div className={'pixel-hair-mesh '+(longHair?'is-long':'is-bob')} aria-hidden="true">
+      <Block name="hair-curtain" x={7} y={1} width={20} height={longHair?28:21} depth={6}/>
+      <Block name="hair-left" x={5} y={4} width={4} height={longHair?27:18} depth={7}/>
+      <Block name="hair-right" x={25} y={4} width={4} height={longHair?27:18} depth={7}/>
+      {longHair&&<Block name="hair-tips" x={9} y={28} width={16} height={5} depth={5}/>}
+      {longHair&&hairStyle===3&&<><Block name="hair-wave-left" x={4} y={20} width={5} height={14} depth={8}/><Block name="hair-wave-right" x={25} y={19} width={5} height={15} depth={8}/></>}
+     </div>}
+     {profile.accessory===3&&<Block name="hair-clip" x={24} y={5} width={4} height={2} depth={2}/>}
+    </div>
     <Block name="body" x={narrow?10:9} y={20} width={narrow?14:16} height={22} depth={10}/>
+    {narrow&&<Block name="blouse-hem" x={9} y={35} width={16} height={7} depth={11}/>}
     <div className="pixel-limb pixel-arm-left"><Block name="arm" x={0} y={0} width={6} height={23} depth={8}/></div>
     <div className="pixel-limb pixel-arm-right"><Block name="arm" x={0} y={0} width={6} height={23} depth={8}/></div>
    </div>

@@ -3,7 +3,7 @@ import {sanctuaryCapacity} from './sanctuaryMovement'
 import {PixelAvatar} from './PixelAvatar'
 import {SanctuaryDialog} from './SanctuaryDialog'
 import {BEFORE_APP_UPDATE} from '../../lib/appUpdateProtocol'
-import {avatarSkins,avatarHairs,avatarShirts,avatarPants,avatarHairStyles,avatarTopStyles,avatarAccessories,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
+import {avatarSkins,avatarHairs,avatarShirts,avatarPants,getAvatarHairStyles,avatarPresets,applyAvatarPreset,matchesAvatarPreset,selectAvatarGender,avatarTopStyles,avatarAccessories,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
 import type {SanctuaryCommunity} from './useSanctuaryCommunity'
 type Draft={title:string;body:string;id?:string}
 export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter}:{room:SanctuaryCommunity;uid:string;boardOpen:boolean;onBoardClose:()=>void;onEnter?:()=>void}){
@@ -50,23 +50,35 @@ export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter
    {room.error&&<p className="sanctuary-community-error">{room.error}</p>}
    {room.peers.length>0&&<p className="sanctuary-people">{room.peers.map(p=><span key={p.uid}>{p.name}</span>)}</p>}
   </section>
-  <SanctuaryDialog open={editing} title="나의 캐릭터" onClose={()=>setEditing(false)}>
-   <form className="sanctuary-avatar-editor" onSubmit={event=>{event.preventDefault();void action(async()=>{await room.saveProfile(avatar);setEditing(false)},'캐릭터를 저장했습니다.')}}>
-    <div className="sanctuary-avatar-preview"><PixelAvatar profile={avatar} facing={-25} moving={false} seated={false} scale={1.25}/></div>
+  <SanctuaryDialog open={editing} title="나의 캐릭터" onClose={()=>setEditing(false)} className="sanctuary-character-dialog">
+   <form className="sanctuary-avatar-editor sanctuary-avatar-studio" onSubmit={event=>{event.preventDefault();void action(async()=>{await room.saveProfile(avatar);setEditing(false)},'캐릭터를 저장했습니다.')}}>
+    <div className="sanctuary-avatar-showcase">
+     <div className="sanctuary-avatar-preview"><PixelAvatar profile={avatar} facing={-25} moving={false} seated={false} scale={1.65}/></div>
+     <section className="sanctuary-avatar-presets" aria-label="샘플 캐릭터">
+      <h4>마음에 드는 모습으로 시작해요</h4>
+      <div className="sanctuary-avatar-preset-grid" role="group" aria-label="샘플 캐릭터 선택">{avatarPresets.map(preset=><button type="button" key={preset.id} aria-label={preset.label+' 샘플 선택'} aria-pressed={matchesAvatarPreset(avatar,preset)} disabled={busy} onClick={()=>setAvatar(current=>applyAvatarPreset(current,preset.id))}>
+       <span className="sanctuary-preset-figure"><PixelAvatar profile={{name:avatar.name,...preset.appearance}} facing={-25} moving={false} seated={false} scale={.75} label={preset.label+' 샘플 캐릭터'}/></span>
+       <span>{preset.label}</span><small>{preset.appearance.gender==='female'?'여성':'남성'}</small>
+      </button>)}</div>
+      <p>샘플을 고른 뒤 색과 머리를 바꿔도 좋아요.</p>
+     </section>
+    </div>
+    <div className="sanctuary-avatar-fields">
     <label>캐릭터 이름<input aria-label="캐릭터 이름" value={avatar.name} maxLength={24} required disabled={busy} onChange={e=>setAvatar({...avatar,name:e.target.value})}/></label>
     <label>캐릭터 성별
-     <select value={avatar.gender??'male'} disabled={busy} onChange={e=>setAvatar({...avatar,gender:e.target.value==='female'?'female':'male'})}>
+     <select value={avatar.gender??'male'} disabled={busy} onChange={e=>setAvatar(current=>selectAvatarGender(current,e.target.value==='female'?'female':'male'))}>
       <option value="male">남성</option>
       <option value="female">여성</option>
      </select>
     </label>
     {([['skin','피부',avatarSkins],['hair','머리',avatarHairs],['shirt','옷',avatarShirts],['pants','바지',avatarPants]] as const).map(([key,label,colors])=><fieldset key={key} disabled={busy}><legend>{label}</legend>{colors.map((color,index)=><button key={color} type="button" aria-label={label+' 색상 '+(index+1)} aria-pressed={(avatar[key]??0)===index} style={{background:color}} onClick={()=>setAvatar({...avatar,[key]:index})}/>)}</fieldset>)}
-    {([['hairStyle','머리 모양',avatarHairStyles],['topStyle','상의 모양',avatarTopStyles],['accessory','액세서리',avatarAccessories]] as const).map(([key,label,options])=><label key={key}>{label}
+    {([['hairStyle','머리 모양',getAvatarHairStyles(avatar.gender)],['topStyle','상의 모양',avatarTopStyles],['accessory','액세서리',avatarAccessories]] as const).map(([key,label,options])=><label key={key}>{label}
      <select value={avatar[key]??0} disabled={busy} onChange={e=>setAvatar({...avatar,[key]:Number(e.target.value)})}>
       {options.map((option,index)=><option key={option} value={index}>{option}</option>)}
      </select>
     </label>)}
     <button className="sanctuary-primary" disabled={busy||!avatar.name.trim()}>캐릭터 저장</button>
+    </div>
    </form>{message&&<p role="status" className="sanctuary-community-feedback">{message}</p>}
   </SanctuaryDialog>
   <SanctuaryDialog open={boardOpen} title="중보기도 게시판" onClose={onBoardClose} className="sanctuary-prayer-board">

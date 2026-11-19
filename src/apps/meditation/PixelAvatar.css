@@ -57,3 +57,15 @@
 
 .pixel-avatar[data-gender=female] .pixel-arm-left{left:4px}
 .pixel-avatar[data-gender=female] .pixel-arm-right{left:24px}
+
+.pixel-head-rig{position:absolute;left:0;top:0;width:34px;height:18px;transform-style:preserve-3d;transform-origin:50% 100%;transition:transform .18s ease}
+.pixel-hair-mesh{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.pixel-hair-mesh .voxel-block{--voxel-front:var(--avatar-hair);--voxel-side:color-mix(in srgb,var(--avatar-hair),black 18%);--voxel-top:color-mix(in srgb,var(--avatar-hair),white 10%)}
+.voxel-hair-curtain,.voxel-hair-tips{transform:translateZ(-10px)}
+.voxel-hair-left,.voxel-hair-right{transform:translateZ(-1px)}
+.voxel-hair-wave-left,.voxel-hair-wave-right{transform:translateZ(1px)}
+.voxel-hair-clip{--voxel-front:#f5ce72;--voxel-side:#c9a04c;--voxel-top:#ffe3a3;transform:translateZ(9px)}
+.pixel-avatar .voxel-blouse-hem{--voxel-front:var(--avatar-shirt);--voxel-side:color-mix(in srgb,var(--avatar-shirt),black 20%);--voxel-top:color-mix(in srgb,var(--avatar-shirt),white 15%)}
+.pixel-avatar[data-top-style="2"] .voxel-blouse-hem .voxel-face-front{background:repeating-linear-gradient(var(--avatar-shirt) 0 4px,color-mix(in srgb,var(--avatar-shirt),white 48%) 4px 6px)}
+.pixel-avatar[data-gender=female] .voxel-body .voxel-face-front:after{left:4px;top:0;width:6px;height:4px;background:#fff5df;clip-path:polygon(0 0,100% 0,50% 100%);box-shadow:none}
+@media(prefers-reduced-motion:reduce){.pixel-head-rig{transition:none}}
