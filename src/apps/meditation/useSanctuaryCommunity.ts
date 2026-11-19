@@ -20,11 +20,11 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
   const fail=()=>{if(alive)setError('공유 기능과 연결되지 않았습니다. 연결을 확인하고 다시 시도해주세요.')}
   const stop=()=>{generation++;live.current=null;if(connection){void remove(connection).catch(()=>{});connection=null}setJoined(false)}
   async function join(){
-   if(!entered||!alive||document.hidden||connection)return
+   if(!entered||!alive||!online||connection)return
    const epoch=++generation,node=push(ref(db,'sanctuary/presence/'+member.uid));connection=node
    try{
     await onDisconnect(node).remove()
-    if(!alive||document.hidden||epoch!==generation){void remove(node).catch(()=>{});return}
+    if(!alive||epoch!==generation){void remove(node).catch(()=>{});return}
     live.current=node
     const p=position.current
     await set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,pose:p.pose,updatedAt:serverTimestamp()})
@@ -32,7 +32,6 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
    }catch{if(connection===node){connection=null;live.current=null}fail()}
   }
   let online=false
-  const visible=()=>{if(document.hidden)stop();else if(online)void join()}
   const subscriptions=[
    onValue(ref(db,'.info/serverTimeOffset'),s=>{if(alive)setOffset(Number(s.val())||0)}),
    onValue(ref(db,'.info/connected'),s=>{online=s.val()===true;setConnected(online);if(online)void join();else stop()}),
@@ -44,11 +43,13 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
    onValue(ref(db,'users/'+member.uid+'/sanctuaryPrayerReads'),s=>{if(alive)setReadPrayers(s.val()||{})},fail),
    onValue(ref(db,'sanctuary/intercessions'),s=>{if(alive)setIntercessions(s.val()||{})},fail),
   ]
-  const publish=()=>{const node=live.current;if(!node||document.hidden)return;const p=position.current;void set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,pose:p.pose,updatedAt:serverTimestamp()}).catch(fail)}
+  const publish=()=>{const node=live.current;if(!node)return;const p=position.current;void set(node,{...profileRef.current,...p.point,facing:p.facing,moving:p.moving,pose:p.pose,updatedAt:serverTimestamp()}).catch(fail)}
   const motion=window.setInterval(()=>{if(dirty.current){dirty.current=false;publish()}},150)
-  const heartbeat=window.setInterval(publish,20000)
-  document.addEventListener('visibilitychange',visible)
-  return()=>{alive=false;stop();subscriptions.forEach(off=>off());window.clearInterval(motion);window.clearInterval(heartbeat);document.removeEventListener('visibilitychange',visible)}
+  const refreshPresence=()=>{if(live.current)publish();else void join()}
+  const heartbeat=window.setInterval(refreshPresence,20000)
+  const visibilityChanged=()=>queueMicrotask(refreshPresence)
+  document.addEventListener('visibilitychange',visibilityChanged)
+  return()=>{alive=false;stop();subscriptions.forEach(off=>off());window.clearInterval(motion);window.clearInterval(heartbeat);document.removeEventListener('visibilitychange',visibilityChanged)}
  },[member.uid,member.displayName,entered])
  useEffect(()=>{
   let db:ReturnType<typeof getRealtimeDb>;try{db=getRealtimeDb()}catch{return}
@@ -78,6 +79,6 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
  const unreadCount=readPrayers===null?0:prayers.filter(p=>p.uid!==member.uid&&readPrayers[p.id]!==true).length
  const members=onlineMembers(raw??null,clock+offset)
  const full=members.length>=sanctuaryCapacity&&!members.some(p=>p.uid===member.uid)
- return{profile,saveProfile,move,unreadCount,markPrayerRead,peers:entered&&joined?members.filter(p=>p.uid!==member.uid):[],online:connected&&raw!==undefined?members.length:null,visitors,connected,joined,full,loaded,prayers,intercessions,error,savePrayer,answerPrayer,deletePrayer,pray}
+ return{profile,saveProfile,move,unreadCount,markPrayerRead,peers:entered&&connected?members.filter(p=>p.uid!==member.uid):[],online:connected&&raw!==undefined?members.length:null,visitors,connected,joined,full,loaded,prayers,intercessions,error,savePrayer,answerPrayer,deletePrayer,pray}
 }
 export type SanctuaryCommunity=ReturnType<typeof useSanctuaryCommunity>

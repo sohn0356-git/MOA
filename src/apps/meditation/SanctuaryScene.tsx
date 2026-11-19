@@ -78,7 +78,10 @@ export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition =
     style={{left:screen.x/640*100+'%',top:screen.y/480*100+'%',zIndex:10+Math.round(walk.position.z*100)}}>
     <PixelAvatar pose={walk.pose} profile={profile} facing={walk.facing} moving={walk.moving} seated={walk.seated} scale={.55+walk.position.z*.35}/>
   </div>}
-  {onSeat&&peers.map(peer=>{const p=projectSanctuaryPoint(peer);return <div key={peer.uid} className="sanctuary-avatar-anchor sanctuary-peer" data-peer-uid={peer.uid} style={{left:p.x/640*100+'%',top:p.y/480*100+'%',zIndex:10+Math.round(peer.z*100)}}>
+  {onSeat&&peers.map(peer=>{
+   const p=projectSanctuaryPoint(peer)
+   const overlapsSelf=Math.abs(p.x-screen.x)<16&&Math.abs(p.y-screen.y)<12
+   return <div key={peer.uid} className="sanctuary-avatar-anchor sanctuary-peer" data-peer-uid={peer.uid} style={{left:p.x/640*100+'%',top:p.y/480*100+'%',marginLeft:overlapsSelf?(p.x<screen.x?-18:18):undefined,zIndex:10+Math.round(peer.z*100)}}>
    <span className="sanctuary-avatar-name">{peer.name}</span><PixelAvatar pose={peer.pose} profile={peer} facing={peer.facing} moving={peer.moving} seated={false} scale={.55+peer.z*.35} label={peer.name+'의 아바타'}/>
   </div>})}
   </div>

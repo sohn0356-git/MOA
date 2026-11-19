@@ -18,10 +18,12 @@ export function normalizeAvatar(raw:unknown,name='나그네'):AvatarProfile{
  const index=(v:unknown,length:number)=>typeof v==='number'&&Number.isInteger(v)&&v>=0&&v<length?v:0
  return{name:typeof p.name==='string'&&p.name.trim()?p.name.trim().slice(0,24):defaultAvatar(name).name,skin:index(p.skin,avatarSkins.length),hair:index(p.hair,avatarHairs.length),shirt:index(p.shirt,avatarShirts.length),pants:index(p.pants,avatarPants.length),hairStyle:index(p.hairStyle,avatarHairStyles.length),topStyle:index(p.topStyle,avatarTopStyles.length),accessory:index(p.accessory,avatarAccessories.length),...(p.gender==='male'||p.gender==='female'?{gender:p.gender}:{})}
 }
+// Background browsers can throttle the 20-second heartbeat to one minute.
+const presenceTimeoutMs=3*60_000
 export function onlineMembers(raw:Record<string,Record<string,unknown>>|null,now:number):RoomPresence[]{
  const result:RoomPresence[]=[]
  for(const [uid,connections] of Object.entries(raw||{})){
-  const rows=Object.values(connections||{}).filter((v):v is Record<string,unknown>=>!!v&&typeof v==='object').filter(v=>typeof v.updatedAt==='number'&&now-v.updatedAt<65000&&v.updatedAt<=now+10000).sort((a,b)=>Number(b.updatedAt)-Number(a.updatedAt))
+  const rows=Object.values(connections||{}).filter((v):v is Record<string,unknown>=>!!v&&typeof v==='object').filter(v=>typeof v.updatedAt==='number'&&now-v.updatedAt<presenceTimeoutMs&&v.updatedAt<=now+10000).sort((a,b)=>Number(b.updatedAt)-Number(a.updatedAt))
   const p=rows[0];if(!p)continue
   result.push({...normalizeAvatar(p),...safeSanctuaryPoint(p),uid,pose:normalizePose(p.pose),facing:typeof p.facing==='number'?p.facing:0,moving:p.moving===true,updatedAt:Number(p.updatedAt)})
  }
