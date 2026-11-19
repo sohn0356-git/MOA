@@ -1,3 +1,5 @@
+import {normalizeLunchPraiseTracks,type LunchPraiseTrack} from './dailyPraise'
+import {useDailyPraise} from './useDailyPraise'
 import { Church } from 'lucide-react'
 import { SanctuaryTab } from './SanctuaryTab'
 import type { SanctuaryMember } from './sanctuaryState'
@@ -135,15 +137,6 @@ type CrossPhotoComment = {
   authorUid: string
   body: string
   createdAt: string
-}
-
-type LunchPraiseTrack = {
-  id: string
-  active?: boolean
-  artist?: string
-  title?: string
-  videoId?: string
-  youtubeUrl?: string
 }
 
 type PrayerComment = {
@@ -632,39 +625,6 @@ function normalizeFirebaseRange(value: unknown): FirebaseVerseRange | null {
 
   const [book, chapter, start, endOrChapter, endVerse] = value
   return endVerse === undefined ? [book, chapter, start, endOrChapter] : [book, chapter, start, endOrChapter, endVerse]
-}
-
-function normalizeLunchPraiseTracks(value: unknown): LunchPraiseTrack[] {
-  if (!value || typeof value !== 'object') {
-    return []
-  }
-
-  return Object.entries(value as Record<string, unknown>)
-    .map((entry): LunchPraiseTrack | null => {
-      const [id, item] = entry
-      if (!item || typeof item !== 'object') {
-        return null
-      }
-
-      const data = item as Record<string, unknown>
-      const active = typeof data.active === 'boolean' ? data.active : true
-      const youtubeUrl = typeof data.youtubeUrl === 'string' ? data.youtubeUrl : typeof data.videoUrl === 'string' ? data.videoUrl : typeof data.audioUrl === 'string' ? data.audioUrl : ''
-      const videoId = typeof data.videoId === 'string' ? data.videoId : ''
-
-      if (!active || (!youtubeUrl && !videoId)) {
-        return null
-      }
-
-      return {
-        id,
-        active,
-        artist: typeof data.artist === 'string' ? data.artist : '',
-        title: typeof data.title === 'string' ? data.title : '오찬추',
-        videoId,
-        youtubeUrl,
-      }
-    })
-    .filter((track): track is LunchPraiseTrack => track !== null)
 }
 
 async function loadScriptureBook(language: ScriptureLanguage, book: string) {
@@ -1477,14 +1437,14 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     const first = getKstDateParts(weekDateKeys[0] ?? selectedDate)
     return `${first.year}년 ${first.month}월`
   }, [selectedDate, weekDateKeys])
-  const lunchPraise = lunchPraiseTracks.find(track => track.id === todayKey)
+  const lunchPraise = useDailyPraise(lunchPraiseTracks,todayKey)
   const [isPraiseFormOpen, setIsPraiseFormOpen] = useState(false)
   const [praiseUrl, setPraiseUrl] = useState('')
   const [praiseSaving, setPraiseSaving] = useState(false)
   const [praiseFeedback, setPraiseFeedback] = useState('')
   const canEditPraise = Boolean(currentUser)
 
-  async function saveTodayPraise() {
+  async function savePraiseToLibrary() {
     if (!canEditPraise || praiseSaving || activityBusy) return
     const videoId = extractYouTubeVideoId(praiseUrl)
     if (!videoId || !/^https?:\/\//i.test(praiseUrl.trim())) {
@@ -1500,7 +1460,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       })
       setPraiseUrl('')
       setIsPraiseFormOpen(false)
-      setPraiseFeedback('오늘의 찬송을 저장했습니다.')
+      setPraiseFeedback('찬송 목록에 저장했습니다. 매일 추천 곡을 이 목록에서 골라요.')
     } catch {
       setPraiseFeedback('찬송을 저장하지 못했습니다. 로그인 상태와 연결을 확인해 주세요.')
     } finally {
@@ -3003,7 +2963,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                     )}
                   </div>
                   {canEditPraise && isPraiseFormOpen && (
-                    <form onSubmit={event => { event.preventDefault(); void saveTodayPraise() }}>
+                    <form onSubmit={event => { event.preventDefault(); void savePraiseToLibrary() }}>
                       <label className="faith-field">
                         <span>YouTube 영상 URL</span>
                         <input type="url" required value={praiseUrl} onChange={event => setPraiseUrl(event.currentTarget.value)}
@@ -3027,7 +2987,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                       />
                     </>
                   ) : (
-                    <p className="faith-muted">오늘의 찬양을 준비하고 있어요.</p>
+                    <p className="faith-muted">재생할 수 있는 찬송이 아직 없습니다. 찬송 URL을 등록해 주세요.</p>
                   )}
                 </section>
 
