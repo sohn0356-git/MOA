@@ -7,6 +7,7 @@ import { sanctuaryKey } from './sanctuaryState'
 import { canApplyAppUpdate } from '../../lib/appUpdateProtocol'
 const scripture={reference:'요한복음 14:27',text:'평안을 너희에게 끼치노니'}
 const props={onRead:vi.fn(),onPrayer:vi.fn(),scripture}
+const enter=()=>fireEvent.click(screen.getByRole('button',{name:'입장하기'}))
 const openNote=()=>fireEvent.click(document.querySelector('summary')!)
 beforeEach(()=>{localStorage.clear();vi.clearAllMocks()})
 afterEach(()=>{cleanup();vi.restoreAllMocks();vi.useRealTimers()})
@@ -22,15 +23,15 @@ it('requires a real signed-in member before mounting personal sanctuary content'
  await waitFor(()=>expect(login).toHaveBeenCalledOnce())
 })
 it('isolates notes and candles by account and restores them after returning',()=>{
- const view=render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>);openNote()
+ const view=render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>);enter();openNote()
  fireEvent.change(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'}),{target:{value:'Alice만의 기도'}})
  fireEvent.click(screen.getByRole('button',{name:'촛불 켜기'}))
  fireEvent.click(screen.getByRole('button',{name:'뒤쪽 오른편 자리 선택'}))
  expect(JSON.parse(localStorage.getItem(sanctuaryKey('alice'))!).note).toBe('Alice만의 기도')
- view.rerender(<SanctuaryTab {...props} member={{uid:'bob',displayName:'Bob'}}/>);openNote()
+ view.rerender(<SanctuaryTab {...props} member={{uid:'bob',displayName:'Bob'}}/>);enter();openNote()
  expect(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'})).toHaveValue('')
  expect(screen.getByRole('button',{name:'앞쪽 왼편 자리 선택'})).toHaveAttribute('aria-pressed','true')
- view.rerender(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>);openNote()
+ view.rerender(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>);enter();openNote()
  expect(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'})).toHaveValue('Alice만의 기도')
  expect(screen.getByRole('button',{name:'뒤쪽 오른편 자리 선택'})).toHaveAttribute('aria-pressed','true')
  view.rerender(<SanctuaryTab {...props} member={null}/>)
@@ -39,6 +40,7 @@ it('isolates notes and candles by account and restores them after returning',()=
 it('runs, pauses and completes an actual prayer countdown once',()=>{
  vi.useFakeTimers();vi.setSystemTime(new Date('2026-11-12T03:00:00Z'))
  render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>)
+ enter()
  fireEvent.click(screen.getByRole('button',{name:'기도 시작'}))
  act(()=>{vi.advanceTimersByTime(10000)})
  expect(screen.getByRole('timer')).toHaveTextContent('04:50')
@@ -55,6 +57,7 @@ it('runs, pauses and completes an actual prayer countdown once',()=>{
 })
 it('keeps unsaved notes visible and guards updates if local persistence fails',()=>{
  render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>)
+ enter()
  openNote()
  fireEvent.click(screen.getByRole('button',{name:'낮'}))
  vi.spyOn(Storage.prototype,'setItem').mockImplementation(()=>{throw new Error('quota')})
@@ -73,4 +76,19 @@ it('shows restoration instead of a login prompt while Firebase initializes',()=>
  expect(screen.queryByRole('button',{name:'로그인하고 예배당 입장'})).toBeNull()
  expect(screen.queryByRole('img',{name:'나의 3D 픽셀 아바타'})).toBeNull()
  expect(reads).not.toHaveBeenCalled()
+})
+
+it('shows the lobby and character editor before opening the sanctuary',()=>{
+ render(<SanctuaryTab {...props} member={{uid:'alice',displayName:'Alice'}}/>)
+ expect(screen.getByRole('img',{name:'내 캐릭터 미리보기'})).toBeInTheDocument()
+ expect(screen.getByText('현재 입장 인원 / 정원')).toBeInTheDocument()
+ expect(screen.getByText('/ 24명')).toBeInTheDocument()
+ expect(screen.getByText('오늘 총 입장 인원')).toBeInTheDocument()
+ expect(screen.queryByRole('group',{name:'아바타 이동이 가능한 예배당'})).toBeNull()
+ fireEvent.click(screen.getByRole('button',{name:'캐릭터 수정'}))
+ expect(screen.getByRole('dialog',{name:'나의 캐릭터'})).toBeInTheDocument()
+ fireEvent.click(screen.getByRole('button',{name:'나의 캐릭터 닫기'}))
+ enter()
+ expect(screen.queryByRole('button',{name:'입장하기'})).toBeNull()
+ expect(screen.getByRole('group',{name:'아바타 이동이 가능한 예배당'})).toBeInTheDocument()
 })

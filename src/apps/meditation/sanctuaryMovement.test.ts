@@ -8,6 +8,6 @@ describe('sanctuary floor routes',()=>{
   }
  })
  it('uses one straight segment for an unobstructed aisle instead of tiny grid steps',()=>{expect(sanctuaryPath(sanctuarySpawn,{x:0,z:.2})).toEqual([{x:0,z:.2}])})
- it('blocks pews/walls and rejects damaged saved positions',()=>{expect(stepSanctuaryPoint({x:.5,z:.76},0,.08)).toEqual({x:.5,z:.76});expect(stepSanctuaryPoint({x:.95,z:.94},.1,0)).toEqual({x:.95,z:.94});expect(safeSanctuaryPoint({x:NaN,z:1})).toEqual(sanctuarySpawn);expect(sanctuaryPath(sanctuarySpawn,{x:NaN,z:0})).toEqual([])})
+ it('blocks pews/walls and rejects damaged saved positions',()=>{expect(stepSanctuaryPoint({x:.5,z:.76},0,.1)).toEqual({x:.5,z:.76});expect(stepSanctuaryPoint({x:.95,z:.94},.1,0)).toEqual({x:.95,z:.94});expect(safeSanctuaryPoint({x:NaN,z:1})).toEqual(sanctuarySpawn);expect(sanctuaryPath(sanctuarySpawn,{x:NaN,z:0})).toEqual([])})
  it('maps taps back onto the same floor location',()=>{const p={x:.3,z:.5},s=projectSanctuaryPoint(p),back=floorPointFromScene(s.x,s.y);expect(back?.x).toBeCloseTo(p.x);expect(back?.z).toBeCloseTo(p.z);expect(floorPointFromScene(320,10)).toBeNull()})
 })

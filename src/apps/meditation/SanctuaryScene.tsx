@@ -3,7 +3,7 @@ import { SanctuaryJoystick } from './SanctuaryJoystick'
 import type {AvatarPose,AvatarProfile,RoomPresence} from './sanctuaryCommunity'
 import { PixelAvatar } from './PixelAvatar'
 import { useSanctuaryMovement } from './useSanctuaryMovement'
-import { floorPointFromScene, projectSanctuaryPoint, sanctuarySeats, sanctuarySeatPoints, sanctuaryPrayerBoxPoint, sanctuarySpawn, type FloorPoint } from './sanctuaryMovement'
+import { floorPointFromScene, projectSanctuaryPoint, sanctuaryBenchDepth, sanctuaryBenches, sanctuarySeats, sanctuarySeatPoints, sanctuaryPrayerBoxPoint, sanctuarySpawn, type FloorPoint } from './sanctuaryMovement'
 import './PixelAvatar.css'
 export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition = sanctuarySpawn, onPosition, onMotion, profile, peers=[], onPrayerBox, prayerCount=0 }: {
  seat:number; onSeat?:(seat:number)=>void; candle?:boolean; initialPosition?:FloorPoint; onPosition?:(point:FloorPoint,facing:number)=>void; onMotion?:(point:FloorPoint,facing:number,moving:boolean,pose?:AvatarPose)=>void; onPrayerBox?:()=>void; prayerCount?:number; profile?:AvatarProfile; peers?:RoomPresence[]
@@ -49,12 +49,17 @@ export function SanctuaryScene({ seat, onSeat, candle = false, initialPosition =
    <path d="M280 273L202 480H438L360 273" fill="var(--room-aisle)" opacity=".65"/>
    <path d="M276 252H364V276H276Z" fill="var(--room-wood)"/><path d="M269 245H371V255H269Z" fill="var(--room-trim)"/>
    <path d="M308 230H332V245H308Z" fill="#c9b887"/><path d="M306 229H334" stroke="#f7e7bd" strokeWidth="3"/>
-   {[0,1,2,3,4,5].map(row=><g key={row}>
-    <path d={`M${109-row*13} ${279+row*30}H${265-row*3}V${294+row*30}H${109-row*13}Z`} fill="var(--room-wood)"/>
-    <path d={`M${109-row*13} ${279+row*30}L${118-row*13} ${271+row*30}H${270-row*3}L${265-row*3} ${279+row*30}Z`} fill="var(--room-pew-top)"/>
-    <path d={`M${375+row*3} ${279+row*30}H${531+row*13}V${294+row*30}H${375+row*3}Z`} fill="var(--room-wood)"/>
-    <path d={`M${375+row*3} ${279+row*30}L${370+row*3} ${271+row*30}H${522+row*13}L${531+row*13} ${279+row*30}Z`} fill="var(--room-pew-top)"/>
-   </g>)}
+   {[...sanctuaryBenches].sort((a,b)=>a.point.z-b.point.z).map(({label,point})=>{
+    const side=Math.sign(point.x)
+    const near=projectSanctuaryPoint({x:side*.37,z:point.z})
+    const outer=projectSanctuaryPoint({x:side*.89,z:point.z})
+    const far=projectSanctuaryPoint({x:side*.37,z:point.z-sanctuaryBenchDepth})
+    const farOuter=projectSanctuaryPoint({x:side*.89,z:point.z-sanctuaryBenchDepth})
+    return <g key={label}>
+     <path d={`M${near.x} ${near.y}H${outer.x}v7H${near.x}Z`} fill="var(--room-wood)"/>
+     <path d={`M${near.x} ${near.y}L${far.x} ${far.y}H${farOuter.x}L${outer.x} ${outer.y}Z`} fill="var(--room-pew-top)"/>
+    </g>
+   })}
    <path d="M75 126V211M104 143V235M565 126V211M536 143V235" stroke="var(--room-window-top)" strokeWidth="7" opacity=".4"/>
    <path d="M291 275V299M349 275V299" stroke="var(--room-trim)" strokeWidth="4"/>
    {candle && <g className="sanctuary-scene-candle"><ellipse cx="349" cy="261" rx="16" ry="20" fill="#ffcf6a" opacity=".2"/><rect x="346" y="249" width="6" height="15" rx="1" fill="#fff1ce"/><path d="M349 235Q340 247 349 250Q358 247 349 235" fill="#ffc96f"/></g>}

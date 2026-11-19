@@ -28,6 +28,9 @@
 .sanctuary-presence-stats dd{margin:0;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
 .sanctuary-presence-stats dl>div:first-child dd{font-size:clamp(28px,7vw,40px);line-height:1.15}
 .sanctuary-presence-stats .sanctuary-live{justify-self:start}
+.sanctuary-presence-stats dd small{font-size:.55em;color:#5e7354;white-space:nowrap}
+.sanctuary-presence-strip .sanctuary-enter{grid-column:1/-1;justify-content:center;width:100%;margin-top:4px}
+.sanctuary-enter:disabled{opacity:.6;cursor:default}
 .sanctuary-character-button{border:1px solid #c7d3bd;color:#405538;background:#fff;border-radius:20px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
 .sanctuary-presence-strip .sanctuary-community-error,.sanctuary-presence-strip .sanctuary-people{grid-column:1/-1;margin:0}
 .sanctuary-compact .sanctuary-verse-card{padding:13px 15px;border-radius:14px}.sanctuary-compact .sanctuary-verse-card>p{font-size:11px;line-height:1.8;margin:0 0 8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.sanctuary-compact .sanctuary-verse-card>div,.sanctuary-compact .sanctuary-verse-card button{font-size:9px}
@@ -66,9 +69,9 @@
 @media(max-width:360px){.sanctuary-prayer-board .sanctuary-dialog-body{padding:14px 12px}.sanctuary-dialog-heading h3{font-size:18px}.sanctuary-prayer-note>button{padding:18px 10px 10px;min-height:166px}.sanctuary-prayer-note h4{font-size:13px}.sanctuary-prayer-note footer{font-size:7px}.sanctuary-timer-line small{display:none}}
 @media(prefers-reduced-motion:reduce){.sanctuary-prayer-box>svg,.pixel-avatar-model,.voxel-head,.pixel-limb{transition:none}.sanctuary-prayer-note{transform:none}}
 
-.sanctuary-seat{width:44px;height:min(44px,6%);background:transparent;box-shadow:none}
+.sanctuary-seat{width:min(44px,7%);height:min(44px,6%);background:transparent;box-shadow:none}
 .sanctuary-seat>span{width:14px;height:14px;border:1px solid #fbf5dcdd;background:#fff9e47a;box-shadow:none}
-.sanctuary-seat[aria-pressed=true]{width:44px;height:min(44px,6%);background:transparent;box-shadow:none}
+.sanctuary-seat[aria-pressed=true]{width:min(44px,7%);height:min(44px,6%);background:transparent;box-shadow:none}
 .sanctuary-seat[aria-pressed=true]>span{background:#fff8dc;border-color:#b8a36a;box-shadow:none}
 .sanctuary-seat:disabled{opacity:.45;cursor:default}.sanctuary-seat:disabled>span{background:#a19b87;border-color:#d2cbb6;box-shadow:none}
 

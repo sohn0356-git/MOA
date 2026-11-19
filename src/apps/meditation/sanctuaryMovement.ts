@@ -2,7 +2,7 @@ export type FloorPoint={x:number;z:number}
 export type WalkDirection='north'|'south'|'west'|'east'
 export const sanctuarySpawn:FloorPoint={x:0,z:.94}
 // Keep the first four indices stable for existing saved seat selections.
-export const sanctuarySeats = [
+export const sanctuaryBenches = [
  {label:'앞쪽 왼편', point:{x:-.56,z:.27}},
  {label:'앞쪽 오른편', point:{x:.56,z:.27}},
  {label:'뒤쪽 왼편', point:{x:-.49,z:.77}},
@@ -16,13 +16,16 @@ export const sanctuarySeats = [
  {label:'맨 뒤 왼편', point:{x:-.48,z:.92}},
  {label:'맨 뒤 오른편', point:{x:.48,z:.92}},
 ]
+const secondSeats=sanctuaryBenches.map(({label,point})=>({label:label+' 바깥쪽',point:{x:Math.sign(point.x)*.8,z:point.z}}))
+export const sanctuarySeats = [...sanctuaryBenches,...secondSeats]
 export const sanctuarySeatPoints = sanctuarySeats.map(({point})=>point)
+export const sanctuaryCapacity = sanctuarySeats.length
 export const sanctuaryPrayerBoxPoint:FloorPoint={x:.93,z:.14}
-const rows=[.045,.205,.365,.525,.685,.845]
+export const sanctuaryBenchDepth=.055
 export function isSanctuaryWalkable(p:FloorPoint) {
  if(!Number.isFinite(p.x)||!Number.isFinite(p.z)||Math.abs(p.x)>.96||p.z<.06||p.z>.97)return false
- if(Math.abs(p.x)<.2||Math.abs(p.x)>.9)return true
- return !rows.some(row=>Math.abs(row-p.z)<.045)
+ if(Math.abs(p.x)<.37||Math.abs(p.x)>.89)return true
+ return !sanctuaryBenches.some(({point})=>Math.sign(point.x)===Math.sign(p.x)&&p.z>point.z-sanctuaryBenchDepth-.02&&p.z<point.z-.018)
 }
 export function safeSanctuaryPoint(raw:unknown):FloorPoint {
  const p=raw&&typeof raw==='object'?raw as FloorPoint:sanctuarySpawn

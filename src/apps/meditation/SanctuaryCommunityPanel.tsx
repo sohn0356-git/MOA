@@ -1,11 +1,12 @@
 import {useEffect,useRef,useState} from 'react'
+import {sanctuaryCapacity} from './sanctuaryMovement'
 import {PixelAvatar} from './PixelAvatar'
 import {SanctuaryDialog} from './SanctuaryDialog'
 import {BEFORE_APP_UPDATE} from '../../lib/appUpdateProtocol'
 import {avatarSkins,avatarHairs,avatarShirts,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
 import type {SanctuaryCommunity} from './useSanctuaryCommunity'
 type Draft={title:string;body:string;id?:string}
-export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose}:{room:SanctuaryCommunity;uid:string;boardOpen:boolean;onBoardClose:()=>void}){
+export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter}:{room:SanctuaryCommunity;uid:string;boardOpen:boolean;onBoardClose:()=>void;onEnter?:()=>void}){
  const [editing,setEditing]=useState(false),[avatar,setAvatar]=useState<AvatarProfile>(room.profile),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
  const [view,setView]=useState<'list'|'read'|'write'>('list'),[selectedId,setSelectedId]=useState(''),[filter,setFilter]=useState<'active'|'answered'|'mine'>('active')
  const lock=useRef(false),unsaved=useRef(false)
@@ -29,6 +30,7 @@ export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose}:{room:
  }
  const selected=room.prayers.find(p=>p.id===selectedId)
  const visible=room.prayers.filter(p=>filter==='mine'?p.uid===uid:filter==='answered'?p.answered:!p.answered)
+ const online=onEnter?room.connected:room.joined
  const counts={active:room.prayers.filter(p=>!p.answered).length,answered:room.prayers.filter(p=>p.answered).length,mine:room.prayers.filter(p=>p.uid===uid).length}
  return <div className="sanctuary-community sanctuary-community-compact">
   <section className="sanctuary-presence-strip" aria-label="예배당 접속 현황">
@@ -38,12 +40,13 @@ export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose}:{room:
     <button type="button" className="sanctuary-character-button" onClick={()=>{setAvatar(room.profile);setMessage('');setEditing(true)}}>캐릭터 수정</button>
    </div>
    <div className="sanctuary-presence-stats">
-    <span className={'sanctuary-live '+(room.connected?'is-online':'')}>{room.connected?'실시간 연결':'연결 확인 중'}</span>
+    <span className={'sanctuary-live '+(online?'is-online':'')}>{online?'실시간 연결':'연결 확인 중'}</span>
     <dl>
-    <div><dt>현재 입장 인원</dt><dd>{room.connected?room.online+'명':'—'}</dd></div>
-    <div><dt>오늘 총 입장 인원</dt><dd>{room.visitors===null?'—':room.visitors+'명'}</dd></div>
+     <div><dt>현재 입장 인원 / 정원</dt><dd>{room.online??'—'} <small>/ {sanctuaryCapacity}명</small></dd></div>
+     <div><dt>오늘 총 입장 인원</dt><dd>{room.visitors===null?'—':room.visitors+'명'}</dd></div>
     </dl>
    </div>
+   {onEnter&&<button type="button" className="sanctuary-primary sanctuary-enter" disabled={room.full} onClick={onEnter}>{room.full?'정원 마감':'입장하기'}</button>}
    {room.error&&<p className="sanctuary-community-error">{room.error}</p>}
    {room.peers.length>0&&<p className="sanctuary-people">{room.peers.map(p=><span key={p.uid}>{p.name}</span>)}</p>}
   </section>

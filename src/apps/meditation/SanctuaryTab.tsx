@@ -22,7 +22,6 @@ export function SanctuaryTab(props: Props) {
   <div className="sanctuary-eyebrow"><span/>MOA FAITH · SANCTUARY</div>
   <h2>마음이 쉬어가는<br/><em>나의 예배당</em></h2>
   <p className="sanctuary-lead">분주한 하루에서 한 걸음 물러나,<br/>말씀과 기도에 머무는 시간을 가져보세요.</p>
-  <div className="sanctuary-gate-scene"><SanctuaryScene seat={0}/><span className="sanctuary-gate-seal"><LockKeyhole size={22}/></span></div>
   <div className="sanctuary-login-card">
    <h3>로그인하고 들어오세요</h3><p>예배당은 로그인한 계정으로 이용할 수 있습니다.<br/>활동 아이디 선택과 별도로 계정 로그인이 필요해요.</p>
    {props.onSignIn ? <button className="sanctuary-primary" type="button" disabled={signing||props.authBusy} onClick={()=>void signIn()}>{signing?'로그인 중…':'로그인하고 예배당 입장'}<ArrowUpRight size={17}/></button> : <a className="sanctuary-primary" href="#/login">로그인하고 예배당 입장<ArrowUpRight size={17}/></a>}
@@ -31,7 +30,8 @@ export function SanctuaryTab(props: Props) {
  </section>
 }
 function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:SanctuaryMember}) {
- const room=useSanctuaryCommunity(member)
+ const [entered,setEntered]=useState(false)
+ const room=useSanctuaryCommunity(member,entered)
  const [boardOpen,setBoardOpen]=useState(false)
  const storageKey=sanctuaryKey(member.uid)
  const [loadError]=useState(()=>{try{JSON.parse(localStorage.getItem(storageKey)||'null');return ''}catch{return '예배당 기록을 읽지 못했습니다. 이 기기의 저장 설정을 확인해주세요.'}})
@@ -84,7 +84,8 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
  const clock=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0')
  return <section className="sanctuary sanctuary-compact" data-light={record.light} aria-label="나의 예배당">
   <header className="sanctuary-compact-welcome"><div><small>YOUR QUIET PLACE</small><h2>{member.displayName||'방문자'}님의 작은 예배당</h2></div><span>잠시, 평안히</span></header>
-  <SanctuaryCommunityPanel room={room} uid={member.uid} boardOpen={boardOpen} onBoardClose={()=>setBoardOpen(false)}/>
+  <SanctuaryCommunityPanel room={room} uid={member.uid} boardOpen={boardOpen} onBoardClose={()=>setBoardOpen(false)} onEnter={entered?undefined:()=>setEntered(true)}/>
+  {entered&&<>
   <div className="sanctuary-room-card">
    <div className="sanctuary-room-top"><span>고요한 본당</span><button type="button" onClick={()=>void ring()} aria-label="예배당 종소리 듣기"><Volume2 size={15}/>종소리</button></div>
    <SanctuaryScene profile={room.profile} peers={room.peers} onMotion={room.move} onPrayerBox={()=>setBoardOpen(true)} prayerCount={room.unreadCount} seat={record.seat} onSeat={seat=>save({seat})} candle={candles>0} initialPosition={record.avatarPosition} onPosition={point=>save({avatarPosition:point})}/>
@@ -100,5 +101,6 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
   {notice&&<p className="sanctuary-notice" role="status">{notice}</p>}
   {error&&<p className="sanctuary-error" role="alert">{error}</p>}
   <footer className="sanctuary-footer"><small>MOA FAITH · 이 기기에서 마친 기도 {record.sessions}회</small></footer>
+  </>}
  </section>
 }

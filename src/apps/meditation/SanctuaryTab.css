@@ -81,9 +81,6 @@
 .sanctuary-gate>.sanctuary-eyebrow{justify-content:center}
 .sanctuary-gate h2{font-size:32px;margin-top:22px}
 .sanctuary-gate .sanctuary-lead{margin:15px 0 23px}
-.sanctuary-gate-scene{position:relative;max-width:480px;margin:auto}
-.sanctuary-gate-scene .sanctuary-room{border-radius:24px;max-height:300px;opacity:.85;filter:saturate(.7)}
-.sanctuary-gate-seal{display:grid;place-items:center;position:absolute;left:50%;bottom:-25px;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;background:#f9faf3;border:5px solid #f6f4ee;color:#8b9b76;box-shadow:0 5px 14px #5f6a4012}
 .sanctuary-login-card{padding:30px 12px 0}
 .sanctuary-login-card h3{font-size:16px;color:#526a4a;margin:16px 0 10px}
 .sanctuary-login-card p{font-size:11px;line-height:1.9;color:#929b85;margin-bottom:20px}

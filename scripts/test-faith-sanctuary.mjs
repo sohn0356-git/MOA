@@ -43,6 +43,7 @@ try{
   assert.equal(await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).count(),0,'no personal sanctuary before login')
   await page.screenshot({path:'test-results/faith-sanctuary/gate-'+width+'.png',fullPage:true})
   await page.getByRole('button',{name:'로그인하고 예배당 입장'}).click()
+  await page.getByRole('button',{name:'입장하기',exact:true}).click()
   await page.locator('.sanctuary-private-note summary').click()
   await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).waitFor()
   const avatar=page.locator('.sanctuary-avatar-anchor')
@@ -70,9 +71,13 @@ try{
   assert.equal(new Set(markerSizes.map(s=>s.w.toFixed(2)+'/'+s.h.toFixed(2))).size,1,'all seat circles have equal dimensions')
   await page.getByRole('button',{name:'앉아 기도'}).click()
   assert.equal(await page.getByRole('img',{name:'나의 3D 픽셀 아바타'}).getAttribute('data-pose'),'standing','sitting waits for arrival')
-  const walking=[]
-  for(let frame=0;frame<20;frame++){await page.clock.runFor(16);walking.push(await page.getByRole('img',{name:'나의 3D 픽셀 아바타'}).getAttribute('data-moving'))}
-  assert.ok(walking.slice(1).every(v=>v==='true'),'walking does not pause at each grid point')
+  const walker=page.getByRole('img',{name:'나의 3D 픽셀 아바타'})
+  for(let frame=0;frame<20;frame++){
+   await page.clock.runFor(16)
+   const {pose,moving}=await walker.evaluate(el=>el.dataset)
+   if(pose==='sitting')break
+   if(frame>0)assert.equal(moving,'true','walking does not pause before reaching the seat')
+  }
   await page.clock.runFor(5000)
   assert.equal(await page.getByRole('img',{name:'나의 3D 픽셀 아바타'}).getAttribute('data-pose'),'sitting')
   await page.getByRole('button',{name:'무릎 기도'}).click()
@@ -129,6 +134,7 @@ try{
  await page.getByText('작은 종소리를 울렸습니다.').waitFor()
  await page.reload()
  await page.getByRole('button',{name:'로그인하고 예배당 입장'}).click()
+ await page.getByRole('button',{name:'입장하기',exact:true}).click()
  await page.locator('.sanctuary-private-note summary').click()
  assert.equal(await page.getByRole('textbox',{name:'예배당 개인 기도 메모'}).inputValue(),'이 계정에 남기는 조용한 기도')
  await page.getByRole('button',{name:'로그아웃 검사'}).click()

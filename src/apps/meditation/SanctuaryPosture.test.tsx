@@ -36,5 +36,6 @@ it('cancels a pending arrival interaction when manual movement takes over',()=>{
 it('does not allow selecting a seat visibly occupied by another member',()=>{
  render(<SanctuaryScene seat={0} onSeat={vi.fn()} peers={[{uid:'bob',name:'Bob',skin:0,hair:0,shirt:0,x:-.56,z:.27,facing:180,moving:false,pose:'sitting',updatedAt:Date.now()}]}/>)
  expect(screen.getByRole('button',{name:'앞쪽 왼편 자리 선택'})).toBeDisabled()
+ expect(screen.getByRole('button',{name:'앞쪽 왼편 바깥쪽 자리 선택'})).not.toBeDisabled()
  expect(screen.getByRole('button',{name:'앞쪽 오른편 자리 선택'})).not.toBeDisabled()
 })
