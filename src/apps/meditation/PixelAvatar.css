@@ -69,3 +69,7 @@
 .pixel-avatar[data-top-style="2"] .voxel-blouse-hem .voxel-face-front{background:repeating-linear-gradient(var(--avatar-shirt) 0 4px,color-mix(in srgb,var(--avatar-shirt),white 48%) 4px 6px)}
 .pixel-avatar[data-gender=female] .voxel-body .voxel-face-front:after{left:4px;top:0;width:6px;height:4px;background:#fff5df;clip-path:polygon(0 0,100% 0,50% 100%);box-shadow:none}
 @media(prefers-reduced-motion:reduce){.pixel-head-rig{transition:none}}
+
+.voxel-hair-fringe-left,.voxel-hair-fringe-right{transform:translateZ(8px)}
+.pixel-avatar .voxel-tunic-flare{--voxel-front:var(--avatar-shirt);--voxel-side:color-mix(in srgb,var(--avatar-shirt),black 20%);--voxel-top:color-mix(in srgb,var(--avatar-shirt),white 15%)}
+.pixel-avatar[data-top-style="2"] .voxel-tunic-flare .voxel-face-front{background:repeating-linear-gradient(var(--avatar-shirt) 0 4px,color-mix(in srgb,var(--avatar-shirt),white 48%) 4px 6px)}

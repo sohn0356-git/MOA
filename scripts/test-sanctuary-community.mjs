@@ -32,7 +32,7 @@ const server=await createServer({configFile:false,root:process.cwd(),plugins:[re
 await server.listen()
 const browser=await chromium.launch({headless:true,channel:'chrome'})
 const errors=[]
-async function ready(page){page.on('pageerror',e=>errors.push(e.message));await page.getByText('실시간 연결',{exact:true}).waitFor()}
+async function ready(page){page.on('pageerror',e=>errors.push(e.message));await page.waitForFunction(()=>document.querySelector('.sanctuary-live')?.classList.contains('is-online'))}
 const enter=page=>page.getByRole('button',{name:'입장하기',exact:true}).click()
 const current=page=>page.locator('.sanctuary-presence-stats dd').first()
 const url='http://127.0.0.1:4182/'+folder+'/index.html'
@@ -79,8 +79,16 @@ try{
  await alice.mouse.move(stageBox.x+30,stageBox.y+50);await alice.mouse.down();await alice.mouse.move(stageBox.x+90,stageBox.y+50);await alice.mouse.up()
  assert.equal(await alice.getByRole('slider',{name:'캐릭터 회전 각도'}).inputValue(),'90','drag rotates the avatar')
  await alice.getByRole('button',{name:'정면 보기'}).click()
+ const rotationTouch=await a.newCDPSession(alice)
+ await rotationTouch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:stageBox.x+30,y:stageBox.y+50}]})
+ await rotationTouch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:stageBox.x+90,y:stageBox.y+50}]})
+ await rotationTouch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})
+ assert.equal(await alice.getByRole('slider',{name:'캐릭터 회전 각도'}).inputValue(),'90','touch drag rotates the avatar')
+ await rotationTouch.detach()
+ await alice.getByRole('button',{name:'정면 보기'}).click()
  const editor=alice.getByRole('dialog',{name:'나의 캐릭터'})
  await editor.evaluate(el=>{el.scrollTop=0})
+ await alice.waitForTimeout(200)
  assert.ok(await alice.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'avatar editor fits mobile')
  await alice.screenshot({path:'test-results/faith-sanctuary/avatar-editor-mobile.png',fullPage:true})
  await alice.setViewportSize({width:1000,height:1050})

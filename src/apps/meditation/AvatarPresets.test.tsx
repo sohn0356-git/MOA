@@ -28,6 +28,8 @@ describe('avatar samples and feminine appearance',()=>{
   expect(view.container.querySelector('.pixel-hair-mesh.is-long')).toBeInTheDocument()
   expect(view.container.querySelector('.voxel-hair-curtain')).toHaveStyle({height:'36px'})
   expect(view.container.querySelector('.voxel-blouse-hem')).toBeInTheDocument()
+  expect(view.container.querySelector('.voxel-tunic-flare')).toHaveStyle({width:'24px'})
+  expect(view.container.querySelector('.voxel-hair-fringe-left')).toBeInTheDocument()
   expect(view.container.querySelector('.voxel-body')).toHaveStyle({width:'14px'})
   view.rerender(<PixelAvatar profile={{...profile,gender:'male'}} facing={-25} moving={false} seated={false} scale={1}/>)
   expect(view.container.querySelector('.pixel-hair-mesh.is-long')).toBeNull()
