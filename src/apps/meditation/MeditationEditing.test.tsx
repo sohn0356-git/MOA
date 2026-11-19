@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({
   user: { uid: 'owner', displayName: 'Google 사용자', email: 'owner@example.com', photoURL: '' },
   entries: {} as Record<string, unknown>,
   publicPhotos: {} as Record<string, unknown>,
+  praiseBank: {} as Record<string, unknown>,
   update: vi.fn(),
   plan: { date: '2026-10-31', title: '말씀', theme: '사랑', reference: '요한복음 13:34', question: '오늘의 적용은?', verses: [{ number: 1, text: '서로 사랑하라' }] },
 }))
@@ -19,7 +20,7 @@ vi.mock('firebase/storage', () => ({ deleteObject: vi.fn(), getDownloadURL: vi.f
 vi.mock('firebase/database', () => ({
   ref: (_db: unknown, path = '') => path,
   onValue: (path: string, callback: (snapshot: { val: () => unknown }) => void) => {
-    callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : path === 'crossPhotos' ? state.publicPhotos : null })
+    callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : path === 'crossPhotos' ? state.publicPhotos : path === 'lunchPraiseTracks' ? state.praiseBank : null })
     return () => {}
   },
   get: vi.fn(async () => ({ val: () => null })), push: () => ({ key: 'new-entry' }),
@@ -33,6 +34,7 @@ beforeEach(() => {
   localStorage.clear()
   state.user.uid = 'owner'
   state.publicPhotos = {}
+  state.praiseBank = {}
   state.update.mockReset().mockResolvedValue(undefined)
   state.entries = { original: {
     authorUid: 'owner', authorName: 'AI 01', activityId: 'ai01',
@@ -196,4 +198,17 @@ it('combines devotion and prayer under one bottom tab and places the gated sanct
  expect(screen.queryByRole('textbox',{name:'예배당 개인 기도 메모'})).toBeNull()
  fireEvent.click(screen.getByRole('button',{name:'로그인하고 예배당 입장'}))
  await waitFor(()=>expect(login).toHaveBeenCalledOnce())
+})
+
+it('shows a playable daily praise from historical uploads when today has no entry, and keeps it after remount',async()=>{
+ state.praiseBank={'2020-01-01':{videoId:'abcdefghijk'},'2021-02-03':{youtubeUrl:'https://youtu.be/lmnopqrstuv'},invalid:{youtubeUrl:'https://example.com/broken'}}
+ const first=render(<MeditationApp/>)
+ const player=await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')
+ const src=player.getAttribute('src')
+ expect(src).toMatch(/^https:\/\/www[.]youtube[.]com\/embed\/(abcdefghijk|lmnopqrstuv)[?]/)
+ expect(screen.queryByText('오늘의 찬양을 준비하고 있어요.')).toBeNull()
+ first.unmount()
+ state.praiseBank=Object.fromEntries(Object.entries(state.praiseBank).reverse())
+ render(<MeditationApp/>)
+ expect((await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')).getAttribute('src')).toBe(src)
 })
