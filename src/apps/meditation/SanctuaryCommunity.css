@@ -58,7 +58,7 @@
 .sanctuary-dialog.sanctuary-character-dialog .sanctuary-avatar-studio{display:grid;grid-template-columns:minmax(210px,.9fr) minmax(230px,1.1fr);gap:24px;max-width:none;align-items:start}
 .sanctuary-avatar-showcase{position:sticky;top:0;background:#f8faef;border:1px solid #e0e7d5;border-radius:17px;padding:10px}
 .sanctuary-character-dialog .sanctuary-avatar-preview{height:155px;margin:0;background:radial-gradient(ellipse,#e2ebd4,transparent 67%)}
-.sanctuary-character-dialog .sanctuary-avatar-preview .pixel-avatar{top:144px}
+.sanctuary-character-dialog .sanctuary-avatar-preview .pixel-avatar{top:108px}
 .sanctuary-avatar-presets h4{font-size:11px;color:#71835e;text-align:center;margin:5px 0 12px;font-weight:500}
 .sanctuary-avatar-preset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .sanctuary-avatar-preset-grid>button{position:relative;display:flex;align-items:center;flex-direction:column;gap:2px;min-width:0;min-height:101px;border:1px solid #dbe4cd;background:#fdfef8;border-radius:12px;padding:5px 4px 8px;font:inherit;font-size:10px;color:#6b8055;cursor:pointer}
