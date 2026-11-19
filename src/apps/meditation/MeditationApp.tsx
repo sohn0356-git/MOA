@@ -2977,7 +2977,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                     <EmptyState>영상을 불러오고 있습니다.</EmptyState>
                   ) : lunchPraiseEmbedUrl ? (
                     <>
-                      <iframe
+                      <iframe key={`${todayKey}:${lunchPraise.videoId}`}
                         allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                         className="faith-youtube"

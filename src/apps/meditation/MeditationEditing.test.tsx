@@ -44,7 +44,7 @@ beforeEach(() => {
   } }
   vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} unobserve() {} })
 })
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers() })
 async function openEdit() {
   render(<MeditationApp activityId="ai03"/>)
   fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상·기도' }))
@@ -211,4 +211,16 @@ it('shows a playable daily praise from historical uploads when today has no entr
  state.praiseBank=Object.fromEntries(Object.entries(state.praiseBank).reverse())
  render(<MeditationApp/>)
  expect((await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')).getAttribute('src')).toBe(src)
+})
+
+it('refreshes the daily player at Korean midnight even when the library has only one song',async()=>{
+ vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T14:59:00Z'))
+ state.praiseBank={'2020-01-01':{videoId:'abcdefghijk'}}
+ render(<MeditationApp/>)
+ const previous=await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')
+ vi.setSystemTime(new Date('2026-11-19T15:00:00Z'))
+ fireEvent.focus(window)
+ await waitFor(()=>expect(previous.isConnected).toBe(false))
+ expect((await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')).getAttribute('src')).toContain('/embed/abcdefghijk?')
+ expect(JSON.parse(localStorage.getItem('moa.faith.dailyPraise.v1')!).day).toBe('2026-11-20')
 })
