@@ -3067,7 +3067,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
           </section>
         ) : null}
 
-        {activeTab === 'church' ? <SanctuaryTab member={churchMember} authBusy={churchAuthBusy} onSignIn={onChurchSignIn}
+        {activeTab === 'church' ? <SanctuaryTab praiseTracks={lunchPraiseTracks} member={churchMember} authBusy={churchAuthBusy} onSignIn={onChurchSignIn}
           scripture={{reference:plan.reference,text:plan.verses[0]?.text || ''}}
           onRead={() => handleTabChange('devotion')} onPrayer={() => { if(!requestDraftNavigation()) return; setActiveTab('prayer'); setPrayerView('write') }} /> : null}
         {(activeTab === 'devotion' || activeTab === 'prayer') ? <nav className="faith-spiritual-switch" aria-label="묵상과 기도">

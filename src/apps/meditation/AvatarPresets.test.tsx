@@ -6,9 +6,11 @@ import {PixelAvatar} from './PixelAvatar'
 import {avatarPresets,applyAvatarPreset,defaultAvatar,getAvatarHairStyles,matchesAvatarPreset,normalizeAvatar,selectAvatarGender} from './sanctuaryCommunity'
 afterEach(cleanup)
 describe('avatar samples and feminine appearance',()=>{
- it('offers six valid distinct samples and preserves the entered name',()=>{
-  expect(avatarPresets).toHaveLength(6);expect(new Set(avatarPresets.map(p=>p.id)).size).toBe(6)
-  expect(avatarPresets.filter(p=>p.appearance.gender==='female')).toHaveLength(3)
+ it('offers six valid distinct samples for each gender and preserves the entered name',()=>{
+  expect(avatarPresets).toHaveLength(12);expect(new Set(avatarPresets.map(p=>p.id)).size).toBe(12)
+  expect(avatarPresets.filter(p=>p.appearance.gender==='female')).toHaveLength(6)
+  expect(avatarPresets.filter(p=>p.appearance.gender==='male')).toHaveLength(6)
+  expect(new Set(avatarPresets.map(p=>JSON.stringify(p.appearance))).size).toBe(12)
   for(const preset of avatarPresets){
    const profile=applyAvatarPreset(defaultAvatar('내 이름'),preset.id)
    expect(profile.name).toBe('내 이름');expect(normalizeAvatar(profile)).toEqual(profile);expect(matchesAvatarPreset(profile,preset)).toBe(true)
@@ -24,12 +26,13 @@ describe('avatar samples and feminine appearance',()=>{
   const profile=selectAvatarGender(defaultAvatar(),'female')
   const view=render(<PixelAvatar profile={profile} facing={-25} moving={false} seated={false} scale={1}/>)
   expect(view.container.querySelector('.pixel-hair-mesh.is-long')).toBeInTheDocument()
-  expect(view.container.querySelector('.voxel-hair-curtain')).toHaveStyle({height:'28px'})
+  expect(view.container.querySelector('.voxel-hair-curtain')).toHaveStyle({height:'36px'})
   expect(view.container.querySelector('.voxel-blouse-hem')).toBeInTheDocument()
   expect(view.container.querySelector('.voxel-body')).toHaveStyle({width:'14px'})
   view.rerender(<PixelAvatar profile={{...profile,gender:'male'}} facing={-25} moving={false} seated={false} scale={1}/>)
   expect(view.container.querySelector('.pixel-hair-mesh.is-long')).toBeNull()
   expect(view.container.querySelector('.voxel-body')).toHaveStyle({width:'16px'})
+  expect(view.container.querySelector('.voxel-shoulders')).toHaveStyle({width:'22px'})
  })
  it('attaches long hair and the bun to the same rig as the bowing head',()=>{
   const profile=applyAvatarPreset(defaultAvatar(),'sunshine')

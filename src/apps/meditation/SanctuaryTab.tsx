@@ -7,8 +7,10 @@ import './SanctuaryTab.css'
 import './SanctuaryCommunity.css'
 import './SanctuaryCompact.css'
 import {useSanctuaryCommunity} from './useSanctuaryCommunity'
+import {SanctuaryMusic} from './SanctuaryMusic'
+import type {LunchPraiseTrack} from './dailyPraise'
 import {SanctuaryCommunityPanel} from './SanctuaryCommunityPanel'
-type Props = { member:SanctuaryMember|null; authBusy?:boolean; onSignIn?:()=>Promise<unknown>; onRead:()=>void; onPrayer:()=>void; scripture:{reference:string;text:string} }
+type Props = { praiseTracks?:LunchPraiseTrack[]; member:SanctuaryMember|null; authBusy?:boolean; onSignIn?:()=>Promise<unknown>; onRead:()=>void; onPrayer:()=>void; scripture:{reference:string;text:string} }
 export function SanctuaryTab(props: Props) {
  const [signing,setSigning]=useState(false),[error,setError]=useState('')
  if(props.authBusy && !props.member) return <section className="sanctuary sanctuary-session-restore" role="status"><LockKeyhole size={24}/><h3>로그인 상태를 복원하고 있습니다</h3><p>저장된 계정을 확인하는 동안 잠시만 기다려주세요.</p></section>
@@ -29,7 +31,7 @@ export function SanctuaryTab(props: Props) {
   </div>
  </section>
 }
-function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:SanctuaryMember}) {
+function SanctuaryExperience({member,onRead,onPrayer,scripture,praiseTracks=[]}:Props & {member:SanctuaryMember}) {
  const [entered,setEntered]=useState(false)
  const room=useSanctuaryCommunity(member,entered)
  const [boardOpen,setBoardOpen]=useState(false)
@@ -83,16 +85,18 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
  const today=sanctuaryDay(),candles=record.candleDay===today?record.candles:0
  const clock=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0')
  return <section className="sanctuary sanctuary-compact" data-light={record.light} aria-label="나의 예배당">
-  <header className="sanctuary-compact-welcome"><div><small>YOUR QUIET PLACE</small><h2>{member.displayName||'방문자'}님의 작은 예배당</h2></div><span>잠시, 평안히</span></header>
+  {!entered&&<header className="sanctuary-compact-welcome"><div><small>YOUR QUIET PLACE</small><h2>{member.displayName||'방문자'}님의 작은 예배당</h2></div><span>잠시, 평안히</span></header>}
   <SanctuaryCommunityPanel room={room} uid={member.uid} boardOpen={boardOpen} onBoardClose={()=>setBoardOpen(false)} onEnter={entered?undefined:()=>setEntered(true)}/>
   {entered&&<>
   <div className="sanctuary-room-card">
-   <div className="sanctuary-room-top"><span>고요한 본당</span><button type="button" onClick={()=>void ring()} aria-label="예배당 종소리 듣기"><Volume2 size={15}/>종소리</button></div>
+   <div className="sanctuary-room-top"><span>고요한 본당</span><div className="sanctuary-room-actions"><button type="button" onClick={()=>{setEntered(false);setBoardOpen(false)}}>로비로</button><button type="button" onClick={()=>void ring()} aria-label="예배당 종소리 듣기"><Volume2 size={15}/>종소리</button></div></div>
    <SanctuaryScene profile={room.profile} peers={room.peers} onMotion={room.move} onPrayerBox={()=>setBoardOpen(true)} prayerCount={room.unreadCount} seat={record.seat} onSeat={seat=>save({seat})} candle={candles>0} initialPosition={record.avatarPosition} onPosition={point=>save({avatarPosition:point})}/>
    <div className="sanctuary-room-tools"><div className="sanctuary-light-switch" role="group" aria-label="예배당 빛 분위기">
     {([{id:'dawn',label:'새벽',Icon:Sunrise},{id:'day',label:'낮',Icon:Sun},{id:'evening',label:'저녁',Icon:Moon}] as const).map(({id,label,Icon})=><button key={id} type="button" aria-pressed={record.light===id} onClick={()=>save({light:id})}><Icon size={13}/>{label}</button>)}
    </div><button className="sanctuary-tiny-candle" type="button" aria-label="촛불 켜기" data-lit={candles>0} onClick={()=>{save({candleDay:today,candles:candles+1});setNotice('마음의 촛불을 켰습니다.')}}><Flame size={14}/><span>촛불 {candles}</span></button></div>
   </div>
+  {room.error&&<p className="sanctuary-error" role="alert">{room.error}</p>}
+  <SanctuaryMusic tracks={praiseTracks}/>
   <section className="sanctuary-verse-card" aria-label="마음에 두는 말씀"><p>{scripture.text||'조용히 마음을 준비해보세요.'}</p><div><span>{scripture.reference}</span><button type="button" onClick={onRead}>말씀 읽기<ArrowUpRight size={13}/></button></div></section>
   <section className="sanctuary-timer-card sanctuary-compact-timer" aria-label="고요한 기도 시간"><div className="sanctuary-timer-line"><div><small>고요한 기도</small><strong role="timer" aria-label="기도 남은 시간">{clock}</strong></div><div className="sanctuary-timer-actions"><button type="button" className="sanctuary-primary" onClick={toggleTimer}>{running?<Pause size={14}/>:<Play size={14}/>} {running?'잠시 멈춤':'기도 시작'}</button><button type="button" className="sanctuary-reset" aria-label="기도 타이머 초기화" onClick={()=>{deadline.current=null;finished.current=false;setRunning(false);setRemaining(minutes*60);setNotice('')}}><RotateCcw size={15}/></button></div></div>
    <div className="sanctuary-duration" role="group" aria-label="기도 시간 선택">{[5,10,20].map(value=><button key={value} type="button" disabled={running} aria-pressed={minutes===value} onClick={()=>{setMinutes(value);setRemaining(value*60);finished.current=false;setNotice('')}}>{value}분</button>)}</div>

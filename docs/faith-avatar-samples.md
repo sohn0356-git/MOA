@@ -1,8 +1,11 @@
-# Avatar samples and feminine appearance
-The character editor now provides six appearance samples alongside a live preview: three masculine and three feminine combinations. Applying a sample changes appearance only and preserves the entered name. All colors, clothes, accessories and hair options remain editable before saving.
+# 예배당 입장과 캐릭터 스튜디오
 
-Selecting female defaults the existing hairStyle index 0 to long straight hair; index 3 is long wavy hair for feminine avatars. Masculine labels/rendering remain unchanged. Female users can explicitly choose bob or bun styles as well. No new database field or index value is introduced, and existing profile/presence permissions remain valid.
+입장 전 로비에만 캐릭터 수정과 현재·오늘 입장 인원을 표시합니다. 입장하면 개인 인사와 현황을 숨기고 고요한 본당을 맨 위에 표시합니다. 로비로 돌아오면 캐릭터 수정과 현황을 다시 볼 수 있습니다. 방에 있는 다른 사람의 아바타는 계속 표시됩니다.
 
-Long hair uses actual back and side cuboids reaching below the shoulders, with extra stepped locks for waves. A head rig keeps hair, bun and clip attached when the head bows. The feminine top keeps the existing narrower shoulders and adds a modest flared hem. The same PixelAvatar renders samples, editor previews, lobby characters and remote room members.
+캐릭터 편집은 남성·여성 탭별 여섯 개씩, 총 열두 가지 샘플을 제공합니다. 이름은 보존하고 색상·스타일은 선택 후에도 개별 수정할 수 있습니다. 드래그(마우스/터치), 회전 버튼, 키보드로 조작 가능한 각도 슬라이더, 정면 보기 버튼으로 앞뒤를 확인합니다. 회전 각도는 편집 미리보기에만 적용됩니다.
 
-Verification includes preset validity/name preservation, default and manual hair selection, legacy profile normalization, real geometry, responsive editor screenshots, server-saved restoration and appearance propagation between two real emulator-authenticated accounts. Existing room movement, postures, prayer board and Faith-only startup checks remain enabled.
+남성형은 넓은 어깨와 짧은 머리, 여성형 기본은 허리까지 내려오는 생머리/웨이브와 넓어지는 튜닉 실루엣으로 구분합니다. 기존 스타일 범위와 DB 스키마를 유지합니다. 같은 PixelAvatar 렌더러가 미리보기·샘플·본인·다른 접속자에 적용되어 저장된 모습이 일치합니다. 머리는 머리 관절에 붙어 기도 자세를 따라갑니다.
+
+본당에서는 기존 활성 lunchPraiseTracks 목록을 YouTube 공식 플레이어로 이어서 반복 재생합니다. 초기 음량은 20%, 재생·일시정지·음량 조절이 가능합니다. 소리 자동재생이 차단되면 재생 버튼을 누르도록 안내하고, 로비 복귀나 탭 이탈 시 플레이어를 제거해 소리를 멈춥니다. 음원이 비어 있으면 외부 플레이어를 요청하지 않습니다. 아직 별도 CCM MP3는 제공되지 않았으며, 특정한 잔잔한 음원으로 바꾸려면 실제 파일이 필요합니다.
+
+검증: 성별별 샘플 개수·프로필 유효성·이름 보존·성별 실루엣 단위 검사, 로비/본당 노출·회전 조작 검사, 반복재생/낮은 음량/자동재생 차단/음량 조절/종료 정리 검사, 실제 Auth+DB 에뮬레이터 두 계정 간 외형 저장·동기화, 모바일/PC 캡처.

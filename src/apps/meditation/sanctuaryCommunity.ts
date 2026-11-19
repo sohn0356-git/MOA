@@ -38,9 +38,15 @@ export const avatarPresets:readonly AvatarPreset[]=[
  {id:'forest',label:'숲빛',appearance:{gender:'male',skin:0,hair:0,shirt:0,pants:0,hairStyle:0,topStyle:0,accessory:0}},
  {id:'ocean',label:'바다',appearance:{gender:'male',skin:2,hair:1,shirt:1,pants:3,hairStyle:3,topStyle:1,accessory:1}},
  {id:'sunset',label:'노을',appearance:{gender:'male',skin:3,hair:2,shirt:3,pants:2,hairStyle:0,topStyle:2,accessory:0}},
+ {id:'stone',label:'돌담',appearance:{gender:'male',skin:1,hair:6,shirt:4,pants:2,hairStyle:3,topStyle:1,accessory:0}},
+ {id:'cedar',label:'삼나무',appearance:{gender:'male',skin:5,hair:1,shirt:6,pants:0,hairStyle:0,topStyle:1,accessory:2}},
+ {id:'night',label:'별밤',appearance:{gender:'male',skin:7,hair:0,shirt:7,pants:1,hairStyle:3,topStyle:2,accessory:1}},
  {id:'lavender',label:'라벤더',appearance:{gender:'female',skin:0,hair:0,shirt:2,pants:5,hairStyle:0,topStyle:1,accessory:3}},
  {id:'sunshine',label:'햇살',appearance:{gender:'female',skin:4,hair:3,shirt:5,pants:1,hairStyle:3,topStyle:0,accessory:0}},
  {id:'rose',label:'장미',appearance:{gender:'female',skin:6,hair:4,shirt:8,pants:4,hairStyle:0,topStyle:2,accessory:2}},
+ {id:'cloud',label:'구름',appearance:{gender:'female',skin:1,hair:5,shirt:1,pants:5,hairStyle:3,topStyle:1,accessory:3}},
+ {id:'peach',label:'복숭아',appearance:{gender:'female',skin:5,hair:2,shirt:3,pants:0,hairStyle:0,topStyle:0,accessory:0}},
+ {id:'lilac',label:'라일락',appearance:{gender:'female',skin:3,hair:6,shirt:2,pants:3,hairStyle:3,topStyle:2,accessory:1}},
 ]
 export function applyAvatarPreset(profile:AvatarProfile,id:string):AvatarProfile{
  const preset=avatarPresets.find(p=>p.id===id);return preset?{...profile,...preset.appearance}:profile

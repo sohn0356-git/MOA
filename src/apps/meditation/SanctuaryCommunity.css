@@ -85,3 +85,32 @@
  .sanctuary-avatar-presets>p{font-size:7px;text-align:left;margin:7px 0 0}
  .sanctuary-avatar-fields{width:100%;gap:13px}
 }
+
+.sanctuary-presence-strip[hidden]{display:none!important}
+.sanctuary-community-compact:has(.sanctuary-presence-strip[hidden]){margin:0;gap:0}
+.sanctuary-gender-tabs{display:flex;background:#e8eddc;border-radius:10px;padding:3px;margin:0 0 12px;gap:3px}
+.sanctuary-gender-tabs [role=tab]{flex:1;border:0;border-radius:8px;background:transparent;padding:9px;color:#7b886d;font:inherit;font-size:12px;cursor:pointer}
+.sanctuary-gender-tabs [aria-selected=true]{background:#fffef6;color:#425f43;box-shadow:0 2px 6px #4c614014;font-weight:600}
+.sanctuary-avatar-turntable{min-width:0;text-align:center;padding-bottom:14px}
+.sanctuary-dialog.sanctuary-character-dialog .sanctuary-avatar-preview{height:175px;touch-action:pan-y;cursor:grab;user-select:none}
+.sanctuary-dialog.sanctuary-character-dialog .sanctuary-avatar-preview:active{cursor:grabbing}
+.sanctuary-dialog.sanctuary-character-dialog .sanctuary-avatar-preview .pixel-avatar{top:155px;z-index:1}
+.sanctuary-turntable-ring{position:absolute;left:50%;bottom:8px;width:105px;height:22px;border:1px solid #adbba083;border-radius:50%;transform:translateX(-50%);background:#e5ecd7}
+.sanctuary-rotation-controls{display:flex;align-items:center;justify-content:center;gap:8px;max-width:220px;margin:auto}
+.sanctuary-rotation-controls button{background:#e9efdf;color:#647a52;border:0;border-radius:50%;width:30px;height:30px;font-size:20px;padding:0;flex-shrink:0}
+.sanctuary-rotation-controls input{accent-color:#6f895c;min-width:0;width:100%;padding:0;border:0;height:24px}
+.sanctuary-rotation-reset{border:0;background:none;color:#8b987b;font-size:9px;padding:6px}
+.pixel-avatar .voxel-shoulders{--voxel-front:var(--avatar-shirt);--voxel-side:color-mix(in srgb,var(--avatar-shirt),black 20%);--voxel-top:color-mix(in srgb,var(--avatar-shirt),white 15%)}
+.pixel-avatar[data-gender=female] .voxel-head .voxel-face-front:before{width:3px;height:2px;box-shadow:7px 0 #463c35,0 -1px #463c35,7px -1px #463c35}
+.pixel-avatar[data-gender=female][data-accessory="0"] .voxel-head .voxel-face-front:after{background:#b97d73;box-shadow:-4px -3px #d89c8a,5px -3px #d89c8a}
+@media(max-width:620px){
+ .sanctuary-avatar-showcase{display:block;padding:10px;width:100%}
+ .sanctuary-avatar-turntable{padding-bottom:6px}
+ .sanctuary-dialog.sanctuary-character-dialog .sanctuary-avatar-preview{height:160px}
+ .sanctuary-dialog.sanctuary-character-dialog .sanctuary-avatar-preview .pixel-avatar{top:145px;--avatar-scale:1.85!important}
+ .sanctuary-avatar-presets h4{text-align:center}
+ .sanctuary-avatar-preset-grid>button{min-height:98px;font-size:10px}
+ .sanctuary-preset-figure{height:64px}.sanctuary-preset-figure>.pixel-avatar{top:61px;--avatar-scale:.78!important}
+ .sanctuary-avatar-preset-grid small{font-size:8px}
+ .sanctuary-avatar-presets>p{text-align:center}
+}

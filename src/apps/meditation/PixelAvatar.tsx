@@ -17,16 +17,17 @@ export function PixelAvatar({facing,moving,seated,scale,profile=defaultAvatar(),
      <Block name="head" x={8} y={0} width={18} height={18} depth={16}/>
      {hairStyle===2&&<Block name="hair-bun" x={15} y={-5} width={9} height={7} depth={9}/>}
      {(longHair||bob)&&<div className={'pixel-hair-mesh '+(longHair?'is-long':'is-bob')} aria-hidden="true">
-      <Block name="hair-curtain" x={7} y={1} width={20} height={longHair?28:21} depth={6}/>
-      <Block name="hair-left" x={5} y={4} width={4} height={longHair?27:18} depth={7}/>
-      <Block name="hair-right" x={25} y={4} width={4} height={longHair?27:18} depth={7}/>
-      {longHair&&<Block name="hair-tips" x={9} y={28} width={16} height={5} depth={5}/>}
-      {longHair&&hairStyle===3&&<><Block name="hair-wave-left" x={4} y={20} width={5} height={14} depth={8}/><Block name="hair-wave-right" x={25} y={19} width={5} height={15} depth={8}/></>}
+      <Block name="hair-curtain" x={7} y={1} width={20} height={longHair?36:21} depth={6}/>
+      <Block name="hair-left" x={5} y={4} width={4} height={longHair?35:18} depth={7}/>
+      <Block name="hair-right" x={25} y={4} width={4} height={longHair?35:18} depth={7}/>
+      {longHair&&<Block name="hair-tips" x={9} y={36} width={16} height={5} depth={5}/>}
+      {longHair&&hairStyle===3&&<><Block name="hair-wave-left" x={4} y={25} width={5} height={16} depth={8}/><Block name="hair-wave-right" x={25} y={24} width={5} height={17} depth={8}/></>}
      </div>}
      {profile.accessory===3&&<Block name="hair-clip" x={24} y={5} width={4} height={2} depth={2}/>}
     </div>
+    {!narrow&&<Block name="shoulders" x={6} y={20} width={22} height={6} depth={11}/>}
     <Block name="body" x={narrow?10:9} y={20} width={narrow?14:16} height={22} depth={10}/>
-    {narrow&&<Block name="blouse-hem" x={9} y={35} width={16} height={7} depth={11}/>}
+    {narrow&&<Block name="blouse-hem" x={7} y={34} width={20} height={12} depth={11}/>}
     <div className="pixel-limb pixel-arm-left"><Block name="arm" x={0} y={0} width={6} height={23} depth={8}/></div>
     <div className="pixel-limb pixel-arm-right"><Block name="arm" x={0} y={0} width={6} height={23} depth={8}/></div>
    </div>
