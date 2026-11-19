@@ -3,7 +3,7 @@ import {sanctuaryCapacity} from './sanctuaryMovement'
 import {PixelAvatar} from './PixelAvatar'
 import {SanctuaryDialog} from './SanctuaryDialog'
 import {BEFORE_APP_UPDATE} from '../../lib/appUpdateProtocol'
-import {avatarSkins,avatarHairs,avatarShirts,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
+import {avatarSkins,avatarHairs,avatarShirts,avatarPants,avatarHairStyles,avatarTopStyles,avatarAccessories,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
 import type {SanctuaryCommunity} from './useSanctuaryCommunity'
 type Draft={title:string;body:string;id?:string}
 export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter}:{room:SanctuaryCommunity;uid:string;boardOpen:boolean;onBoardClose:()=>void;onEnter?:()=>void}){
@@ -54,7 +54,12 @@ export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter
    <form className="sanctuary-avatar-editor" onSubmit={event=>{event.preventDefault();void action(async()=>{await room.saveProfile(avatar);setEditing(false)},'캐릭터를 저장했습니다.')}}>
     <div className="sanctuary-avatar-preview"><PixelAvatar profile={avatar} facing={-25} moving={false} seated={false} scale={1.25}/></div>
     <label>캐릭터 이름<input aria-label="캐릭터 이름" value={avatar.name} maxLength={24} required disabled={busy} onChange={e=>setAvatar({...avatar,name:e.target.value})}/></label>
-    {([['skin','피부',avatarSkins],['hair','머리',avatarHairs],['shirt','옷',avatarShirts]] as const).map(([key,label,colors])=><fieldset key={key} disabled={busy}><legend>{label}</legend>{colors.map((color,index)=><button key={color} type="button" aria-label={label+' 색상 '+(index+1)} aria-pressed={avatar[key]===index} style={{background:color}} onClick={()=>setAvatar({...avatar,[key]:index})}/>)}</fieldset>)}
+    {([['skin','피부',avatarSkins],['hair','머리',avatarHairs],['shirt','옷',avatarShirts],['pants','바지',avatarPants]] as const).map(([key,label,colors])=><fieldset key={key} disabled={busy}><legend>{label}</legend>{colors.map((color,index)=><button key={color} type="button" aria-label={label+' 색상 '+(index+1)} aria-pressed={(avatar[key]??0)===index} style={{background:color}} onClick={()=>setAvatar({...avatar,[key]:index})}/>)}</fieldset>)}
+    {([['hairStyle','머리 모양',avatarHairStyles],['topStyle','상의 모양',avatarTopStyles],['accessory','액세서리',avatarAccessories]] as const).map(([key,label,options])=><label key={key}>{label}
+     <select value={avatar[key]??0} disabled={busy} onChange={e=>setAvatar({...avatar,[key]:Number(e.target.value)})}>
+      {options.map((option,index)=><option key={option} value={index}>{option}</option>)}
+     </select>
+    </label>)}
     <button className="sanctuary-primary" disabled={busy||!avatar.name.trim()}>캐릭터 저장</button>
    </form>{message&&<p role="status" className="sanctuary-community-feedback">{message}</p>}
   </SanctuaryDialog>

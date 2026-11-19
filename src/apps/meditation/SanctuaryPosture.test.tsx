@@ -22,7 +22,9 @@ it('walks to an empty seat before sitting, kneels differently, and stands when w
 })
 it('opens the prayer box only once after reaching its approach point',()=>{
  const open=vi.fn();render(<SanctuaryScene seat={0} onSeat={vi.fn()} onPrayerBox={open} prayerCount={3}/>)
- fireEvent.click(screen.getByRole('button',{name:'중보기도함 열기'}));expect(open).not.toHaveBeenCalled()
+ const mailbox=screen.getByRole('button',{name:'중보기도함 열기'})
+ expect(mailbox.textContent).toBe('3')
+ fireEvent.click(mailbox);expect(open).not.toHaveBeenCalled()
  act(()=>vi.advanceTimersByTime(8000));expect(open).toHaveBeenCalledOnce()
  const anchor=document.querySelector('.sanctuary-avatar-anchor')!;expect(Number(anchor.getAttribute('data-avatar-x'))).toBeCloseTo(sanctuaryPrayerBoxPoint.x);expect(Number(anchor.getAttribute('data-avatar-z'))).toBeCloseTo(sanctuaryPrayerBoxPoint.z)
  act(()=>vi.advanceTimersByTime(1000));expect(open).toHaveBeenCalledOnce()

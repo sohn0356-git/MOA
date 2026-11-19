@@ -40,3 +40,16 @@
 @media(prefers-reduced-motion:reduce){.sanctuary-peer{transition:none}}
 
 .sanctuary-community{margin:0 0 24px}
+
+.sanctuary-avatar-editor fieldset{flex-wrap:wrap}
+.sanctuary-avatar-editor select{width:100%;min-height:38px;margin-top:5px;padding:6px 10px;border:1px solid #d7dfce;border-radius:10px;background:#fff;color:#405538;font:inherit}
+.pixel-avatar .voxel-thigh,.pixel-avatar .voxel-shin{--voxel-front:var(--avatar-pants);--voxel-side:color-mix(in srgb,var(--avatar-pants),black 22%);--voxel-top:color-mix(in srgb,var(--avatar-pants),white 18%)}
+.pixel-avatar .voxel-hair-bun{--voxel-front:var(--avatar-hair);--voxel-side:color-mix(in srgb,var(--avatar-hair),black 20%);--voxel-top:color-mix(in srgb,var(--avatar-hair),white 12%);transform:translateZ(-6px)}
+.pixel-avatar[data-hair-style="1"] .voxel-head .voxel-face-left,.pixel-avatar[data-hair-style="1"] .voxel-head .voxel-face-right{background:linear-gradient(90deg,var(--avatar-hair) 0 58%,transparent 58%),linear-gradient(var(--avatar-hair) 0 7px,var(--avatar-skin) 7px)}
+.pixel-avatar[data-hair-style="1"] .voxel-head .voxel-face-right{background:linear-gradient(270deg,var(--avatar-hair) 0 58%,transparent 58%),linear-gradient(var(--avatar-hair) 0 7px,var(--avatar-skin) 7px)}
+.pixel-avatar[data-hair-style="3"] .voxel-head .voxel-face-front{background:linear-gradient(140deg,var(--avatar-hair) 0 36%,transparent 36%),linear-gradient(var(--avatar-hair) 0 4px,var(--avatar-skin) 4px)}
+.pixel-avatar[data-top-style="1"] .voxel-arm .voxel-face-front,.pixel-avatar[data-top-style="1"] .voxel-arm .voxel-face-left,.pixel-avatar[data-top-style="1"] .voxel-arm .voxel-face-right{background:linear-gradient(var(--avatar-shirt) 0 19px,var(--avatar-skin) 19px)}
+.pixel-avatar[data-top-style="2"] .voxel-body .voxel-face-front,.pixel-avatar[data-top-style="2"] .voxel-body .voxel-face-left,.pixel-avatar[data-top-style="2"] .voxel-body .voxel-face-right,.pixel-avatar[data-top-style="2"] .voxel-body .voxel-face-back{background:repeating-linear-gradient(var(--avatar-shirt) 0 4px,color-mix(in srgb,var(--avatar-shirt),white 48%) 4px 6px)}
+.pixel-avatar[data-accessory="1"] .voxel-head .voxel-face-front::before{left:2px;top:8px;width:13px;height:6px;background:linear-gradient(#30343c,#30343c) center/100% 1px no-repeat,repeating-linear-gradient(90deg,#30343c 0 1px,#f7f1e57a 1px 5px,#30343c 5px 6px,transparent 6px 7px);border-block:1px solid #30343c;box-shadow:none}
+.pixel-avatar[data-accessory="2"] .voxel-body .voxel-face-front::after{left:1px;top:1px;width:12px;height:4px;background:#b94d48;box-shadow:4px 4px 0 -1px #963d40}
+.pixel-avatar[data-accessory="3"] .voxel-head .voxel-face-front::after{left:2px;top:4px;width:4px;height:1px;background:#ffd67a;box-shadow:5px 11px #b37c62}
