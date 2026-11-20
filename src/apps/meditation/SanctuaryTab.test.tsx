@@ -9,7 +9,7 @@ const scripture={reference:'요한복음 14:27',text:'평안을 너희에게 끼
 const props={onRead:vi.fn(),onPrayer:vi.fn(),scripture}
 const enter=()=>fireEvent.click(screen.getByRole('button',{name:'입장하기'}))
 const openNote=()=>fireEvent.click(document.querySelector('summary')!)
-beforeEach(()=>{localStorage.clear();vi.clearAllMocks()})
+beforeEach(()=>{localStorage.clear();vi.clearAllMocks();vi.spyOn(HTMLMediaElement.prototype,'play').mockResolvedValue();vi.spyOn(HTMLMediaElement.prototype,'pause').mockImplementation(()=>{});vi.spyOn(HTMLMediaElement.prototype,'load').mockImplementation(()=>{})})
 afterEach(()=>{cleanup();vi.restoreAllMocks();vi.useRealTimers()})
 it('requires a real signed-in member before mounting personal sanctuary content',async()=>{
  localStorage.setItem(sanctuaryKey('alice'),JSON.stringify({note:'비공개 메모'}))
@@ -64,7 +64,7 @@ it('keeps unsaved notes visible and guards updates if local persistence fails',(
  fireEvent.change(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'}),{target:{value:'잃지 않을 메모'}})
  expect(screen.getByRole('textbox',{name:'예배당 개인 기도 메모'})).toHaveValue('잃지 않을 메모')
  expect(screen.getByText(/예배당 기록을 임시저장하지 못했습니다/)).toHaveAttribute('role','alert')
- expect(screen.getByRole('status')).not.toHaveTextContent('자동 저장됨')
+ expect(screen.getAllByRole('status').every(el=>!el.textContent?.includes('자동 저장됨'))).toBe(true)
  let allowed=true;act(()=>{allowed=canApplyAppUpdate()})
  expect(allowed).toBe(false)
 })
