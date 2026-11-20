@@ -46,7 +46,7 @@ jobs:
         run: npx firebase-tools@latest emulators:exec --only auth --project demo-moa --config firebase.auth-test.json "node scripts/test-faith-session.mjs"
       - run: node scripts/test-faith-gallery.mjs
       - run: node scripts/test-faith-sanctuary.mjs
-      - name: Verify Firebase M4A playback
+      - name: Verify Pages M4A playback without Storage traffic
         run: node scripts/test-sanctuary-audio.mjs
       - name: Verify two-account sanctuary community
         run: npx firebase-tools@latest emulators:exec --only auth,database --project demo-moa --config firebase.sanctuary-test.json "node scripts/test-sanctuary-community.mjs"

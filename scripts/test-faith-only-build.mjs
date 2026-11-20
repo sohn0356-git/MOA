@@ -12,6 +12,9 @@ assert.ok(!shell.includes('registry')&&!shell.includes('AiCity')&&!shell.include
 const manifest=JSON.parse(await readFile('dist/.vite/manifest.json','utf8'))
 for(const [key,value] of Object.entries(manifest)){assert.ok(!removed.some(name=>key.includes('src/apps/'+name+'/')),key);assert.ok(!removed.some(name=>value.file.toLowerCase().includes(name+'app')),value.file)}
 const sw=await readFile('dist/sw.js','utf8')
+assert.ok(!sw.includes('audio/sanctuary-ccm.m4a'),'large chapel audio is never precached at startup')
+const audioSize=(await stat('dist/audio/sanctuary-ccm.m4a')).size
+assert.ok(audioSize>0&&audioSize<100*1024*1024,'Pages audio must fit the GitHub file limit')
 assert.ok(!sw.includes('/fonts/nanum-square-neo/'),'duplicate public fonts are not precached')
 assert.ok(sw.includes('MOA_APPLY_UPDATE')&&sw.includes('MOA_UPDATE_SAFETY'),'safe update protocol is preserved')
 async function measure(dir){

@@ -6,9 +6,9 @@ import {SanctuaryMusic} from './SanctuaryMusic'
 import {SANCTUARY_CCM_URL} from './sanctuaryAudio'
 beforeEach(()=>{vi.spyOn(HTMLMediaElement.prototype,'play').mockResolvedValue();vi.spyOn(HTMLMediaElement.prototype,'pause').mockImplementation(()=>{});vi.spyOn(HTMLMediaElement.prototype,'load').mockImplementation(()=>{})})
 afterEach(()=>{cleanup();vi.restoreAllMocks()})
-it('streams the supplied M4A in a loop at low volume without a video or cross-origin fetch',()=>{
+it('streams the supplied M4A in a loop at low volume from the app origin without a video or Firebase request',()=>{
  const view=render(<SanctuaryMusic/>),node=view.container.querySelector('audio')!
- expect(node.src).toBe(SANCTUARY_CCM_URL);expect(node.loop).toBe(true);expect(node.volume).toBe(.2)
+ expect(node.getAttribute('src')).toBe(SANCTUARY_CCM_URL);expect(new URL(node.src).origin).toBe(location.origin);expect(node.loop).toBe(true);expect(node.volume).toBe(.2)
  expect(node.preload).toBe('none');expect(node.crossOrigin).toBeNull()
  expect(node.play).toHaveBeenCalledOnce();expect(view.container.querySelector('iframe')).toBeNull()
  fireEvent.playing(node)
