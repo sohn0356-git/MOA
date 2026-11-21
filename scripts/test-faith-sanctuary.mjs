@@ -132,8 +132,9 @@ try{
  await page.getByRole('button',{name:'잠시 멈춤'}).click()
  await page.clock.fastForward(10000)
  assert.equal(await page.getByRole('timer').innerText(),'04:50')
- await page.getByRole('button',{name:'예배당 종소리 듣기'}).click()
- await page.getByText('작은 종소리를 울렸습니다.').waitFor()
+ assert.equal(await page.getByRole('button',{name:'예배당 종소리 듣기'}).count(),0)
+ assert.equal(await page.locator('.sanctuary-music').count(),0,'no music card below the room')
+ assert.equal(await page.locator('.sanctuary-room-top .sanctuary-room-music button').isVisible(),true,'music toggle replaces the bell in the room header')
  await page.reload()
  await page.getByRole('button',{name:'로그인하고 예배당 입장'}).click()
  await page.getByRole('button',{name:'입장하기',exact:true}).click()
@@ -145,5 +146,5 @@ try{
  await page.setViewportSize({width:760,height:370})
  await page.goto('http://127.0.0.1:4180/MOA/'+folder+'/index.html?pose-review')
  await page.screenshot({path:'test-results/faith-sanctuary/pose-comparison.png',animations:'disabled'})
- console.log('Sanctuary passed at 360/768/1440px: authentication gate, seating, lighting, candle, note restoration, timer pause and bell playback.')
+ console.log('Sanctuary passed at 360/768/1440px: authentication gate, seating, lighting, candle, note restoration, timer pause and header music control.')
 }finally{await browser.close();await server.close();await rm(folder,{recursive:true,force:true})}
