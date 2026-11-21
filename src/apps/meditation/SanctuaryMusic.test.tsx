@@ -12,20 +12,21 @@ it('streams the supplied M4A in a loop at low volume from the app origin without
  expect(node.preload).toBe('none');expect(node.crossOrigin).toBeNull()
  expect(node.play).toHaveBeenCalledOnce();expect(view.container.querySelector('iframe')).toBeNull()
  fireEvent.playing(node)
- fireEvent.click(screen.getByRole('button',{name:'찬양 일시정지'}));expect(node.pause).toHaveBeenCalledOnce()
+ node.currentTime=9
+ fireEvent.click(screen.getByRole('button',{name:'노래 정지'}));expect(node.currentTime).toBe(0);expect(node.pause).toHaveBeenCalledOnce()
  fireEvent.pause(node)
- fireEvent.click(screen.getByRole('button',{name:'찬양 재생'}));expect(node.play).toHaveBeenCalledTimes(2)
- fireEvent.change(screen.getByRole('slider',{name:'찬양 음량'}),{target:{value:'35'}});expect(node.volume).toBe(.35)
+ fireEvent.click(screen.getByRole('button',{name:'노래 재생'}));expect(node.play).toHaveBeenCalledTimes(2)
+ expect(screen.queryByRole('slider')).toBeNull();expect(screen.queryByRole('heading')).toBeNull();expect(view.container.querySelector('.sanctuary-music')).toBeNull()
  view.unmount();expect(node.pause).toHaveBeenCalledTimes(2);expect(node.load).toHaveBeenCalledOnce();expect(node.hasAttribute('src')).toBe(false)
 })
 it('allows a manual start if the browser blocks autoplay',async()=>{
  vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(new DOMException('blocked','NotAllowedError'))
  render(<SanctuaryMusic/>);await waitFor(()=>expect(screen.getByRole('status')).toHaveTextContent('소리를 켜려면'))
- fireEvent.click(screen.getByRole('button',{name:'찬양 재생'}));expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2)
+ fireEvent.click(screen.getByRole('button',{name:'노래 재생'}));expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2)
 })
 it('reconnects after a network error and replaces the source without retaining the previous stream',()=>{
  const view=render(<SanctuaryMusic/>),node=view.container.querySelector('audio')!
  fireEvent.error(node);expect(screen.getByRole('status')).toHaveTextContent('불러오지 못했어요')
- fireEvent.click(screen.getByRole('button',{name:'다시 연결'}));expect(node.load).toHaveBeenCalledOnce();expect(node.play).toHaveBeenCalledTimes(2)
+ fireEvent.click(screen.getByRole('button',{name:'노래 재생'}));expect(node.load).toHaveBeenCalledOnce();expect(node.play).toHaveBeenCalledTimes(2)
  view.rerender(<SanctuaryMusic source="https://example.com/next.m4a"/>);expect(node.src).toBe('https://example.com/next.m4a');expect(node.pause).toHaveBeenCalledOnce();expect(node.play).toHaveBeenCalledTimes(3)
 })

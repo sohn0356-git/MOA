@@ -50,6 +50,7 @@ try {
  for (const width of [360,768,1440]) {
   await page.setViewportSize({ width, height: 900 })
   await page.goto('http://127.0.0.1:4179/MOA/' + folder + '/index.html')
+  await page.getByRole('navigation',{name:'MOA Faith'}).getByRole('button',{name:'피드',exact:true}).click()
   await page.locator('.faith-gallery-tile').first().waitFor()
   assert.equal(await page.getByRole('navigation',{name:'피드 그룹'}).count(),0,'bookmarks start folded')
   await page.getByRole('button',{name:'책갈피 펼치기'}).click()

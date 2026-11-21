@@ -1182,7 +1182,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
-  const [activeTab, setActiveTab] = useState<FaithTab>('feed')
+  const [activeTab, setActiveTab] = useState<FaithTab>('church')
   const [devotionView, setDevotionView] = useState<DevotionView>('read')
   const [feedView, setFeedView] = useState<FeedView>('list')
   const [prayerView, setPrayerView] = useState<PrayerView>('list')

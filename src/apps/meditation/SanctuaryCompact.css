@@ -79,12 +79,7 @@
 .pixel-avatar[data-pose=kneeling] .voxel-shoe{transform:translateZ(-2px) rotateX(90deg) translateZ(2px)}
 
 .sanctuary-room-actions{display:flex;gap:9px;align-items:center}
-.sanctuary-music{border:1px solid #dce4d0;border-radius:16px;background:#f8faf1;padding:16px;margin:16px 0}
-.sanctuary-music-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
-.sanctuary-music-heading small{font-size:8px;letter-spacing:1.4px;color:#91a07e}.sanctuary-music h3{font-size:14px;color:#526a49;margin:5px 0}
-.sanctuary-music button{font:inherit;font-size:10px;border:1px solid #d8e2cc;background:#edf2e4;color:#5f7750;border-radius:20px;padding:8px 12px;cursor:pointer}
-.sanctuary-music button:disabled{opacity:.5;cursor:wait}
-.sanctuary-music-volume{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}.sanctuary-music-volume label{display:flex;align-items:center;gap:8px;font-size:10px;color:#849473}.sanctuary-music-volume input{width:100px;accent-color:#71875f}
-.sanctuary-music p,.sanctuary-music-empty{font-size:10px;color:#89967d;line-height:1.7;margin:10px 0 0}
-
 .sanctuary-room-top .sanctuary-room-actions button{display:flex;align-items:center;gap:4px;border:1px solid #dce3d0;background:#fafbf4;color:#748565;border-radius:14px;padding:6px 9px;font:inherit;font-size:9px;cursor:pointer}
+
+.sanctuary-room-music{display:inline-flex;align-items:center}
+.sanctuary-music-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

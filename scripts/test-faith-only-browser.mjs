@@ -17,6 +17,7 @@ try{
   times.push({route,milliseconds:Date.now()-start})
   assert.equal(new URL(page.url()).hash,'#/meditation','all retired routes resolve to Faith')
   assert.equal(await page.locator('.faith-bottom-nav button').count(),5)
+  assert.equal(await page.getByRole('button',{name:'예배당',exact:true}).getAttribute('aria-current'),'page','sanctuary is the launch tab')
   assert.equal(await page.locator('.app-grid,.city-main-app,.app-tile').count(),0)
  }
  await page.getByRole('button',{name:'예배당',exact:true}).click()
