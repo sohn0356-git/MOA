@@ -32,26 +32,16 @@ beforeEach(()=>{
  history.replaceState(null,'','/')
 })
 describe('Faith activity permissions and account controls',()=>{
- it('requests AI permissions while keeping the dropdown and separate Google login available',()=>{
-  const view=render(<AppShell/>)
-  fireEvent.change(screen.getByRole('combobox',{name:'활동 아이디 선택'}),{target:{value:'ai03'}})
-  expect(activity.selectActivity).toHaveBeenCalledWith('ai03')
-  expect(auth.signInWithAiAccount).not.toHaveBeenCalled()
-  expect(auth.signInWithGoogle).not.toHaveBeenCalled()
-  view.rerender(<AppShell/>)
-  expect((screen.getByRole('combobox',{name:'활동 아이디 선택'}) as HTMLSelectElement).value).toBe('ai03')
+ it('removes account selection while keeping Google login available',()=>{
+  render(<AppShell/>)
+  expect(screen.queryByRole('combobox')).toBeNull()
   expect(screen.getByRole('button',{name:'구글 로그인'})).toBeTruthy()
-  expect(screen.getByRole('button',{name:'로그아웃'})).toBeTruthy()
-  fireEvent.change(screen.getByRole('combobox',{name:'활동 아이디 선택'}),{target:{value:'ai07'}})
-  expect(activity.selectActivity).toHaveBeenLastCalledWith('ai07')
+  expect(activity.selectActivity).not.toHaveBeenCalled()
  })
- it('preserves the Google account when selecting AI and clears both sessions on logout',async()=>{
+ it('clears both authenticated sessions on logout',async()=>{
   auth.user={uid:'google-owner',email:'owner@example.com'} as User
-  const view=render(<AppShell/>)
-  fireEvent.change(screen.getByRole('combobox',{name:'활동 아이디 선택'}),{target:{value:'ai05'}})
-  view.rerender(<AppShell/>)
-  expect(auth.user.uid).toBe('google-owner')
-  expect(auth.signOutUser).not.toHaveBeenCalled()
+  activity.activityId='ai05'
+  render(<AppShell/>)
   fireEvent.click(screen.getByRole('button',{name:'로그아웃'}))
   await waitFor(()=>expect(auth.signOutUser).toHaveBeenCalledOnce())
   expect(activity.clearActivity).toHaveBeenCalledOnce()
@@ -66,7 +56,7 @@ describe('Faith activity permissions and account controls',()=>{
  it('disables identity changes while permissions are being verified',()=>{
   activity.isSwitching=true;activity.activityId='ai03'
   render(<AppShell/>)
-  expect((screen.getByRole('combobox',{name:'활동 아이디 선택'}) as HTMLSelectElement).disabled).toBe(true)
+  expect(screen.queryByRole('combobox')).toBeNull()
   expect((screen.getByRole('button',{name:'구글 로그인'}) as HTMLButtonElement).disabled).toBe(true)
   expect(screen.getByText('AI 권한을 전환하고 있습니다…')).toBeTruthy()
  })
@@ -74,7 +64,7 @@ describe('Faith activity permissions and account controls',()=>{
   activity.activityId='ai03';activity.error='권한 전환에 실패했습니다.'
   render(<AppShell/>)
   expect(screen.getByRole('alert').textContent).toContain('권한')
-  expect((screen.getByRole('combobox',{name:'활동 아이디 선택'}) as HTMLSelectElement).value).toBe('ai03')
+  expect(screen.queryByRole('combobox')).toBeNull()
  })
  it.each(['#/ai-city','#/apps','#/suggestions','#/timer','#/home/old','#/login'])('opens only Faith for the retired route %s',(route)=>{
   history.replaceState(null,'','/'+route);render(<AppShell/>)
@@ -87,10 +77,10 @@ describe('Faith activity permissions and account controls',()=>{
   expect(screen.getByRole('main',{name:'모아 메인'})).toBeTruthy()
   expect(screen.getByText('공개 신앙 앱')).toBeTruthy()
  })
- it('keeps the picker and logout for a signed-in personal visitor',()=>{
+ it('keeps logout without the picker for a signed-in personal visitor',()=>{
   auth.user={uid:'u1',email:'person@example.com'} as User
   render(<AppShell/>)
-  expect(screen.getByRole('combobox',{name:'활동 아이디 선택'})).toBeTruthy()
+  expect(screen.queryByRole('combobox')).toBeNull()
   expect(screen.getByRole('button',{name:'로그아웃'})).toBeTruthy()
   expect(screen.queryByRole('button',{name:'구글 로그인'})).toBeNull()
  })

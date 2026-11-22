@@ -47,6 +47,7 @@ jobs:
       - name: Verify durable login across browser restarts
         run: npx firebase-tools@latest emulators:exec --only auth --project demo-moa --config firebase.auth-test.json "node scripts/test-faith-session.mjs"
       - run: node scripts/test-faith-gallery.mjs
+      - run: node scripts/test-faith-author-photo.mjs
       - name: Verify bilingual scripture and end-of-reading writing
         run: node scripts/test-faith-reading.mjs
       - run: node scripts/test-faith-sanctuary.mjs

@@ -18,8 +18,9 @@ export function buildPersonalFeed(photos: FeedPhoto[], entries: Entry[], uid?: s
     result.set(id, {
       id, publicId: id, ownerUid: uid, authorUid: uid, authorName: entry.authorName, authorAvatarUrl: entry.authorAvatarUrl,
       activityId: entry.activityId, sourceType: 'devotion', sourceEntryId: entry.id, audience: entry.audience,
-      groupName: normalizeFeedGroup(entry.groupName), imageUrl: isDevotionImage(entry.crossImage) ? entry.crossImage : '',
-      caption: getDevotionCaption(entry), createdAt: entry.createdAt, selectedDate: entry.selectedDate, storagePath: '',
+      groupName: normalizeFeedGroup(entry.groupName), imageUrl: isDevotionImage(entry.crossImage) ? entry.crossImage : entry.photoUrl || '',
+      caption: getDevotionCaption(entry), createdAt: entry.createdAt, selectedDate: entry.selectedDate, storagePath: entry.photoStoragePath||'',
+      ...(entry.authorPixelAvatar?{authorPixelAvatar:entry.authorPixelAvatar}:{}),
     })
   }
   return [...result.values()].sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))

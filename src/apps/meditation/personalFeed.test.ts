@@ -30,3 +30,12 @@ describe('public groups and personal feed isolation', () => {
   expect(DEFAULT_FEED_GROUP).toBe('전체 공개')
  })
 })
+
+it('keeps Storage photos in the personal album after converting uploads into meditation entries',()=>{
+ const photo={...own,authorUid:'ai01',photoUrl:'https://example.com/photo.jpg',photoStoragePath:'users/ai01/photos/photo.jpg'}
+ const result=buildPersonalFeed([], [photo], 'ai01')
+ expect(result).toHaveLength(1)
+ expect(result[0].imageUrl).toBe(photo.photoUrl)
+ expect(result[0].sourceEntryId).toBe(photo.id)
+ expect(result[0].storagePath).toBe(photo.photoStoragePath)
+})

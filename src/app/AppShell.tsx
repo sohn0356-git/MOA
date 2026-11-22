@@ -46,17 +46,6 @@ export function AppShell(){
           onActivityChange={activity.selectActivity} activityId={activityId} activityBusy={activity.isLoading || activity.isSwitching || isAuthMutating} entryActions={
           (
             <div className="faith-entry-account">
-              <label className="faith-entry-label" htmlFor="faith-ai-account">활동 아이디</label>
-              <select
-                id="faith-ai-account"
-                aria-label="활동 아이디 선택"
-                value={activityId}
-                disabled={activity.isLoading || activity.isSwitching || isAuthMutating}
-                onChange={event => { void activity.selectActivity(event.currentTarget.value).catch(() => {}) }}
-              >
-                <option value="">내 아이디</option>
-                {aiLoginAccounts.map(account => <option key={account.accountId} value={account.accountId}>{account.displayName}</option>)}
-              </select>
               {(!user || aiLoginAccounts.some(account => account.email === user.email)) ? <button
                 className="faith-entry-google" type="button"
                 disabled={isAuthLoading || isAuthMutating || activity.isLoading || activity.isSwitching || Boolean(authError?.startsWith('Firebase configuration is missing:'))}

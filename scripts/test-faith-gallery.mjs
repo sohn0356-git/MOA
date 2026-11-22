@@ -14,6 +14,7 @@ import { createRoot } from 'react-dom/client'
 import { FaithGallery } from '../src/apps/meditation/FaithGallery'
 import { useDevotionDraft } from '../src/apps/meditation/useDevotionDraft'
 import { normalizeDevotionFields } from '../src/apps/meditation/devotionEditing'
+import { FeedAuthorAvatar } from '../src/apps/meditation/FeedAuthor'
 import { SharedDevotionImageEditor } from '../src/apps/meditation/SharedDevotionImageEditor'
 function App() {
  const [sharedImage,setSharedImage] = useState('')
@@ -29,19 +30,19 @@ function App() {
   <button onClick={()=>{draft.activate();setEditing(true)}}>묵상 작성</button>
   {!editing && draft.drafts.length>0 && <button onClick={()=>{draft.activate(draft.drafts[0]);setMind(draft.drafts[0].values.mind);setEditing(true)}}>이어서 쓰기</button>}
   {editing && <label>묵상 메모<textarea value={mind} onChange={e=>{draft.flush({mind:e.target.value});setMind(e.target.value)}} /></label>}
-  <FaithGallery view={view} onViewChange={next=>{setView(next);setGroup('')}} photos={view==='mine'?photos.slice(0,2):photos} groups={groups} selectedGroup={group} onSelectGroup={setGroup} onAddGroup={name=>{setGroups([...groups,name]);setGroup(name)}} limit={8} sentinelRef={null} header={<p>작은 묵상, 함께하는 하루</p>} renderDetail={(photo)=> <article><h2>{photo.caption.split('\\n')[0]}</h2><p>사진을 눌러 읽는 묵상 본문</p><SharedDevotionImageEditor actorUid="bob" target={{ownerUid:'alice',sourceEntryId:'entry',publicId:'devotion_alice_entry'}} image={sharedImage} onSaved={setSharedImage}/></article>}/>
+  <FaithGallery view={view} onViewChange={next=>{setView(next);setGroup('')}} photos={view==='mine'?photos.slice(0,2):photos} groups={groups} selectedGroup={group} onSelectGroup={setGroup} onAddGroup={name=>{setGroups([...groups,name]);setGroup(name)}} limit={8} sentinelRef={null} header={<p>작은 묵상, 함께하는 하루</p>} renderAuthor={photo=><button className="faith-gallery-author" aria-label="작성자 보기" onClick={()=>alert('AI 01')}><FeedAuthorAvatar photo={{...photo,selectedDate:'2026-11-22'}} profile={{name:'AI 01',skin:0,hair:0,shirt:0}}/></button>} renderDetail={(photo)=> <article><h2>{photo.caption.split('\\n')[0]}</h2><p>사진을 눌러 읽는 묵상 본문</p><SharedDevotionImageEditor actorUid="ai02" target={{ownerUid:'alice',sourceEntryId:'entry',publicId:'devotion_alice_entry'}} image={sharedImage} onSaved={setSharedImage}/></article>}/>
  </div>
 }
 createRoot(document.getElementById('root')!).render(<App/>)
 `)
-await writeFile(folder + '/fake-db.ts', "export const ref=()=>({}); export const update=async (_ref,data)=>{window.__collabImageWrites=data}")
-await writeFile(folder + '/fake-session.ts', "export const getFaithAuth=()=>({currentUser:{uid:'bob'}}); export const getFaithDb=()=>({})")
+await writeFile(folder + '/fake-db.ts', "export const onValue=()=>()=>{};export const query=()=>null;export const orderByChild=()=>null;export const equalTo=()=>null;export const limitToLast=()=>null;export const ref=()=>({}); export const update=async (_ref,data)=>{window.__collabImageWrites=data}")
+await writeFile(folder + '/fake-session.ts', "export const getFaithAuth=()=>({currentUser:{uid:'ai02'}}); export const getFaithDb=()=>({})")
 const server = await createServer({ configFile: false, root: process.cwd(), base: '/MOA/', plugins: [react()], resolve: { alias: [
  { find: 'firebase/database', replacement: process.cwd() + '/' + folder + '/fake-db.ts' },
  { find: '../../services/faithSession', replacement: process.cwd() + '/' + folder + '/fake-session.ts' },
 ] }, server: { host: '127.0.0.1', port: 4179, strictPort: true } })
 await server.listen()
-const browser = await chromium.launch({ headless: true, channel: 'chrome' })
+const browser = await chromium.launch({ headless: true, ...(process.env.MOA_BROWSER_PATH?{executablePath:process.env.MOA_BROWSER_PATH}:{channel:'chrome'}) })
 try {
  const page = await browser.newPage()
  page.on('dialog', dialog => dialog.accept())

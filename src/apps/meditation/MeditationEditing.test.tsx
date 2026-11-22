@@ -21,6 +21,7 @@ vi.mock('../../services/faithSession', () => ({ getFaithAuth: () => ({ currentUs
 vi.mock('firebase/auth', () => ({ updateProfile: vi.fn() }))
 vi.mock('firebase/storage', () => ({ deleteObject: vi.fn(), getDownloadURL: vi.fn(), ref: vi.fn(), uploadBytesResumable: vi.fn() }))
 vi.mock('firebase/database', () => ({
+  query:(path:string)=>path, orderByChild:vi.fn(),equalTo:vi.fn(),limitToLast:vi.fn(),
   ref: (_db: unknown, path = '') => path,
   onValue: (path: string, callback: (snapshot: { val: () => unknown }) => void) => {
     callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : path === 'crossPhotos' ? state.publicPhotos : path === 'lunchPraiseTracks' ? state.praiseBank : null })
@@ -135,7 +136,7 @@ it('selects an AI author inside the composer and blocks posting during authentic
   fireEvent.click(within(screen.getByRole('navigation', { name: '모아' })).getByRole('button', { name: '묵상·기도' }))
   fireEvent.click(screen.getByRole('button', { name: '묵상 쓰기' }))
   fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: '보존할 초안' } })
-  expect(screen.getByRole('combobox', { name: '새 묵상 작성자' })).toBeDisabled()
+  expect(screen.queryByRole('combobox', { name: '새 묵상 작성자' })).toBeNull()
   expect(screen.getByRole('button', { name: '저장하고 십자가에 공유' })).toBeDisabled()
   expect(state.update).not.toHaveBeenCalled()
 })
@@ -149,7 +150,7 @@ it('recovers actual editing fields after a reload and removes the restored draft
   fireEvent.click(await screen.findByRole('button', { name: '최근 묵상 이어쓰기' }))
   expect((screen.getByRole('textbox', { name: /묵상 메모/ }) as HTMLTextAreaElement).value).toBe('새로고침 직전의 묵상')
   expect((screen.getByRole('combobox', { name: '공개 그룹' }) as HTMLInputElement).value).toBe('주일 묵상')
-  expect(screen.getByAltText('첨부한 십자가 그림 미리보기')).toHaveAttribute('src', image)
+  expect(screen.getByAltText('묵상에 첨부한 십자가 그림')).toHaveAttribute('src', image)
   fireEvent.click(screen.getByRole('button', { name: '저장' }))
   await waitFor(() => expect(state.update).toHaveBeenCalled())
   await waitFor(() => expect(screen.queryByRole('heading', { name: '묵상 수정' })).toBeNull())
@@ -173,7 +174,7 @@ it('shows private devotions only through My posts and does not publish when filt
 })
 
 it('offers image-only editing on another user’s public devotion without exposing author controls',()=>{
- state.user.uid='bob';state.entries={}
+ state.user.uid='ai02';state.entries={}
  state.publicPhotos={devotion_alice_shared:{ownerUid:'alice',authorUid:'alice',authorName:'Alice',sourceType:'devotion',sourceEntryId:'shared',publicId:'devotion_alice_shared',imageUrl:image,caption:'Alice의 전체 공개 묵상',selectedDate:'2026-11-11',createdAt:'2026-10-15T01:00:00.000Z',storagePath:''}}
  render(<MeditationApp activityId="ai03"/>)
  fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'피드'}))

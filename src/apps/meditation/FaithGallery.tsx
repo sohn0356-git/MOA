@@ -4,8 +4,8 @@ import { normalizeFeedGroup, DEFAULT_FEED_GROUP } from './feedGroups'
 import './FaithGallery.css'
 
 type Photo = { id: string; publicId?: string; imageUrl: string; caption: string; authorName?: string; groupName?: string }
-export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, onSelectGroup, onAddGroup, header, renderDetail, limit, sentinelRef, view = 'public', onViewChange }: {
-  photos: T[]; groups: string[]; selectedGroup: string; onSelectGroup: (group: string) => void
+export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, onSelectGroup, onAddGroup, header, renderDetail, limit, sentinelRef, view = 'public', onViewChange,renderAuthor }: {
+  renderAuthor?:(photo:T)=>ReactNode; photos: T[]; groups: string[]; selectedGroup: string; onSelectGroup: (group: string) => void
   onAddGroup: (group: string) => void; header: ReactNode; renderDetail: (photo: T, close: () => void) => ReactNode
   limit: number; sentinelRef: Ref<HTMLDivElement>; view?: 'public' | 'mine'; onViewChange?: (view: 'public' | 'mine') => void
 }) {
@@ -45,11 +45,11 @@ export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, o
         <button type="submit">추가</button><button type="button" onClick={() => setAdding(false)}>취소</button>
       </form>}
       <div className="faith-gallery-grid">
-        {filtered.slice(0, limit).map(item => <button type="button" className="faith-gallery-tile" key={item.publicId || item.id}
+        {filtered.slice(0, limit).map(item => <div className="faith-gallery-item" key={item.publicId || item.id}><button type="button" className="faith-gallery-tile" key={item.publicId || item.id}
           aria-label={(item.authorName || '이웃') + '의 묵상 보기: ' + item.caption.slice(0, 60)} onClick={() => setOpened(item.publicId || item.id)}>
           <div className="faith-gallery-art">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : <div className="faith-gallery-placeholder"><svg viewBox="0 0 100 120" aria-hidden="true"><path d="M44 10h12v34h28v12H56v54H44V56H16V44h28z" fill="currentColor" /></svg></div>}
 </div>
-        </button>)}
+        </button>{renderAuthor?.(item)}</div>)}
       </div>
       {!filtered.length && <p className="faith-gallery-empty">{view === 'mine' ? '아직 내 글이 없어요. 내 공개 글과 나만 보기 묵상을 이곳에서 모아볼 수 있어요.' : '아직 공개 글이 없어요. 글을 올릴 때 공개 그룹을 지정해보세요.'}</p>}
       <div ref={sentinelRef} aria-hidden="true" className="faith-feed-sentinel" />

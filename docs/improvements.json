@@ -41,5 +41,12 @@
     "status": "implemented",
     "existingBoardId": "-P47UMSCQqffvyqh3m02",
     "evidence": "Existing board item -P47UMSCQqffvyqh3m02 checked against deployed SuggestionsApp: default open/newest, clickable count filters, pressed state/checkmark, result count/order summary, oldest sort and state-specific empty messages. Component tests passed in fbf09fb4c35638526942ea1abe7321980bdb4772 follow-up b1a6d7c77691441552c82b849e5d0755bd2cb62e; revalidated in the current build. Same feature as suggestion-status-sort, not a new request."
+  },
+  {
+    "id": "faith-feed-authors-ai-photos",
+    "title": "공유 묵상 작성자 아바타·기록 보기와 AI 사진 업로드",
+    "body": "공유 사진 왼쪽 위 원형 아바타에서 작성자의 공개 묵상과 예배당 공유 기도제목을 확인합니다. 사진 업로드는 실제 AI 인증 계정에만 허용하고 개인 묵상과 공개 피드에 함께 저장합니다. 아이디 선택기는 제거하며 Google 로그인과 로그아웃은 유지합니다.",
+    "status": "implemented",
+    "evidence": "Author privacy/login component tests; atomic photo/personal feed tests; ordinary-user legacy text edit and AI-only Database/Storage emulator tests; mobile Chromium photo selection, optimization, upload, author prayers and personal photo detail; see docs/faith-feed-authors.md. Completion requires successful Pages and rules deployments."
   }
 ]

@@ -45,3 +45,14 @@ describe('cross-tab devotion sharing', () => {
     expect(commit).toHaveBeenCalledWith({ 'users/alice/meditationEntries/entry1': null })
   })
 })
+
+it('saves an uploaded AI photo in personal meditations and the public feed atomically without expiry',async()=>{
+ const photo={...entry,id:'photo',crossImage:undefined,photoUrl:'https://example.com/photo.jpg',photoStoragePath:'users/ai01/photos/photo.jpg'}
+ const commit=vi.fn().mockResolvedValue(undefined)
+ await persistSharedDevotion('ai01',photo,{...photo,authorUid:'ai01'},async()=>null,commit)
+ const updates=commit.mock.calls[0][0]
+ expect(updates['users/ai01/meditationEntries/photo'].photoUrl).toBe(photo.photoUrl)
+ expect(updates['crossPhotos/devotion_ai01_photo/imageUrl']).toBe(photo.photoUrl)
+ expect(updates['crossPhotos/devotion_ai01_photo/storagePath']).toBe(photo.photoStoragePath)
+ expect(Object.keys(updates).some(k=>k.includes('expiresAt'))).toBe(false)
+})

@@ -1,7 +1,9 @@
+import type {AvatarProfile} from './sanctuaryCommunity'
 import { normalizeFeedGroup } from './feedGroups'
 import { isDevotionImage } from './devotionImage'
 
 export type ShareableDevotion = {
+  authorPixelAvatar?:AvatarProfile; photoUrl?:string; photoStoragePath?:string
   groupName?: string
   id: string; audience: 'private' | 'public' | 'group'; mind: string; apply: string; prayer?: string
   verseText: string; reference: string; selectedDate: string; crossImage?: string
@@ -23,7 +25,8 @@ export function devotionShareUpdates(uid: string, entry: ShareableDevotion, prev
     ownerUid: uid, authorUid: uid, activityId: entry.activityId || '', authorName: entry.authorName || 'MOA 사용자', authorAvatarUrl: entry.authorAvatarUrl || '',
     sourceType: 'devotion', sourceEntryId: entry.id, publicId: id,
     createdAt: previous?.createdAt || now, selectedDate: entry.selectedDate, updatedAt: now,
-    caption, imageUrl: isDevotionImage(entry.crossImage) ? entry.crossImage : '', storagePath: '',
+    caption, imageUrl: isDevotionImage(entry.crossImage) ? entry.crossImage : entry.photoUrl || '', storagePath: entry.photoStoragePath || '',
+    ...(entry.authorPixelAvatar?{authorPixelAvatar:entry.authorPixelAvatar}:{}),
   }
   // Update content leaves rather than replacing the shared record: other people's comments and reaction counts survive edits.
   return Object.fromEntries(Object.entries(payload).map(([key, value]) => [base + '/' + key, value]))
