@@ -24,26 +24,26 @@ function observe(page){page.on('pageerror',e=>{errors.push(e.message);console.er
 try{
  for(const width of [360,768,1440]){
   const context=await browser.newContext({viewport:{width,height:900},reducedMotion:width===768?'reduce':'no-preference'}),page=await context.newPage();observe(page)
-  await page.goto(url);await page.getByLabel('모아 시작 준비').waitFor();await page.waitForFunction(()=>document.querySelector('.moa-launch-art img')?.complete)
+  await page.goto(url);await page.getByLabel('MOA 시작 준비').waitFor();await page.waitForFunction(()=>document.querySelector('.moa-launch-art img')?.complete)
   const p=Number(await page.getByRole('progressbar',{name:'앱 준비 진행률'}).getAttribute('value'));assert.ok(p<100)
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'launch fits mobile and desktop')
   if(width===768)assert.equal(await page.locator('.moa-launch-art img').evaluate(el=>getComputedStyle(el).animationName),'none')
   await page.screenshot({path:'test-results/faith-boot/launch-'+width+'.png'})
   if(width===360){
-   await page.getByLabel('모아 시작 준비').waitFor({state:'detached'})
+   await page.getByLabel('MOA 시작 준비').waitFor({state:'detached'})
    await page.getByRole('button',{name:'구글 로그인'}).click();await page.getByLabel('구글 로그인 준비').waitFor()
    await page.screenshot({path:'test-results/faith-boot/google-signin-launch.png'})
    await page.getByLabel('구글 로그인 준비').waitFor({state:'detached'});await page.getByRole('button',{name:'로그아웃',exact:true}).waitFor()
-   assert.equal(await page.locator('main[aria-label="모아 메인"]').getAttribute('inert'),null)
-  }else{await page.getByRole('button',{name:'먼저 둘러보기'}).click();await page.getByLabel('모아 시작 준비').waitFor({state:'detached'})}
+   assert.equal(await page.locator('main[aria-label="MOA 메인"]').getAttribute('inert'),null)
+  }else{await page.getByRole('button',{name:'먼저 둘러보기'}).click();await page.getByLabel('MOA 시작 준비').waitFor({state:'detached'})}
   await context.close()
  }
  const slow=await browser.newContext({viewport:{width:390,height:800}}),page=await slow.newPage();observe(page)
- await page.goto(url+'?slow');await page.getByLabel('모아 시작 준비').waitFor();assert.notEqual(await page.getByRole('progressbar').getAttribute('value'),'100')
- await page.getByLabel('모아 시작 준비').waitFor({state:'detached',timeout:12000});await page.getByText(/연결을 기다리는 동안 먼저 둘러볼/).waitFor()
- await page.getByRole('navigation',{name:'모아',exact:true}).getByRole('button',{name:'내 기록'}).click();await slow.close()
+ await page.goto(url+'?slow');await page.getByLabel('MOA 시작 준비').waitFor();assert.notEqual(await page.getByRole('progressbar').getAttribute('value'),'100')
+ await page.getByLabel('MOA 시작 준비').waitFor({state:'detached',timeout:12000});await page.getByText(/연결을 기다리는 동안 먼저 둘러볼/).waitFor()
+ await page.getByRole('navigation',{name:'MOA',exact:true}).getByRole('button',{name:'내 기록'}).click();await slow.close()
  const cancelled=await browser.newContext({viewport:{width:390,height:800}}),cancel=await cancelled.newPage();observe(cancel)
- await cancel.goto(url);await cancel.getByLabel('모아 시작 준비').waitFor({state:'detached'});await cancel.evaluate(()=>{window.cancelLogin=true})
+ await cancel.goto(url);await cancel.getByLabel('MOA 시작 준비').waitFor({state:'detached'});await cancel.evaluate(()=>{window.cancelLogin=true})
  await cancel.getByRole('button',{name:'구글 로그인'}).click();await cancel.getByLabel('구글 로그인 준비').waitFor();await cancel.getByLabel('구글 로그인 준비').waitFor({state:'detached'})
  await cancel.getByRole('alert').filter({hasText:'로그인이 취소되었습니다.'}).waitFor();await cancelled.close()
  assert.deepEqual(errors,[]);console.log('Chapel launch passed: real shell milestones, initial render, Google success/cancel, responsive/reduced-motion, manual skip and slow-connection escape.')

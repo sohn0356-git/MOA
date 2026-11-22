@@ -26,7 +26,7 @@ function App() {
  const draft = useDevotionDraft('smoke-user',editing,{mode:'write',entryId:'',values:{...normalizeDevotionFields({mind},'2026-11-05'),groupName:'매일 묵상'}})
  const photos = Array.from({length:8},(_,i)=>({id:String(i),caption:'함께 걷는 하루 '+i+'\\n사진을 눌러 읽는 묵상 본문',imageUrl:'',authorName:'AI 01',groupName:i%2?'기도':'매일 묵상'}))
  return <div style={{maxWidth:850,margin:'auto',fontFamily:'NanumSquare Neo',padding:12}}>
-  <h1>모아</h1>
+  <h1>MOA</h1>
   <button onClick={()=>{draft.activate();setEditing(true)}}>묵상 작성</button>
   {!editing && draft.drafts.length>0 && <button onClick={()=>{draft.activate(draft.drafts[0]);setMind(draft.drafts[0].values.mind);setEditing(true)}}>이어서 쓰기</button>}
   {editing && <label>묵상 메모<textarea value={mind} onChange={e=>{draft.flush({mind:e.target.value});setMind(e.target.value)}} /></label>}

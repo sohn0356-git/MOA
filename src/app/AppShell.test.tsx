@@ -18,7 +18,7 @@ vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
 vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn,onStartupState}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>;onStartupState?:(s:{owner:string;scripture:boolean;entries:boolean;feed:boolean})=>void})=>{
  useEffect(()=>{if(boot.publish)onStartupState?.({owner:activityId||churchMember?.uid||'guest',scripture:true,entries:true,feed:true})},[activityId,churchMember?.uid,onStartupState,boot.publish])
- return <section><h1>모아</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.().catch(()=>{})}>예배당 로그인</button></section>
+ return <section><h1>MOA</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.().catch(()=>{})}>예배당 로그인</button></section>
 }}))
 afterEach(cleanup)
 beforeEach(()=>{
@@ -68,13 +68,13 @@ describe('Faith activity permissions and account controls',()=>{
  })
  it.each(['#/ai-city','#/apps','#/suggestions','#/timer','#/home/old','#/login'])('opens only Faith for the retired route %s',(route)=>{
   history.replaceState(null,'','/'+route);render(<AppShell/>)
-  expect(screen.getByRole('main',{name:'모아 메인'})).toBeTruthy()
+  expect(screen.getByRole('main',{name:'MOA 메인'})).toBeTruthy()
   expect(location.hash).toBe('#/meditation')
   expect(screen.queryByText('공개 도시')).toBeNull()
  })
  it('opens Faith during account restoration and for the legacy root hash',()=>{
   auth.isAuthLoading=true;history.replaceState(null,'','/#/');render(<AppShell/>)
-  expect(screen.getByRole('main',{name:'모아 메인'})).toBeTruthy()
+  expect(screen.getByRole('main',{name:'MOA 메인'})).toBeTruthy()
   expect(screen.getByText('공개 신앙 앱')).toBeTruthy()
  })
  it('keeps logout without the picker for a signed-in personal visitor',()=>{
@@ -108,10 +108,10 @@ it('uses primary account authentication for sanctuary access and clears AI activ
 it('shows a cute launch while restoring the account and releases it only when ready',()=>{
  auth.isAuthLoading=true;const view=render(<AppShell/>)
  expect(screen.getByRole('progressbar',{name:'앱 준비 진행률'}).getAttribute('value')).not.toBe('100')
- expect(screen.getByLabelText('모아 시작 준비')).toBeTruthy()
+ expect(screen.getByLabelText('MOA 시작 준비')).toBeTruthy()
  auth.isAuthLoading=false;view.rerender(<AppShell/>)
- expect(screen.queryByLabelText('모아 시작 준비')).toBeNull()
- expect(screen.getByRole('main',{name:'모아 메인'}).hasAttribute('inert')).toBe(false)
+ expect(screen.queryByLabelText('MOA 시작 준비')).toBeNull()
+ expect(screen.getByRole('main',{name:'MOA 메인'}).hasAttribute('inert')).toBe(false)
 })
 it('covers Google sign-in while pending and dismisses the launch after cancellation',async()=>{
  let reject:(e:Error)=>void=()=>{};auth.signInWithGoogle.mockImplementation(()=>new Promise((_resolve,r)=>{reject=r}))

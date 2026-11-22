@@ -34,7 +34,7 @@ export function AppShell(){
   return (
       <>
       {showLaunch&&<AppLaunchScreen authReady={!isAuthLoading&&!isAuthMutating&&!googlePending} activityReady={!activity.isLoading&&!activity.isSwitching} content={currentContent} signingIn={loginOverlay} onContinue={continueLoading}/>}
-      <main inert={isUpdating||showLaunch} className="app-shell app-shell-subapp app-shell-faith" aria-label="모아 메인">
+      <main inert={isUpdating||showLaunch} className="app-shell app-shell-subapp app-shell-faith" aria-label="MOA 메인">
         {hasUpdate ? <AppUpdateBanner error={updateError} isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
         {deferred&&!ready&&<p className="faith-activity-progress" role="status">연결을 기다리는 동안 먼저 둘러볼 수 있어요. 준비된 내용부터 보여드릴게요.</p>}
         {authError ? <p className="faith-entry-error" role="alert">{authError}</p> : null}

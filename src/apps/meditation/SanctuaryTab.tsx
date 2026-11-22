@@ -20,7 +20,7 @@ export function SanctuaryTab(props: Props) {
   try{await props.onSignIn()}catch{setError('로그인을 완료하지 못했습니다. 다시 시도해주세요.')}finally{setSigning(false)}
  }
  return <section className="sanctuary sanctuary-gate" aria-label="예배당 로그인 안내" data-light="dawn">
-  <div className="sanctuary-eyebrow"><span/>모아 · SANCTUARY</div>
+  <div className="sanctuary-eyebrow"><span/>MOA · SANCTUARY</div>
   <h2>마음이 쉬어가는<br/><em>나의 예배당</em></h2>
   <p className="sanctuary-lead">분주한 하루에서 한 걸음 물러나,<br/>말씀과 기도에 머무는 시간을 가져보세요.</p>
   <div className="sanctuary-login-card">
@@ -88,7 +88,7 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:
   <details className="sanctuary-private-note"><summary><BookOpen size={15}/>나의 기도 메모<small>이 기기에만 보관</small></summary><div className="sanctuary-note-card"><textarea aria-label="예배당 개인 기도 메모" value={record.note} maxLength={4000} rows={3} placeholder="오늘, 제 마음은…" onChange={event=>save({note:event.target.value})}/><div className="sanctuary-note-footer"><span role="status">{savedAt?'자동 저장됨':''}</span></div><button className="sanctuary-prayer-link" type="button" onClick={onPrayer}>함께 나눌 기도 작성하기<ArrowUpRight size={13}/></button></div></details>
   {notice&&<p className="sanctuary-notice" role="status">{notice}</p>}
   {error&&<p className="sanctuary-error" role="alert">{error}</p>}
-  <footer className="sanctuary-footer"><small>모아 · 이 기기에서 마친 기도 {record.sessions}회</small></footer>
+  <footer className="sanctuary-footer"><small>MOA · 이 기기에서 마친 기도 {record.sessions}회</small></footer>
   </>}
  </section>
 }

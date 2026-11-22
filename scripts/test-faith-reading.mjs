@@ -16,7 +16,7 @@ const server=await createServer({configFile:false,root:process.cwd(),base:'/MOA/
 await server.listen()
 const browser=await chromium.launch({headless:true,...(process.env.MOA_BROWSER_PATH?{executablePath:process.env.MOA_BROWSER_PATH}:{channel:'chrome'})}),errors=[]
 const url='http://127.0.0.1:4185/MOA/'+folder+'/index.html'
-const read=page=>page.getByRole('navigation',{name:'모아',exact:true}).getByRole('button',{name:'묵상·기도'}).click()
+const read=page=>page.getByRole('navigation',{name:'MOA',exact:true}).getByRole('button',{name:'묵상·기도'}).click()
 try{
  for(const width of [360,768,1440]){
   const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),requests=[]

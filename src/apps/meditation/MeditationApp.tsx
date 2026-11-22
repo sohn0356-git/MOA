@@ -2655,7 +2655,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         {activeTab === 'feed' || (activeTab === 'qna' && qnaView === 'list') ? (
           <div className="faith-title faith-title-brand">
             <FaithBrandMark />
-            <h2>모아</h2>
+            <h2>MOA</h2>
           </div>
         ) : activeTab === 'qna' && qnaView === 'write' ? (
           <div className="faith-title">
@@ -3724,7 +3724,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       ) : null}
 
       {activeTab === 'qna' && qnaView === 'write' ? null : (
-        <nav className="faith-bottom-nav" aria-label="모아" inert={activityBusy}>
+        <nav className="faith-bottom-nav" aria-label="MOA" inert={activityBusy}>
           {tabs.map((tab) => (
             <button aria-current={activeTab === tab.id || tab.id === 'devotion' && activeTab === 'prayer' ? 'page' : undefined} data-sanctuary={tab.id === 'church' || undefined} key={tab.id} type="button" onClick={() => handleTabChange(tab.id)}>
               {tab.id === 'church' ? <span className="faith-sanctuary-nav-icon"><Church size={22} aria-hidden="true"/></span> : <Icon name={tab.icon} />}
