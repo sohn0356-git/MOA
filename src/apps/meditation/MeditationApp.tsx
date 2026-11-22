@@ -1,3 +1,4 @@
+import type {StartupContentState} from '../../components/AppLaunchScreen'
 import {normalizeLunchPraiseTracks,type LunchPraiseTrack} from './dailyPraise'
 import {useDailyPraise} from './useDailyPraise'
 import { Church } from 'lucide-react'
@@ -1186,7 +1187,7 @@ function UploadProgress({
   )
 }
 
-export function MeditationApp({ entryActions, activityId = '', activityBusy = false, onActivityChange, churchMember = null, churchAuthBusy = false, onChurchSignIn }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown>; churchMember?: SanctuaryMember | null; churchAuthBusy?: boolean; onChurchSignIn?: () => Promise<unknown> } = {}) {
+export function MeditationApp({ entryActions, activityId = '', activityBusy = false, onActivityChange, onStartupState, churchMember = null, churchAuthBusy = false, onChurchSignIn }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown>; onStartupState?: (state:StartupContentState)=>void; churchMember?: SanctuaryMember | null; churchAuthBusy?: boolean; onChurchSignIn?: () => Promise<unknown> } = {}) {
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
@@ -1302,6 +1303,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   const [isLicenseOpen, setIsLicenseOpen] = useState(false)
   const [licenseText, setLicenseText] = useState('')
   const [isAiMode, setIsAiMode] = useState(() => window.localStorage.getItem(AI_MODE_STORAGE_KEY) === 'true')
+  const [startupData,setStartupData]=useState({owner:'',entries:false,feed:false})
   const [syncState, setSyncState] = useState<'local' | 'syncing' | 'synced' | 'error'>('local')
   const [errorMessage, setErrorMessage] = useState('')
   const plan = useMemo(() => remotePlan ?? getPlanForDate(selectedDate), [remotePlan, selectedDate])
@@ -1582,7 +1584,11 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }, [selectedDate, scriptureLanguage])
 
 
+  useEffect(()=>{onStartupState?.({owner:startupData.owner,entries:startupData.entries,feed:startupData.feed,scripture:!isPlanLoading})},[onStartupState,startupData,isPlanLoading])
+  function markStartup(part:'entries'|'feed',owner:string){setStartupData(s=>s.owner===owner&&!s[part]?{...s,[part]:true}:s)}
+
   useEffect(() => {
+    setStartupData({owner:currentUser?.uid||'guest',entries:!currentUser,feed:false})
     if (!currentUser) {
       setSyncState('local')
       setEntries(current => current.filter(entry => !entry.authorUid))
@@ -1603,9 +1609,11 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         setEntries(remoteEntries)
         try { saveLocalEntries(remoteEntries) } catch { /* The Firebase record remains saved if the device cache is full. */ }
         setSyncState('synced')
+        markStartup('entries',currentUser.uid)
       },
       (error) => {
         setSyncState('error')
+        markStartup('entries',currentUser.uid)
         setErrorMessage(error.message)
       },
     )
@@ -1736,8 +1744,8 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
     const unsubscribePublicPhotos = onValue(
       ref(getRealtimeDb(), getPublicCrossPhotosPath()),
-      (snapshot) => setPublicFeedPhotos(mapList<CrossPhoto>(snapshot.val())),
-      () => setPublicFeedPhotos([]),
+      (snapshot) => {setPublicFeedPhotos(mapList<CrossPhoto>(snapshot.val()));markStartup('feed',currentUser?.uid||'guest')},
+      () => {setPublicFeedPhotos([]);markStartup('feed',currentUser?.uid||'guest')},
     )
 
     const unsubscribePublicPhotoComments = onValue(ref(getRealtimeDb(), 'crossPhotoComments'), (snapshot) => {

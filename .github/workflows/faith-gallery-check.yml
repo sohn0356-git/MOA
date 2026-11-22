@@ -42,6 +42,8 @@ jobs:
       - run: npm run test:faith-startup
       - run: npm install --no-save --package-lock=false playwright
       - run: node scripts/test-faith-only-browser.mjs
+      - name: Verify chapel launch and Google login progress
+        run: node scripts/test-moa-launch.mjs
       - name: Verify durable login across browser restarts
         run: npx firebase-tools@latest emulators:exec --only auth --project demo-moa --config firebase.auth-test.json "node scripts/test-faith-session.mjs"
       - run: node scripts/test-faith-gallery.mjs

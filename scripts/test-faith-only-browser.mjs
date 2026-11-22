@@ -4,13 +4,18 @@ import {preview} from 'vite'
 import {chromium} from 'playwright'
 await mkdir('test-results/faith-boot',{recursive:true})
 const server=await preview({preview:{host:'127.0.0.1',port:4183,strictPort:true}})
-const browser=await chromium.launch({headless:true,channel:'chrome'})
+const browser=await chromium.launch({headless:true,...(process.env.MOA_BROWSER_PATH?{executablePath:process.env.MOA_BROWSER_PATH}:{channel:'chrome'})})
 try{
+ const staticContext=await browser.newContext({viewport:{width:390,height:850},javaScriptEnabled:false})
+ const staticPage=await staticContext.newPage();await staticPage.goto('http://127.0.0.1:4183/MOA/');assert.equal(await staticPage.locator('.moa-boot').isVisible(),true,'chapel artwork is visible before JavaScript loads');await staticPage.screenshot({path:'test-results/faith-boot/static-chapel-boot.png'});await staticContext.close()
  const context=await browser.newContext({viewport:{width:390,height:950},hasTouch:true,isMobile:true})
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error('Production page error:',e.message)})
  const times=[]
  for(const route of ['', '#/ai-city','#/apps','#/suggestions','#/mini-room','#/home/legacy','#/timer','#/login']){
   const start=Date.now();await page.goto('http://127.0.0.1:4183/MOA/'+route)
+  await page.waitForFunction(()=>!document.querySelector('.moa-boot'))
+  await page.waitForFunction(()=>!document.querySelector('.moa-launch')||document.querySelector('.moa-launch-skip'))
+  if(await page.locator('.moa-launch-skip').count())await page.getByRole('button',{name:'먼저 둘러보기'}).click()
   await page.getByRole('main',{name:'모아 메인'}).waitFor()
   await page.waitForURL('**/#/meditation')
   await page.locator('.faith-bottom-nav button').first().waitFor()

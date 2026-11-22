@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest'
-import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
+import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
 import type {User} from 'firebase/auth'
-import type {ReactNode} from 'react'
+import {useEffect,type ReactNode} from 'react'
 import {AppShell} from './AppShell'
+const boot=vi.hoisted(()=>({publish:true}))
 const auth=vi.hoisted(()=>({
  user:null as User|null,authError:null as string|null,isAuthLoading:false,isAuthMutating:false,
  signInWithAiAccount:vi.fn().mockResolvedValue(undefined),signInWithEmail:vi.fn().mockResolvedValue(undefined),
@@ -15,10 +16,15 @@ const activity=vi.hoisted(()=>({
 vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
-vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>})=><section><h1>모아</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.()}>예배당 로그인</button></section>}))
+vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn,onStartupState}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>;onStartupState?:(s:{owner:string;scripture:boolean;entries:boolean;feed:boolean})=>void})=>{
+ useEffect(()=>{if(boot.publish)onStartupState?.({owner:activityId||churchMember?.uid||'guest',scripture:true,entries:true,feed:true})},[activityId,churchMember?.uid,onStartupState,boot.publish])
+ return <section><h1>모아</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.().catch(()=>{})}>예배당 로그인</button></section>
+}}))
 afterEach(cleanup)
 beforeEach(()=>{
+ boot.publish=true
  localStorage.clear();vi.clearAllMocks()
+ auth.signInWithGoogle.mockReset().mockResolvedValue(undefined)
  auth.user=null;auth.authError=null;auth.isAuthLoading=false;auth.isAuthMutating=false
  activity.activityId='';activity.isLoading=false;activity.isSwitching=false;activity.error=''
  activity.selectActivity.mockReset().mockImplementation(async(id:string)=>{activity.activityId=id})
@@ -107,4 +113,37 @@ it('uses primary account authentication for sanctuary access and clears AI activ
  auth.user={uid:'google-member',displayName:'회원'} as User
  view.rerender(<AppShell/>)
  expect(screen.getByLabelText('예배당 로그인 계정').textContent).toBe('google-member')
+})
+
+it('shows a cute launch while restoring the account and releases it only when ready',()=>{
+ auth.isAuthLoading=true;const view=render(<AppShell/>)
+ expect(screen.getByRole('progressbar',{name:'앱 준비 진행률'}).getAttribute('value')).not.toBe('100')
+ expect(screen.getByLabelText('모아 시작 준비')).toBeTruthy()
+ auth.isAuthLoading=false;view.rerender(<AppShell/>)
+ expect(screen.queryByLabelText('모아 시작 준비')).toBeNull()
+ expect(screen.getByRole('main',{name:'모아 메인'}).hasAttribute('inert')).toBe(false)
+})
+it('covers Google sign-in while pending and dismisses the launch after cancellation',async()=>{
+ let reject:(e:Error)=>void=()=>{};auth.signInWithGoogle.mockImplementation(()=>new Promise((_resolve,r)=>{reject=r}))
+ render(<AppShell/>);fireEvent.click(screen.getByRole('button',{name:'구글 로그인'}))
+ expect(screen.getByLabelText('구글 로그인 준비')).toBeTruthy()
+ reject(new Error('cancelled'))
+ await waitFor(()=>expect(screen.queryByLabelText('구글 로그인 준비')).toBeNull())
+ expect(activity.clearActivity).not.toHaveBeenCalled()
+})
+it('does not get stuck when Google returns the same account',async()=>{
+ auth.user={uid:'member',displayName:'회원'} as User
+ render(<AppShell/>);fireEvent.click(screen.getByRole('button',{name:'예배당 로그인'}))
+ await waitFor(()=>expect(activity.clearActivity).toHaveBeenCalledOnce())
+ await waitFor(()=>expect(screen.queryByLabelText('구글 로그인 준비')).toBeNull())
+})
+
+it('waits for the newly signed-in account content instead of reusing guest readiness',async()=>{
+ let finish=()=>{};auth.signInWithGoogle.mockImplementation(()=>new Promise<void>(resolve=>{finish=resolve}))
+ const view=render(<AppShell/>);fireEvent.click(screen.getByRole('button',{name:'구글 로그인'}))
+ boot.publish=false;auth.user={uid:'new-member',displayName:'새 회원'} as User;view.rerender(<AppShell/>)
+ await act(async()=>finish())
+ expect(screen.getByLabelText('구글 로그인 준비')).toBeTruthy();expect(screen.getByRole('progressbar').getAttribute('value')).not.toBe('100')
+ boot.publish=true;view.rerender(<AppShell/>)
+ await waitFor(()=>expect(screen.queryByLabelText('구글 로그인 준비')).toBeNull())
 })

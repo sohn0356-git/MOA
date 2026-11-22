@@ -291,3 +291,8 @@ it('preserves a saved bilingual quotation when editing only the meditation',asyn
  await waitFor(()=>expect(state.update).toHaveBeenCalled())
  expect(state.update.mock.calls.find(c=>c[1]['users/owner/meditationEntries/original'])![1]['users/owner/meditationEntries/original'].verseText).toBe(quote)
 })
+
+it('reports the first actual scripture and entry/feed snapshots for the active content owner',async()=>{
+ const status=vi.fn();render(<MeditationApp onStartupState={status}/>)
+ await waitFor(()=>expect(status).toHaveBeenLastCalledWith({owner:'owner',entries:true,feed:true,scripture:true}))
+})
