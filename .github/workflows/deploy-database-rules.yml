@@ -7,6 +7,8 @@ on:
     paths:
       - database.rules.json
       - storage.rules
+      - functions/scripts/deploy-storage-rules.mjs
+      - scripts/test-storage-deployment.mjs
       - firebase.json
       - firebase.rules-test.json
       - scripts/test-*-rules.mjs
@@ -45,14 +47,28 @@ jobs:
           npm_config_fetch_timeout: '30000'
         run: npx firebase-tools@latest emulators:exec --only database,storage --project demo-moa --config firebase.rules-test.json "node scripts/test-storage-rules.mjs && node scripts/test-sanctuary-rules.mjs && node scripts/test-devotion-image-rules.mjs && node scripts/test-suggestion-rules.mjs && node scripts/test-question-rules.mjs && node scripts/test-ai-city-rules.mjs && node scripts/test-city-image-rules.mjs && node scripts/test-city-space-rules.mjs"
 
+      - name: Test Storage deployment requests
+        run: node scripts/test-storage-deployment.mjs
+
+      - name: Install existing Firebase Admin dependency
+        run: npm ci --prefer-offline --no-audit --no-fund
+        working-directory: functions
+
       - name: Write service account
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy database and Storage rules
+      - name: Deploy database rules
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx firebase-tools@latest deploy --only database,storage --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: npx firebase-tools@latest deploy --only database --project "$FIREBASE_PROJECT_ID" --non-interactive
+
+      - name: Deploy and verify Storage rules
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: node functions/scripts/deploy-storage-rules.mjs
