@@ -6,7 +6,7 @@ import {normalizeAvatar,type AvatarProfile,type SharedPrayer} from './sanctuaryC
 import {SanctuaryDialog} from './SanctuaryDialog'
 import './FeedAuthor.css'
 export type AuthorPhoto={id:string;publicId?:string;ownerUid?:string;authorUid?:string;authorName?:string;authorAvatarUrl?:string;authorPixelAvatar?:AvatarProfile;imageUrl:string;caption:string;selectedDate:string;sourceType?:string}
-export const authorUid=(photo:AuthorPhoto)=>photo.authorUid||photo.ownerUid||''
+export const authorUid=(photo:AuthorPhoto)=>photo.ownerUid||photo.authorUid||''
 export function useFeedAuthorAvatars(photos:AuthorPhoto[],viewerUid:string){
  const ids=JSON.stringify([...new Set(photos.map(authorUid).filter(Boolean))].sort()),[avatars,setAvatars]=useState<Record<string,AvatarProfile>>({})
  useEffect(()=>{let alive=true;setAvatars({});if(!viewerUid)return
@@ -23,7 +23,7 @@ export function FeedAuthorDialog({photo,photos,profile,viewerUid,onClose,onSignI
  const [tab,setTab]=useState<'devotions'|'prayers'>('devotions'),[prayers,setPrayers]=useState<SharedPrayer[]>([]),[loaded,setLoaded]=useState(false),[error,setError]=useState('')
  const uid=authorUid(photo),name=photo.authorName||profile?.name||'이웃'
  useEffect(()=>{let alive=true;setLoaded(false);setPrayers([]);setError('');if(!uid||!viewerUid)return
-  const stop=onValue(query(ref(getFaithDb(),'sanctuary/prayers'),orderByChild('uid'),equalTo(uid),limitToLast(100)),s=>{if(alive){setPrayers(Object.entries(s.val()||{}).map(([id,p])=>({...p as Omit<SharedPrayer,'id'>,id})).sort((a,b)=>b.createdAt-a.createdAt));setLoaded(true)}},()=>{if(alive){setError('공유 기도제목을 불러오지 못했습니다.');setLoaded(true)}})
+  const stop=onValue(query(ref(getFaithDb(),'sanctuary/prayers'),orderByChild('uid'),equalTo(uid),limitToLast(100)),s=>{if(alive){setPrayers(Object.entries(s.val()||{}).map(([id,p])=>({...p as Omit<SharedPrayer,'id'>,id})).filter(p=>p.uid===uid).sort((a,b)=>b.createdAt-a.createdAt));setLoaded(true)}},()=>{if(alive){setError('공유 기도제목을 불러오지 못했습니다.');setLoaded(true)}})
   return()=>{alive=false;stop()}
  },[uid,viewerUid])
  const posts=photos.filter(p=>!!uid&&authorUid(p)===uid)

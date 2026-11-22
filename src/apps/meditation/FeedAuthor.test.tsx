@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import {afterEach,beforeEach,expect,it,vi} from 'vitest'
 import {cleanup,fireEvent,render,screen} from '@testing-library/react'
-import {FeedAuthorDialog} from './FeedAuthor'
+import {FeedAuthorDialog,authorUid} from './FeedAuthor'
 import {canUploadFaithPhoto} from './aiPhotoAccess'
 const state=vi.hoisted(()=>({reads:[] as string[],stop:vi.fn()}))
 vi.mock('../../services/faithSession',()=>({getFaithDb:()=>({})}))
@@ -34,3 +34,5 @@ it('checks authenticated AI principals rather than a selected identity or AI-loo
  expect(canUploadFaithPhoto({uid:'ai10'})).toBe(true)
  expect(canUploadFaithPhoto({uid:'ai11'})).toBe(false)
 })
+
+it('uses the authenticated record owner for attribution even if legacy author metadata disagrees',()=>{expect(authorUid({...photo,authorUid:'other'})).toBe('alice')})
