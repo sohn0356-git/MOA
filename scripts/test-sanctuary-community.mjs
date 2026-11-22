@@ -24,8 +24,9 @@ import {createRoot} from 'react-dom/client'
 import '../src/index.css'
 import '../src/apps/meditation/FaithSocial.css'
 import {SanctuaryTab} from '../src/apps/meditation/SanctuaryTab'
+import {ProfileAvatarCard} from '../src/apps/meditation/ProfileAvatarCard'
 import {login} from './firebase'
-function App(){const [member,setMember]=useState<any>(null);useEffect(()=>{login().then(u=>setMember({uid:u.uid,displayName:new URLSearchParams(location.search).get('name')||'방문자'}))},[]);return <main className="faith-screen faith-social" data-church-active="true"><SanctuaryTab member={member} authBusy={!member} onRead={()=>{}} onPrayer={()=>{}} scripture={{reference:'요한복음 14:27',text:'평안을 너희에게 주노라'}}/></main>}
+function App(){const [member,setMember]=useState<any>(null),[profileTab,setProfileTab]=useState(false);useEffect(()=>{login().then(u=>setMember({uid:u.uid,displayName:new URLSearchParams(location.search).get('name')||'방문자'}))},[]);return <main className="faith-screen faith-social" data-church-active="true"><nav><button onClick={()=>setProfileTab(false)}>예배당 탭</button><button onClick={()=>setProfileTab(true)}>프로필 탭</button></nav>{profileTab?<ProfileAvatarCard member={member}/>:<SanctuaryTab member={member} authBusy={!member} onRead={()=>{}} onPrayer={()=>{}} scripture={{reference:'요한복음 14:27',text:'평안을 너희에게 주노라'}}/>}</main>}
 createRoot(document.getElementById('root')!).render(<App/>)
 `)
 const server=await createServer({configFile:false,root:process.cwd(),plugins:[react()],resolve:{alias:[{find:'../../services/firebase',replacement:path.resolve(folder+'/firebase.ts')}]},server:{host:'127.0.0.1',port:4182,strictPort:true}})
@@ -96,6 +97,19 @@ try{
  await alice.screenshot({path:'test-results/faith-sanctuary/avatar-editor-desktop.png',fullPage:true})
  await alice.setViewportSize({width:390,height:950})
  await alice.getByRole('button',{name:'캐릭터 저장'}).click()
+ await alice.getByRole('button',{name:'프로필 탭',exact:true}).click()
+ const profileAvatar=alice.getByRole('img',{name:'프로필의 내 아바타'})
+ await alice.getByRole('heading',{name:'하늘',exact:true}).waitFor()
+ assert.equal(await profileAvatar.getAttribute('data-gender'),'female')
+ assert.equal(await profileAvatar.getAttribute('data-hair-style'),'3')
+ await alice.getByRole('button',{name:'아바타 편집',exact:true}).click()
+ await alice.getByRole('button',{name:'머리 색상 3'}).click()
+ await alice.getByRole('button',{name:'캐릭터 저장'}).click()
+ await alice.waitForFunction(()=>document.querySelector('.faith-profile-pixel .pixel-avatar')?.getAttribute('style')?.includes('#906444'))
+ await alice.screenshot({path:'test-results/faith-sanctuary/profile-avatar-mobile.png',fullPage:true})
+ await alice.getByRole('button',{name:'예배당 탭',exact:true}).click()
+ await ready(alice)
+ await alice.waitForFunction(()=>document.querySelector('.sanctuary-presence-character .pixel-avatar')?.getAttribute('style')?.includes('#906444'))
  await enter(alice)
  assert.equal(await alice.getByRole('button',{name:'캐릭터 수정'}).count(),0,'character editing only appears in the lobby')
  assert.equal(await alice.locator('.sanctuary-presence-strip').isVisible(),false,'counts are hidden inside the room')
@@ -112,6 +126,7 @@ try{
  const peerAnchor=bob.locator('.sanctuary-peer')
  assert.equal(await peerAnchor.evaluate(el=>getComputedStyle(el).marginLeft),'18px','overlapping arrival positions still show the other character')
  assert.equal(await peer.getAttribute('data-gender'),'female')
+ assert.ok((await peer.getAttribute('style')).includes('#906444'),'profile-tab edit reaches the chapel peer')
  assert.equal(await peer.locator('.pixel-hair-mesh.is-long').count(),1,'long hair is visible to another account')
  assert.ok(await peer.locator('.voxel-hair-curtain').evaluate(el=>parseFloat(getComputedStyle(el).height)>18),'shared hair extends below the head')
  assert.equal(await peer.getAttribute('data-hair-style'),'3')

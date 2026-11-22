@@ -1,16 +1,19 @@
 import {useEffect,useRef,useState} from 'react'
 import {ref,onValue,onDisconnect,push,set,remove,serverTimestamp,query,orderByValue,startAt,endAt,orderByChild,limitToLast,type DatabaseReference} from 'firebase/database'
+import {useSanctuaryAvatar} from './useSanctuaryAvatar'
 import {getRealtimeDb} from '../../services/firebase'
-import {defaultAvatar,normalizeAvatar,onlineMembers,koreanDayBounds,type AvatarPose,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
+import {onlineMembers,koreanDayBounds,type AvatarPose,type SharedPrayer} from './sanctuaryCommunity'
 import {sanctuaryCapacity,sanctuarySpawn,type FloorPoint} from './sanctuaryMovement'
 import type {SanctuaryMember} from './sanctuaryState'
 export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
- const [profile,setProfile]=useState(()=>defaultAvatar(member.displayName)),[raw,setRaw]=useState<Record<string,Record<string,unknown>>|null|undefined>(undefined)
+ const {profile,saveProfile:saveAvatar,error:avatarError}=useSanctuaryAvatar(member)
+ const [raw,setRaw]=useState<Record<string,Record<string,unknown>>|null|undefined>(undefined)
  const [prayers,setPrayers]=useState<SharedPrayer[]>([]),[intercessions,setIntercessions]=useState<Record<string,Record<string,{at:number}>>>({}),[visitors,setVisitors]=useState<number|null>(null)
  const [readPrayers,setReadPrayers]=useState<Record<string,true>|null>(null)
  const [error,setError]=useState(''),[connected,setConnected]=useState(false),[joined,setJoined]=useState(false),[loaded,setLoaded]=useState(false),[offset,setOffset]=useState(0),[clock,setClock]=useState(Date.now())
  const profileRef=useRef(profile);profileRef.current=profile
  const position=useRef({point:sanctuarySpawn,facing:-25,moving:false,pose:'standing' as AvatarPose}),live=useRef<DatabaseReference|null>(null),dirty=useRef(false)
+ useEffect(()=>{dirty.current=true},[profile])
  const day=Math.floor((clock+offset+32400000)/86400000)
  useEffect(()=>{const timer=window.setInterval(()=>setClock(Date.now()),1000);return()=>window.clearInterval(timer)},[])
  useEffect(()=>{
@@ -35,7 +38,6 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
   const subscriptions=[
    onValue(ref(db,'.info/serverTimeOffset'),s=>{if(alive)setOffset(Number(s.val())||0)}),
    onValue(ref(db,'.info/connected'),s=>{online=s.val()===true;setConnected(online);if(online)void join();else stop()}),
-   onValue(ref(db,'sanctuary/avatars/'+member.uid),s=>{if(alive){setProfile(normalizeAvatar(s.val(),member.displayName))}},fail),
    onValue(ref(db,'sanctuary/presence'),s=>{if(alive)setRaw(s.val())},fail),
    onValue(query(ref(db,'sanctuary/prayers'),orderByChild('createdAt'),limitToLast(100)),s=>{
     if(!alive)return;setPrayers(Object.entries(s.val()||{}).map(([id,p])=>({...p as Omit<SharedPrayer,'id'>,id})).sort((a,b)=>b.createdAt-a.createdAt));setLoaded(true)
@@ -61,7 +63,7 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
   if(!joined)return
   void set(ref(getRealtimeDb(),'sanctuary/visits/'+member.uid),serverTimestamp()).catch(()=>setError('오늘 접속 기록을 저장하지 못했습니다.'))
  },[member.uid,day,joined])
- async function saveProfile(next:AvatarProfile){await set(ref(getRealtimeDb(),'sanctuary/avatars/'+member.uid),normalizeAvatar(next));dirty.current=true}
+ const saveProfile:typeof saveAvatar=async next=>{await saveAvatar(next);dirty.current=true}
  function move(point:FloorPoint,facing:number,moving=false,pose:AvatarPose='standing'){position.current={point,facing,moving,pose};dirty.current=true}
  async function savePrayer(title:string,body:string,id?:string){
   const trimmed=title.trim(),text=body.trim();if(!trimmed||!text||trimmed.length>80||text.length>1500)throw new Error('제목 80자, 내용 1500자 이내로 입력해주세요.')
@@ -79,6 +81,6 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
  const unreadCount=readPrayers===null?0:prayers.filter(p=>p.uid!==member.uid&&readPrayers[p.id]!==true).length
  const members=onlineMembers(raw??null,clock+offset)
  const full=members.length>=sanctuaryCapacity&&!members.some(p=>p.uid===member.uid)
- return{profile,saveProfile,move,unreadCount,markPrayerRead,peers:entered&&connected?members.filter(p=>p.uid!==member.uid):[],online:connected&&raw!==undefined?members.length:null,visitors,connected,joined,full,loaded,prayers,intercessions,error,savePrayer,answerPrayer,deletePrayer,pray}
+ return{profile,saveProfile,move,unreadCount,markPrayerRead,peers:entered&&connected?members.filter(p=>p.uid!==member.uid):[],online:connected&&raw!==undefined?members.length:null,visitors,connected,joined,full,loaded,prayers,intercessions,error:error||avatarError,savePrayer,answerPrayer,deletePrayer,pray}
 }
 export type SanctuaryCommunity=ReturnType<typeof useSanctuaryCommunity>

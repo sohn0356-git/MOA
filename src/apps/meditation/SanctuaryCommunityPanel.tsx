@@ -1,14 +1,14 @@
 import {useEffect,useRef,useState} from 'react'
 import {sanctuaryCapacity} from './sanctuaryMovement'
-import {AvatarPreview} from './AvatarPreview'
+import {AvatarEditor} from './AvatarEditor'
 import {PixelAvatar} from './PixelAvatar'
 import {SanctuaryDialog} from './SanctuaryDialog'
 import {BEFORE_APP_UPDATE} from '../../lib/appUpdateProtocol'
-import {avatarSkins,avatarHairs,avatarShirts,avatarPants,getAvatarHairStyles,avatarPresets,applyAvatarPreset,matchesAvatarPreset,selectAvatarGender,avatarTopStyles,avatarAccessories,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
+import {type SharedPrayer} from './sanctuaryCommunity'
 import type {SanctuaryCommunity} from './useSanctuaryCommunity'
 type Draft={title:string;body:string;id?:string}
 export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter}:{room:SanctuaryCommunity;uid:string;boardOpen:boolean;onBoardClose:()=>void;onEnter?:()=>void}){
- const [editing,setEditing]=useState(false),[avatar,setAvatar]=useState<AvatarProfile>(room.profile),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
+ const [editing,setEditing]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
  const [view,setView]=useState<'list'|'read'|'write'>('list'),[selectedId,setSelectedId]=useState(''),[filter,setFilter]=useState<'active'|'answered'|'mine'>('active')
  const lock=useRef(false),unsaved=useRef(false)
  const draftKey='moa.faith.shared-prayer-draft:'+encodeURIComponent(uid)
@@ -38,7 +38,7 @@ export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter
    <div className="sanctuary-presence-character">
     <PixelAvatar profile={room.profile} facing={-25} moving={false} seated={false} scale={.9} label="내 캐릭터 미리보기"/>
     <span>{room.profile.name}</span>
-    <button type="button" className="sanctuary-character-button" onClick={()=>{setAvatar(room.profile);setMessage('');setEditing(true)}}>캐릭터 수정</button>
+    <button type="button" className="sanctuary-character-button" onClick={()=>{setMessage('');setEditing(true)}}>캐릭터 수정</button>
    </div>
    <div className="sanctuary-presence-stats">
     <span className={'sanctuary-live '+(online?'is-online':'')}>{online?'실시간 연결':'연결 확인 중'}</span>
@@ -51,32 +51,7 @@ export function SanctuaryCommunityPanel({room,uid,boardOpen,onBoardClose,onEnter
    {room.error&&<p className="sanctuary-community-error">{room.error}</p>}
    {room.peers.length>0&&<p className="sanctuary-people">{room.peers.map(p=><span key={p.uid}>{p.name}</span>)}</p>}
   </section>
-  <SanctuaryDialog open={editing} title="나의 캐릭터" onClose={()=>setEditing(false)} className="sanctuary-character-dialog">
-   <form className="sanctuary-avatar-editor sanctuary-avatar-studio" onSubmit={event=>{event.preventDefault();void action(async()=>{await room.saveProfile(avatar);setEditing(false)},'캐릭터를 저장했습니다.')}}>
-    <div className="sanctuary-avatar-showcase">
-     <AvatarPreview profile={avatar}/>
-     <section className="sanctuary-avatar-presets" aria-label="샘플 캐릭터">
-      <div className="sanctuary-gender-tabs" role="tablist" aria-label="캐릭터 성별">{(['male','female'] as const).map(gender=><button key={gender} type="button" role="tab" aria-selected={(avatar.gender??'male')===gender} aria-controls="sanctuary-samples" id={'avatar-tab-'+gender} disabled={busy} onClick={()=>setAvatar(current=>selectAvatarGender(current,gender))}>{gender==='male'?'남성':'여성'}</button>)}</div>
-      <h4>마음에 드는 모습으로 시작해요</h4>
-      <div role="tabpanel" id="sanctuary-samples" aria-labelledby={'avatar-tab-'+(avatar.gender??'male')}><div className="sanctuary-avatar-preset-grid" role="group" aria-label="샘플 캐릭터 선택">{avatarPresets.filter(p=>p.appearance.gender===(avatar.gender??'male')).map(preset=><button type="button" key={preset.id} aria-label={preset.label+' 샘플 선택'} aria-pressed={matchesAvatarPreset(avatar,preset)} disabled={busy} onClick={()=>setAvatar(current=>applyAvatarPreset(current,preset.id))}>
-       <span className="sanctuary-preset-figure"><PixelAvatar profile={{name:avatar.name,...preset.appearance}} facing={-25} moving={false} seated={false} scale={.75} label={preset.label+' 샘플 캐릭터'}/></span>
-       <span>{preset.label}</span><small>{preset.appearance.gender==='female'?'여성':'남성'}</small>
-      </button>)}</div></div>
-      <p>샘플을 고른 뒤 색과 머리를 바꿔도 좋아요.</p>
-     </section>
-    </div>
-    <div className="sanctuary-avatar-fields">
-    <label>캐릭터 이름<input aria-label="캐릭터 이름" value={avatar.name} maxLength={24} required disabled={busy} onChange={e=>setAvatar({...avatar,name:e.target.value})}/></label>
-    {([['skin','피부',avatarSkins],['hair','머리',avatarHairs],['shirt','옷',avatarShirts],['pants','바지',avatarPants]] as const).map(([key,label,colors])=><fieldset key={key} disabled={busy}><legend>{label}</legend>{colors.map((color,index)=><button key={color} type="button" aria-label={label+' 색상 '+(index+1)} aria-pressed={(avatar[key]??0)===index} style={{background:color}} onClick={()=>setAvatar({...avatar,[key]:index})}/>)}</fieldset>)}
-    {([['hairStyle','머리 모양',getAvatarHairStyles(avatar.gender)],['topStyle','상의 모양',avatarTopStyles],['accessory','액세서리',avatarAccessories]] as const).map(([key,label,options])=><label key={key}>{label}
-     <select value={avatar[key]??0} disabled={busy} onChange={e=>setAvatar({...avatar,[key]:Number(e.target.value)})}>
-      {options.map((option,index)=><option key={option} value={index}>{option}</option>)}
-     </select>
-    </label>)}
-    <button className="sanctuary-primary" disabled={busy||!avatar.name.trim()}>캐릭터 저장</button>
-    </div>
-   </form>{message&&<p role="status" className="sanctuary-community-feedback">{message}</p>}
-  </SanctuaryDialog>
+  {editing&&<AvatarEditor profile={room.profile} onSave={room.saveProfile} onClose={()=>setEditing(false)}/>}
   <SanctuaryDialog open={boardOpen} title="중보기도 게시판" onClose={onBoardClose} className="sanctuary-prayer-board">
    <div className="sanctuary-board-intro"><span className="sanctuary-paper-seal" aria-hidden="true">✦</span><div><strong>서로의 마음을 맡겨두는 곳</strong><p>기도제목은 로그인한 이웃에게 공유됩니다.</p></div></div>
    <nav className="sanctuary-board-nav" aria-label="중보기도 게시판 메뉴"><button type="button" aria-pressed={view!=='write'} onClick={()=>{setView('list');setMessage('')}}>기도 모아보기</button><button type="button" aria-pressed={view==='write'} onClick={()=>{setView('write');setMessage('')}}>{draft.title||draft.body?'작성 이어쓰기':'기도제목 쓰기'}</button></nav>

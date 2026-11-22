@@ -2,6 +2,7 @@
 import "@testing-library/jest-dom/vitest"
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {set as saveFirebase} from 'firebase/database'
 import { MeditationApp } from './MeditationApp'
 const state = vi.hoisted(() => ({
   user: { uid: 'owner', displayName: 'Google 사용자', email: 'owner@example.com', photoURL: '' },
@@ -230,4 +231,20 @@ it('refreshes the daily player at Korean midnight even when the library has only
  await waitFor(()=>expect(previous.isConnected).toBe(false))
  expect((await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')).getAttribute('src')).toContain('/embed/abcdefghijk?')
  expect(JSON.parse(localStorage.getItem('moa.faith.dailyPraise.v1')!).day).toBe('2026-11-20')
+})
+
+it('replaces profile photo editing with the primary-account chapel avatar editor',async()=>{
+ const view=render(<MeditationApp activityId="ai03"/>)
+ fireEvent.click(within(screen.getByRole('navigation',{name:'MOA Faith'})).getByRole('button',{name:'내 기록'}))
+ view.rerender(<MeditationApp activityId="ai03" churchMember={{uid:'google-alice',displayName:'Alice'}}/>)
+ expect(screen.getByRole('img',{name:'프로필의 내 아바타'})).toBeInTheDocument()
+ expect(screen.queryByRole('button',{name:'프로필 편집'})).toBeNull()
+ expect(screen.queryByRole('button',{name:'프로필 사진 변경'})).toBeNull()
+ fireEvent.click(screen.getByRole('button',{name:'아바타 편집'}))
+ fireEvent.click(screen.getByRole('tab',{name:'여성'}))
+ fireEvent.click(screen.getByRole('button',{name:'라벤더 샘플 선택'}))
+ fireEvent.click(screen.getByRole('button',{name:'캐릭터 저장'}))
+ await waitFor(()=>expect(saveFirebase).toHaveBeenCalledWith('sanctuary/avatars/google-alice',expect.objectContaining({name:'Alice',gender:'female'})))
+ expect(screen.getByRole('img',{name:'프로필의 내 아바타'})).toHaveAttribute('data-gender','female')
+ expect(state.update).not.toHaveBeenCalled()
 })

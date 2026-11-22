@@ -1,12 +1,12 @@
 import {normalizeLunchPraiseTracks,type LunchPraiseTrack} from './dailyPraise'
 import {useDailyPraise} from './useDailyPraise'
 import { Church } from 'lucide-react'
+import {ProfileAvatarCard} from './ProfileAvatarCard'
 import { SanctuaryTab } from './SanctuaryTab'
 import type { SanctuaryMember } from './sanctuaryState'
 import { SharedDevotionImageEditor } from './SharedDevotionImageEditor'
 import { buildPersonalFeed } from './personalFeed'
 import { FirebaseError } from 'firebase/app'
-import { updateProfile } from 'firebase/auth'
 import { get, onValue, push, ref, remove, runTransaction, serverTimestamp, set, update } from 'firebase/database'
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, type UploadTask } from 'firebase/storage'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -1281,21 +1281,10 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   const [editingPhotoGroup, setEditingPhotoGroup] = useState(DEFAULT_FEED_GROUP)
   const [faithProfile, setFaithProfile] = useState<FaithProfile | null>(null)
   const profileOwner = useRef<string | null>(null)
-  const [profileView, setProfileView] = useState<'records' | 'edit'>('records')
-  const [profileDraftName, setProfileDraftName] = useState('')
-  const [profileDraftBio, setProfileDraftBio] = useState('')
-  const [profileDraftFile, setProfileDraftFile] = useState<File | null>(null)
-  const [profilePreviewObjectUrl, setProfilePreviewObjectUrl] = useState('')
-  const [profileUploadState, setProfileUploadState] = useState<UploadProgressState>(idleUploadState)
-  const [profileUseDefaultAvatar, setProfileUseDefaultAvatar] = useState(false)
-  const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false)
   const [isSettingsSheetOpen, setIsSettingsSheetOpen] = useState(false)
   const [isLicenseOpen, setIsLicenseOpen] = useState(false)
   const [licenseText, setLicenseText] = useState('')
-  const [isProfileSaving, setIsProfileSaving] = useState(false)
   const [isAiMode, setIsAiMode] = useState(() => window.localStorage.getItem(AI_MODE_STORAGE_KEY) === 'true')
-  const profileUploadTaskRef = useRef<UploadTask | null>(null)
-  const [profileError, setProfileError] = useState('')
   const [syncState, setSyncState] = useState<'local' | 'syncing' | 'synced' | 'error'>('local')
   const [errorMessage, setErrorMessage] = useState('')
   const plan = useMemo(() => remotePlan ?? getPlanForDate(selectedDate), [remotePlan, selectedDate])
@@ -1479,7 +1468,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     }).format(date).replace(/요일$/, '')
   }, [selectedDate])
   const photoPreviewUrl = crossPreviewUrl
-  const profileAvatarPreview = profileUseDefaultAvatar ? '' : profilePreviewObjectUrl || currentProfile.avatarUrl
 
   useEffect(() => {
     setEditingPhotoCaption((selectedProfilePhoto ?? selectedFeedPhoto ?? editingFeedPhoto)?.caption ?? '')
@@ -1493,14 +1481,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       }
     }
   }, [crossPreviewUrl])
-
-  useEffect(() => {
-    return () => {
-      if (profilePreviewObjectUrl) {
-        URL.revokeObjectURL(profilePreviewObjectUrl)
-      }
-    }
-  }, [profilePreviewObjectUrl])
 
   useEffect(() => {
     return () => {
@@ -1634,7 +1614,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     setLegacyFaithQuestions([])
     setLegacyQuestionAnswers({})
     setFaithProfile(null)
-    setProfileView('records')
     setPrayerView('list')
     setQnaView('list')
     const db = getRealtimeDb()
@@ -1650,8 +1629,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
           displayName: typeof value?.displayName === 'string' ? value.displayName : fallback.displayName,
         }
         setFaithProfile(nextProfile)
-        setProfileDraftName(nextProfile.displayName)
-        setProfileDraftBio(nextProfile.bio)
       }),
       onValue(ref(db, `users/${currentUser.uid}/crossPhotoReactions`), (snapshot) => {
         const value = snapshot.val() as Record<string, Record<string, boolean>> | null
@@ -1781,32 +1758,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     }
   }
 
-  function openProfileEdit() {
-    setProfileDraftName(currentProfile.displayName)
-    setProfileDraftBio(currentProfile.bio)
-    setProfileDraftFile(null)
-    setProfileUseDefaultAvatar(false)
-    setProfileError('')
-    setProfileView('edit')
-  }
-
-  function closeProfileEdit() {
-    const hasChanges =
-      profileDraftName.trim() !== currentProfile.displayName ||
-      profileDraftBio.trim() !== currentProfile.bio ||
-      Boolean(profileDraftFile) ||
-      profileUseDefaultAvatar
-
-    if (hasChanges && !window.confirm('저장하지 않은 프로필 변경 사항을 버릴까요?')) {
-      return
-    }
-
-    setProfileView('records')
-    setProfileDraftFile(null)
-    setProfileUseDefaultAvatar(false)
-    setProfileError('')
-  }
-
   async function handleCrossFileSelected(file?: File | null) {
     if (!file) {
       setCrossFile(null)
@@ -1832,40 +1783,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       setCrossPreviewUrl(URL.createObjectURL(file))
       setCrossUploadState({
         error: error instanceof Error ? error.message : '사진을 준비하지 못했습니다.',
-        metrics: { originalBytes: file.size },
-        percent: 0,
-        stage: 'error',
-      })
-    }
-  }
-
-  async function handleProfileFileSelected(file?: File | null) {
-    if (!file) {
-      setProfileDraftFile(null)
-      setProfilePreviewObjectUrl('')
-      setProfileUploadState(idleUploadState)
-      return
-    }
-
-    setProfileUseDefaultAvatar(false)
-    setProfileUploadState({ metrics: { originalBytes: file.size }, percent: 0, stage: 'preparing' })
-    setProfileError('')
-
-    try {
-      const result = await prepareImageForUpload(file, {
-        cropSquare: true,
-        filePrefix: 'avatar',
-        maxDimension: 512,
-        quality: 0.8,
-      })
-      setProfileDraftFile(result.file)
-      setProfilePreviewObjectUrl(result.previewUrl)
-      setProfileUploadState({ file: result.file, metrics: result.metrics, percent: 0, stage: 'ready' })
-    } catch (error) {
-      setProfileDraftFile(null)
-      setProfilePreviewObjectUrl(URL.createObjectURL(file))
-      setProfileUploadState({
-        error: error instanceof Error ? error.message : '프로필 사진을 준비하지 못했습니다.',
         metrics: { originalBytes: file.size },
         percent: 0,
         stage: 'error',
@@ -1911,12 +1828,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     setIsPhotoUploading(false)
   }
 
-  function cancelProfileUpload() {
-    void profileUploadTaskRef.current?.cancel()
-    setProfileUploadState((state) => ({ ...state, percent: 0, stage: 'canceled' }))
-    setIsProfileSaving(false)
-  }
-
   function cancelEditingPhotoUpload() {
     void editingPhotoUploadTaskRef.current?.cancel()
     setEditingPhotoUploadState((state) => ({ ...state, percent: 0, stage: 'canceled' }))
@@ -1924,116 +1835,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
   function isStoragePathShared(path: string, exceptPhotoId?: string) {
     return crossPhotos.some((photo) => photo.id !== exceptPhotoId && photo.storagePath === path)
-  }
-
-  async function updateAuthorSnapshots(displayName: string, avatarUrl: string) {
-    if (!currentUser) {
-      return
-    }
-
-    const updates: Record<string, string> = {}
-
-    crossPhotos.forEach((photo) => {
-      if (photo.activityId) return
-      updates[`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/authorName`] = displayName
-      updates[`${getUserCrossPhotosPath(currentUser.uid)}/${photo.id}/authorAvatarUrl`] = avatarUrl
-      if (photo.publicId) {
-        updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/groupName`] = normalizeFeedGroup(editingPhotoGroup)
-        updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/authorName`] = displayName
-        updates[`${getPublicCrossPhotosPath()}/${photo.publicId}/authorAvatarUrl`] = avatarUrl
-      }
-    })
-
-    prayerRequests.forEach((request) => {
-      if (!request.activityId && (request.authorUid === currentUser.uid || !request.authorUid)) {
-        updates[`${getUserPrayerRequestsPath(currentUser.uid)}/${request.id}/authorName`] = displayName
-        updates[`${getUserPrayerRequestsPath(currentUser.uid)}/${request.id}/authorAvatarUrl`] = avatarUrl
-      }
-    })
-
-    faithQuestions.forEach((question) => {
-      if (!question.activityId && (question.authorUid === currentUser.uid || !question.authorUid)) {
-        updates[`${getQuestionPath(question)}/authorName`] = displayName
-        updates[`${getQuestionPath(question)}/authorAvatarUrl`] = avatarUrl
-      }
-    })
-
-    Object.entries(prayerComments).forEach(([prayerId, comments]) => {
-      comments.forEach((comment) => {
-        if (!comment.activityId && comment.authorUid === currentUser.uid) {
-          updates[`${getUserPrayerCommentsPath(currentUser.uid, prayerId)}/${comment.id}/authorName`] = displayName
-          updates[`${getUserPrayerCommentsPath(currentUser.uid, prayerId)}/${comment.id}/authorAvatarUrl`] = avatarUrl
-        }
-      })
-    })
-
-    Object.entries(questionAnswers).forEach(([questionId, answers]) => {
-      answers.forEach((answer) => {
-        if (!answer.activityId && answer.authorUid === currentUser.uid) {
-          updates[`${questionId.startsWith('legacy_') ? getUserQuestionAnswersPath(currentUser.uid, questionId.slice(7)) : 'faithQuestionAnswers/' + questionId}/${answer.id}/authorName`] = displayName
-          updates[`${questionId.startsWith('legacy_') ? getUserQuestionAnswersPath(currentUser.uid, questionId.slice(7)) : 'faithQuestionAnswers/' + questionId}/${answer.id}/authorAvatarUrl`] = avatarUrl
-        }
-      })
-    })
-
-    if (Object.keys(updates).length) {
-      await update(ref(getRealtimeDb()), updates)
-    }
-  }
-
-  async function handleProfileSave() {
-    if (!currentUser || isProfileSaving) {
-      return
-    }
-
-    const displayName = profileDraftName.trim() || currentProfile.displayName
-    const bio = profileDraftBio.trim()
-    let avatarUrl = profileUseDefaultAvatar ? '' : currentProfile.avatarUrl
-
-    setIsProfileSaving(true)
-    setProfileError('')
-
-    try {
-      if (profileDraftFile) {
-        const extension = profileDraftFile.type === 'image/webp' ? 'webp' : 'jpg'
-        const path = `users/${currentUser.uid}/profile/faith-${createLocalId()}.${extension}`
-        const uploadTask = uploadBytesResumable(storageRef(getFirebaseStorage(), path), profileDraftFile, {
-          cacheControl: 'public,max-age=31536000,immutable',
-          contentType: profileDraftFile.type,
-        })
-        profileUploadTaskRef.current = uploadTask
-        setProfileUploadState((state) => ({ ...state, percent: 0, stage: 'uploading' }))
-        const uploadMetrics = await runResumableUpload(uploadTask, (percent) => {
-          setProfileUploadState((state) => ({ ...state, percent, stage: 'uploading' }))
-        })
-        setProfileUploadState((state) => ({ ...state, metrics: { ...state.metrics, ...uploadMetrics }, percent: 100, stage: 'saving' }))
-        const urlStart = performance.now()
-        avatarUrl = await getDownloadURL(uploadTask.snapshot.ref)
-        setProfileUploadState((state) => ({ ...state, metrics: { ...state.metrics, urlMs: performance.now() - urlStart } }))
-      }
-
-      const saveStart = performance.now()
-      await updateProfile(currentUser, { displayName, photoURL: avatarUrl || null })
-      await set(ref(getRealtimeDb(), getUserFaithProfilePath(currentUser.uid)), {
-        avatarUrl,
-        bio,
-        displayName,
-        updatedAt: new Date().toISOString(),
-        updatedAtMs: serverTimestamp(),
-      })
-      await updateAuthorSnapshots(displayName, avatarUrl)
-      setProfileUploadState((state) => ({ ...state, metrics: { ...state.metrics, saveMs: performance.now() - saveStart }, percent: 100, stage: 'success' }))
-      setFaithProfile({ avatarUrl, bio, displayName })
-      setProfileDraftFile(null)
-      setProfileUseDefaultAvatar(false)
-      setProfileView('records')
-    } catch (error) {
-      setProfileError(error instanceof Error ? error.message : '프로필을 저장하지 못했습니다.')
-      setProfileUploadState((state) => ({ ...state, error: error instanceof Error ? error.message : '프로필을 저장하지 못했습니다.', stage: 'error' }))
-    } finally {
-      profileUploadTaskRef.current = null
-      setIsProfileSaving(false)
-    }
   }
 
   function toggleVerse(verseNumber: VerseKey) {
@@ -2828,13 +2629,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
             </button>
             <h2>{editingQuestionId ? '질문 수정' : '질문 작성'}</h2>
           </div>
-        ) : profileView === 'edit' ? (
-          <div className="faith-title">
-            <button aria-label="프로필 편집 뒤로가기" className="faith-icon-button" type="button" onClick={closeProfileEdit}>
-              <Icon name="back" />
-            </button>
-            <h2>프로필 편집</h2>
-          </div>
         ) : activeTab === 'prayer' && prayerView === 'detail' ? (
           <div className="faith-title">
             <button aria-label="기도 목록으로" className="faith-icon-button" type="button" onClick={() => setPrayerView('list')}>
@@ -2857,10 +2651,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         {entryActions}
         {activeTab === 'qna' && qnaView === 'write' ? (
           <button className="faith-text-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>취소</button>
-        ) : profileView === 'edit' ? (
-          <button className="faith-text-button" disabled={isProfileSaving} type="button" onClick={() => void handleProfileSave()}>
-            {isProfileSaving ? '저장 중' : '저장'}
-          </button>
         ) : entryActions ? (
           activeTab === 'profile' ? <button aria-label="설정" className="faith-icon-button" type="button" onClick={() => setIsSettingsSheetOpen(true)}><Icon name="settings"/></button> : null
         ) : (
@@ -2882,7 +2672,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
             ) : (
               <button aria-label="내 기록 보기" className="faith-avatar-button" type="button" onClick={() => {
                 setActiveTab('profile')
-                setProfileView('records')
               }}>
                 <Avatar name={authorName} size="header" src={authorAvatarUrl} />
               </button>
@@ -3518,47 +3307,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
         {activeTab === 'profile' ? (
           <section className="faith-stack">
-            {profileView === 'edit' ? (
-              <section className="faith-profile-edit">
-                <div className="faith-profile-photo-edit">
-                  <Avatar name={profileDraftName || authorName} size="profile" src={profileAvatarPreview} />
-                  <button aria-label="프로필 사진 변경" type="button" onClick={() => setIsAvatarSheetOpen(true)}>
-                    <Icon name="photo" />
-                  </button>
-                </div>
-                <button className="faith-text-button" type="button" onClick={() => setIsAvatarSheetOpen(true)}>사진 변경</button>
-                {profileError ? <p className="faith-alert faith-alert-error">{profileError}</p> : null}
-                <UploadProgress
-                  disabled={!profileDraftFile || isProfileSaving}
-                  onCancel={cancelProfileUpload}
-                  onRetry={() => void handleProfileSave()}
-                  state={profileUploadState}
-                />
-                <label className="faith-field">
-                  <span>이름</span>
-                  <input maxLength={24} value={profileDraftName} onChange={(event) => setProfileDraftName(event.target.value)} />
-                </label>
-                <label className="faith-field">
-                  <span>소개</span>
-                  <textarea maxLength={80} rows={4} value={profileDraftBio} onChange={(event) => setProfileDraftBio(event.target.value)} />
-                </label>
-                <p className="faith-counter">{profileDraftBio.length} / 80</p>
-              </section>
-            ) : (
-              <>
-            <section className="faith-profile">
-              <div className="faith-profile-photo-edit">
-                <Avatar name={authorName} size="profile" src={authorAvatarUrl} />
-                <button aria-label="프로필 사진 변경" type="button" onClick={openProfileEdit}>
-                  <Icon name="photo" />
-                </button>
-              </div>
-              <div>
-                <h3>{authorName}</h3>
-                <p>{currentProfile.bio}</p>
-                <button className="faith-outline-button" type="button" onClick={openProfileEdit}>프로필 편집</button>
-              </div>
-            </section>
+            <ProfileAvatarCard member={churchMember} authBusy={churchAuthBusy} onSignIn={onChurchSignIn}/>
             <div className="faith-profile-counts" aria-label="기록 수">
               <div><strong>{entries.length}</strong><span>묵상</span></div>
               <div><strong>{crossPhotos.length}</strong><span>사진</span></div>
@@ -3691,8 +3440,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                 </div>
               ) : null}
             </section>
-              </>
-            )}
           </section>
         ) : null}
       </main>
@@ -3916,28 +3663,6 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
               </div>
             </div>
           </article>
-        </div>
-      ) : null}
-
-      {isAvatarSheetOpen ? (
-        <div className="faith-sheet-backdrop" role="presentation" onClick={() => setIsAvatarSheetOpen(false)}>
-          <section className="faith-action-sheet" aria-label="프로필 사진 변경" onClick={(event) => event.stopPropagation()}>
-            <label>
-              사진 선택
-              <input accept="image/jpeg,image/png,image/webp" type="file" onChange={(event) => {
-                void handleProfileFileSelected(event.target.files?.[0] ?? null)
-                setIsAvatarSheetOpen(false)
-              }} />
-            </label>
-            <button type="button" onClick={() => {
-              setProfileDraftFile(null)
-              setProfilePreviewObjectUrl('')
-              setProfileUseDefaultAvatar(true)
-              setProfileUploadState(idleUploadState)
-              setIsAvatarSheetOpen(false)
-            }}>기본 이미지로 변경</button>
-            <button type="button" onClick={() => setIsAvatarSheetOpen(false)}>취소</button>
-          </section>
         </div>
       ) : null}
 

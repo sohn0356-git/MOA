@@ -114,3 +114,10 @@
  .sanctuary-avatar-preset-grid small{font-size:8px}
  .sanctuary-avatar-presets>p{text-align:center}
 }
+
+.sanctuary-avatar-host{display:contents;margin:0}
+.faith-profile-avatar{align-items:center;gap:18px}
+.faith-profile-pixel{position:relative;flex:0 0 98px;width:98px;height:125px;background:radial-gradient(ellipse at 50% 75%,#e2ead8,transparent 70%);border-radius:18px}
+.faith-profile-pixel>.pixel-avatar{left:50%;top:110px}
+.faith-profile-avatar>div:last-of-type{min-width:0}
+.faith-profile-avatar h3{overflow-wrap:anywhere}
