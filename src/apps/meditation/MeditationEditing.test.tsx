@@ -311,3 +311,20 @@ it('uses Korean and English by default even when the old comparison preference w
  expect(screen.getByRole('button',{name:'말씀 언어 선택'})).toHaveTextContent('한글 + 영어')
  expect(document.querySelector('.faith-verse-translation')).toHaveTextContent('Love one another')
 })
+
+it('keeps separate verse paragraphs when selecting only Korean',()=>{
+ const original=state.plan.verses
+ state.plan.verses=[{number:1,text:'첫 번째 선택 말씀'},{number:2,text:'두 번째 선택 말씀'}]
+ try{
+  localStorage.setItem('moa.faith.scripture-reading.v2',JSON.stringify(['ko']))
+  render(<MeditationApp/>)
+  fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
+  fireEvent.click(screen.getByRole('button',{name:'말씀 언어 선택'}))
+  const english=screen.getByRole('menuitemcheckbox',{name:/English/})
+  if(english.getAttribute('aria-checked')==='true')fireEvent.click(english)
+  fireEvent.click(screen.getByRole('button',{name:'말씀 언어 선택'}))
+  document.querySelectorAll('.faith-verse-list button').forEach(button=>fireEvent.click(button))
+  fireEvent.click(screen.getByRole('button',{name:'묵상하기'}))
+  expect(document.querySelector('.faith-selected-quote')?.textContent).toBe('첫 번째 선택 말씀\n\n두 번째 선택 말씀')
+ }finally{state.plan.verses=original}
+})

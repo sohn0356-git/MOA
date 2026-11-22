@@ -786,7 +786,7 @@ function getSelectedVerses(plan: ScripturePlan, selectedVerseNumbers: VerseKey[]
 
 function getSelectedVerseText(plan: ScripturePlan, selectedVerseNumbers: VerseKey[]) {
   const verses = getSelectedVerses(plan, selectedVerseNumbers)
-  return verses.map((verse) => verse.text).join(' ')
+  return verses.map((verse) => verse.text).join('\n\n')
 }
 
 function getUserEntriesPath(userId: string) {
