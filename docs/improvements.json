@@ -48,5 +48,12 @@
     "body": "공유 사진 왼쪽 위 원형 아바타에서 작성자의 공개 묵상과 예배당 공유 기도제목을 확인합니다. 사진 업로드는 실제 AI 인증 계정에만 허용하고 개인 묵상과 공개 피드에 함께 저장합니다. 아이디 선택기는 제거하며 Google 로그인과 로그아웃은 유지합니다.",
     "status": "implemented",
     "evidence": "Author privacy/login component tests; atomic photo/personal feed tests; ordinary-user legacy text edit and AI-only Database/Storage emulator tests; mobile Chromium photo selection, optimization, upload, author prayers and personal photo detail; see docs/faith-feed-authors.md. Completion requires successful Pages and rules deployments."
+  },
+  {
+    "id": "faith-resume-avatar-sync",
+    "title": "새로고침 로딩 생략과 프로필 3D 아바타 실시간 동기화",
+    "body": "첫 진입 이후 같은 탭의 새로고침에서는 정적·React 시작 화면을 생략하고 계정과 글을 배경에서 복원합니다. 프로필·예배당·공유 피드·상세·댓글은 현재 3D 캐릭터를 함께 사용하며 비로그인 독자에게도 외형 수정이 실시간 반영됩니다. 아바타 한 건의 외형만 공개하고 접속 정보·기도제목·목록 및 수정 권한은 보호합니다.",
+    "status": "implemented",
+    "evidence": "182 component/unit tests; responsive native browser refresh and static pre-React resume checks; Auth+Database native browser test for two successive profile edits propagating to an unauthenticated reader without reload; anonymous exact-avatar read and list/presence/prayer/write denial emulator tests. See docs/faith-launch-resume.md. Completion requires successful Pages and database rules deployments."
   }
 ]

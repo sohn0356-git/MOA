@@ -8,6 +8,13 @@ const browser=await chromium.launch({headless:true,...(process.env.MOA_BROWSER_P
 try{
  const staticContext=await browser.newContext({viewport:{width:390,height:850},javaScriptEnabled:false})
  const staticPage=await staticContext.newPage();await staticPage.goto('http://127.0.0.1:4183/MOA/');assert.equal(await staticPage.locator('.moa-boot').isVisible(),true,'chapel artwork is visible before JavaScript loads');await staticPage.screenshot({path:'test-results/faith-boot/static-chapel-boot.png'});await staticContext.close()
+ const returning=await browser.newContext({viewport:{width:390,height:850}})
+ const returningPage=await returning.newPage()
+ await returningPage.addInitScript(()=>sessionStorage.setItem('moa.launch.seen.v1','1'))
+ await returningPage.route('**/*.js',route=>route.fulfill({contentType:'text/javascript',body:''}))
+ await returningPage.goto('http://127.0.0.1:4183/MOA/')
+ assert.equal(await returningPage.locator('.moa-boot').isVisible(),false,'returning users must not see static boot art before React loads')
+ await returning.close()
  const context=await browser.newContext({viewport:{width:390,height:950},hasTouch:true,isMobile:true})
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error('Production page error:',e.message)})
  const times=[]

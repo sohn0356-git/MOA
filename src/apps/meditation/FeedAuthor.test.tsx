@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import {afterEach,beforeEach,expect,it,vi} from 'vitest'
-import {cleanup,fireEvent,render,screen} from '@testing-library/react'
-import {FeedAuthorDialog,authorUid} from './FeedAuthor'
+import {act,cleanup,fireEvent,render,screen} from '@testing-library/react'
+import {FeedAuthorDialog,FeedAuthorAvatar,SyncedAuthorAvatar,authorUid} from './FeedAuthor'
 import {canUploadFaithPhoto} from './aiPhotoAccess'
-const state=vi.hoisted(()=>({reads:[] as string[],stop:vi.fn()}))
+const state=vi.hoisted(()=>({reads:[] as string[],stop:vi.fn(),avatarCallback:null as null|((s:{val:()=>unknown})=>void)}))
+vi.mock('../../services/firebase',()=>({getRealtimeDb:()=>({})}))
 vi.mock('../../services/faithSession',()=>({getFaithDb:()=>({})}))
-vi.mock('firebase/database',()=>({ref:(_db:unknown,p:string)=>p,query:(p:string)=>p,orderByChild:vi.fn(),equalTo:vi.fn(),limitToLast:vi.fn(),onValue:(p:string,cb:(s:{val:()=>unknown})=>void)=>{state.reads.push(p);cb({val:()=>({prayer:{uid:'alice',name:'Alice',title:'공유 기도제목',body:'함께 기도해 주세요',createdAt:123,updatedAt:123,answered:false}})});return state.stop}}))
+vi.mock('firebase/database',()=>({ref:(_db:unknown,p:string)=>p,query:(p:string)=>p,orderByChild:vi.fn(),equalTo:vi.fn(),limitToLast:vi.fn(),onValue:(p:string,cb:(s:{val:()=>unknown})=>void)=>{state.reads.push(p);if(p.startsWith('sanctuary/avatars/')){state.avatarCallback=cb;cb({val:()=>({name:'Alice',skin:1,hair:2,shirt:3,gender:'female'})});return state.stop}cb({val:()=>({prayer:{uid:'alice',name:'Alice',title:'공유 기도제목',body:'함께 기도해 주세요',createdAt:123,updatedAt:123,answered:false}})});return state.stop}}))
 const photo={id:'one',ownerUid:'alice',authorName:'Alice',imageUrl:'photo.jpg',caption:'Alice의 공개 묵상',selectedDate:'2026-11-22'}
 beforeEach(()=>{state.reads=[];state.stop.mockClear();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}})
 afterEach(cleanup)
@@ -36,3 +37,19 @@ it('checks authenticated AI principals rather than a selected identity or AI-loo
 })
 
 it('uses the authenticated record owner for attribution even if legacy author metadata disagrees',()=>{expect(authorUid({...photo,authorUid:'other'})).toBe('alice')})
+
+it('uses the same live 3D avatar for guests and updates it after a profile edit',()=>{
+ const view=render(<SyncedAuthorAvatar uid="alice" name="Alice"/>)
+ expect(state.reads).toEqual(['sanctuary/avatars/alice'])
+ expect(view.container.querySelector('.pixel-avatar')).toHaveAttribute('data-gender','female')
+ act(()=>state.avatarCallback?.({val:()=>({name:'Alice',skin:1,hair:4,shirt:5,gender:'male',hairStyle:2})}))
+ expect(view.container.querySelector('.pixel-avatar')).toHaveAttribute('data-gender','male')
+ expect(view.container.querySelector('.pixel-avatar')).toHaveAttribute('data-hair-style','2')
+ expect(view.container.querySelector('img')).toBeNull()
+ view.unmount();expect(state.stop).toHaveBeenCalledOnce()
+})
+it('renders a 3D fallback instead of an old Google photograph',()=>{
+ const view=render(<FeedAuthorAvatar photo={{...photo,authorAvatarUrl:'old-google-photo.jpg'}}/>)
+ expect(view.container.querySelector('.pixel-avatar')).toBeInTheDocument()
+ expect(view.container.querySelector('img')).toBeNull()
+})

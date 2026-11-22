@@ -1,4 +1,4 @@
-import {FeedAuthorAvatar,FeedAuthorDialog,useFeedAuthorAvatars,authorUid} from './FeedAuthor'
+import {FeedAuthorAvatar,FeedAuthorDialog,SyncedAuthorAvatar,useFeedAuthorAvatars,authorUid} from './FeedAuthor'
 import {canUploadFaithPhoto} from './aiPhotoAccess'
 import {normalizeAvatar,type AvatarProfile} from './sanctuaryCommunity'
 import type {StartupContentState} from '../../components/AppLaunchScreen'
@@ -861,10 +861,6 @@ function mapList<T extends { id: string; createdAt?: string }>(value: Record<str
     : []
 }
 
-function getInitials(name: string) {
-  return name.trim().slice(0, 1).toLocaleUpperCase('ko-KR') || 'M'
-}
-
 function getDefaultProfile(user: ReturnType<typeof getFirebaseAuth>['currentUser']): FaithProfile {
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'MOA 친구'
 
@@ -960,21 +956,18 @@ function getAiFaithQuestions(date: string): FaithQuestion[] {
 function Avatar({
   name,
   size = 'post',
-  src,
+  uid,
 }: {
   name: string
+  uid?:string
   size?: 'comment' | 'header' | 'post' | 'profile'
   src?: string
 }) {
-  return src ? (
-    <img alt="" className={`faith-avatar faith-avatar-${size}`} src={src} />
-  ) : (
-    <span aria-hidden="true" className={`faith-avatar faith-avatar-${size}`}>{getInitials(name)}</span>
-  )
+  return <span className={`faith-avatar faith-avatar-${size}`}>{uid?<SyncedAuthorAvatar uid={uid} name={name}/>:<FeedAuthorAvatar photo={{id:name,authorName:name,imageUrl:'',caption:'',selectedDate:''}}/>}</span>
 }
 
 function AuthorRow({
-  avatarUrl,
+  avatarUrl,uid,
   canManage = false,
   name,
   onDelete,
@@ -982,6 +975,7 @@ function AuthorRow({
   time,
 }: {
   avatarUrl?: string
+  uid?:string
   canManage?: boolean
   name: string
   onDelete?: () => void
@@ -990,7 +984,7 @@ function AuthorRow({
 }) {
   return (
     <div className="faith-author-row">
-      <Avatar name={name} src={avatarUrl} />
+      <Avatar uid={uid} name={name} src={avatarUrl} />
       <div>
         <strong>{name}</strong>
         {time ? <time>{time}</time> : null}
@@ -1426,7 +1420,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }, [crossPhotos, currentUser?.uid, nowMs, publicFeedPhotos])
   const ownFeedPhotos = useMemo(() => buildPersonalFeed([...publicCrossPhotos, ...crossPhotos], entries, currentUser?.uid), [publicCrossPhotos, crossPhotos, entries, currentUser?.uid])
   const galleryPhotos: CrossPhoto[] = feedScope === 'mine' ? ownFeedPhotos : publicCrossPhotos
-  const feedAuthorAvatars=useFeedAuthorAvatars(galleryPhotos.filter(p=>!selectedFeedGroup||normalizeFeedGroup(p.groupName)===selectedFeedGroup).slice(0,visibleFeedCount),currentUser?.uid||'')
+  const feedAuthorAvatars=useFeedAuthorAvatars([...(openedAuthor?[openedAuthor]:[]),...galleryPhotos.filter(p=>!selectedFeedGroup||normalizeFeedGroup(p.groupName)===selectedFeedGroup).slice(0,visibleFeedCount)],currentUser?.uid||'')
   const publicGroupNames = [...new Set([...savedGroups.map(normalizeFeedGroup), ...publicCrossPhotos.map(photo => normalizeFeedGroup(photo.groupName))])]
   const selectedProfilePhoto = crossPhotos.find((photo) => photo.id === selectedProfilePhotoId) ?? null
   const selectedFeedPhoto = publicCrossPhotos.find((photo) => (photo.publicId ?? photo.id) === selectedFeedPhotoId) ?? null
@@ -2708,7 +2702,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
               <button aria-label="내 기록 보기" className="faith-avatar-button" type="button" onClick={() => {
                 setActiveTab('profile')
               }}>
-                <Avatar name={authorName} size="header" src={authorAvatarUrl} />
+                <Avatar uid={churchMember?.uid||currentUser?.uid} name={authorName} size="header" src={authorAvatarUrl} />
               </button>
             )}
           </div>
@@ -2824,7 +2818,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                         return (
                           <article className="faith-photo-slide" key={photoKey}>
                             <AuthorRow
-                              avatarUrl={photo.authorAvatarUrl}
+                              uid={photo.ownerUid||photo.authorUid} avatarUrl={photo.authorAvatarUrl}
                               name={photo.authorName || authorName}
                               time={formatRelativeTime(photo.createdAt)}
                               canManage={photo.ownerUid === currentUser?.uid}
@@ -3109,7 +3103,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                     </div>
                   ) : null}
                 </div>
-                <AuthorRow avatarUrl={selectedPrayer.authorAvatarUrl} name={selectedPrayer.authorName || authorName} time={formatRelativeTime(selectedPrayer.createdAt)} />
+                <AuthorRow uid={selectedPrayer.authorUid} avatarUrl={selectedPrayer.authorAvatarUrl} name={selectedPrayer.authorName || authorName} time={formatRelativeTime(selectedPrayer.createdAt)} />
                 <h3>{selectedPrayer.title}</h3>
                 {selectedPrayer.body ? <p>{selectedPrayer.body}</p> : null}
                 <ReactionRow
@@ -3149,7 +3143,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                 {filteredPrayerRequests.length ? filteredPrayerRequests.map((request) => (
                   <article className="faith-prayer-post" key={request.id}>
                     <AuthorRow
-                      avatarUrl={request.authorAvatarUrl}
+                      uid={request.authorUid} avatarUrl={request.authorAvatarUrl}
                       name={request.authorName || authorName}
                       time={formatRelativeTime(request.createdAt)}
                     />
@@ -3194,7 +3188,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                     </div>
                   ) : null}
                 </div>
-                <AuthorRow avatarUrl={selectedQuestion.authorAvatarUrl} name={selectedQuestion.authorName || authorName} time={formatRelativeTime(selectedQuestion.createdAt)} />
+                <AuthorRow uid={selectedQuestion.authorUid} avatarUrl={selectedQuestion.authorAvatarUrl} name={selectedQuestion.authorName || authorName} time={formatRelativeTime(selectedQuestion.createdAt)} />
                 <h3>{selectedQuestion.title}</h3>
                 <p>{selectedQuestion.body}</p>
                 <div className="faith-tags">{selectedQuestion.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
@@ -3205,7 +3199,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   ) : null}
                   {selectedQuestionAnswers.length ? selectedQuestionAnswers.map((answer) => (
                     <article className={aiAuthorIds.has(answer.authorUid) ? 'faith-ai-answer' : undefined} key={answer.id}>
-                      <Avatar name={answer.authorName} size="comment" src={answer.authorAvatarUrl} />
+                      <Avatar uid={answer.authorUid} name={answer.authorName} size="comment" src={answer.authorAvatarUrl} />
                       <div>
                         <div className="faith-answer-author">\n                          <strong>{answer.authorName}</strong>\n                          {aiAuthorIds.has(answer.authorUid) ? <span className="faith-ai-answer-badge">✦ AI 답변</span> : null}\n                          <time>{formatRelativeTime(answer.createdAt)}</time>\n                        </div>
                         <p>{answer.body}</p>
@@ -3300,7 +3294,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   {filteredQuestions.length ? filteredQuestions.map((question) => (
                     <article className="faith-question-post" key={question.id}>
                       <AuthorRow
-                        avatarUrl={question.authorAvatarUrl}
+                        uid={question.authorUid} avatarUrl={question.authorAvatarUrl}
                         name={question.authorName || authorName}
                         time={formatRelativeTime(question.createdAt)}
                       />
@@ -3793,7 +3787,7 @@ function PrayerComments({
       <h4>댓글 {comments.length}</h4>
       {comments.map((comment) => (
         <article key={comment.id}>
-          <Avatar name={comment.authorName} size="comment" src={comment.authorAvatarUrl} />
+          <Avatar uid={comment.authorUid} name={comment.authorName} size="comment" src={comment.authorAvatarUrl} />
           <div>
             <div><strong>{comment.authorName}</strong><time>{formatRelativeTime(comment.createdAt)}</time></div>
             <p>{comment.body}</p>
@@ -3838,7 +3832,7 @@ function PhotoComments({
     <section className="faith-comments" aria-label="사진 댓글">
       {comments.map((comment) => (
         <article key={comment.id}>
-          <Avatar name={comment.authorName} size="comment" src={comment.authorAvatarUrl} />
+          <Avatar uid={comment.authorUid} name={comment.authorName} size="comment" src={comment.authorAvatarUrl} />
           <div>
             <div><strong>{comment.authorName}</strong><time>{formatRelativeTime(comment.createdAt)}</time></div>
             <p>{comment.body}</p>

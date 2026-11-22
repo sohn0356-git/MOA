@@ -1,3 +1,4 @@
+import {shouldShowInitialLaunch,markLaunchSeen} from '../lib/launchSession'
 import {useCallback,useEffect,useState} from 'react'
 import {AppLaunchScreen,type StartupContentState} from '../components/AppLaunchScreen'
 import {MeditationApp} from '../apps/meditation/MeditationApp'
@@ -9,7 +10,8 @@ import {useAppUpdate} from '../hooks/useAppUpdate'
 import './FaithEntry.css'
 export function AppShell(){
  const {authError,isAuthLoading,isAuthMutating,signInWithGoogle,signOutUser,user}=useAuth()
- const [initial,setInitial]=useState(true),[loginOverlay,setLoginOverlay]=useState(false),[googlePending,setGooglePending]=useState(false),[deferred,setDeferred]=useState(false),[content,setContent]=useState<StartupContentState|null>(null)
+ const [initial,setInitial]=useState(shouldShowInitialLaunch),[loginOverlay,setLoginOverlay]=useState(false),[googlePending,setGooglePending]=useState(false),[deferred,setDeferred]=useState(false),[content,setContent]=useState<StartupContentState|null>(null)
+ useEffect(markLaunchSeen,[])
  const activity=useFaithActivity(),activityId=activity.activityId
  const {applyUpdate,hasUpdate,isUpdating,updateError}=useAppUpdate()
  const owner=activityId||user?.uid||'guest'

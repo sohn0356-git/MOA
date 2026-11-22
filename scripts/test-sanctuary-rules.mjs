@@ -6,6 +6,12 @@ async function check(ok,path,method,data,uid){const r=await request(path,method,
 const stamp={'.sv':'timestamp'},profile={name:'하늘',skin:1,hair:2,shirt:3},presence={...profile,x:0,z:.9,facing:0,moving:false,updatedAt:stamp}
 await check(false,'sanctuary','GET',undefined,null)
 await check(true,'sanctuary/avatars/room-alice','PUT',profile)
+await check(true,'sanctuary/avatars/room-alice','GET',undefined,null)
+await check(false,'sanctuary/avatars','GET',undefined,null)
+await check(false,'sanctuary/prayers','GET',undefined,null)
+await check(false,'sanctuary/presence','GET',undefined,null)
+await check(false,'sanctuary/avatars/room-alice','PUT',profile,null)
+await check(false,'sanctuary/avatars/room-alice','PUT',{...profile,email:'private@example.com'})
 await check(false,'sanctuary/avatars/room-alice','PUT',profile,'room-bob')
 await check(false,'sanctuary/avatars/room-alice','PUT',{...profile,shirt:9})
 await check(false,'sanctuary/avatars/room-alice','PUT',{...profile,shirt:.5})

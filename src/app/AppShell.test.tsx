@@ -23,7 +23,7 @@ vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,ac
 afterEach(cleanup)
 beforeEach(()=>{
  boot.publish=true
- localStorage.clear();vi.clearAllMocks()
+ localStorage.clear();sessionStorage.clear();vi.clearAllMocks()
  auth.signInWithGoogle.mockReset().mockResolvedValue(undefined)
  auth.user=null;auth.authError=null;auth.isAuthLoading=false;auth.isAuthMutating=false
  activity.activityId='';activity.isLoading=false;activity.isSwitching=false;activity.error=''
@@ -136,4 +136,21 @@ it('waits for the newly signed-in account content instead of reusing guest readi
  expect(screen.getByLabelText('구글 로그인 준비')).toBeTruthy();expect(screen.getByRole('progressbar').getAttribute('value')).not.toBe('100')
  boot.publish=true;view.rerender(<AppShell/>)
  await waitFor(()=>expect(screen.queryByLabelText('구글 로그인 준비')).toBeNull())
+})
+
+it('does not cover the app again after a same-tab refresh or remount',()=>{
+ auth.isAuthLoading=true
+ const view=render(<AppShell/>);expect(screen.getByLabelText('MOA 시작 준비')).toBeTruthy()
+ view.unmount();render(<AppShell/>)
+ expect(screen.queryByLabelText('MOA 시작 준비')).toBeNull()
+ expect(screen.getByRole('main',{name:'MOA 메인'}).hasAttribute('inert')).toBe(false)
+})
+it('skips initial launch on reload even without a session marker',()=>{
+ auth.isAuthLoading=true
+ const getEntries=vi.spyOn(performance,'getEntriesByType').mockReturnValue([{type:'reload'}] as unknown as PerformanceEntry[])
+ try{
+  render(<AppShell/>)
+  expect(screen.queryByLabelText('MOA 시작 준비')).toBeNull()
+  expect(screen.getByRole('main',{name:'MOA 메인'}).hasAttribute('inert')).toBe(false)
+ }finally{getEntries.mockRestore()}
 })

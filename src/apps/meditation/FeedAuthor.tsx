@@ -1,5 +1,6 @@
 import {useEffect,useState} from 'react'
 import {onValue,ref,query,orderByChild,equalTo,limitToLast} from 'firebase/database'
+import {getRealtimeDb} from '../../services/firebase'
 import {getFaithDb} from '../../services/faithSession'
 import {PixelAvatar} from './PixelAvatar'
 import {normalizeAvatar,type AvatarProfile,type SharedPrayer} from './sanctuaryCommunity'
@@ -9,15 +10,20 @@ export type AuthorPhoto={id:string;publicId?:string;ownerUid?:string;authorUid?:
 export const authorUid=(photo:AuthorPhoto)=>photo.ownerUid||photo.authorUid||''
 export function useFeedAuthorAvatars(photos:AuthorPhoto[],viewerUid:string){
  const ids=JSON.stringify([...new Set(photos.map(authorUid).filter(Boolean))].sort()),[avatars,setAvatars]=useState<Record<string,AvatarProfile>>({})
- useEffect(()=>{let alive=true;setAvatars({});if(!viewerUid)return
-  const stops=JSON.parse(ids).map((uid:string)=>onValue(ref(getFaithDb(),'sanctuary/avatars/'+uid),s=>{if(alive&&s.val())setAvatars(current=>({...current,[uid]:normalizeAvatar(s.val())}))},()=>{}))
+ useEffect(()=>{let alive=true;setAvatars({});
+  const stops=JSON.parse(ids).map((uid:string)=>onValue(ref(getRealtimeDb(),'sanctuary/avatars/'+uid),s=>{if(alive)setAvatars(current=>({...current,[uid]:normalizeAvatar(s.val(),photos.find(photo=>authorUid(photo)===uid)?.authorName)}))},()=>{}))
   return()=>{alive=false;stops.forEach((stop:()=>void)=>stop())}
  },[ids,viewerUid])
  return avatars
 }
 export function FeedAuthorAvatar({photo,profile}:{photo:AuthorPhoto;profile?:AvatarProfile}){
- const avatar=profile||(photo.authorPixelAvatar?normalizeAvatar(photo.authorPixelAvatar):undefined)
- return <span className="faith-author-avatar" aria-hidden="true">{avatar?<PixelAvatar profile={avatar} facing={-25} moving={false} seated={false} scale={.62}/>:photo.authorAvatarUrl?<img src={photo.authorAvatarUrl} alt=""/>:<span>{(photo.authorName||'이웃').slice(0,2)}</span>}</span>
+ const avatar=profile||normalizeAvatar(photo.authorPixelAvatar,photo.authorName)
+ return <span className="faith-author-avatar" aria-hidden="true"><PixelAvatar profile={avatar} facing={-25} moving={false} seated={false} scale={.62}/></span>
+}
+export function SyncedAuthorAvatar({uid,name}:{uid:string;name:string}) {
+ const photo={id:uid,ownerUid:uid,authorName:name,imageUrl:'',caption:'',selectedDate:''}
+ const profiles=useFeedAuthorAvatars([photo],'')
+ return <FeedAuthorAvatar photo={photo} profile={profiles[uid]}/>
 }
 export function FeedAuthorDialog({photo,photos,profile,viewerUid,onClose,onSignIn}:{photo:AuthorPhoto;photos:AuthorPhoto[];profile?:AvatarProfile;viewerUid:string;onClose:()=>void;onSignIn?:()=>Promise<unknown>}){
  const [tab,setTab]=useState<'devotions'|'prayers'>('devotions'),[prayers,setPrayers]=useState<SharedPrayer[]>([]),[loaded,setLoaded]=useState(false),[error,setError]=useState('')

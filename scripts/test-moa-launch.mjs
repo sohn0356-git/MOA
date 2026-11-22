@@ -36,6 +36,10 @@ try{
    await page.getByLabel('구글 로그인 준비').waitFor({state:'detached'});await page.getByRole('button',{name:'로그아웃',exact:true}).waitFor()
    assert.equal(await page.locator('main[aria-label="MOA 메인"]').getAttribute('inert'),null)
   }else{await page.getByRole('button',{name:'먼저 둘러보기'}).click();await page.getByLabel('MOA 시작 준비').waitFor({state:'detached'})}
+  await page.reload()
+  await page.locator('main[aria-label="MOA 메인"]').waitFor()
+  assert.equal(await page.locator('.moa-launch').count(),0,'refresh must not replay the welcome loading screen')
+  assert.equal(await page.locator('main[aria-label="MOA 메인"]').getAttribute('inert'),null,'account restoration may not cover a refreshed app')
   await context.close()
  }
  const slow=await browser.newContext({viewport:{width:390,height:800}}),page=await slow.newPage();observe(page)

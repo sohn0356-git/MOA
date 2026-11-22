@@ -2,6 +2,14 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        var moaNavigation = performance.getEntriesByType('navigation')[0];
+        var moaReturning = moaNavigation && (moaNavigation.type === 'reload' || moaNavigation.type === 'back_forward');
+        try { moaReturning = moaReturning || sessionStorage.getItem('moa.launch.seen.v1') === '1'; } catch (_) {}
+        if (moaReturning) document.documentElement.dataset.moaResume = 'true';
+      } catch (_) {}
+    </script>
     <link rel="icon" type="image/png" sizes="32x32" href="/MOA/icons/chapel-v1-favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/MOA/icons/chapel-v1-touch-180.png" />
     <meta
@@ -19,6 +27,7 @@
   </head>
   <body>
     <style>
+      html[data-moa-resume="true"] .moa-boot{display:none}body{background:#f7f5ee}
       .moa-boot{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 25%,#e7ecd8,transparent 57%),#f7f5ee;color:#4b6040;font-family:system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}.moa-boot img{border-radius:30px;width:192px;height:192px}.moa-boot h1{font-size:36px;letter-spacing:.08em;margin:15px 0 5px}.moa-boot p{font-size:12px;color:#899879;margin:0 0 26px}.moa-boot-track{width:min(280px,75vw);height:8px;background:#e2e7d7;border-radius:10px;overflow:hidden;margin:auto}.moa-boot-track::after{content:'';display:block;width:35%;height:100%;border-radius:10px;background:#96ac7c;animation:moa-boot-drift 1.5s ease-in-out infinite}.moa-boot small{display:block;font-size:11px;color:#97a286;margin-top:14px}@keyframes moa-boot-drift{from{transform:translateX(-100%)}to{transform:translateX(390%)}}@media(prefers-reduced-motion:reduce){.moa-boot-track::after{animation:none;transform:translateX(90%)}}
     </style>
     <div id="root"><div class="moa-boot" role="status" aria-label="MOA를 여는 중"><div><img src="/MOA/icons/chapel-v1-192.png" width="192" height="192" alt="" fetchpriority="high"/><h1>MOA</h1><p>묵상 · 선교 · 교제</p><div class="moa-boot-track" role="progressbar" aria-label="앱을 불러오는 중"></div><small>작은 예배당을 열고 있어요…</small></div></div></div>
