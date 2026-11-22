@@ -2977,7 +2977,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                         onClick={() => toggleVerse(verse.number)}
                       >
                         <sup>{getVerseDisplayNumber(verse)}</sup>
-                        <span className="faith-verse-pair"><span lang={isFallbackPlan?'ko':scriptureLanguage}>{verse.text}</span>{comparisonGroups.filter(g=>g.aligned).map(group=><span key={group.language} className="faith-verse-translation" lang={group.language}><small>{scriptureLanguageOptions.find(o=>o.id===group.language)?.label}</small>{group.verses.get(parallelVerseKey(verse,parallelMultipleChapters))||'이 절의 본문이 없습니다.'}</span>)}</span>
+                        <span className="faith-verse-pair"><span lang={isFallbackPlan?'ko':scriptureLanguage}>{verse.text}</span>{comparisonGroups.filter(g=>g.aligned).map(group=><span key={group.language} className="faith-verse-translation" lang={group.language}>{group.verses.get(parallelVerseKey(verse,parallelMultipleChapters))||'이 절의 본문이 없습니다.'}</span>)}</span>
                       </button>
                     ))
                   )}
