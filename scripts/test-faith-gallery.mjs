@@ -36,9 +36,10 @@ function App() {
 createRoot(document.getElementById('root')!).render(<App/>)
 `)
 await writeFile(folder + '/fake-db.ts', "export const onValue=()=>()=>{};export const query=()=>null;export const orderByChild=()=>null;export const equalTo=()=>null;export const limitToLast=()=>null;export const ref=()=>({}); export const update=async (_ref,data)=>{window.__collabImageWrites=data}")
-await writeFile(folder + '/fake-session.ts', "export const getFaithAuth=()=>({currentUser:{uid:'ai02'}}); export const getFaithDb=()=>({})")
+await writeFile(folder + '/fake-session.ts', "export const getFaithAuth=()=>({currentUser:{uid:'ai02'}}); export const getFaithDb=()=>({}); export const getRealtimeDb=getFaithDb")
 const server = await createServer({ configFile: false, root: process.cwd(), base: '/MOA/', plugins: [react()], resolve: { alias: [
  { find: 'firebase/database', replacement: process.cwd() + '/' + folder + '/fake-db.ts' },
+ { find: '../../services/firebase', replacement: process.cwd() + '/' + folder + '/fake-session.ts' },
  { find: '../../services/faithSession', replacement: process.cwd() + '/' + folder + '/fake-session.ts' },
 ] }, server: { host: '127.0.0.1', port: 4179, strictPort: true } })
 await server.listen()
