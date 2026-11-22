@@ -3088,7 +3088,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                 <time>{formatDateLabel(selectedEntry.selectedDate)}</time>
                 <h3>{getEntryTitle(selectedEntry)}</h3>
                 <p className="faith-muted">{selectedEntry.reference} · {selectedEntry.authorName ?? authorName} · {getAudienceLabel(selectedEntry.audience)}</p>
-                <blockquote>{selectedEntry.verseText}</blockquote>
+                <blockquote className="faith-selected-quote">{selectedEntry.verseText}</blockquote>
                 <DevotionImage value={selectedEntry.crossImage}/>
                 {(!selectedEntry.authorUid || selectedEntry.authorUid === currentUser?.uid) ? <button className="faith-outline-button" type="button" onClick={() => { startEdit(selectedEntry); setAudience('public') }}>십자가 공유 탭에 올리기</button> : null}
                 {selectedEntry.apply ? <section><h4>오늘의 적용</h4><p>{selectedEntry.apply}</p></section> : null}
