@@ -17,9 +17,9 @@ export default defineConfig({
       includeAssets: ['icons/chapel-v1-favicon-32.png', 'icons/chapel-v1-touch-180.png'],
       manifest: {
         id: '/MOA/',
-        name: '모아 예배당',
-        short_name: '모아 예배당',
-        description: '3D 픽셀 예배당에서 말씀과 묵상, 기도를 함께 나누는 공간',
+        name: '모아',
+        short_name: '모아',
+        description: '모아 — 묵상·선교·교제를 함께하는 신앙 공간',
         start_url: '/MOA/',
         scope: '/MOA/',
         display: 'standalone',

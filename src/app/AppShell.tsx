@@ -20,7 +20,7 @@ export function AppShell(){
 
 
   return (
-      <main inert={isUpdating} className="app-shell app-shell-subapp app-shell-faith" aria-label="모아 예배당 메인">
+      <main inert={isUpdating} className="app-shell app-shell-subapp app-shell-faith" aria-label="모아 메인">
         {hasUpdate ? <AppUpdateBanner error={updateError} isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}
         {authError ? <p className="faith-entry-error" role="alert">{authError}</p> : null}
         {activity.error ? <p className="faith-entry-error" role="alert">{activity.error}</p> : null}

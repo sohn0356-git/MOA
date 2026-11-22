@@ -11,11 +11,11 @@ try{
  const times=[]
  for(const route of ['', '#/ai-city','#/apps','#/suggestions','#/mini-room','#/home/legacy','#/timer','#/login']){
   const start=Date.now();await page.goto('http://127.0.0.1:4183/MOA/'+route)
-  await page.getByRole('main',{name:'모아 예배당 메인'}).waitFor()
+  await page.getByRole('main',{name:'모아 메인'}).waitFor()
   await page.waitForURL('**/#/meditation')
   await page.locator('.faith-bottom-nav button').first().waitFor()
   times.push({route,milliseconds:Date.now()-start})
-  assert.equal(await page.title(),'모아 예배당','browser and installed branding use the new chapel name')
+  assert.equal(await page.title(),'모아','browser and installed branding use the new chapel name')
   assert.equal(new URL(page.url()).hash,'#/meditation','all retired routes resolve to Faith')
   assert.equal(await page.locator('.faith-bottom-nav button').count(),5)
   assert.equal(await page.getByRole('button',{name:'예배당',exact:true}).getAttribute('aria-current'),'page','sanctuary is the launch tab')

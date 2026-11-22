@@ -15,7 +15,7 @@ const activity=vi.hoisted(()=>({
 vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
-vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>})=><section><h1>모아 예배당</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.()}>예배당 로그인</button></section>}))
+vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>})=><section><h1>모아</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.()}>예배당 로그인</button></section>}))
 afterEach(cleanup)
 beforeEach(()=>{
  localStorage.clear();vi.clearAllMocks()
@@ -72,13 +72,13 @@ describe('Faith activity permissions and account controls',()=>{
  })
  it.each(['#/ai-city','#/apps','#/suggestions','#/timer','#/home/old','#/login'])('opens only Faith for the retired route %s',(route)=>{
   history.replaceState(null,'','/'+route);render(<AppShell/>)
-  expect(screen.getByRole('main',{name:'모아 예배당 메인'})).toBeTruthy()
+  expect(screen.getByRole('main',{name:'모아 메인'})).toBeTruthy()
   expect(location.hash).toBe('#/meditation')
   expect(screen.queryByText('공개 도시')).toBeNull()
  })
  it('opens Faith during account restoration and for the legacy root hash',()=>{
   auth.isAuthLoading=true;history.replaceState(null,'','/#/');render(<AppShell/>)
-  expect(screen.getByRole('main',{name:'모아 예배당 메인'})).toBeTruthy()
+  expect(screen.getByRole('main',{name:'모아 메인'})).toBeTruthy()
   expect(screen.getByText('공개 신앙 앱')).toBeTruthy()
  })
  it('keeps the picker and logout for a signed-in personal visitor',()=>{
