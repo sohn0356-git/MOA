@@ -54,9 +54,6 @@
 @media(max-width:480px){.faith-social .faith-feed-intro{align-items:flex-start;padding:18px;gap:12px}.faith-social .faith-feed-intro h3{font-size:17px}.faith-social .faith-feed-intro .faith-primary{font-size:11px;padding:10px;min-height:42px}.faith-social .faith-title h2{font-size:20px}.faith-social .faith-header{gap:8px}.faith-social .faith-photo-frame{border-radius:12px}.faith-social .faith-panel{padding:16px}}
 @media(prefers-reduced-motion:reduce){.faith-social *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
-.faith-parallel-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 0;margin:4px 0 12px;border-block:1px solid #e6e8e0;color:#7d8974;font-size:11px}
-.faith-parallel-controls label{display:flex;align-items:center;gap:6px;min-width:0}
-.faith-parallel-controls select{border:1px solid #dce2d3;border-radius:9px;background:#f9faf5;color:#53674a;padding:7px;font:inherit;max-width:100%;min-width:0}
 .faith-verse-pair{display:grid;gap:12px;min-width:0}
 .faith-verse-translation{display:grid;gap:4px;color:#7b8390;font-size:.94em;line-height:1.85;overflow-wrap:anywhere}
 .faith-verse-translation small{font-size:9px;letter-spacing:.04em;color:#8f9c88}
@@ -66,3 +63,7 @@
 .faith-reading-finish>.faith-primary{width:100%;justify-content:center;gap:8px;min-height:48px}
 .faith-selected-quote{white-space:pre-line;line-height:1.9}
 @media(max-width:480px){.faith-scripture-head{flex-wrap:wrap}.faith-reading-tools{flex-wrap:wrap;gap:8px}.faith-parallel-controls{align-items:flex-start;gap:8px}.faith-parallel-controls label{flex-wrap:wrap}}
+
+.faith-language-menu [role=menu]{min-width:165px}
+.faith-language-menu [role=menu] button{display:flex;align-items:center;gap:7px}
+.faith-language-menu [role=menuitemcheckbox][aria-checked=true]{background:#f0f3e8;color:#536b44}

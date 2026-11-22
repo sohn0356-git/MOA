@@ -255,8 +255,8 @@ it('replaces profile photo editing with the primary-account chapel avatar editor
 it('pairs verses in two languages and opens writing from the end with both texts',async()=>{
  render(<MeditationApp/>)
  fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
- fireEvent.click(screen.getByRole('button',{name:'대조 읽기'}))
- expect(screen.getByRole('combobox',{name:'대조 언어'})).toHaveValue('en')
+ expect(screen.queryByRole('button',{name:'대조 읽기'})).toBeNull()
+ expect(screen.getByRole('button',{name:'말씀 언어 선택'})).toHaveTextContent('한글 + 영어')
  expect(document.querySelector('.faith-verse-translation')).toHaveTextContent('Love one another')
  fireEvent.click(document.querySelector('.faith-verse-list button')!)
  fireEvent.click(screen.getByRole('button',{name:'묵상하기'}))
@@ -272,17 +272,24 @@ it('pairs verses in two languages and opens writing from the end with both texts
 })
 it.each(['missing','mismatched'])('does not present a %s translation as the matching second language',kind=>{
  state.parallelMissing=kind==='missing';state.parallelMismatch=kind==='mismatched'
- render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}));fireEvent.click(screen.getByRole('button',{name:'대조 읽기'}))
+ render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
  expect(document.querySelector('.faith-verse-translation')).toBeNull()
- expect(screen.getByText(/같은 날짜·범위의 대조 본문을/)).toBeInTheDocument()
- expect(screen.getByRole('button',{name:'대조 본문 다시 불러오기'})).toBeInTheDocument()
+ expect(screen.getByText(/같은 날짜·범위 본문을/)).toBeInTheDocument()
+ expect(screen.getByRole('button',{name:'English 본문 다시 불러오기'})).toBeInTheDocument()
 })
-it('remembers the comparison setting and permits a different second language',()=>{
- const view=render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}));fireEvent.click(screen.getByRole('button',{name:'대조 읽기'}))
- fireEvent.change(screen.getByRole('combobox',{name:'대조 언어'}),{target:{value:'ja'}})
- expect(document.querySelector('.faith-verse-translation')).toHaveTextContent('互いに愛し合いなさい')
+it('remembers multiple selected languages and never permits an empty selection',()=>{
+ const view=render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
+ fireEvent.click(screen.getByRole('button',{name:'말씀 언어 선택'}))
+ expect(screen.getByRole('menuitemcheckbox',{name:/한국어/})).toHaveAttribute('aria-checked','true')
+ expect(screen.getByRole('menuitemcheckbox',{name:/English/})).toHaveAttribute('aria-checked','true')
+ fireEvent.click(screen.getByRole('menuitemcheckbox',{name:/日本語/}))
+ expect(document.querySelectorAll('.faith-verse-translation')).toHaveLength(2)
+ expect(document.querySelector('[lang=ja]')).toHaveTextContent('互いに愛し合いなさい')
+ fireEvent.click(screen.getByRole('menuitemcheckbox',{name:/English/}))
  view.unmount();render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
- expect(screen.getByRole('button',{name:'대조 읽기'})).toHaveAttribute('aria-pressed','true');expect(screen.getByRole('combobox',{name:'대조 언어'})).toHaveValue('ja')
+ expect(screen.getByRole('button',{name:'말씀 언어 선택'})).toHaveTextContent('한글 + 일본어')
+ fireEvent.click(screen.getByRole('button',{name:'말씀 언어 선택'}));fireEvent.click(screen.getByRole('menuitemcheckbox',{name:/한국어/}))
+ expect(screen.getByRole('menuitemcheckbox',{name:/日本語/})).toBeDisabled()
 })
 it('preserves a saved bilingual quotation when editing only the meditation',async()=>{
  const quote='[한국어] 서로 사랑하라\n[English] Love one another'
@@ -295,4 +302,11 @@ it('preserves a saved bilingual quotation when editing only the meditation',asyn
 it('reports the first actual scripture and entry/feed snapshots for the active content owner',async()=>{
  const status=vi.fn();render(<MeditationApp onStartupState={status}/>)
  await waitFor(()=>expect(status).toHaveBeenLastCalledWith({owner:'owner',entries:true,feed:true,scripture:true}))
+})
+
+it('uses Korean and English by default even when the old comparison preference was off',()=>{
+ localStorage.setItem('moa.faith.scripture-reading.v1',JSON.stringify({primary:'ja',parallel:false}))
+ render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
+ expect(screen.getByRole('button',{name:'말씀 언어 선택'})).toHaveTextContent('한글 + 영어')
+ expect(document.querySelector('.faith-verse-translation')).toHaveTextContent('Love one another')
 })
