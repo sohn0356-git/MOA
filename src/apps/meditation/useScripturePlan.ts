@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 export function useScripturePlan<T, L extends string>(
-  date: string, language: L, fetchPlan: (date: string, language: L) => Promise<T | null>,
+  date: string, language: L, fetchPlan: (date: string, language: L) => Promise<T | null>, enabled = true,
 ) {
   const key = JSON.stringify([date, language])
   const [attempt, setAttempt] = useState(0)
@@ -9,6 +9,7 @@ export function useScripturePlan<T, L extends string>(
     key: '', attempt: -1, plan: null, error: '', loading: true,
   })
   useEffect(() => {
+    if (!enabled) { setState({key:'',attempt:-1,plan:null,error:'',loading:false}); return }
     let active = true
     setState({ key, attempt, plan: null, error: '', loading: true })
     const load = async () => {
@@ -21,10 +22,10 @@ export function useScripturePlan<T, L extends string>(
     }
     void load()
     return () => { active = false }
-  }, [date, language, fetchPlan, key, attempt])
-  const isCurrent = state.key === key && state.attempt === attempt
-  const isLoading = !isCurrent || state.loading
+  }, [date, language, fetchPlan, key, attempt, enabled])
+  const isCurrent = enabled && state.key === key && state.attempt === attempt
+  const isLoading = enabled && (!isCurrent || state.loading)
   const remotePlan = isCurrent ? state.plan : null
   const retry = useCallback(() => setAttempt(value => value + 1), [])
-  return { remotePlan, isLoading, error: isCurrent ? state.error : '', isFallback: !isLoading && !remotePlan, retry }
+  return { remotePlan, isLoading, error: isCurrent ? state.error : '', isFallback: enabled && !isLoading && !remotePlan, retry }
 }

@@ -68,3 +68,12 @@ describe('scripture loading and retry', () => {
     await waitFor(() => expect(result.current.isFallback).toBe(true))
   })
 })
+
+it('loads no secondary data while disabled and masks a late response after disabling',async()=>{
+ let finish:(p:Plan)=>void=()=>{};const fetchPlan=vi.fn(()=>new Promise<Plan>(r=>{finish=r}))
+ const view=renderHook(({enabled})=>useScripturePlan('2026-11-22','en',fetchPlan,enabled),{initialProps:{enabled:false}})
+ expect(fetchPlan).not.toHaveBeenCalled();expect(view.result.current.isLoading).toBe(false);expect(view.result.current.isFallback).toBe(false)
+ view.rerender({enabled:true});expect(fetchPlan).toHaveBeenCalledOnce()
+ view.rerender({enabled:false});await act(async()=>{finish(actual)})
+ expect(view.result.current.remotePlan).toBeNull();expect(view.result.current.error).toBe('')
+})

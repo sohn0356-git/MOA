@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   publicPhotos: {} as Record<string, unknown>,
   praiseBank: {} as Record<string, unknown>,
   update: vi.fn(),
+  parallelMissing:false,
+  parallelMismatch:false,
   plan: { date: '2026-10-31', title: '말씀', theme: '사랑', reference: '요한복음 13:34', question: '오늘의 적용은?', verses: [{ number: 1, text: '서로 사랑하라' }] },
 }))
 vi.mock('../../services/firebase', () => ({
@@ -27,13 +29,14 @@ vi.mock('firebase/database', () => ({
   get: vi.fn(async () => ({ val: () => null })), push: () => ({ key: 'new-entry' }),
   update: state.update, set: vi.fn(), remove: vi.fn(), runTransaction: vi.fn(), serverTimestamp: () => 123,
 }))
-vi.mock('./useScripturePlan', () => ({ useScripturePlan: () => ({ remotePlan: state.plan, isLoading: false, error: '', isFallback: false, retry: vi.fn() }) }))
+vi.mock('./useScripturePlan', () => ({ useScripturePlan: (_date:string,language:string,_fetch:unknown,enabled=true) => ({remotePlan:!enabled||language!=='ko'&&state.parallelMissing?null:{...state.plan,reference:language!=='ko'&&state.parallelMismatch?'다른 본문':state.plan.reference,verses:state.plan.verses.map(v=>({...v,text:language==='en'?'Love one another':language==='ja'?'互いに愛し合いなさい':v.text}))},isLoading:false,error:'',isFallback:enabled&&language!=='ko'&&state.parallelMissing,retry:vi.fn()}) }))
 const image = 'data:image/png;base64,AAAA'
 beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') }
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new Event('close')) }
   localStorage.clear()
   state.user.uid = 'owner'
+  state.parallelMissing=false;state.parallelMismatch=false
   state.publicPhotos = {}
   state.praiseBank = {}
   state.update.mockReset().mockResolvedValue(undefined)
@@ -247,4 +250,44 @@ it('replaces profile photo editing with the primary-account chapel avatar editor
  await waitFor(()=>expect(saveFirebase).toHaveBeenCalledWith('sanctuary/avatars/google-alice',expect.objectContaining({name:'Alice',gender:'female'})))
  expect(screen.getByRole('img',{name:'프로필의 내 아바타'})).toHaveAttribute('data-gender','female')
  expect(state.update).not.toHaveBeenCalled()
+})
+
+it('pairs verses in two languages and opens writing from the end with both texts',async()=>{
+ render(<MeditationApp/>)
+ fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
+ fireEvent.click(screen.getByRole('button',{name:'대조 읽기'}))
+ expect(screen.getByRole('combobox',{name:'대조 언어'})).toHaveValue('en')
+ expect(document.querySelector('.faith-verse-translation')).toHaveTextContent('Love one another')
+ fireEvent.click(document.querySelector('.faith-verse-list button')!)
+ fireEvent.click(screen.getByRole('button',{name:'묵상하기'}))
+ await waitFor(()=>expect(screen.getByRole('heading',{name:'묵상 작성'})).toHaveFocus())
+ expect(document.querySelector('.faith-selected-quote')).toHaveTextContent('서로 사랑하라')
+ expect(document.querySelector('.faith-selected-quote')).toHaveTextContent('Love one another')
+ fireEvent.change(screen.getByRole('textbox',{name:/묵상 메모/}),{target:{value:'두 언어로 묵상한 내용'}})
+ fireEvent.click(screen.getByRole('button',{name:'나만 보기'}))
+ fireEvent.click(screen.getByRole('button',{name:'저장'}))
+ await waitFor(()=>expect(state.update).toHaveBeenCalled())
+ const payload=state.update.mock.calls.find(c=>c[1]['users/owner/meditationEntries/new-entry'])![1]['users/owner/meditationEntries/new-entry']
+ expect(payload.verseText).toContain('서로 사랑하라');expect(payload.verseText).toContain('Love one another')
+})
+it.each(['missing','mismatched'])('does not present a %s translation as the matching second language',kind=>{
+ state.parallelMissing=kind==='missing';state.parallelMismatch=kind==='mismatched'
+ render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}));fireEvent.click(screen.getByRole('button',{name:'대조 읽기'}))
+ expect(document.querySelector('.faith-verse-translation')).toBeNull()
+ expect(screen.getByText(/같은 날짜·범위의 대조 본문을/)).toBeInTheDocument()
+ expect(screen.getByRole('button',{name:'대조 본문 다시 불러오기'})).toBeInTheDocument()
+})
+it('remembers the comparison setting and permits a different second language',()=>{
+ const view=render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}));fireEvent.click(screen.getByRole('button',{name:'대조 읽기'}))
+ fireEvent.change(screen.getByRole('combobox',{name:'대조 언어'}),{target:{value:'ja'}})
+ expect(document.querySelector('.faith-verse-translation')).toHaveTextContent('互いに愛し合いなさい')
+ view.unmount();render(<MeditationApp/>);fireEvent.click(within(screen.getByRole('navigation',{name:'모아'})).getByRole('button',{name:'묵상·기도'}))
+ expect(screen.getByRole('button',{name:'대조 읽기'})).toHaveAttribute('aria-pressed','true');expect(screen.getByRole('combobox',{name:'대조 언어'})).toHaveValue('ja')
+})
+it('preserves a saved bilingual quotation when editing only the meditation',async()=>{
+ const quote='[한국어] 서로 사랑하라\n[English] Love one another'
+ state.entries.original={...state.entries.original as object,verseText:quote}
+ await openEdit();fireEvent.change(screen.getByRole('textbox',{name:/묵상 메모/}),{target:{value:'본문을 유지하는 수정'}});fireEvent.click(screen.getByRole('button',{name:'저장'}))
+ await waitFor(()=>expect(state.update).toHaveBeenCalled())
+ expect(state.update.mock.calls.find(c=>c[1]['users/owner/meditationEntries/original'])![1]['users/owner/meditationEntries/original'].verseText).toBe(quote)
 })

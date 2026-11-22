@@ -290,6 +290,11 @@ const scriptureLanguageOptions: Array<{ id: ScriptureLanguage; label: string; tr
   { id: 'en', label: 'English', translation: 'World English Bible' },
   { id: 'ja', label: '日本語', translation: 'Japanese Bungo-yaku' },
 ]
+const READING_PREFERENCES_KEY='moa.faith.scripture-reading.v1'
+function readingPreferences(){
+ try{const p=JSON.parse(localStorage.getItem(READING_PREFERENCES_KEY)||'{}');return{primary:scriptureLanguageOptions.some(l=>l.id===p.primary)?p.primary as ScriptureLanguage:'ko' as ScriptureLanguage,secondary:scriptureLanguageOptions.some(l=>l.id===p.secondary)?p.secondary as ScriptureLanguage:'en' as ScriptureLanguage,parallel:p.parallel===true}}catch{return{primary:'ko' as ScriptureLanguage,secondary:'en' as ScriptureLanguage,parallel:false}}
+}
+const parallelVerseKey=(v:Verse,multi=false)=>multi?(String(v.number).includes(':')?String(v.number):`${v.chapter??'?'}:${v.number}`):String(v.number).split(':').at(-1)!
 const scriptureBookSlugs: Record<string, string> = {
   창세기: 'genesis',
   출애굽기: 'exodus',
@@ -644,6 +649,7 @@ async function loadScriptureBook(language: ScriptureLanguage, book: string) {
   const promise = fetch(`${import.meta.env.BASE_URL}scripture/${language}/${slug}.json`, { cache: 'no-cache' })
     .then((response) => response.ok ? response.json() as Promise<ScriptureCache> : null)
     .catch(() => null)
+    .then(cache=>{if(!cache)scriptureBookCachePromises.delete(cacheKey);return cache})
 
   scriptureBookCachePromises.set(cacheKey, promise)
   return promise
@@ -664,6 +670,7 @@ async function getScriptureVersesFromCache(language: ScriptureLanguage, range: F
     const chapterVerses = cache?.chapters?.[String(chapter)]
 
     if (!chapterVerses) {
+      scriptureBookCachePromises.delete(`${language}:${scriptureBookSlugs[book]}`)
       return null
     }
 
@@ -682,6 +689,7 @@ async function getScriptureVersesFromCache(language: ScriptureLanguage, range: F
       const text = chapterVerses[String(verseNumber)]
 
       if (!text) {
+        scriptureBookCachePromises.delete(`${language}:${scriptureBookSlugs[book]}`)
         return null
       }
 
@@ -735,7 +743,7 @@ async function fetchFirebasePlan(date: string, language: ScriptureLanguage) {
     const range = normalizeFirebaseRange(value[0])
     const verses = range ? await getScriptureVersesFromCache(language, range) : null
     const translation = scriptureLanguageOptions.find((option) => option.id === language)?.translation
-    const plan = range ? planFromFirebaseRange(date, range, verses, translation) : null
+    const plan = range && (language==='ko'||verses?.length) ? planFromFirebaseRange(date, range, verses, translation) : null
 
     if (range && !plan) {
       const parts = getRangeParts(range)
@@ -751,7 +759,7 @@ async function fetchFirebasePlan(date: string, language: ScriptureLanguage) {
   const translation = typeof value.translation === 'string' ? value.translation : undefined
   const cachedVerses = range ? await getScriptureVersesFromCache(language, range) : null
 
-  const plan = range ? planFromFirebaseRange(date, range, verses ?? cachedVerses, translation) : null
+  const plan = range && (language==='ko'||cachedVerses?.length) ? planFromFirebaseRange(date, range, verses ?? cachedVerses, language==='ko'?translation:scriptureLanguageOptions.find(o=>o.id===language)?.translation) : null
 
   if (range && !plan) {
     const parts = getRangeParts(range)
@@ -1189,13 +1197,22 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   const [qnaView, setQnaView] = useState<QnaView>('list')
   const [currentTodayKey, setCurrentTodayKey] = useState(getTodayKey)
   const [selectedDate, setSelectedDate] = useState(getTodayKey)
-  const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>('ko')
+  const [scriptureLanguage, setScriptureLanguage] = useState<ScriptureLanguage>(()=>readingPreferences().primary)
+  const [parallelReading,setParallelReading]=useState(()=>readingPreferences().parallel)
+  const [secondaryLanguage,setSecondaryLanguage]=useState<ScriptureLanguage>(()=>readingPreferences().secondary)
+  const comparisonLanguage=secondaryLanguage===scriptureLanguage?(scriptureLanguage==='ko'?'en':'ko'):secondaryLanguage
+  const [savedVerseQuote,setSavedVerseQuote]=useState<string|null>(null)
   const [selectedVerseNumbers, setSelectedVerseNumbers] = useState<VerseKey[]>([])
   const [isVerseSheetOpen, setIsVerseSheetOpen] = useState(false)
   const [isDateSheetOpen, setIsDateSheetOpen] = useState(false)
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false)
   const [fontScale, setFontScale] = useState(() => Number(window.localStorage.getItem('moa.faith.fontScale') ?? 1) || 1)
   const { remotePlan, isLoading: isPlanLoading, error: planError, isFallback: isFallbackPlan, retry: retryPlan } = useScripturePlan(selectedDate, scriptureLanguage, fetchFirebasePlan)
+  const comparison=useScripturePlan(selectedDate,comparisonLanguage,fetchFirebasePlan,parallelReading&&activeTab==='devotion'&&!isPlanLoading&&!isFallbackPlan&&!!remotePlan)
+  const comparisonAligned=!!remotePlan&&!!comparison.remotePlan&&!comparison.isLoading&&!comparison.isFallback&&comparison.remotePlan.date===remotePlan.date&&comparison.remotePlan.reference===remotePlan.reference
+  const parallelMultipleChapters=/:\d+-\d+:/.test(remotePlan?.reference||'')
+  const comparisonVerses=useMemo(()=>new Map((comparisonAligned?comparison.remotePlan!.verses:[]).map(v=>[parallelVerseKey(v,parallelMultipleChapters),v.text])),[comparisonAligned,comparison.remotePlan,parallelMultipleChapters])
+  useEffect(()=>{try{localStorage.setItem(READING_PREFERENCES_KEY,JSON.stringify({primary:scriptureLanguage,secondary:comparisonLanguage,parallel:parallelReading}))}catch{}},[scriptureLanguage,comparisonLanguage,parallelReading])
   const composerOwner = useRef('')
   const [groupName, setGroupName] = useState(DEFAULT_FEED_GROUP)
   const [feedScope, setFeedScope] = useState<'public' | 'mine'>('public')
@@ -1301,7 +1318,8 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     isAiMode ? mergeFaithRecords(faithQuestions, aiFaithQuestions) : faithQuestions
   ), [aiFaithQuestions, faithQuestions, isAiMode])
   const selectedVerses = useMemo(() => getSelectedVerses(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
-  const selectedVerseText = useMemo(() => getSelectedVerseText(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
+  const liveSelectedVerseText = useMemo(()=>parallelReading&&comparisonAligned?selectedVerses.map(v=>`${getVerseDisplayNumber(v)} [${scriptureLanguageOptions.find(o=>o.id===scriptureLanguage)?.label}] ${v.text}\n[${scriptureLanguageOptions.find(o=>o.id===comparisonLanguage)?.label}] ${comparisonVerses.get(parallelVerseKey(v,parallelMultipleChapters))||'이 절의 대조 본문이 없습니다.'}`).join('\n\n'):getSelectedVerseText(plan,selectedVerseNumbers),[parallelReading,comparisonAligned,selectedVerses,scriptureLanguage,comparisonLanguage,comparisonVerses,plan,selectedVerseNumbers])
+  const selectedVerseText = savedVerseQuote??liveSelectedVerseText
   const currentUser = getFirebaseAuth().currentUser
   const currentProfile = profileOwner.current === currentUser?.uid ? faithProfile ?? getDefaultProfile(currentUser) : getDefaultProfile(currentUser)
   const activeIdentity = aiLoginAccounts.find(account => account.accountId === activityId)
@@ -1348,6 +1366,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     const values = record.values
     setEditingEntry(record.mode === 'edit' ? source! : null); setSelectedEntryId(record.entryId)
     skipVerseReset.current = selectedDate !== values.selectedDate
+    setSavedVerseQuote(values.verseText)
     setSelectedDate(values.selectedDate); setSelectedVerseNumbers(values.selectedVerseNumbers)
     setMind(values.mind); setApply(values.apply); setPrayerText(values.prayer)
     setDevotionImage(values.crossImage); setIsDevotionImagePreparing(false)
@@ -1559,6 +1578,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   useEffect(() => {
     if (skipVerseReset.current) { skipVerseReset.current = false; return }
     setSelectedVerseNumbers([])
+    setSavedVerseQuote(null)
   }, [selectedDate, scriptureLanguage])
 
 
@@ -1838,6 +1858,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }
 
   function toggleVerse(verseNumber: VerseKey) {
+    setSavedVerseQuote(null)
     setSelectedVerseNumbers((currentNumbers) =>
       currentNumbers.includes(verseNumber)
         ? currentNumbers.filter((number) => number !== verseNumber)
@@ -1846,6 +1867,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }
 
   function startWriting() {
+    setSavedVerseQuote(liveSelectedVerseText)
     draftStore.activate(); composerOwner.current = draftOwner
     setGroupName(selectedFeedGroup || DEFAULT_FEED_GROUP)
     setEditingEntry(null)
@@ -1857,6 +1879,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     setAudience('public')
     setBookmarked(false)
     setDevotionView('write')
+    requestAnimationFrame(()=>{const editor=document.getElementById('write-title');editor?.scrollIntoView?.({block:'start'});editor?.focus({preventScroll:true})})
   }
 
   function startEdit(entry: MeditationEntry) {
@@ -1875,6 +1898,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     setSelectedEntryId(entry.id)
     setSelectedDate(draft.selectedDate)
     setSelectedVerseNumbers(draft.selectedVerseNumbers)
+    setSavedVerseQuote(draft.verseText)
     setDevotionImage(isDevotionImage(draft.crossImage) ? draft.crossImage : '')
     setIsDevotionImagePreparing(false)
     setMind(draft.mind)
@@ -2909,11 +2933,17 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                         </div>
                       ) : null}
                     </div>
+                    <button className="faith-text-button" aria-pressed={parallelReading} type="button" onClick={()=>setParallelReading(value=>!value)}>대조 읽기</button>
                     <button className="faith-text-button" type="button" onClick={startWriting}>
                       묵상 쓰기
                     </button>
                   </div>
                 </div>
+                {parallelReading&&<div className="faith-parallel-controls" aria-label="대조 읽기 설정"><span>{scriptureLanguageOptions.find(o=>o.id===scriptureLanguage)?.label} · {scriptureLanguageOptions.find(o=>o.id===scriptureLanguage)?.translation}</span><span aria-hidden="true">＋</span><label>대조 언어<select aria-label="대조 언어" value={comparisonLanguage} onChange={e=>setSecondaryLanguage(e.target.value as ScriptureLanguage)}>{scriptureLanguageOptions.filter(o=>o.id!==scriptureLanguage).map(o=><option key={o.id} value={o.id}>{o.label} · {o.translation}</option>)}</select></label></div>}
+                {parallelReading&&!isFallbackPlan&&<>
+                 {comparison.isLoading&&<p className="faith-helper" role="status">대조 본문을 불러오고 있습니다.</p>}
+                 {!isPlanLoading&&!comparison.isLoading&&!comparisonAligned&&<div className="faith-parallel-notice" role="status">같은 날짜·범위의 대조 본문을 불러오지 못했습니다. <button type="button" className="faith-text-button" onClick={comparison.retry}>대조 본문 다시 불러오기</button></div>}
+                </>}
                 {isFallbackPlan ? (
                   <div className="faith-alert faith-alert-error" role="status">
                     <strong>예시 대체 본문</strong>
@@ -2935,12 +2965,13 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                         onClick={() => toggleVerse(verse.number)}
                       >
                         <sup>{getVerseDisplayNumber(verse)}</sup>
-                        <span>{verse.text}</span>
+                        <span className="faith-verse-pair"><span lang={isFallbackPlan?'ko':scriptureLanguage}>{verse.text}</span>{parallelReading&&comparisonAligned&&<span className="faith-verse-translation" lang={comparisonLanguage}><small>{scriptureLanguageOptions.find(o=>o.id===comparisonLanguage)?.label}</small>{comparisonVerses.get(parallelVerseKey(verse,parallelMultipleChapters))||'이 절의 대조 본문이 없습니다.'}</span>}</span>
                       </button>
                     ))
                   )}
                 </div>
                 <p className="faith-question-line">{plan.question}</p>
+                <div className="faith-reading-finish"><span>{selectedVerseNumbers.length?`${selectedVerseNumbers.length}개 구절을 담았어요`:'읽은 말씀을 마음에 담아보세요'}</span><button className="faith-primary" type="button" disabled={isPlanLoading} onClick={startWriting}>묵상하기<Icon name="edit"/></button></div>
               </section>
             ) : null}
 
@@ -2962,22 +2993,14 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   </select>
                   <small>{activityBusy ? '작성자 권한을 확인하고 있습니다…' : `${authorName} 이름으로 게시됩니다. 십자가 그림도 함께 첨부할 수 있습니다.`}</small>
                 </label> : null}
-                <section className={selectedVerses.length || (devotionView === 'edit' && selectedEntry?.verseText) ? 'faith-focus' : 'faith-verse-empty'}>
-                  {selectedVerses.length || (devotionView === 'edit' && selectedEntry?.verseText) ? (
+                <section className={selectedVerseText || (devotionView === 'edit' && selectedEntry?.verseText) ? 'faith-focus' : 'faith-verse-empty'}>
+                  {selectedVerseText || (devotionView === 'edit' && selectedEntry?.verseText) ? (
                     <>
                       <div className="faith-section-head">
                         <span>마음에 남은 말씀</span>
                         <button className="faith-text-button" type="button" onClick={() => setIsVerseSheetOpen(true)}>다시 선택</button>
                       </div>
-                      {selectedVerses.length ? (
-                        <div className="faith-selected-verses">
-                          {selectedVerses.map((verse) => (
-                            <p key={verse.number}><sup>{getVerseDisplayNumber(verse)}</sup>{verse.text}</p>
-                          ))}
-                        </div>
-                      ) : (
-                        <p>{selectedEntry?.verseText}</p>
-                      )}
+                      <div className="faith-selected-verses"><p className="faith-selected-quote">{selectedVerseText||selectedEntry?.verseText}</p></div>
                     </>
                   ) : (
                     <>
