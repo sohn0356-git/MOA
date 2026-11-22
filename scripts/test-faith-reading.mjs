@@ -8,19 +8,19 @@ const folder='.faith-reading-smoke'
 await mkdir(folder,{recursive:true});await mkdir('test-results/faith-gallery',{recursive:true})
 await writeFile(folder+'/index.html','<html lang="ko"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script type="module" src="./main.tsx"></script></html>')
 await writeFile(folder+'/main.tsx',`import React from 'react';import {createRoot} from 'react-dom/client';import '../src/index.css';import {MeditationApp} from '../src/apps/meditation/MeditationApp';createRoot(document.getElementById('root')!).render(<MeditationApp/>);`)
-await writeFile(folder+'/session.ts',`const auth={currentUser:null};export const getFirebaseAuth=()=>auth;export const getFaithAuth=getFirebaseAuth;export const getRealtimeDb=()=>({});export const getFaithDb=getRealtimeDb;export const getFirebaseStorage=()=>({});export const getFaithStorage=getFirebaseStorage;`)
+await writeFile(folder+'/session.ts',`const auth={currentUser:null};export const getFirebaseConfigError=()=>'';export const getFirebaseAuth=()=>auth;export const getFaithAuth=getFirebaseAuth;export const getRealtimeDb=()=>({});export const getFaithDb=getRealtimeDb;export const getFirebaseStorage=()=>({});export const getFaithStorage=getFirebaseStorage;`)
 const ko=JSON.parse(await readFile('public/scripture/ko/2-corinthians.json','utf8')).chapters['1']
 const versePayload={range:['고린도후서',1,1,24],verses:Object.entries(ko).map(([number,text])=>({number:Number(number),text}))}
 await writeFile(folder+'/db.ts',`const versePayload=${JSON.stringify(versePayload)};export const ref=(_db,path='')=>path;export const get=async path=>({val:()=>path.startsWith('verse/')?versePayload:null});export const onValue=(_path,fn)=>{fn({val:()=>null});return()=>{}};export const query=node=>node;export const orderByValue=()=>null;export const startAt=()=>null;export const endAt=()=>null;export const orderByChild=()=>null;export const limitToLast=()=>null;export const onDisconnect=()=>({remove:async()=>{}});export const push=()=>({key:'new'});export const set=async()=>{};export const remove=async()=>{};export const update=async()=>{};export const serverTimestamp=()=>0;export const runTransaction=async()=>{};`)
 const server=await createServer({configFile:false,root:process.cwd(),base:'/MOA/',plugins:[react()],resolve:{alias:[{find:'../../services/faithSession',replacement:path.resolve(folder+'/session.ts')},{find:'../../services/firebase',replacement:path.resolve(folder+'/session.ts')},{find:'firebase/database',replacement:path.resolve(folder+'/db.ts')}]},server:{host:'127.0.0.1',port:4185,strictPort:true}})
 await server.listen()
-const browser=await chromium.launch({headless:true,channel:'chrome'}),errors=[]
+const browser=await chromium.launch({headless:true,...(process.env.MOA_BROWSER_PATH?{executablePath:process.env.MOA_BROWSER_PATH}:{channel:'chrome'})}),errors=[]
 const url='http://127.0.0.1:4185/MOA/'+folder+'/index.html'
 const read=page=>page.getByRole('navigation',{name:'모아',exact:true}).getByRole('button',{name:'묵상·기도'}).click()
 try{
  for(const width of [360,768,1440]){
   const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),requests=[]
-  page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()))
+  page.on('pageerror',e=>{errors.push(e.message);console.error('Reading page error:',e.message)});page.on('request',r=>requests.push(r.url()))
   await page.goto(url);await read(page);await page.locator('.faith-verse-list>button').last().waitFor()
   assert.equal(await page.locator('.faith-verse-list>button').count(),24)
   assert.equal(requests.some(r=>r.includes('/scripture/en/')),false,'second language is not fetched while off')
@@ -43,7 +43,7 @@ try{
   await context.close()
  }
  const context=await browser.newContext({viewport:{width:390,height:850}}),page=await context.newPage()
- page.on('pageerror',e=>errors.push(e.message))
+ page.on('pageerror',e=>{errors.push(e.message);console.error('Reading page error:',e.message)})
  await page.route('**/scripture/en/2-corinthians.json',route=>route.fulfill({status:404,body:'missing'}))
  await page.goto(url);await read(page);await page.locator('.faith-verse-list>button').last().waitFor();await page.getByRole('button',{name:'대조 읽기',exact:true}).click()
  await page.getByText(/같은 날짜·범위의 대조 본문을/).waitFor()
