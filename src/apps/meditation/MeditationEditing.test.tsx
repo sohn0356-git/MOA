@@ -48,7 +48,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers() })
 async function openEdit() {
   render(<MeditationApp activityId="ai03"/>)
-  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상·기도' }))
+  fireEvent.click(within(screen.getByRole('navigation', { name: '모아 예배당' })).getByRole('button', { name: '묵상·기도' }))
   fireEvent.click(screen.getByRole('tab', { name: '내 묵상' }))
   fireEvent.click(await screen.findByText('수정 전 묵상'))
   fireEvent.click(screen.getByRole('button', { name: '묵상 수정' }))
@@ -112,7 +112,7 @@ describe('real devotion editing and activity authorship', () => {
   it('uses the selected AI activity name for a new entry without changing the authenticated owner', async () => {
     state.entries = {}
     render(<MeditationApp activityId="ai03"/>)
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상·기도' }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: '모아 예배당' })).getByRole('button', { name: '묵상·기도' }))
     fireEvent.click(screen.getByRole('button', { name: '묵상 쓰기' }))
     fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: 'AI 03으로 쓴 묵상' } })
     fireEvent.click(screen.getByRole('button', { name: '나만 보기' }))
@@ -129,7 +129,7 @@ describe('real devotion editing and activity authorship', () => {
 it('selects an AI author inside the composer and blocks posting during authentication', async () => {
   const selectActivity = vi.fn().mockResolvedValue(undefined)
   render(<MeditationApp activityId="ai01" activityBusy onActivityChange={selectActivity}/>)
-  fireEvent.click(within(screen.getByRole('navigation', { name: 'MOA Faith' })).getByRole('button', { name: '묵상·기도' }))
+  fireEvent.click(within(screen.getByRole('navigation', { name: '모아 예배당' })).getByRole('button', { name: '묵상·기도' }))
   fireEvent.click(screen.getByRole('button', { name: '묵상 쓰기' }))
   fireEvent.change(screen.getByRole('textbox', { name: /묵상 메모/ }), { target: { value: '보존할 초안' } })
   expect(screen.getByRole('combobox', { name: '새 묵상 작성자' })).toBeDisabled()
@@ -155,7 +155,7 @@ it('recovers actual editing fields after a reload and removes the restored draft
 
 it('shows private devotions only through My posts and does not publish when filtering or reading', async () => {
   render(<MeditationApp activityId="ai03"/>)
-  fireEvent.click(within(screen.getByRole('navigation',{name:'MOA Faith'})).getByRole('button',{name:'피드'}))
+  fireEvent.click(within(screen.getByRole('navigation',{name:'모아 예배당'})).getByRole('button',{name:'피드'}))
   expect(screen.queryByRole('button', { name: /의 묵상 보기:/ })).toBeNull()
   expect(screen.queryByRole('button', { name: '묵상 나누기' })).toBeNull()
   expect(screen.queryByRole('navigation', { name: '피드 그룹' })).toBeNull()
@@ -173,7 +173,7 @@ it('offers image-only editing on another user’s public devotion without exposi
  state.user.uid='bob';state.entries={}
  state.publicPhotos={devotion_alice_shared:{ownerUid:'alice',authorUid:'alice',authorName:'Alice',sourceType:'devotion',sourceEntryId:'shared',publicId:'devotion_alice_shared',imageUrl:image,caption:'Alice의 전체 공개 묵상',selectedDate:'2026-11-11',createdAt:'2026-10-15T01:00:00.000Z',storagePath:''}}
  render(<MeditationApp activityId="ai03"/>)
- fireEvent.click(within(screen.getByRole('navigation',{name:'MOA Faith'})).getByRole('button',{name:'피드'}))
+ fireEvent.click(within(screen.getByRole('navigation',{name:'모아 예배당'})).getByRole('button',{name:'피드'}))
  fireEvent.click(screen.getByRole('button',{name:/Alice의 묵상 보기/}))
  expect(screen.getByRole('button',{name:'공개 묵상 그림 수정'})).toBeEnabled()
  expect(screen.queryByRole('button',{name:'묵상 수정'})).toBeNull()
@@ -187,7 +187,7 @@ it('offers image-only editing on another user’s public devotion without exposi
 it('combines devotion and prayer under one bottom tab and places the gated sanctuary in the center',async()=>{
  const login=vi.fn().mockResolvedValue(undefined)
  render(<MeditationApp activityId="ai03" onChurchSignIn={login}/>)
- const nav=screen.getByRole('navigation',{name:'MOA Faith'})
+ const nav=screen.getByRole('navigation',{name:'모아 예배당'})
  expect(within(nav).getByRole('button',{name:'예배당'})).toHaveAttribute('aria-current','page')
  expect(screen.getByRole('heading',{name:'로그인하고 들어오세요'})).toBeInTheDocument()
  expect(within(nav).getAllByRole('button').map(button=>button.textContent)).toEqual(['피드','묵상·기도','예배당','질문','내 기록'])
@@ -208,7 +208,7 @@ it('combines devotion and prayer under one bottom tab and places the gated sanct
 it('shows a playable daily praise from historical uploads when today has no entry, and keeps it after remount',async()=>{
  state.praiseBank={'2020-01-01':{videoId:'abcdefghijk'},'2021-02-03':{youtubeUrl:'https://youtu.be/lmnopqrstuv'},invalid:{youtubeUrl:'https://example.com/broken'}}
  const first=render(<MeditationApp/>)
- fireEvent.click(within(screen.getByRole('navigation',{name:'MOA Faith'})).getByRole('button',{name:'피드'}))
+ fireEvent.click(within(screen.getByRole('navigation',{name:'모아 예배당'})).getByRole('button',{name:'피드'}))
  const player=await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')
  const src=player.getAttribute('src')
  expect(src).toMatch(/^https:\/\/www[.]youtube[.]com\/embed\/(abcdefghijk|lmnopqrstuv)[?]/)
@@ -216,7 +216,7 @@ it('shows a playable daily praise from historical uploads when today has no entr
  first.unmount()
  state.praiseBank=Object.fromEntries(Object.entries(state.praiseBank).reverse())
  render(<MeditationApp/>)
- fireEvent.click(within(screen.getByRole('navigation',{name:'MOA Faith'})).getByRole('button',{name:'피드'}))
+ fireEvent.click(within(screen.getByRole('navigation',{name:'모아 예배당'})).getByRole('button',{name:'피드'}))
  expect((await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')).getAttribute('src')).toBe(src)
 })
 
@@ -224,7 +224,7 @@ it('refreshes the daily player at Korean midnight even when the library has only
  vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T14:59:00Z'))
  state.praiseBank={'2020-01-01':{videoId:'abcdefghijk'}}
  render(<MeditationApp/>)
- fireEvent.click(within(screen.getByRole('navigation',{name:'MOA Faith'})).getByRole('button',{name:'피드'}))
+ fireEvent.click(within(screen.getByRole('navigation',{name:'모아 예배당'})).getByRole('button',{name:'피드'}))
  const previous=await screen.findByTitle('오늘의 찬송 추천 YouTube 영상')
  vi.setSystemTime(new Date('2026-11-19T15:00:00Z'))
  fireEvent.focus(window)
@@ -235,7 +235,7 @@ it('refreshes the daily player at Korean midnight even when the library has only
 
 it('replaces profile photo editing with the primary-account chapel avatar editor',async()=>{
  const view=render(<MeditationApp activityId="ai03"/>)
- fireEvent.click(within(screen.getByRole('navigation',{name:'MOA Faith'})).getByRole('button',{name:'내 기록'}))
+ fireEvent.click(within(screen.getByRole('navigation',{name:'모아 예배당'})).getByRole('button',{name:'내 기록'}))
  view.rerender(<MeditationApp activityId="ai03" churchMember={{uid:'google-alice',displayName:'Alice'}}/>)
  expect(screen.getByRole('img',{name:'프로필의 내 아바타'})).toBeInTheDocument()
  expect(screen.queryByRole('button',{name:'프로필 편집'})).toBeNull()
