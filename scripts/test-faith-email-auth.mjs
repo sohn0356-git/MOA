@@ -45,7 +45,7 @@ try{
  assert.equal(await account().innerText(),'guest','invalid credentials grant no church identity')
  await fill();await dialog().getByRole('button',{name:'이메일로 로그인',exact:true}).click();await dialog().waitFor({state:'detached'})
  await page.waitForFunction(uid=>document.querySelector('output')?.textContent===uid,uid)
- await page.getByRole('button',{name:'로그아웃',exact:true}).click();await page.reload();await account().filter({hasText:'guest'}).waitFor()
+ await page.getByRole('button',{name:'로그아웃',exact:true}).click();await account().filter({hasText:'guest'}).waitFor();await page.reload();await account().filter({hasText:'guest'}).waitFor()
  assert.deepEqual(errors,[])
  console.log('Email UI: signup, primary church identity, invalid-password retry, login, reload/browser restart persistence, logout and chapel entry auth choices passed against Firebase Auth emulator.')
 }finally{await context?.close();await server.close();await rm(folder,{recursive:true,force:true})}
