@@ -27,7 +27,8 @@
 .sanctuary-room-art{display:block;width:100%;height:100%}
 .sanctuary-seat{position:absolute;width:44px;height:44px;border:0;background:transparent;border-radius:50%;display:grid;place-items:center;transform:translate(-50%,-50%);padding:0;color:#fff}
 .sanctuary-seat>span{width:7px;height:7px;border-radius:50%;background:#ffffff75;box-shadow:0 0 0 5px #ffffff0a}
-.sanctuary-seat[aria-pressed=true]{background:#f8f5db;box-shadow:0 0 0 6px #f7f3cb22,0 3px 14px #343c2525;width:32px;height:32px;color:#7a8662}
+.sanctuary-seat[aria-pressed=true]{background:transparent;box-shadow:none;color:#7a8662}
+.sanctuary-seat[aria-pressed=true]>span{background:#fff8dc;box-shadow:none}
 .sanctuary-seat:focus-visible{outline:2px solid #fff;outline-offset:4px}
 .sanctuary-scene-candle{animation:sanctuary-glow 3s ease-in-out infinite}
 .sanctuary-light-switch{display:flex;justify-content:center;gap:8px;margin:16px 0 24px}

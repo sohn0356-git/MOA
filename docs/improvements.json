@@ -69,5 +69,12 @@
     "body": "선택한 말씀의 한국어·English 안내를 없애고 본문과 줄바꿈만 표시합니다. 기존 글의 언어 꼬리표도 원문 변경 없이 숨깁니다. 읽기·묵상 상세·작성 본문의 글꼴, 17px 크기, 자간, 줄 높이, 명암과 한글 단어 줄바꿈을 정돈합니다.",
     "status": "implemented",
     "evidence": "191 unit/component tests; responsive Chromium checks for bilingual content without labels, 17px/uncompressed typography, full-width wrapping and reload draft restoration; legacy source quotation and author-written bracket text preserved. See docs/faith-reading-typography.md. Completion requires successful Pages deployment."
+  },
+  {
+    "id": "faith-seat-circle-highlight",
+    "title": "예배당 착석 강조를 기존 좌석 원 안으로 제한",
+    "body": "착석한 좌석의 밝은 표시는 기존 좌석 원 안쪽에만 적용합니다. 바깥 클릭 영역의 흰 배경과 후광, 선택 시 크기 확대를 제거합니다.",
+    "status": "implemented",
+    "evidence": "Reviewed seat styles and removed the legacy 32px opaque button/outer halo. Manual Chromium verification at 360/768/1440px confirmed transparent selected hit target, no outer shadow, and unchanged inner circle dimensions; seating and sanctuary interactions passed. npm run build passed. Completion requires successful Pages deployment."
   }
 ]
