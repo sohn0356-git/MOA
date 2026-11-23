@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import {afterEach,describe,expect,it} from 'vitest'
-import {cleanup,render} from '@testing-library/react'
+import {afterEach,describe,expect,it,vi} from 'vitest'
+import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
+import {AvatarEditor} from './AvatarEditor'
 import {PixelAvatar} from './PixelAvatar'
-import {avatarPresets,applyAvatarPreset,defaultAvatar,getAvatarHairStyles,matchesAvatarPreset,normalizeAvatar,selectAvatarGender} from './sanctuaryCommunity'
+import {randomizeAvatar,avatarPresets,applyAvatarPreset,defaultAvatar,getAvatarHairStyles,matchesAvatarPreset,normalizeAvatar,selectAvatarGender} from './sanctuaryCommunity'
 afterEach(cleanup)
 describe('avatar samples and feminine appearance',()=>{
  it('offers six valid distinct samples for each gender and preserves the entered name',()=>{
@@ -50,4 +51,41 @@ describe('avatar samples and feminine appearance',()=>{
   expect(matchesAvatarPreset({...profile,shirt:8},p)).toBe(false)
   expect(applyAvatarPreset(profile,'unknown')).toEqual(profile)
  })
+})
+
+it.each(['male','female'] as const)('randomizes valid appearance while retaining name and %s selection',gender=>{
+ const original={...defaultAvatar('내 이름'),gender}
+ const next=randomizeAvatar(original,()=>.99999)
+ expect(next.name).toBe(original.name);expect(next.gender).toBe(gender)
+ expect(normalizeAvatar(next)).toEqual(next)
+ expect(original).toEqual({...defaultAvatar('내 이름'),gender})
+})
+it('always changes the preview even if random values repeat the existing appearance',()=>{
+ const original=normalizeAvatar(defaultAvatar('하늘'))
+ const first=randomizeAvatar(original,()=>0),second=randomizeAvatar(first,()=>0)
+ expect(first.shirt).not.toBe(original.shirt);expect(second.shirt).not.toBe(first.shirt)
+ expect(second.name).toBe('하늘')
+})
+it('rerolls in the editor without changing the name or saving until requested',async()=>{
+ HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}
+ const random=vi.spyOn(Math,'random').mockReturnValue(0)
+ let finish=()=>{};const save=vi.fn(()=>new Promise<void>(resolve=>{finish=resolve})),close=vi.fn()
+ try{
+  const view=render(<AvatarEditor profile={defaultAvatar('하늘')} onSave={save} onClose={close}/>)
+  fireEvent.change(screen.getByRole('textbox',{name:'캐릭터 이름'}),{target:{value:'내가 정한 이름'}})
+  fireEvent.click(screen.getByRole('tab',{name:'여성'}))
+  const preview=()=>view.container.querySelector('.sanctuary-avatar-turntable .pixel-avatar') as HTMLElement
+  const before=preview().style.getPropertyValue('--avatar-shirt')
+  fireEvent.click(screen.getByRole('button',{name:'아바타 랜덤 생성'}))
+  const first=preview().style.getPropertyValue('--avatar-shirt');expect(first).not.toBe(before)
+  fireEvent.click(screen.getByRole('button',{name:'아바타 랜덤 생성'}))
+  expect(preview().style.getPropertyValue('--avatar-shirt')).not.toBe(first)
+  expect(preview()).toHaveAttribute('data-gender','female')
+  expect(screen.getByRole('textbox',{name:'캐릭터 이름'})).toHaveValue('내가 정한 이름')
+  expect(save).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button',{name:'캐릭터 저장'}))
+  expect(screen.getByRole('button',{name:'아바타 랜덤 생성'})).toBeDisabled()
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({name:'내가 정한 이름',gender:'female'}))
+  finish();await waitFor(()=>expect(close).toHaveBeenCalledOnce())
+ }finally{random.mockRestore()}
 })

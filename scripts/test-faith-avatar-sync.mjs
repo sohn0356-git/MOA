@@ -42,6 +42,17 @@ try{
  await owner.getByRole('button',{name:'아바타 편집'}).click()
  await owner.getByRole('tab',{name:'여성',exact:true}).click()
  await owner.getByRole('button',{name:'라벤더 샘플 선택'}).click()
+ const preview=owner.locator('.sanctuary-avatar-turntable .pixel-avatar')
+ const appearance=()=>preview.evaluate(el=>[el.dataset.gender,el.dataset.hairStyle,el.dataset.topStyle,el.dataset.accessory,...['skin','hair','shirt','pants'].map(key=>el.style.getPropertyValue('--avatar-'+key))])
+ const name=await owner.getByRole('textbox',{name:'캐릭터 이름'}).inputValue()
+ let previous=await appearance()
+ for(let i=0;i<3;i++){
+  await owner.getByRole('button',{name:'아바타 랜덤 생성'}).click()
+  const next=await appearance();assert.notDeepEqual(next,previous,'every reroll changes the visible appearance');assert.equal(next[0],'female');previous=next
+ }
+ assert.equal(await owner.getByRole('textbox',{name:'캐릭터 이름'}).inputValue(),name,'random appearance never changes the entered name')
+ await owner.screenshot({path:'test-results/faith-gallery/avatar-random-mobile.png'})
+
  await owner.getByRole('button',{name:'캐릭터 저장',exact:true}).click()
  for(const p of [owner,guest])await p.waitForFunction(()=>document.querySelector('#guest-avatar .pixel-avatar,#owner-feed-avatar .pixel-avatar')?.dataset.gender==='female')
  assert.equal(await owner.getByRole('img',{name:'프로필의 내 아바타'}).getAttribute('data-gender'),'female')

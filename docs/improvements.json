@@ -76,5 +76,12 @@
     "body": "착석한 좌석의 밝은 표시는 기존 좌석 원 안쪽에만 적용합니다. 바깥 클릭 영역의 흰 배경과 후광, 선택 시 크기 확대를 제거합니다.",
     "status": "implemented",
     "evidence": "Reviewed seat styles and removed the legacy 32px opaque button/outer halo. Manual Chromium verification at 360/768/1440px confirmed transparent selected hit target, no outer shadow, and unchanged inner circle dimensions; seating and sanctuary interactions passed. npm run build passed. Completion requires successful Pages deployment."
+  },
+  {
+    "id": "faith-avatar-random",
+    "title": "아바타 생성과 편집에 랜덤 외형 버튼 추가",
+    "body": "미리보기 위의 랜덤 버튼으로 피부·머리·옷·스타일·액세서리를 반복해서 골라볼 수 있습니다. 이름과 선택한 성별은 유지하고 매번 다른 미리보기를 보여줍니다. 저장 전에는 계정에 반영하지 않고 저장 후 공용 3D 아바타에 동기화합니다.",
+    "status": "implemented",
+    "evidence": "195 unit/component tests including valid appearance ranges, identity retention, repeated rerolls, save-only persistence and busy-state lock; real Auth+Database Chromium test rerolls three times then verifies public avatar synchronization. See docs/faith-avatar-samples.md. Completion requires successful Pages deployment."
   }
 ]

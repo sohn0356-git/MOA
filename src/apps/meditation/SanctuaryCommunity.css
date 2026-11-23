@@ -121,3 +121,7 @@
 .faith-profile-pixel>.pixel-avatar{left:50%;top:110px}
 .faith-profile-avatar>div:last-of-type{min-width:0}
 .faith-profile-avatar h3{overflow-wrap:anywhere}
+
+.sanctuary-avatar-random-tools{display:flex;justify-content:flex-end;margin-bottom:4px}
+.sanctuary-avatar-random{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:7px 12px;border:1px solid #d5dfc8;border-radius:11px;background:#edf2e3;color:#526b40;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.sanctuary-avatar-random:hover{background:#e2ebd5}.sanctuary-avatar-random:focus-visible{outline:2px solid #7e9966;outline-offset:3px}.sanctuary-avatar-random:disabled{opacity:.55;cursor:wait}

@@ -1,8 +1,9 @@
+import {Shuffle} from 'lucide-react'
 import {useEffect,useRef,useState} from 'react'
 import {AvatarPreview} from './AvatarPreview'
 import {PixelAvatar} from './PixelAvatar'
 import {SanctuaryDialog} from './SanctuaryDialog'
-import {avatarSkins,avatarHairs,avatarShirts,avatarPants,getAvatarHairStyles,avatarPresets,applyAvatarPreset,matchesAvatarPreset,selectAvatarGender,avatarTopStyles,avatarAccessories,type AvatarProfile} from './sanctuaryCommunity'
+import {randomizeAvatar,avatarSkins,avatarHairs,avatarShirts,avatarPants,getAvatarHairStyles,avatarPresets,applyAvatarPreset,matchesAvatarPreset,selectAvatarGender,avatarTopStyles,avatarAccessories,type AvatarProfile} from './sanctuaryCommunity'
 import './PixelAvatar.css'
 import './SanctuaryCommunity.css'
 import './SanctuaryCompact.css'
@@ -18,6 +19,7 @@ export function AvatarEditor({profile,onSave,onClose}:{profile:AvatarProfile;onS
   <SanctuaryDialog open title="나의 캐릭터" onClose={onClose} className="sanctuary-character-dialog">
    <form className="sanctuary-avatar-editor sanctuary-avatar-studio" onSubmit={event=>{event.preventDefault();void save()}}>
     <div className="sanctuary-avatar-showcase">
+     <div className="sanctuary-avatar-random-tools"><button type="button" className="sanctuary-avatar-random" aria-label="아바타 랜덤 생성" title="선택한 성별에서 외형을 무작위로 바꿉니다" disabled={busy} onClick={()=>setAvatar(current=>randomizeAvatar(current))}><Shuffle size={15} aria-hidden="true"/>랜덤</button></div>
      <AvatarPreview profile={avatar}/>
      <section className="sanctuary-avatar-presets" aria-label="샘플 캐릭터">
       <div className="sanctuary-gender-tabs" role="tablist" aria-label="캐릭터 성별">{(['male','female'] as const).map(gender=><button key={gender} type="button" role="tab" aria-selected={(avatar.gender??'male')===gender} aria-controls="sanctuary-samples" id={'avatar-tab-'+gender} disabled={busy} onClick={()=>setAvatar(current=>selectAvatarGender(current,gender))}>{gender==='male'?'남성':'여성'}</button>)}</div>

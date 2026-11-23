@@ -58,3 +58,12 @@ export function matchesAvatarPreset(profile:AvatarProfile,preset:AvatarPreset){
  const normalized=normalizeAvatar(profile)
  return Object.entries(preset.appearance).every(([key,value])=>(key==='gender'?(normalized.gender??'male'):normalized[key as keyof AvatarProfile])===value)
 }
+
+export function randomizeAvatar(profile:AvatarProfile,random= Math.random):AvatarProfile{
+ const pick=(length:number)=>Math.floor(random()*length)
+ const gender=profile.gender??'male'
+ const next:AvatarProfile={...profile,gender,skin:pick(avatarSkins.length),hair:pick(avatarHairs.length),shirt:pick(avatarShirts.length),pants:pick(avatarPants.length),hairStyle:pick(getAvatarHairStyles(gender).length),topStyle:pick(avatarTopStyles.length),accessory:pick(avatarAccessories.length)}
+ // Even an identical roll should give the user a different preview.
+ if(['skin','hair','shirt','pants','hairStyle','topStyle','accessory'].every(key=>(next[key as keyof AvatarProfile]??0)===(profile[key as keyof AvatarProfile]??0)))next.shirt=(next.shirt+1)%avatarShirts.length
+ return next
+}
