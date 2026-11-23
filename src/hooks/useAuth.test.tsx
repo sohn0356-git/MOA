@@ -2,13 +2,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { FirebaseError } from 'firebase/app'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword,signInWithEmailAndPassword } from 'firebase/auth'
 import { useAuth } from './useAuth'
 
 vi.mock('firebase/auth', () => ({
   GoogleAuthProvider: vi.fn(),
   onAuthStateChanged: vi.fn(() => () => {}),
-  signInWithEmailAndPassword: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),createUserWithEmailAndPassword:vi.fn(),
   signInWithRedirect: vi.fn(),
   signInWithPopup: vi.fn(),
   signOut: vi.fn(),
@@ -38,4 +38,19 @@ describe('email authentication', () => {
     expect(result.current.authError).toContain('이메일 또는 비밀번호')
     expect(result.current.isAuthMutating).toBe(false)
   })
+})
+
+it('creates a persistent email account using the entered password unchanged',async()=>{
+ vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({} as Awaited<ReturnType<typeof createUserWithEmailAndPassword>>)
+ const {result}=renderHook(()=>useAuth())
+ await act(async()=>{await result.current.createEmailAccount(' person@example.com ',' password ')})
+ expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(expect.anything(),'person@example.com',' password ')
+ expect(result.current.isAuthMutating).toBe(false)
+})
+it.each([['auth/email-already-in-use','이미 등록된'],['auth/weak-password','6자 이상']])('explains signup failure %s',async(code,message)=>{
+ vi.mocked(createUserWithEmailAndPassword).mockRejectedValue(new FirebaseError(code,'failed'))
+ const {result}=renderHook(()=>useAuth())
+ await act(async()=>{await expect(result.current.createEmailAccount('person@example.com','password')).rejects.toBeInstanceOf(FirebaseError)})
+ expect(result.current.authError).toContain(message)
+ expect(result.current.isAuthMutating).toBe(false)
 })

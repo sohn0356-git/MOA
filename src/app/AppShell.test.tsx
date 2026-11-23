@@ -7,7 +7,7 @@ import {AppShell} from './AppShell'
 const boot=vi.hoisted(()=>({publish:true}))
 const auth=vi.hoisted(()=>({
  user:null as User|null,authError:null as string|null,isAuthLoading:false,isAuthMutating:false,
- signInWithAiAccount:vi.fn().mockResolvedValue(undefined),signInWithEmail:vi.fn().mockResolvedValue(undefined),
+ signInWithAiAccount:vi.fn().mockResolvedValue(undefined),signInWithEmail:vi.fn().mockResolvedValue(undefined),createEmailAccount:vi.fn().mockResolvedValue(undefined),
  signInWithGoogle:vi.fn().mockResolvedValue(undefined),signOutUser:vi.fn().mockResolvedValue(undefined)
 }))
 const activity=vi.hoisted(()=>({
@@ -22,6 +22,7 @@ vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,ac
 }}))
 afterEach(cleanup)
 beforeEach(()=>{
+ HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}
  boot.publish=true
  localStorage.clear();sessionStorage.clear();vi.clearAllMocks()
  auth.signInWithGoogle.mockReset().mockResolvedValue(undefined)
@@ -97,7 +98,7 @@ it('uses primary account authentication for sanctuary access and clears AI activ
  activity.activityId='ai03'
  const view=render(<AppShell/>)
  expect(screen.getByLabelText('예배당 로그인 계정').textContent).toBe('로그인 필요')
- fireEvent.click(screen.getByRole('button',{name:'예배당 로그인'}))
+ fireEvent.click(screen.getByRole('button',{name:'예배당 로그인'}));fireEvent.click(screen.getByRole('button',{name:'구글 계정으로 로그인'}))
  await waitFor(()=>expect(activity.clearActivity).toHaveBeenCalledOnce())
  expect(auth.signInWithGoogle).toHaveBeenCalledOnce()
  auth.user={uid:'google-member',displayName:'회원'} as User
@@ -123,7 +124,7 @@ it('covers Google sign-in while pending and dismisses the launch after cancellat
 })
 it('does not get stuck when Google returns the same account',async()=>{
  auth.user={uid:'member',displayName:'회원'} as User
- render(<AppShell/>);fireEvent.click(screen.getByRole('button',{name:'예배당 로그인'}))
+ render(<AppShell/>);fireEvent.click(screen.getByRole('button',{name:'예배당 로그인'}));fireEvent.click(screen.getByRole('button',{name:'구글 계정으로 로그인'}))
  await waitFor(()=>expect(activity.clearActivity).toHaveBeenCalledOnce())
  await waitFor(()=>expect(screen.queryByLabelText('구글 로그인 준비')).toBeNull())
 })
@@ -153,4 +154,20 @@ it('skips initial launch on reload even without a session marker',()=>{
   expect(screen.queryByLabelText('MOA 시작 준비')).toBeNull()
   expect(screen.getByRole('main',{name:'MOA 메인'}).hasAttribute('inert')).toBe(false)
  }finally{getEntries.mockRestore()}
+})
+
+it('offers email login alongside Google and clears AI activity only after successful authentication',async()=>{
+ HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')}
+ HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}
+ activity.activityId='ai03'
+ render(<AppShell/>)
+ expect(screen.getByRole('button',{name:'구글 로그인'})).toBeTruthy()
+ fireEvent.click(screen.getByRole('button',{name:'이메일 로그인'}))
+ fireEvent.change(screen.getByLabelText('이메일',{exact:true}),{target:{value:'person@example.com'}})
+ fireEvent.change(screen.getByLabelText('비밀번호',{exact:true}),{target:{value:' password '}})
+ fireEvent.click(screen.getByRole('button',{name:'이메일로 로그인'}))
+ await waitFor(()=>expect(auth.signInWithEmail).toHaveBeenCalledWith('person@example.com',' password '))
+ await waitFor(()=>expect(activity.clearActivity).toHaveBeenCalledOnce())
+ expect(auth.signInWithGoogle).not.toHaveBeenCalled()
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'이메일 로그인'})).toBeNull())
 })

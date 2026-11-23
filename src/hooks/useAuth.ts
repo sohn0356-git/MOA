@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { FirebaseError } from 'firebase/app'
 import {
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithRedirect,
@@ -41,12 +42,21 @@ function getAuthErrorMessage(error: unknown) {
       return 'AI 로그인 토큰의 Firebase 프로젝트가 현재 앱 설정과 다릅니다.'
     }
 
+    const emailErrors:Record<string,string>={
+      'auth/email-already-in-use':'이미 등록된 이메일입니다. 로그인 탭을 이용해주세요.',
+      'auth/weak-password':'비밀번호를 6자 이상으로 입력해주세요.',
+      'auth/invalid-email':'올바른 이메일 주소를 입력해주세요.',
+      'auth/too-many-requests':'시도가 많아 잠시 제한됐습니다. 잠시 후 다시 시도해주세요.',
+      'auth/network-request-failed':'연결을 확인하고 다시 시도해주세요.',
+      'auth/operation-not-allowed':'현재 이메일 로그인을 사용할 수 없습니다. 구글 로그인을 이용해주세요.',
+    }
+    if(emailErrors[error.code])return emailErrors[error.code]
     if (['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password'].includes(error.code)) {
       return '이메일 또는 비밀번호가 맞지 않습니다. 입력한 계정 정보를 확인해 주세요.'
     }
   }
 
-  return error instanceof Error ? error.message : 'Google login failed.'
+  return error instanceof Error ? error.message : '로그인을 완료하지 못했습니다. 다시 시도해주세요.'
 }
 
 function shouldFallbackToRedirect(error: unknown) {
@@ -139,6 +149,16 @@ export function useAuth() {
     }
   }
 
+  async function createEmailAccount(email:string,password:string){
+    setIsAuthMutating(true);setAuthError(null)
+    try{
+      const auth=getFirebaseAuth()
+      await ensurePersistentAuth(auth)
+      await createUserWithEmailAndPassword(auth,email.trim(),password)
+    }catch(error){setAuthError(getAuthErrorMessage(error));throw error}
+    finally{setIsAuthMutating(false)}
+  }
+
   async function signInWithAiAccount(accountId: string) {
     setIsAuthMutating(true)
     setAuthError(null)
@@ -181,6 +201,7 @@ export function useAuth() {
     isAuthMutating,
     signInWithAiAccount,
     signInWithEmail,
+    createEmailAccount,
     signInWithGoogle,
     signOutUser,
     user,

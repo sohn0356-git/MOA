@@ -1,3 +1,5 @@
+import {Mail} from 'lucide-react'
+import {EmailAuthDialog} from '../components/EmailAuthDialog'
 import {shouldShowInitialLaunch,markLaunchSeen} from '../lib/launchSession'
 import {useCallback,useEffect,useState} from 'react'
 import {AppLaunchScreen,type StartupContentState} from '../components/AppLaunchScreen'
@@ -9,8 +11,9 @@ import {useFaithActivity} from '../hooks/useFaithActivity'
 import {useAppUpdate} from '../hooks/useAppUpdate'
 import './FaithEntry.css'
 export function AppShell(){
- const {authError,isAuthLoading,isAuthMutating,signInWithGoogle,signOutUser,user}=useAuth()
+ const {authError,isAuthLoading,isAuthMutating,signInWithEmail,createEmailAccount,signInWithGoogle,signOutUser,user}=useAuth()
  const [initial,setInitial]=useState(shouldShowInitialLaunch),[loginOverlay,setLoginOverlay]=useState(false),[googlePending,setGooglePending]=useState(false),[deferred,setDeferred]=useState(false),[content,setContent]=useState<StartupContentState|null>(null)
+ const [emailOpen,setEmailOpen]=useState(false)
  useEffect(markLaunchSeen,[])
  const activity=useFaithActivity(),activityId=activity.activityId
  const {applyUpdate,hasUpdate,isUpdating,updateError}=useAppUpdate()
@@ -23,6 +26,11 @@ export function AppShell(){
  async function handleGoogleSignIn(){
   setLoginOverlay(true);setGooglePending(true);setDeferred(false)
   try{await signInWithGoogle();await activity.clearActivity()}catch(error){setLoginOverlay(false);setInitial(false);throw error}finally{setGooglePending(false)}
+ }
+ async function handleEmailSignIn(email:string,password:string,create:boolean){
+  if(create)await createEmailAccount(email,password)
+  else await signInWithEmail(email,password)
+  await activity.clearActivity()
  }
  useEffect(()=>{
   const normalize=()=>{if(location.hash!=='#/meditation')history.replaceState(history.state,'',location.pathname+location.search+'#/meditation')}
@@ -42,9 +50,9 @@ export function AppShell(){
         {authError ? <p className="faith-entry-error" role="alert">{authError}</p> : null}
         {activity.error ? <p className="faith-entry-error" role="alert">{activity.error}</p> : null}
         {activity.isLoading || activity.isSwitching ? <p role="status" className="faith-activity-progress">AI 권한을 전환하고 있습니다…</p> : null}
-        <MeditationApp onStartupState={setContent} churchMember={user ? {uid:user.uid,displayName:user.displayName || '방문자'} : null}
+        <MeditationApp onStartupState={setContent} churchMember={user ? {uid:user.uid,displayName:user.displayName || user.email?.split('@')[0] || '방문자'} : null}
           churchAuthBusy={isAuthLoading || isAuthMutating}
-          onChurchSignIn={handleGoogleSignIn}
+          onChurchSignIn={async()=>{setEmailOpen(true)}}
           onActivityChange={activity.selectActivity} activityId={activityId} activityBusy={activity.isLoading || activity.isSwitching || isAuthMutating} entryActions={
           (
             <div className="faith-entry-account">
@@ -53,6 +61,7 @@ export function AppShell(){
                 disabled={isAuthLoading || isAuthMutating || activity.isLoading || activity.isSwitching || Boolean(authError?.startsWith('Firebase configuration is missing:'))}
                 onClick={() => { void handleGoogleSignIn().catch(() => {}) }}
               ><span aria-hidden="true" className="faith-entry-google-mark">G</span><span>구글 로그인</span></button> : null}
+              {(!user || aiLoginAccounts.some(account=>account.email===user.email))&&<button className="faith-entry-google" type="button" aria-label="이메일 로그인" title="이메일 로그인" disabled={isAuthLoading||isAuthMutating||activity.isLoading||activity.isSwitching||Boolean(authError?.startsWith('Firebase configuration is missing:'))} onClick={()=>setEmailOpen(true)}><Mail size={14} aria-hidden="true"/><span>이메일</span></button>}
               {(user || activityId) ? <button className="faith-entry-google" type="button"
                 disabled={isAuthMutating || activity.isLoading || activity.isSwitching}
                 onClick={() => void handleSignOut()}
@@ -61,6 +70,7 @@ export function AppShell(){
           )
         } />
       </main>
+      {emailOpen&&<EmailAuthDialog onGoogle={()=>void handleGoogleSignIn().catch(()=>{})} error={authError} onClose={()=>setEmailOpen(false)} onSubmit={handleEmailSignIn}/>}
       </>
     )
 }
