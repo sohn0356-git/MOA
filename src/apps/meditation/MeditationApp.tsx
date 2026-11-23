@@ -1,3 +1,4 @@
+import {cleanScriptureQuote,cleanSharedDevotionCaption} from './scriptureText'
 import {FeedAuthorAvatar,FeedAuthorDialog,SyncedAuthorAvatar,useFeedAuthorAvatars,authorUid} from './FeedAuthor'
 import {canUploadFaithPhoto} from './aiPhotoAccess'
 import {normalizeAvatar,type AvatarProfile} from './sanctuaryCommunity'
@@ -1332,7 +1333,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     isAiMode ? mergeFaithRecords(faithQuestions, aiFaithQuestions) : faithQuestions
   ), [aiFaithQuestions, faithQuestions, isAiMode])
   const selectedVerses = useMemo(() => getSelectedVerses(plan, selectedVerseNumbers), [plan, selectedVerseNumbers])
-  const liveSelectedVerseText = readingLanguages.length>1&&comparisonGroups.some(g=>g.aligned)?selectedVerses.map(v=>[`${getVerseDisplayNumber(v)} [${scriptureLanguageOptions.find(o=>o.id===scriptureLanguage)?.label}] ${v.text}`,...comparisonGroups.filter(g=>g.aligned).map(g=>`[${scriptureLanguageOptions.find(o=>o.id===g.language)?.label}] ${g.verses.get(parallelVerseKey(v,parallelMultipleChapters))||'이 절의 본문이 없습니다.'}`)].join('\n')).join('\n\n'):getSelectedVerseText(plan,selectedVerseNumbers)
+  const liveSelectedVerseText = readingLanguages.length>1&&comparisonGroups.some(g=>g.aligned)?selectedVerses.map(v=>[`${getVerseDisplayNumber(v)} ${v.text}`,...comparisonGroups.filter(g=>g.aligned).map(g=>g.verses.get(parallelVerseKey(v,parallelMultipleChapters))||'이 절의 본문이 없습니다.')].join('\n')).join('\n\n'):getSelectedVerseText(plan,selectedVerseNumbers)
   const selectedVerseText = savedVerseQuote??liveSelectedVerseText
   const currentUser = getFirebaseAuth().currentUser
   const currentProfile = profileOwner.current === currentUser?.uid ? faithProfile ?? getDefaultProfile(currentUser) : getDefaultProfile(currentUser)
@@ -2854,7 +2855,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                               
                                 <img alt={photo.sourceType === 'devotion' ? '묵상에 첨부한 십자가 그림' : photo.caption || '오늘의 십자가 사진'} src={photo.imageUrl} style={{ objectPosition: photo.objectPosition ?? '50% 50%' }} />
                             </div> : null}
-                            {photo.caption ? <FeedCaption text={photo.caption} /> : null}
+                            {photo.caption ? <FeedCaption text={photo.sourceType==='devotion'?cleanSharedDevotionCaption(photo.caption):photo.caption} /> : null}
                             {photo.audience && photo.audience !== 'public' ? null : <ReactionRow
                               commentCount={comments.length || photo.commentCount || 0}
                               onComment={() => setExpandedPhotoId((currentId) => currentId === photoKey ? '' : photoKey)}
@@ -2990,7 +2991,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                         <span>마음에 남은 말씀</span>
                         <button className="faith-text-button" type="button" onClick={() => setIsVerseSheetOpen(true)}>다시 선택</button>
                       </div>
-                      <div className="faith-selected-verses"><p className="faith-selected-quote">{selectedVerseText||selectedEntry?.verseText}</p></div>
+                      <div className="faith-selected-verses"><p className="faith-selected-quote">{cleanScriptureQuote(selectedVerseText||selectedEntry?.verseText||'')}</p></div>
                     </>
                   ) : (
                     <>
@@ -3078,7 +3079,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                 <time>{formatDateLabel(selectedEntry.selectedDate)}</time>
                 <h3>{getEntryTitle(selectedEntry)}</h3>
                 <p className="faith-muted">{selectedEntry.reference} · {selectedEntry.authorName ?? authorName} · {getAudienceLabel(selectedEntry.audience)}</p>
-                <blockquote className="faith-selected-quote">{selectedEntry.verseText}</blockquote>
+                <blockquote className="faith-selected-quote">{cleanScriptureQuote(selectedEntry.verseText)}</blockquote>
                 {!isDevotionImage(selectedEntry.crossImage)&&selectedEntry.photoUrl&&<figure className="faith-devotion-image"><img src={selectedEntry.photoUrl} alt="묵상에 올린 사진"/></figure>}
                 <DevotionImage value={selectedEntry.crossImage}/>
                 {(!selectedEntry.authorUid || selectedEntry.authorUid === currentUser?.uid) ? <button className="faith-outline-button" type="button" onClick={() => { startEdit(selectedEntry); setAudience('public') }}>십자가 공유 탭에 올리기</button> : null}

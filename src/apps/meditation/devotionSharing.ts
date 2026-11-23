@@ -1,3 +1,4 @@
+import {cleanScriptureQuote} from './scriptureText'
 import type {AvatarProfile} from './sanctuaryCommunity'
 import { normalizeFeedGroup } from './feedGroups'
 import { isDevotionImage } from './devotionImage'
@@ -11,7 +12,7 @@ export type ShareableDevotion = {
 }
 export function getDevotionCaption(entry: ShareableDevotion) {
   return [
-    entry.reference, entry.verseText, entry.mind.trim() ? '묵상\n' + entry.mind.trim() : '',
+    entry.reference, cleanScriptureQuote(entry.verseText), entry.mind.trim() ? '묵상\n' + entry.mind.trim() : '',
     entry.apply.trim() ? '오늘의 적용\n' + entry.apply.trim() : '', entry.prayer?.trim() ? '기도\n' + entry.prayer.trim() : '',
   ].filter(Boolean).join('\n\n')
 }

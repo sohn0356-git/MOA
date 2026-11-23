@@ -62,5 +62,12 @@
     "body": "구글 로그인과 함께 이메일/비밀번호 로그인 및 회원가입을 제공합니다. 예배당·프로필에서도 인증 방식을 선택하고 기존 로그인 유지 및 로그아웃 동작을 공유합니다. 비밀번호 확인·표시 전환·한국어 오류 안내를 지원하며 인증 성공 후에만 본인 권한으로 전환합니다.",
     "status": "implemented",
     "evidence": "189 unit/component tests; real Firebase Auth emulator browser flow for signup, wrong-password retry, login, primary church identity, reload/browser restart persistence, explicit logout, and chapel auth choices. See docs/faith-email-auth.md. Completion requires successful Pages deployment."
+  },
+  {
+    "id": "faith-reading-typography",
+    "title": "묵상 말씀 언어 안내 제거와 본문 가독성 개선",
+    "body": "선택한 말씀의 한국어·English 안내를 없애고 본문과 줄바꿈만 표시합니다. 기존 글의 언어 꼬리표도 원문 변경 없이 숨깁니다. 읽기·묵상 상세·작성 본문의 글꼴, 17px 크기, 자간, 줄 높이, 명암과 한글 단어 줄바꿈을 정돈합니다.",
+    "status": "implemented",
+    "evidence": "191 unit/component tests; responsive Chromium checks for bilingual content without labels, 17px/uncompressed typography, full-width wrapping and reload draft restoration; legacy source quotation and author-written bracket text preserved. See docs/faith-reading-typography.md. Completion requires successful Pages deployment."
   }
 ]

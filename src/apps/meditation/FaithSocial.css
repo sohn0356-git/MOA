@@ -67,3 +67,15 @@
 .faith-language-menu [role=menu]{min-width:165px}
 .faith-language-menu [role=menu] button{display:flex;align-items:center;gap:7px}
 .faith-language-menu [role=menuitemcheckbox][aria-checked=true]{background:#f0f3e8;color:#536b44}
+
+/* Reading and writing use a quiet text face instead of the compact UI font. */
+.faith-social .faith-verse-list button,.faith-social .faith-selected-quote,.faith-social .faith-detail>section>p,.faith-social .faith-feed-caption,.faith-social .faith-author-posts details>p,.faith-social .faith-compose-screen textarea{
+ font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+ font-size:17px;font-weight:400;letter-spacing:.01em;word-spacing:.02em;line-height:1.9;color:#30343b;
+ word-break:keep-all;overflow-wrap:anywhere;text-align:start;
+}
+.faith-social .faith-verse-translation{font-size:1em;line-height:1.9;color:#626a76}
+.faith-social .faith-verse-pair{gap:10px}
+.faith-social .faith-selected-quote{white-space:pre-line}
+.faith-social .faith-detail>section>p{margin-top:10px}
+.faith-social .faith-compose-screen textarea{padding:14px 15px}

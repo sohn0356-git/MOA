@@ -264,6 +264,7 @@ it('pairs verses in two languages and opens writing from the end with both texts
  await waitFor(()=>expect(screen.getByRole('heading',{name:'묵상 작성'})).toHaveFocus())
  expect(document.querySelector('.faith-selected-quote')).toHaveTextContent('서로 사랑하라')
  expect(document.querySelector('.faith-selected-quote')).toHaveTextContent('Love one another')
+ expect(document.querySelector('.faith-selected-quote')?.textContent).not.toMatch(/\[(한국어|English)\]/)
  fireEvent.change(screen.getByRole('textbox',{name:/묵상 메모/}),{target:{value:'두 언어로 묵상한 내용'}})
  fireEvent.click(screen.getByRole('button',{name:'나만 보기'}))
  fireEvent.click(screen.getByRole('button',{name:'저장'}))
@@ -295,7 +296,7 @@ it('remembers multiple selected languages and never permits an empty selection',
 it('preserves a saved bilingual quotation when editing only the meditation',async()=>{
  const quote='[한국어] 서로 사랑하라\n[English] Love one another'
  state.entries.original={...state.entries.original as object,verseText:quote}
- await openEdit();fireEvent.change(screen.getByRole('textbox',{name:/묵상 메모/}),{target:{value:'본문을 유지하는 수정'}});fireEvent.click(screen.getByRole('button',{name:'저장'}))
+ await openEdit();expect(document.querySelector('.faith-selected-quote')?.textContent).toBe('서로 사랑하라\nLove one another');fireEvent.change(screen.getByRole('textbox',{name:/묵상 메모/}),{target:{value:'본문을 유지하는 수정'}});fireEvent.click(screen.getByRole('button',{name:'저장'}))
  await waitFor(()=>expect(state.update).toHaveBeenCalled())
  expect(state.update.mock.calls.find(c=>c[1]['users/owner/meditationEntries/original'])![1]['users/owner/meditationEntries/original'].verseText).toBe(quote)
 })
