@@ -1,3 +1,5 @@
+import {FriendRequestButton} from './FaithConnections'
+import type {FaithConnections} from './useFaithConnections'
 import {cleanSharedDevotionCaption} from './scriptureText'
 import {useEffect,useState} from 'react'
 import {onValue,ref,query,orderByChild,equalTo,limitToLast} from 'firebase/database'
@@ -26,7 +28,7 @@ export function SyncedAuthorAvatar({uid,name}:{uid:string;name:string}) {
  const profiles=useFeedAuthorAvatars([photo],'')
  return <FeedAuthorAvatar photo={photo} profile={profiles[uid]}/>
 }
-export function FeedAuthorDialog({photo,photos,profile,viewerUid,onClose,onSignIn}:{photo:AuthorPhoto;photos:AuthorPhoto[];profile?:AvatarProfile;viewerUid:string;onClose:()=>void;onSignIn?:()=>Promise<unknown>}){
+export function FeedAuthorDialog({photo,photos,profile,viewerUid,onClose,onSignIn,social}:{photo:AuthorPhoto;photos:AuthorPhoto[];profile?:AvatarProfile;viewerUid:string;onClose:()=>void;onSignIn?:()=>Promise<unknown>;social?:FaithConnections}){
  const [tab,setTab]=useState<'devotions'|'prayers'>('devotions'),[prayers,setPrayers]=useState<SharedPrayer[]>([]),[loaded,setLoaded]=useState(false),[error,setError]=useState('')
  const uid=authorUid(photo),name=photo.authorName||profile?.name||'이웃'
  useEffect(()=>{let alive=true;setLoaded(false);setPrayers([]);setError('');if(!uid||!viewerUid)return
@@ -36,6 +38,7 @@ export function FeedAuthorDialog({photo,photos,profile,viewerUid,onClose,onSignI
  const posts=photos.filter(p=>!!uid&&authorUid(p)===uid)
  return <SanctuaryDialog open title="작성자의 나눔" onClose={onClose} className="faith-author-dialog">
   <header className="faith-author-heading"><FeedAuthorAvatar photo={photo} profile={profile}/><div><h3>{name}</h3><p>공개된 묵상과 함께 나눈 기도제목</p></div></header>
+  {social&&<FriendRequestButton social={social} target={uid} name={name} onSignIn={async()=>{onClose();await onSignIn?.()}}/>}
   <nav className="faith-author-tabs" aria-label="작성자 기록"><button type="button" aria-pressed={tab==='devotions'} onClick={()=>setTab('devotions')}>묵상 {posts.length}</button><button type="button" aria-pressed={tab==='prayers'} onClick={()=>setTab('prayers')}>기도제목</button></nav>
   {tab==='devotions'?<div className="faith-author-posts">{posts.length?posts.map(p=><details key={p.publicId||p.id}><summary>{p.imageUrl&&<img src={p.imageUrl} alt="" loading="lazy"/>}<span><small>{p.selectedDate}</small><strong>{(p.sourceType==='devotion'?cleanSharedDevotionCaption(p.caption):p.caption).split('\n').find(Boolean)||'묵상 나눔'}</strong></span></summary><p>{p.sourceType==='devotion'?cleanSharedDevotionCaption(p.caption):p.caption}</p></details>):<p>아직 공개된 묵상이 없어요.</p>}</div>:!viewerUid?<div className="faith-author-empty"><p>함께 나눈 기도제목은 로그인 후 확인할 수 있어요.</p>{onSignIn&&<button type="button" onClick={()=>{onClose();void onSignIn().catch(()=>{})}}>로그인하고 확인하기</button>}</div>:!loaded?<p role="status">기도제목을 불러오고 있어요.</p>:error?<p role="alert">{error}</p>:prayers.length?<div className="faith-author-prayers">{prayers.map(p=><article key={p.id}><small>{p.answered?'감사 · 응답':'함께 중보해 주세요'}</small><h4>{p.title}</h4><p>{p.body}</p></article>)}</div>:<p>아직 함께 나눈 기도제목이 없어요.</p>}
  </SanctuaryDialog>

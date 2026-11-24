@@ -26,7 +26,7 @@ export function SharedDevotionImageEditor({ actorUid, target, image, disabled = 
     const guard = (event: Event) => {
       if (!editing || !(changed || preparing || saving)) return
       event.preventDefault()
-      setError('그림 수정 중입니다. 저장하거나 수정 화면을 닫은 뒤 업데이트해주세요.')
+      setError('사진 수정 중입니다. 저장하거나 수정 화면을 닫은 뒤 업데이트해주세요.')
     }
     const unload = (event: BeforeUnloadEvent) => {
       if (!editing || !(changed || preparing || saving)) return
@@ -42,18 +42,18 @@ export function SharedDevotionImageEditor({ actorUid, target, image, disabled = 
     try {
       const draft = JSON.parse(localStorage.getItem(storageKey) || 'null')
       if (draft && (draft.image === '' || isDevotionImage(draft.image))) {
-        setValue(draft.image); setDraftNotice('임시저장한 그림 수정을 복원했습니다.')
+        setValue(draft.image); setDraftNotice('임시저장한 사진 수정을 복원했습니다.')
       }
-    } catch { setError('그림 임시저장을 읽지 못했습니다. 브라우저 저장 설정을 확인해주세요.') }
+    } catch { setError('사진 임시저장을 읽지 못했습니다. 브라우저 저장 설정을 확인해주세요.') }
     setEditing(true)
   }
   function change(next: string) {
     setValue(next); setError('')
     try {
       localStorage.setItem(storageKey, JSON.stringify({ image: next, updatedAt: Date.now() }))
-      setDraftNotice('그림 수정 자동 임시저장됨')
+      setDraftNotice('사진 수정 자동 임시저장됨')
     } catch {
-      setDraftNotice(''); setError('그림 임시저장에 실패했습니다. 저장 전에는 화면을 닫지 마세요.')
+      setDraftNotice(''); setError('사진 임시저장에 실패했습니다. 저장 전에는 화면을 닫지 마세요.')
     }
   }
   async function save() {
@@ -64,21 +64,21 @@ export function SharedDevotionImageEditor({ actorUid, target, image, disabled = 
     try {
       await update(ref(getFaithDb()), collaborativeDevotionImageUpdates(target, value))
       let cleanupError = ''
-      try { localStorage.removeItem(storageKey) } catch { cleanupError = '그림은 저장됐지만 임시저장을 정리하지 못했습니다.' }
+      try { localStorage.removeItem(storageKey) } catch { cleanupError = '사진은 저장됐지만 임시저장을 정리하지 못했습니다.' }
       if (generation.current !== version) return
       onSaved(value); setBase(value); setEditing(false); setError(cleanupError); setDraftNotice('')
     } catch {
-      if (generation.current === version) setError('그림을 저장하지 못했습니다. 공개 상태가 바뀌었거나 연결에 문제가 있을 수 있어요. 선택한 그림은 유지했습니다.')
+      if (generation.current === version) setError('사진을 저장하지 못했습니다. 공개 상태가 바뀌었거나 연결에 문제가 있을 수 있어요. 선택한 사진은 유지했습니다.')
     } finally { if (generation.current === version) setSaving(false) }
   }
-  return <section className="faith-shared-image-edit" aria-label="공개 묵상 그림 편집">
+  return <section className="faith-shared-image-edit" aria-label="공개 묵상 사진 편집">
     {!editing ? <button className="faith-outline-button" type="button" disabled={!canUploadFaithPhoto(getFaithAuth().currentUser)||disabled} onClick={open}>
-      <ImagePlus size={17} aria-hidden="true" />{image ? '공개 묵상 그림 수정' : '공개 묵상 그림 추가'}
+      <ImagePlus size={17} aria-hidden="true" />{image ? '공개 묵상 사진 수정' : '공개 묵상 사진 추가'}
     </button> : <>
-      <p className="faith-helper">전체 공개 묵상의 그림은 AI 계정에서 수정할 수 있어요. 본문과 작성자는 그대로 유지됩니다.</p>
+      <p className="faith-helper">전체 공개 묵상의 사진은 AI 계정에서 수정할 수 있어요. 본문과 작성자는 그대로 유지됩니다.</p>
       <DevotionImagePicker value={value} onChange={change} onBusyChange={setPreparing} disabled={!canUploadFaithPhoto(getFaithAuth().currentUser)||disabled || saving} />
       <div className="faith-detail-actions">
-        <button className="faith-primary" type="button" disabled={!canUploadFaithPhoto(getFaithAuth().currentUser)||disabled || saving || preparing || !changed} onClick={() => void save()}>{saving ? '저장 중' : '그림 수정 저장'}</button>
+        <button className="faith-primary" type="button" disabled={!canUploadFaithPhoto(getFaithAuth().currentUser)||disabled || saving || preparing || !changed} onClick={() => void save()}>{saving ? '저장 중' : '사진 수정 저장'}</button>
         <button className="faith-text-button" type="button" disabled={saving || preparing} onClick={() => { setEditing(false); setError('') }}>닫기</button>
       </div>
       {draftNotice && <p role="status">{draftNotice}</p>}

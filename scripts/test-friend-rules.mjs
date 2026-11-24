@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict'
+const base='http://127.0.0.1:9000',ns='demo-moa-default-rtdb'
+function token(uid){const enc=v=>Buffer.from(JSON.stringify(v)).toString('base64url'),now=Math.floor(Date.now()/1000);return enc({alg:'none',typ:'JWT'})+'.'+enc({sub:uid,user_id:uid,aud:'demo-moa',iss:'https://securetoken.google.com/demo-moa',iat:now,exp:now+3600,firebase:{identities:{},sign_in_provider:'custom'}})+'.'}
+async function request(path,method,data,uid='friend-alice',params={}){const url=new URL(base+'/'+path+'.json');url.searchParams.set('ns',ns);if(uid)url.searchParams.set('auth',token(uid));for(const [k,v] of Object.entries(params))url.searchParams.set(k,JSON.stringify(v));return fetch(url,{method,headers:{'Content-Type':'application/json'},...(data===undefined?{}:{body:JSON.stringify(data)})})}
+async function check(ok,path,method,data,uid,params){const r=await request(path,method,data,uid,params);const text=await r.text();assert.equal(r.status,ok?200:401,path+': '+text);return JSON.parse(text)}
+const alice='friend-alice',bob='friend-bob',eve='friend-eve',id=alice+'__'+bob,path='friendRequests/'+id,stamp={'.sv':'timestamp'},entry={from:alice,to:bob,fromName:'앨리스',toName:'밥',status:'pending',createdAt:stamp,updatedAt:stamp}
+await check(false,path,'PUT',entry,null)
+await check(false,path,'PUT',{...entry,status:'accepted'},alice)
+await check(false,path,'PUT',entry,eve)
+await check(false,'friendRequests/'+alice+'__'+alice,'PUT',{...entry,to:alice},alice)
+await check(true,path,'PUT',entry,alice)
+await check(true,path,'GET',undefined,bob);await check(false,path,'GET',undefined,eve)
+await check(false,'friendRequests','GET',undefined,alice)
+await check(false,'friendRequests','GET',undefined,eve,{orderBy:'to',equalTo:bob})
+await check(false,'friendRequests','GET',undefined,null,{orderBy:'to',equalTo:bob})
+const inbox=await check(true,'friendRequests','GET',undefined,bob,{orderBy:'to',equalTo:bob});assert.equal(inbox[id].from,alice)
+await check(true,'friendRequests','GET',undefined,alice,{orderBy:'from',equalTo:alice})
+await check(false,path,'PATCH',{status:'accepted',updatedAt:stamp},alice)
+await check(false,path,'PATCH',{status:'accepted',updatedAt:stamp},eve)
+await check(false,path,'PATCH',{status:'accepted',fromName:'위조',updatedAt:stamp},bob)
+await check(false,path,'PATCH',{status:'accepted',from:eve,updatedAt:stamp},bob)
+await check(false,path,'PATCH',{status:'accepted',createdAt:1,updatedAt:stamp},bob)
+await check(true,path,'PATCH',{status:'accepted',updatedAt:stamp},bob)
+const group='users/'+alice+'/friendGroups/test'
+await check(true,group,'PUT',{name:'가족',createdAt:stamp},alice)
+await check(true,group+'/members/'+bob,'PUT',true,alice)
+await check(false,group+'/members/'+eve,'PUT',true,alice)
+await check(false,group+'/members/'+bob,'PUT',false,alice)
+await check(false,group,'GET',undefined,bob)
+await check(false,group+'/name','PUT','위조',bob)
+await check(false,group+'/name','PUT','   ',alice)
+await check(false,group+'/name','PUT','A'.repeat(31),alice)
+await check(true,group+'/name','PUT','함께 기도',alice)
+await check(false,group+'/privateEmail','PUT','x@example.com',alice)
+const prefs='users/'+bob+'/notificationPreferences'
+await check(true,prefs,'PUT',{friends:false,chapel:true},bob)
+await check(false,prefs+'/friends','PUT',true,alice)
+await check(false,prefs+'/chapel','PUT','false',bob)
+await check(false,prefs,'GET',undefined,alice)
+const saved=await check(true,path,'GET',undefined,bob),read='users/'+bob+'/friendNotificationReads/'+id
+await check(true,read,'PUT',saved.updatedAt,bob);await check(false,read,'PUT',saved.updatedAt,alice)
+await check(false,'','PATCH',{[path]:null,[prefs+'/friends']:true},alice)
+assert.equal((await check(true,prefs,'GET',undefined,bob)).friends,false,'failed mixed write must be atomic')
+assert.equal((await check(true,path,'GET',undefined,alice)).status,'accepted','invalid cross-user write must not partially remove a friendship')
+await check(true,'','PATCH',{[path]:null,[group+'/members/'+bob]:null},alice)
+await check(true,path,'PUT',entry,alice)
+await check(true,path,'PATCH',{status:'rejected',updatedAt:stamp},bob)
+await check(true,path,'PATCH',{status:'pending',updatedAt:stamp},alice)
+await check(true,path,'DELETE',undefined,alice)
+await check(true,group,'DELETE',undefined,alice)
+console.log('Friends: participant-only queries, immutable identity, recipient-only acceptance, request cancellation/resend, private groups, accepted-member checks, preferences isolation and atomic writes passed.')

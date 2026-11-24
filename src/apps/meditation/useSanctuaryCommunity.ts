@@ -5,7 +5,7 @@ import {getRealtimeDb} from '../../services/firebase'
 import {onlineMembers,koreanDayBounds,type AvatarPose,type SharedPrayer} from './sanctuaryCommunity'
 import {sanctuaryCapacity,sanctuarySpawn,type FloorPoint} from './sanctuaryMovement'
 import type {SanctuaryMember} from './sanctuaryState'
-export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
+export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean,notificationsEnabled=true){
  const {profile,saveProfile:saveAvatar,error:avatarError}=useSanctuaryAvatar(member)
  const [raw,setRaw]=useState<Record<string,Record<string,unknown>>|null|undefined>(undefined)
  const [prayers,setPrayers]=useState<SharedPrayer[]>([]),[intercessions,setIntercessions]=useState<Record<string,Record<string,{at:number}>>>({}),[visitors,setVisitors]=useState<number|null>(null)
@@ -78,7 +78,7 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean){
   if(prayer.uid===member.uid||readPrayers?.[prayer.id]===true)return
   await set(ref(getRealtimeDb(),'users/'+member.uid+'/sanctuaryPrayerReads/'+prayer.id),true)
  }
- const unreadCount=readPrayers===null?0:prayers.filter(p=>p.uid!==member.uid&&readPrayers[p.id]!==true).length
+ const unreadCount=!notificationsEnabled||readPrayers===null?0:prayers.filter(p=>p.uid!==member.uid&&readPrayers[p.id]!==true).length
  const members=onlineMembers(raw??null,clock+offset)
  const full=members.length>=sanctuaryCapacity&&!members.some(p=>p.uid===member.uid)
  return{profile,saveProfile,move,unreadCount,markPrayerRead,peers:entered&&connected?members.filter(p=>p.uid!==member.uid):[],online:connected&&raw!==undefined?members.length:null,visitors,connected,joined,full,loaded,prayers,intercessions,error:error||avatarError,savePrayer,answerPrayer,deletePrayer,pray}

@@ -45,7 +45,7 @@ jobs:
           npm_config_fund: 'false'
           npm_config_fetch_retries: '1'
           npm_config_fetch_timeout: '30000'
-        run: npx firebase-tools@latest emulators:exec --only database,storage --project demo-moa --config firebase.rules-test.json "node scripts/test-storage-rules.mjs && node scripts/test-sanctuary-rules.mjs && node scripts/test-devotion-image-rules.mjs && node scripts/test-suggestion-rules.mjs && node scripts/test-question-rules.mjs && node scripts/test-ai-city-rules.mjs && node scripts/test-city-image-rules.mjs && node scripts/test-city-space-rules.mjs"
+        run: npx firebase-tools@latest emulators:exec --only database,storage --project demo-moa --config firebase.rules-test.json "node scripts/test-storage-rules.mjs && node scripts/test-friend-rules.mjs && node scripts/test-sanctuary-rules.mjs && node scripts/test-devotion-image-rules.mjs && node scripts/test-suggestion-rules.mjs && node scripts/test-question-rules.mjs && node scripts/test-ai-city-rules.mjs && node scripts/test-city-image-rules.mjs && node scripts/test-city-space-rules.mjs"
 
       - name: Test Storage deployment requests
         run: node scripts/test-storage-deployment.mjs

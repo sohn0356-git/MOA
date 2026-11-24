@@ -83,5 +83,25 @@
     "body": "미리보기 위의 랜덤 버튼으로 피부·머리·옷·스타일·액세서리를 반복해서 골라볼 수 있습니다. 이름과 선택한 성별은 유지하고 매번 다른 미리보기를 보여줍니다. 저장 전에는 계정에 반영하지 않고 저장 후 공용 3D 아바타에 동기화합니다.",
     "status": "implemented",
     "evidence": "195 unit/component tests including valid appearance ranges, identity retention, repeated rerolls, save-only persistence and busy-state lock; real Auth+Database Chromium test rerolls three times then verifies public avatar synchronization. See docs/faith-avatar-samples.md. Completion requires successful Pages deployment."
+  },
+  {
+    "id": "faith-selection-photo-flow",
+    "title": "말씀 선택 후 묵상하기 버튼과 묵상 사진·임시저장 UI 개선",
+    "body": "선택한 말씀을 가리지 않는 별도 하단 공간에 묵상하기 버튼을 표시합니다. 십자가 그림이라는 안내를 묵상하며 들었던 마음을 사진으로 담는 표현으로 바꾸고 임시저장 카드를 통일합니다.",
+    "status": "implemented",
+    "evidence": "Native mobile reading and verse-picker bounds checks verify the selected verses and next-step controls do not overlap; draft recovery and photo permission browser tests, full unit suite and production build passed."
+  },
+  {
+    "id": "faith-friends-groups-notices",
+    "title": "작성자 프로필 친구 요청·알림과 내 기록 친구 그룹 관리",
+    "body": "작성자 프로필에서 친구 요청을 보내고 수락·거절·취소합니다. 앱 내 알림을 보관하며 내 기록에서 친구와 그룹 생성·이름 수정·삭제·멤버 지정을 관리합니다. 설정에서 친구 및 예배당 알림을 각각 켜고 끕니다.",
+    "status": "implemented",
+    "evidence": "Real two-account Auth/RTDB browser checks cover an offline recipient, request cancellation and acceptance, persisted groups and notification toggles, chapel unread badges and two-sided removal. Emulator rules reject forged acceptance, nonparticipants, private-group access and atomic unauthorized writes."
+  },
+  {
+    "id": "faith-friend-group-sharing",
+    "title": "묵상 공유 범위에서 원하는 친구 그룹 복수 선택",
+    "body": "후속 기능: 묵상 작성·수정 시 공개, 나만 보기, 선택한 친구 그룹으로 공유 대상을 지정합니다. 여러 그룹을 함께 선택하고 서버 읽기 권한과 피드 조회를 함께 적용해야 합니다. 친구 그룹 관리만으로 기존 묵상 공개 범위가 바뀌지는 않습니다.",
+    "status": "planned"
   }
 ]

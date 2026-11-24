@@ -27,7 +27,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Test shared devotion image permissions
-        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs && node scripts/test-sanctuary-rules.mjs"
+        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs && node scripts/test-friend-rules.mjs && node scripts/test-sanctuary-rules.mjs"
       - run: npm run build
       - name: Compare boot assets against the previous multi-app build
         env:
@@ -54,7 +54,7 @@ jobs:
       - name: Verify Pages M4A playback without Storage traffic
         run: node scripts/test-sanctuary-audio.mjs
       - name: Verify two-account sanctuary community
-        run: npx firebase-tools@latest emulators:exec --only auth,database --project demo-moa --config firebase.sanctuary-test.json "node scripts/test-sanctuary-community.mjs && node scripts/test-faith-avatar-sync.mjs"
+        run: npx firebase-tools@latest emulators:exec --only auth,database --project demo-moa --config firebase.sanctuary-test.json "node scripts/test-sanctuary-community.mjs && node scripts/test-faith-avatar-sync.mjs && node scripts/test-faith-friends.mjs"
       - uses: actions/upload-artifact@v6
         if: always()
         with:

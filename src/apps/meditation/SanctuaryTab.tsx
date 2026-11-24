@@ -9,7 +9,7 @@ import './SanctuaryCompact.css'
 import {useSanctuaryCommunity} from './useSanctuaryCommunity'
 import {SanctuaryMusic} from './SanctuaryMusic'
 import {SanctuaryCommunityPanel} from './SanctuaryCommunityPanel'
-type Props = { member:SanctuaryMember|null; authBusy?:boolean; onSignIn?:()=>Promise<unknown>; onRead:()=>void; onPrayer:()=>void; scripture:{reference:string;text:string} }
+type Props = { chapelNotifications?:boolean; member:SanctuaryMember|null; authBusy?:boolean; onSignIn?:()=>Promise<unknown>; onRead:()=>void; onPrayer:()=>void; scripture:{reference:string;text:string} }
 export function SanctuaryTab(props: Props) {
  const [signing,setSigning]=useState(false),[error,setError]=useState('')
  if(props.authBusy && !props.member) return <section className="sanctuary sanctuary-session-restore" role="status"><LockKeyhole size={24}/><h3>로그인 상태를 복원하고 있습니다</h3><p>저장된 계정을 확인하는 동안 잠시만 기다려주세요.</p></section>
@@ -24,15 +24,15 @@ export function SanctuaryTab(props: Props) {
   <h2>마음이 쉬어가는<br/><em>나의 예배당</em></h2>
   <p className="sanctuary-lead">분주한 하루에서 한 걸음 물러나,<br/>말씀과 기도에 머무는 시간을 가져보세요.</p>
   <div className="sanctuary-login-card">
-   <h3>로그인하고 들어오세요</h3><p>예배당은 로그인한 계정으로 이용할 수 있습니다.<br/>활동 아이디 선택과 별도로 계정 로그인이 필요해요.</p>
+   <h3>로그인하고 들어오세요</h3><p>예배당은 로그인한 계정으로 이용할 수 있습니다.<br/>이메일 또는 구글 계정으로 로그인해 함께 기도해요.</p>
    {props.onSignIn ? <button className="sanctuary-primary" type="button" disabled={signing||props.authBusy} onClick={()=>void signIn()}>{signing?'로그인 중…':'로그인하고 예배당 입장'}<ArrowUpRight size={17}/></button> : <a className="sanctuary-primary" href="#/login">로그인하고 예배당 입장<ArrowUpRight size={17}/></a>}
    {error&&<p role="alert">{error}</p>}
   </div>
  </section>
 }
-function SanctuaryExperience({member,onRead,onPrayer,scripture}:Props & {member:SanctuaryMember}) {
+function SanctuaryExperience({member,onRead,onPrayer,scripture,chapelNotifications=true}:Props & {member:SanctuaryMember}) {
  const [entered,setEntered]=useState(false)
- const room=useSanctuaryCommunity(member,entered)
+ const room=useSanctuaryCommunity(member,entered,chapelNotifications)
  const [boardOpen,setBoardOpen]=useState(false)
  const storageKey=sanctuaryKey(member.uid)
  const [loadError]=useState(()=>{try{JSON.parse(localStorage.getItem(storageKey)||'null');return ''}catch{return '예배당 기록을 읽지 못했습니다. 이 기기의 저장 설정을 확인해주세요.'}})

@@ -32,6 +32,7 @@ try{
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'parallel reading fits viewport')
   await page.screenshot({path:'test-results/faith-gallery/parallel-reading-'+width+'.png',fullPage:true})
   await page.locator('.faith-verse-list>button').nth(16).click()
+  const viewport=await page.locator('.faith-verse-list').boundingBox(),dock=await page.locator('.faith-selection-next').boundingBox();assert.ok(viewport&&dock&&viewport.y+viewport.height<=dock.y+1,'next step occupies its own space and never covers scripture');
   const write=page.getByRole('button',{name:'묵상하기',exact:true});await write.scrollIntoViewIfNeeded()
   await page.screenshot({path:'test-results/faith-gallery/parallel-reading-bottom-'+width+'.png'})
   await write.click();await page.waitForFunction(()=>document.activeElement?.id==='write-title')
@@ -45,9 +46,14 @@ try{
   await page.screenshot({path:'test-results/faith-gallery/selected-scripture-clean-'+width+'.png'})
   const quote=await page.locator('.faith-selected-quote').innerText();assert.ok(!/\[(한국어|한글|English)\]/.test(quote),'selected verses have no generated language labels');assert.ok(/[가-힣]/.test(quote)&&/[a-zA-Z]/.test(quote),'both language texts remain')
   await page.getByRole('textbox',{name:/묵상 메모/}).fill('두 언어 본문과 함께 보관할 임시저장 메모')
-  await page.reload();await page.getByRole('button',{name:'최근 묵상 이어쓰기'}).click()
+  await page.reload();await page.getByRole('button',{name:'최근 묵상 이어쓰기'}).waitFor();await page.screenshot({path:'test-results/faith-gallery/draft-recovery-'+width+'.png',fullPage:true});await page.getByRole('button',{name:'최근 묵상 이어쓰기'}).click()
   assert.equal(await page.getByRole('textbox',{name:/묵상 메모/}).inputValue(),'두 언어 본문과 함께 보관할 임시저장 메모')
   assert.equal(await page.locator('.faith-selected-quote').innerText(),quote,'bilingual quotation survives reload independently of pending fetches')
+  await page.getByRole('button',{name:'다시 선택',exact:true}).click()
+  const picker=await page.locator('.faith-verse-picker').boundingBox(),complete=await page.locator('.faith-verse-sheet .faith-sheet-action').boundingBox()
+  assert.ok(picker&&complete&&picker.y+picker.height<=complete.y+1&&complete.y+complete.height<=900,'verse picker completion has its own visible space')
+  await page.getByRole('button',{name:'말씀 선택 닫기',exact:true}).click()
+
   await context.close()
  }
  const context=await browser.newContext({viewport:{width:390,height:850}}),page=await context.newPage()
