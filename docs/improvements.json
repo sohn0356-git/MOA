@@ -87,9 +87,9 @@
   {
     "id": "faith-selection-photo-flow",
     "title": "말씀 선택 후 묵상하기 버튼과 묵상 사진·임시저장 UI 개선",
-    "body": "선택한 말씀을 가리지 않는 별도 하단 공간에 묵상하기 버튼을 표시합니다. 십자가 그림이라는 안내를 묵상하며 들었던 마음을 사진으로 담는 표현으로 바꾸고 임시저장 카드를 통일합니다.",
+    "body": "말씀 본문은 높이를 제한하지 않고 페이지 전체에서 스크롤합니다. 말씀을 선택하면 우측 아래 작은 원형 묵상 버튼을 표시하고 본문과 겹치지 않는 여백을 둡니다. 본문 맨 아래의 묵상하기 버튼은 유지하며 해당 버튼이 모두 보이면 작은 버튼을 숨깁니다. 사진 안내와 임시저장 디자인은 통일된 형태로 유지합니다.",
     "status": "implemented",
-    "evidence": "Native mobile reading and verse-picker bounds checks verify the selected verses and next-step controls do not overlap; draft recovery and photo permission browser tests, full unit suite and production build passed."
+    "evidence": "Native 360/768/1440 browser checks verify natural full-height scripture scrolling, selection-only compact lower-right action, no scripture text overlap, original bottom action and floating action both opening the editor, multilingual draft restoration and verse picker bounds. Replaces the earlier viewport-height dock design."
   },
   {
     "id": "faith-friends-groups-notices",
@@ -103,5 +103,13 @@
     "title": "묵상 공유 범위에서 원하는 친구 그룹 복수 선택",
     "body": "후속 기능: 묵상 작성·수정 시 공개, 나만 보기, 선택한 친구 그룹으로 공유 대상을 지정합니다. 여러 그룹을 함께 선택하고 서버 읽기 권한과 피드 조회를 함께 적용해야 합니다. 친구 그룹 관리만으로 기존 묵상 공개 범위가 바뀌지는 않습니다.",
     "status": "planned"
+  },
+  {
+    "id": "faith-reading-space",
+    "existingBoardId": "-P7Htm1oHP90IXGx_WuP",
+    "title": "묵상 기도에서 말씀 보이는 공간이 좁아서 아쉽습니당!",
+    "body": "더 넓게 보고싶어요..!",
+    "status": "implemented",
+    "evidence": "Existing board item -P7Htm1oHP90IXGx_WuP reviewed against the actual reading layout. Removed fixed viewport height, nested scripture scroller and full-width dock. Full chapter now flows naturally in the page; a compact selection-only side action and the original chapter-end action are verified on 360/768/1440px browsers. See docs/faith-friends-and-reading-flow.md. Completion requires successful tested Pages deployment."
   }
 ]

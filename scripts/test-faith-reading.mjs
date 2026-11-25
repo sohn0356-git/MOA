@@ -31,11 +31,23 @@ try{
   if(width===360){await page.getByRole('button',{name:'말씀 언어 선택'}).click();await page.screenshot({path:'test-results/faith-gallery/language-multiselect-360.png'});await page.getByRole('menuitem',{name:'선택 완료',exact:true}).click()}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'parallel reading fits viewport')
   await page.screenshot({path:'test-results/faith-gallery/parallel-reading-'+width+'.png',fullPage:true})
+  assert.equal(await page.locator('.faith-selection-next').count(),0,'no floating action before scripture selection')
   await page.locator('.faith-verse-list>button').nth(16).click()
-  const viewport=await page.locator('.faith-verse-list').boundingBox(),dock=await page.locator('.faith-selection-next').boundingBox();assert.ok(viewport&&dock&&viewport.y+viewport.height<=dock.y+1,'next step occupies its own space and never covers scripture');
-  const write=page.getByRole('button',{name:'묵상하기',exact:true});await write.scrollIntoViewIfNeeded()
-  await page.screenshot({path:'test-results/faith-gallery/parallel-reading-bottom-'+width+'.png'})
-  await write.click();await page.waitForFunction(()=>document.activeElement?.id==='write-title')
+  const floating=page.getByRole('button',{name:'선택한 말씀으로 묵상하기',exact:true});await floating.waitFor()
+  await page.locator('.faith-verse-list>button').nth(16).click();await floating.waitFor({state:'detached'})
+  await page.locator('.faith-verse-list>button').nth(16).click();await floating.waitFor()
+  const dock=await floating.boundingBox(),nav=await page.getByRole('navigation',{name:'MOA',exact:true}).boundingBox()
+  assert.ok(dock&&nav&&dock.width<=50&&dock.height<=50&&dock.y+dock.height<=nav.y,'small floating action sits above bottom navigation')
+  const reading=await page.locator('.faith-verse-list').evaluate(el=>({height:el.getBoundingClientRect().height,overflow:getComputedStyle(el).overflowY}))
+  assert.ok(reading.height>900&&reading.overflow==='visible','scripture uses full natural page height without a clipped scroll panel')
+  assert.ok(await page.locator('.faith-verse-pair').evaluateAll((nodes,left)=>nodes.every(node=>node.getBoundingClientRect().right<=left),dock.x),'floating action has a clear side gutter and never covers scripture text')
+  await page.screenshot({path:'test-results/faith-gallery/parallel-reading-floating-'+width+'.png'})
+  if(width===360){
+   await page.locator('.faith-reading-finish').scrollIntoViewIfNeeded();await floating.waitFor({state:'detached'})
+   await page.screenshot({path:'test-results/faith-gallery/parallel-reading-bottom-'+width+'.png'})
+   await page.getByRole('button',{name:'묵상하기',exact:true}).click()
+  }else{await floating.click()}
+  await page.waitForFunction(()=>document.activeElement?.id==='write-title')
   const heading=await page.locator('#write-title').boundingBox();assert.ok(heading&&heading.y>=0&&heading.y<450,'bottom action opens the writing heading in view')
   const layout=await page.locator('.faith-selected-quote').evaluate(el=>({display:getComputedStyle(el).display,width:el.getBoundingClientRect().width,parent:el.parentElement.getBoundingClientRect().width,scroll:el.scrollWidth}))
   assert.equal(layout.display,'block','selected quotation must not use the old narrow verse-number grid')

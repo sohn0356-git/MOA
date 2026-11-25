@@ -1193,7 +1193,8 @@ function UploadProgress({
 }
 
 export function MeditationApp({ entryActions, activityId = '', activityBusy = false, onStartupState, churchMember = null, churchAuthBusy = false, onChurchSignIn }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown>; onStartupState?: (state:StartupContentState)=>void; churchMember?: SanctuaryMember | null; churchAuthBusy?: boolean; onChurchSignIn?: () => Promise<unknown> } = {}) {
-  const readingRef=useRef<HTMLElement|null>(null)
+  const readingFinishRef=useRef<HTMLDivElement|null>(null)
+  const [readingFinishVisible,setReadingFinishVisible]=useState(false)
   const recordListRef = useRef<HTMLDivElement | null>(null)
   const feedLoadMoreRef = useRef<HTMLDivElement | null>(null)
   const questionTagInputRef = useRef<HTMLInputElement | null>(null)
@@ -1896,15 +1897,14 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   }
 
   useEffect(()=>{
-    const node=readingRef.current;if(!node)return
-    const resize=()=>{const nav=node.closest('.faith-screen')?.querySelector('.faith-bottom-nav');const height=Math.max(260,(window.visualViewport?.height||window.innerHeight)-node.getBoundingClientRect().top-(nav?.getBoundingClientRect().height||72)-16);const value=Math.round(height)+'px';if(node.style.getPropertyValue('--reading-height')!==value)node.style.setProperty('--reading-height',value)}
-    resize();window.addEventListener('resize',resize);window.visualViewport?.addEventListener('resize',resize)
-    const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(resize)
-    if(node.parentElement)observer?.observe(node.parentElement)
-    const content=node.closest('.faith-content');if(content)observer?.observe(content)
-    const header=node.closest('.faith-screen')?.querySelector('.faith-header');if(header)observer?.observe(header)
-    return()=>{observer?.disconnect();window.removeEventListener('resize',resize);window.visualViewport?.removeEventListener('resize',resize)}
-  },[activeTab,devotionView,draftStore.drafts.length])
+    setReadingFinishVisible(false)
+    const node=readingFinishRef.current
+    if(!node||typeof IntersectionObserver==='undefined')return
+    const navHeight=node.closest('.faith-screen')?.querySelector('.faith-bottom-nav')?.getBoundingClientRect().height||72
+    const observer=new IntersectionObserver(([entry])=>setReadingFinishVisible(entry.intersectionRatio>=0.99),{rootMargin:`0px 0px -${Math.max(0,navHeight-1)}px 0px`,threshold:0.99})
+    observer.observe(node.querySelector('button')||node)
+    return()=>observer.disconnect()
+  },[activeTab,devotionView])
 
   function startWriting() {
     setSavedVerseQuote(liveSelectedVerseText)
@@ -2930,7 +2930,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
             </div>
 
             {devotionView === 'read' ? (
-              <section ref={readingRef} className="faith-reading" data-has-selection={selectedVerseNumbers.length>0} aria-labelledby="scripture-title">
+              <section className="faith-reading" data-has-selection={selectedVerseNumbers.length>0} aria-labelledby="scripture-title">
                 <div className="faith-scripture-head">
                   <div>
                     <h3 id="scripture-title">{plan.reference}</h3>
@@ -2989,8 +2989,8 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   )}
                 </div>
                 <p className="faith-question-line">{plan.question}</p>
-                <div className="faith-reading-finish" hidden={selectedVerseNumbers.length>0}><span>{selectedVerseNumbers.length?`${selectedVerseNumbers.length}개 구절을 담았어요`:'읽은 말씀을 마음에 담아보세요'}</span>{!selectedVerseNumbers.length&&<button className="faith-primary" type="button" disabled={readingBusy} onClick={startWriting}>묵상하기<Icon name="edit"/></button>}</div>
-                {selectedVerseNumbers.length>0&&<div className="faith-selection-next" aria-label="선택한 말씀으로 다음 단계"><span>{selectedVerseNumbers.length}절 선택</span><button className="faith-primary" type="button" disabled={readingBusy} onClick={startWriting}>묵상하기<Icon name="edit"/></button></div>}
+                <div ref={readingFinishRef} className="faith-reading-finish"><span>{selectedVerseNumbers.length?`${selectedVerseNumbers.length}개 구절을 담았어요`:'읽은 말씀을 마음에 담아보세요'}</span><button className="faith-primary" type="button" disabled={readingBusy} onClick={startWriting}>묵상하기<Icon name="edit"/></button></div>
+                {selectedVerseNumbers.length>0&&!readingFinishVisible&&<button className="faith-selection-next" aria-label="선택한 말씀으로 묵상하기" title="선택한 말씀으로 묵상하기" type="button" disabled={readingBusy} onClick={startWriting}><Icon name="edit"/><span>{selectedVerseNumbers.length}</span></button>}
               </section>
             ) : null}
 
