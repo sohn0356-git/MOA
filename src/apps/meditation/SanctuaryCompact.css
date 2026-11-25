@@ -83,3 +83,6 @@
 
 .sanctuary-room-music{display:inline-flex;align-items:center}
 .sanctuary-music-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+.faith-screen[data-church-active=true]:has(.sanctuary[data-entered=true])>.faith-header{display:none}
+.faith-screen[data-church-active=true]:has(.sanctuary[data-entered=true])>.faith-content{padding-top:0}

@@ -87,9 +87,9 @@
   {
     "id": "faith-selection-photo-flow",
     "title": "말씀 선택 후 묵상하기 버튼과 묵상 사진·임시저장 UI 개선",
-    "body": "말씀 본문은 높이나 너비를 줄이지 않고 페이지 전체에서 스크롤합니다. 말씀을 선택하면 우측 아래 작은 원형 묵상 버튼이 본문 위에 뜹니다. 본문 맨 아래의 묵상하기 버튼이 화면에 보이면 작은 버튼이 부드럽게 사라지고, 아래 버튼이 화면 밖으로 나가면 다시 나타납니다. 사진 안내와 임시저장 디자인은 통일된 형태로 유지합니다.",
+    "body": "말씀 본문은 높이나 너비를 줄이지 않고 페이지 전체에서 스크롤합니다. 말씀을 선택하면 우측 아래 작은 원형 묵상 버튼이 본문 위에 뜹니다. 본문 맨 아래의 묵상하기 버튼이 화면에 보이면 작은 버튼이 부드럽게 사라지고, 아래 버튼이 화면 밖으로 나가면 다시 나타납니다. 사진 안내와 임시저장 디자인은 통일된 형태로 유지합니다. 본문 맨 아래 묵상하기 버튼 아래에는 28px 여백을 두어 하단 탭과 붙지 않게 합니다.",
     "status": "implemented",
-    "evidence": "Native 360/768/1440 browser checks verify unchanged full scripture width and natural height, selection-only lower-right overlay, fade-out when the chapter-end button enters the visible area above navigation, fade-in when it leaves, hidden action excluded from focus, and both writing actions. Honors reduced-motion preferences. Replaces the earlier side-gutter and conditional unmount behavior."
+    "evidence": "Native 360/768/1440 browser checks verify unchanged full scripture width and natural height, selection-only lower-right overlay, fade-out when the chapter-end button enters the visible area above navigation, fade-in when it leaves, hidden action excluded from focus, and both writing actions. Honors reduced-motion preferences. Replaces the earlier side-gutter and conditional unmount behavior. Native bounds check verifies at least 28px of space after the chapter-end button."
   },
   {
     "id": "faith-friends-groups-notices",
@@ -111,5 +111,12 @@
     "body": "더 넓게 보고싶어요..!",
     "status": "implemented",
     "evidence": "Existing board item -P7Htm1oHP90IXGx_WuP reviewed against the actual reading layout. Removed fixed viewport height, nested scripture scroller and full-width dock. Full chapter now flows naturally in the page; a compact selection-only side action and the original chapter-end action are verified on 360/768/1440px browsers. See docs/faith-friends-and-reading-flow.md. Completion requires successful tested Pages deployment."
+  },
+  {
+    "id": "faith-prayer-completion-vibration",
+    "title": "기도 타이머 종료 시 진동 알림",
+    "body": "기도 시작 후 설정 시간이 끝나면 지원 기기에서 짧은 진동을 한 번 울립니다. 일시정지에는 진동하지 않으며 진동 API가 없거나 차단되어도 완료 안내와 기도 기록은 정상 처리합니다.",
+    "status": "implemented",
+    "evidence": "Fake-time component tests cover one completion/one vibration after pause-resume, unsupported and throwing vibration APIs. Real Chromium clock checks verify the completion pattern [180,100,180] exactly once, with pause remaining silent. Production build passed."
   }
 ]

@@ -53,6 +53,8 @@ try{
    await page.locator('.faith-reading-finish').scrollIntoViewIfNeeded()
    await page.waitForFunction(()=>{const b=document.querySelector('.faith-selection-next');return b?.getAttribute('aria-hidden')==='true'&&getComputedStyle(b).opacity==='0'})
    await page.screenshot({path:'test-results/faith-gallery/parallel-reading-bottom-'+width+'.png'})
+   const bottomGap=await page.locator('.faith-reading-finish').evaluate(el=>el.getBoundingClientRect().bottom-el.querySelector('button').getBoundingClientRect().bottom)
+   assert.ok(bottomGap>=28,'chapter-end meditation action has comfortable bottom padding')
    await page.getByRole('button',{name:'묵상하기',exact:true}).click()
   }else{await floating.click()}
   await page.waitForFunction(()=>document.activeElement?.id==='write-title')

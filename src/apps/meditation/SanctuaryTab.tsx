@@ -55,7 +55,9 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture,chapelNotificatio
  },[])
  const complete=useCallback(()=>{
   if(finished.current)return
-  finished.current=true;deadline.current=null;setRunning(false);setRemaining(0);save({sessions:latest.current.sessions+1});setNotice('기도 시간을 마쳤습니다. 오늘의 평안이 하루에 이어지기를 바라요.')
+  finished.current=true;deadline.current=null;setRunning(false);setRemaining(0);
+  try{navigator.vibrate?.([180,100,180])}catch{/* Device vibration is optional; completion must still be saved. */}
+  save({sessions:latest.current.sessions+1});setNotice('기도 시간을 마쳤습니다. 오늘의 평안이 하루에 이어지기를 바라요.')
  },[save])
  useEffect(()=>{
   if(!running)return
@@ -69,7 +71,7 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture,chapelNotificatio
  }
  const today=sanctuaryDay(),candles=record.candleDay===today?record.candles:0
  const clock=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0')
- return <section className="sanctuary sanctuary-compact" data-light={record.light} aria-label="나의 예배당">
+ return <section className="sanctuary sanctuary-compact" data-entered={entered} data-light={record.light} aria-label="나의 예배당">
   {!entered&&<header className="sanctuary-compact-welcome"><div><small>YOUR QUIET PLACE</small><h2>{member.displayName||'방문자'}님의 작은 예배당</h2></div><span>잠시, 평안히</span></header>}
   <SanctuaryCommunityPanel room={room} uid={member.uid} boardOpen={boardOpen} onBoardClose={()=>setBoardOpen(false)} onEnter={entered?undefined:()=>setEntered(true)}/>
   {entered&&<>
