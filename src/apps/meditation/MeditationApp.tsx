@@ -1901,7 +1901,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     const node=readingFinishRef.current
     if(!node||typeof IntersectionObserver==='undefined')return
     const navHeight=node.closest('.faith-screen')?.querySelector('.faith-bottom-nav')?.getBoundingClientRect().height||72
-    const observer=new IntersectionObserver(([entry])=>setReadingFinishVisible(entry.intersectionRatio>=0.99),{rootMargin:`0px 0px -${Math.max(0,navHeight-1)}px 0px`,threshold:0.99})
+    const observer=new IntersectionObserver(([entry])=>setReadingFinishVisible(entry.isIntersecting),{rootMargin:`0px 0px -${Math.max(0,navHeight-1)}px 0px`,threshold:0})
     observer.observe(node.querySelector('button')||node)
     return()=>observer.disconnect()
   },[activeTab,devotionView])
@@ -2990,7 +2990,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                 </div>
                 <p className="faith-question-line">{plan.question}</p>
                 <div ref={readingFinishRef} className="faith-reading-finish"><span>{selectedVerseNumbers.length?`${selectedVerseNumbers.length}개 구절을 담았어요`:'읽은 말씀을 마음에 담아보세요'}</span><button className="faith-primary" type="button" disabled={readingBusy} onClick={startWriting}>묵상하기<Icon name="edit"/></button></div>
-                {selectedVerseNumbers.length>0&&!readingFinishVisible&&<button className="faith-selection-next" aria-label="선택한 말씀으로 묵상하기" title="선택한 말씀으로 묵상하기" type="button" disabled={readingBusy} onClick={startWriting}><Icon name="edit"/><span>{selectedVerseNumbers.length}</span></button>}
+                {selectedVerseNumbers.length>0&&<button className="faith-selection-next" data-hidden={readingFinishVisible} aria-hidden={readingFinishVisible} tabIndex={readingFinishVisible?-1:0} aria-label="선택한 말씀으로 묵상하기" title="선택한 말씀으로 묵상하기" type="button" disabled={readingBusy||readingFinishVisible} onClick={startWriting}><Icon name="edit"/><span>{selectedVerseNumbers.length}</span></button>}
               </section>
             ) : null}
 

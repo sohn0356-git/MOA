@@ -87,9 +87,9 @@
   {
     "id": "faith-selection-photo-flow",
     "title": "말씀 선택 후 묵상하기 버튼과 묵상 사진·임시저장 UI 개선",
-    "body": "말씀 본문은 높이를 제한하지 않고 페이지 전체에서 스크롤합니다. 말씀을 선택하면 우측 아래 작은 원형 묵상 버튼을 표시하고 본문과 겹치지 않는 여백을 둡니다. 본문 맨 아래의 묵상하기 버튼은 유지하며 해당 버튼이 모두 보이면 작은 버튼을 숨깁니다. 사진 안내와 임시저장 디자인은 통일된 형태로 유지합니다.",
+    "body": "말씀 본문은 높이나 너비를 줄이지 않고 페이지 전체에서 스크롤합니다. 말씀을 선택하면 우측 아래 작은 원형 묵상 버튼이 본문 위에 뜹니다. 본문 맨 아래의 묵상하기 버튼이 화면에 보이면 작은 버튼이 부드럽게 사라지고, 아래 버튼이 화면 밖으로 나가면 다시 나타납니다. 사진 안내와 임시저장 디자인은 통일된 형태로 유지합니다.",
     "status": "implemented",
-    "evidence": "Native 360/768/1440 browser checks verify natural full-height scripture scrolling, selection-only compact lower-right action, no scripture text overlap, original bottom action and floating action both opening the editor, multilingual draft restoration and verse picker bounds. Replaces the earlier viewport-height dock design."
+    "evidence": "Native 360/768/1440 browser checks verify unchanged full scripture width and natural height, selection-only lower-right overlay, fade-out when the chapter-end button enters the visible area above navigation, fade-in when it leaves, hidden action excluded from focus, and both writing actions. Honors reduced-motion preferences. Replaces the earlier side-gutter and conditional unmount behavior."
   },
   {
     "id": "faith-friends-groups-notices",
