@@ -2545,7 +2545,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         })
       } else {
         await set(push(ref(getRealtimeDb(), 'faithQuestions')), {
-          authorAvatarUrl, authorName, activityId, authorUid: currentUser.uid,
+          authorAvatarUrl, authorName, authorUid: currentUser.uid,
           body: questionBody.trim(), createdAt: new Date().toISOString(), createdAtMs: serverTimestamp(),
           tags, title: questionTitle.trim() || '신앙 질문',
         })
@@ -2588,7 +2588,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         setEditingAnswer(null)
       } else {
         await set(push(ref(getRealtimeDb(), path)), {
-          authorAvatarUrl, authorName, activityId, authorUid: currentUser.uid, body,
+          authorAvatarUrl, authorName, authorUid: currentUser.uid, body,
           createdAt: new Date().toISOString(), createdAtMs: serverTimestamp(),
         })
       }

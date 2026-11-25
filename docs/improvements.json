@@ -2,9 +2,9 @@
   {
     "id": "question-sharing",
     "title": "질문을 다른 사용자와 함께 볼 수 있도록 공유 범위 개선",
-    "body": "현재 질문과 답변은 users/{uid} 아래에서 본인 데이터만 조회합니다. 공개 질문 게시판을 마련하고, 작성자 권한과 다른 사용자의 답변 권한을 검증해 계정 간 질문·답변이 가능하도록 개선합니다.",
+    "body": "현재 질문과 답변은 users/{uid} 아래에서 본인 데이터만 조회합니다. 공개 질문 게시판을 마련하고, 작성자 권한과 다른 사용자의 답변 권한을 검증해 계정 간 질문·답변이 가능하도록 개선합니다. 질문·답변 등록 시 공개 데이터 규격에 없는 과거 활동 ID를 전송하지 않아 저장 거절을 방지합니다.",
     "status": "implemented",
-    "evidence": "Two-account RTDB emulator tests for public reads, question/answer ownership, atomic deletion and private legacy isolation; successful Pages and rules deployments required."
+    "evidence": "Two-account RTDB emulator tests for public reads, question/answer ownership, atomic deletion and private legacy isolation; successful Pages and rules deployments required. Registration regression: remove obsolete activityId from both question and answer payloads; actual two-account Auth/DB browser verifies public creation, reply, author edits and atomic deletion; rules reject the old payload and continue enforcing ownership."
   },
   {
     "id": "suggestion-editing",

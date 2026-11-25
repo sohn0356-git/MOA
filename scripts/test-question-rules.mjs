@@ -20,8 +20,10 @@ async function denied(path, method, data, uid) {
   const res = await request(path, method, data, uid)
   assert.equal(res.status, 401, await res.text())
 }
-const question = { authorUid: 'alice', authorName: 'Alice', title: '공개 질문', body: '질문 내용', createdAt: '2026-10-18T00:00:00Z', createdAtMs: 1, tags: ['기도'] }
-const answer = { authorUid: 'bob', authorName: 'Bob', body: '다른 사용자의 답변', createdAt: '2026-10-18T00:01:00Z', createdAtMs: 2 }
+const question = { authorUid: 'alice', authorName: 'Alice', authorAvatarUrl: '', title: '공개 질문', body: '질문 내용', createdAt: '2026-10-18T00:00:00Z', createdAtMs: 1, tags: ['기도'] }
+const answer = { authorUid: 'bob', authorName: 'Bob', authorAvatarUrl: '', body: '다른 사용자의 답변', createdAt: '2026-10-18T00:01:00Z', createdAtMs: 2 }
+// Legacy activity metadata must stay out of public question/answer writes.
+await denied('faithQuestions/legacy-payload', 'PUT', { ...question, activityId: '' })
 await allowed('faithQuestions/q', 'PUT', question)
 await allowed('faithQuestions/q', 'GET', undefined, 'bob')
 assert.equal((await (await request('faithQuestions', 'GET', undefined, 'bob')).json()).q.title, question.title)
@@ -33,6 +35,7 @@ await denied('faithQuestions/q', 'PATCH', { authorUid: 'bob' })
 await denied('faithQuestions/q', 'PATCH', { createdAtMs: 999 })
 await denied('faithQuestions/q', 'PATCH', { title: null })
 await allowed('faithQuestions/q', 'PATCH', { title: '작성자가 수정한 질문' })
+await denied('faithQuestionAnswers/q/legacy-payload', 'PUT', { ...answer, activityId: '' }, 'bob')
 await allowed('faithQuestionAnswers/q/a', 'PUT', answer, 'bob')
 await allowed('faithQuestionAnswers/q/a', 'GET')
 await denied('faithQuestionAnswers/q/a', 'PATCH', { body: '질문 작성자가 타인 답변 수정' })

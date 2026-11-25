@@ -54,7 +54,7 @@ jobs:
       - name: Verify Pages M4A playback without Storage traffic
         run: node scripts/test-sanctuary-audio.mjs
       - name: Verify two-account sanctuary community
-        run: npx firebase-tools@latest emulators:exec --only auth,database --project demo-moa --config firebase.sanctuary-test.json "node scripts/test-sanctuary-community.mjs && node scripts/test-faith-avatar-sync.mjs && node scripts/test-faith-friends.mjs"
+        run: npx firebase-tools@latest emulators:exec --only auth,database --project demo-moa --config firebase.sanctuary-test.json "node scripts/test-sanctuary-community.mjs && node scripts/test-faith-avatar-sync.mjs && node scripts/test-faith-friends.mjs && node scripts/test-faith-questions.mjs"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
