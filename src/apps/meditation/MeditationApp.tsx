@@ -2695,7 +2695,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
             <h2>{renderHeaderTitle()}</h2>
           </div>
         )}
-        <ConnectionHub kind="bell" social={social} notifications={social.unread} enabled={notificationPreferences.loaded&&notificationPreferences.values.friends}/>
+        {activeTab === 'feed' ? <ConnectionHub kind="bell" social={social} notifications={social.unread} enabled={notificationPreferences.loaded&&notificationPreferences.values.friends}/> : null}
         {entryActions}
         {activeTab === 'qna' && qnaView === 'write' ? (
           <button className="faith-text-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>취소</button>
