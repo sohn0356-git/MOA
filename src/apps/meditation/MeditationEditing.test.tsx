@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
   user: { uid: 'owner', displayName: 'Google 사용자', email: 'owner@example.com', photoURL: '' },
   entries: {} as Record<string, unknown>,
   publicPhotos: {} as Record<string, unknown>,
+  ownPhotos: {} as Record<string, unknown>,
   praiseBank: {} as Record<string, unknown>,
   update: vi.fn(),
   parallelMissing:false,
@@ -24,7 +25,7 @@ vi.mock('firebase/database', () => ({
   query:(path:string)=>path, orderByChild:vi.fn(),equalTo:vi.fn(),limitToLast:vi.fn(),
   ref: (_db: unknown, path = '') => path,
   onValue: (path: string, callback: (snapshot: { val: () => unknown }) => void) => {
-    callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : path === 'crossPhotos' ? state.publicPhotos : path === 'lunchPraiseTracks' ? state.praiseBank : null })
+    callback({ val: () => path === 'users/' + state.user.uid + '/meditationEntries' ? state.entries : path === 'users/' + state.user.uid + '/crossPhotos' ? state.ownPhotos : path === 'crossPhotos' ? state.publicPhotos : path === 'lunchPraiseTracks' ? state.praiseBank : null })
     return () => {}
   },
   get: vi.fn(async () => ({ val: () => null })), push: () => ({ key: 'new-entry' }),
@@ -39,6 +40,7 @@ beforeEach(() => {
   state.user.uid = 'owner'
   state.parallelMissing=false;state.parallelMismatch=false
   state.publicPhotos = {}
+  state.ownPhotos = {}
   state.praiseBank = {}
   state.update.mockReset().mockResolvedValue(undefined)
   state.entries = { original: {
@@ -328,4 +330,25 @@ it('keeps separate verse paragraphs when selecting only Korean',()=>{
   fireEvent.click(screen.getByRole('button',{name:'묵상하기'}))
   expect(document.querySelector('.faith-selected-quote')?.textContent).toBe('첫 번째 선택 말씀\n\n두 번째 선택 말씀')
  }finally{state.plan.verses=original}
+})
+
+it('merges photos into the devotion record tab and opens friend groups directly in a separate tab',async()=>{
+ const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+ state.entries.original={...state.entries.original as object,selectedDate:date}
+ state.ownPhotos={legacy:{imageUrl:image,caption:'예전 사진',selectedDate:date,createdAt:new Date().toISOString()},linked:{imageUrl:image,selectedDate:date,createdAt:new Date().toISOString(),sourceType:'devotion',sourceEntryId:'original'}}
+ render(<MeditationApp/>)
+ fireEvent.click(within(screen.getByRole('navigation',{name:'MOA'})).getByRole('button',{name:'내 기록'}))
+ const tabs=screen.getByRole('tablist',{name:'내 기록 필터'})
+ expect(within(tabs).getAllByRole('tab').map(tab=>tab.textContent)).toEqual(['묵상','기도','질문','친구'])
+ expect(screen.getByText('수정 전 묵상')).toBeInTheDocument()
+ expect(screen.getByRole('img',{name:'묵상 사진'})).toHaveAttribute('src',image)
+ expect(screen.getAllByRole('button',{name:/묵상 사진 보기/})).toHaveLength(1)
+ expect(screen.queryByRole('button',{name:/친구 관리 친구/})).toBeNull()
+ fireEvent.click(within(tabs).getByRole('tab',{name:'친구'}))
+ expect(await screen.findByRole('textbox',{name:'새 친구 그룹 이름'})).toBeInTheDocument()
+ expect(screen.queryByRole('region',{name:'주간 달력'})).toBeNull()
+ expect(screen.queryByRole('dialog',{name:'친구 관리'})).toBeNull()
+ expect(screen.queryByText('수정 전 묵상')).toBeNull()
+ fireEvent.click(within(tabs).getByRole('tab',{name:'묵상'}))
+ expect(screen.getByText('수정 전 묵상')).toBeInTheDocument()
 })

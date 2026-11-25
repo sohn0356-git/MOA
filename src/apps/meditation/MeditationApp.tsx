@@ -202,7 +202,7 @@ type FaithQuestion = {
   title: string
 }
 
-type ProfileRecordTab = 'devotion' | 'photo' | 'prayer' | 'qna'
+type ProfileRecordTab = 'devotion' | 'friends' | 'prayer' | 'qna'
 
 type FaithProfile = {
   avatarUrl: string
@@ -1426,6 +1426,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       .filter((photo) => isPhotoPublic(photo, nowMs))
       .sort((first, second) => getTimestamp(second.createdAt) - getTimestamp(first.createdAt))
   }, [crossPhotos, currentUser?.uid, nowMs, publicFeedPhotos])
+  const standaloneProfilePhotos=crossPhotos.filter(photo=>!photo.sourceEntryId||!entries.some(entry=>entry.id===photo.sourceEntryId))
   const ownFeedPhotos = useMemo(() => buildPersonalFeed([...publicCrossPhotos, ...crossPhotos], entries, currentUser?.uid), [publicCrossPhotos, crossPhotos, entries, currentUser?.uid])
   const galleryPhotos: CrossPhoto[] = feedScope === 'mine' ? ownFeedPhotos : publicCrossPhotos
   const feedAuthorAvatars=useFeedAuthorAvatars([...(openedAuthor?[openedAuthor]:[]),...galleryPhotos.filter(p=>!selectedFeedGroup||normalizeFeedGroup(p.groupName)===selectedFeedGroup).slice(0,visibleFeedCount)],currentUser?.uid||'')
@@ -3341,15 +3342,14 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
         {activeTab === 'profile' ? (
           <section className="faith-stack">
-            <ConnectionHub social={social} notifications={social.unread} enabled={notificationPreferences.loaded&&notificationPreferences.values.friends} onSignIn={onChurchSignIn}/>
             <ProfileAvatarCard member={churchMember} authBusy={churchAuthBusy} onSignIn={onChurchSignIn}/>
             <div className="faith-profile-counts" aria-label="기록 수">
-              <div><strong>{entries.length}</strong><span>묵상</span></div>
-              <div><strong>{crossPhotos.length}</strong><span>사진</span></div>
+              <div><strong>{entries.length+standaloneProfilePhotos.length}</strong><span>묵상</span></div>
+              <div><strong>{social.friends.length}</strong><span>친구</span></div>
               <div><strong>{prayerRequests.filter((item) => item.authorUid === currentUser?.uid || !item.authorUid).length}</strong><span>기도</span></div>
               <div><strong>{faithQuestions.filter((item) => item.authorUid === currentUser?.uid || !item.authorUid).length}</strong><span>질문</span></div>
             </div>
-            <section className="faith-week-panel" aria-label="주간 달력">
+            {profileRecordTab!=='friends'&&<section className="faith-week-panel" aria-label="주간 달력">
               <div className="faith-week-head">
                 <button aria-label="이전 주" className="faith-icon-button" type="button" onClick={() => setSelectedDate(addDaysToKstDateKey(selectedDate, -7))}>
                   <Icon name="back" />
@@ -3362,7 +3362,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
               <div className="faith-week">
                 {weekDateKeys.map((dateKey) => {
                   const parts = getKstDateParts(dateKey)
-                  const count = entries.filter((entry) => entry.selectedDate === dateKey).length
+                  const count = entries.filter((entry) => entry.selectedDate === dateKey).length+standaloneProfilePhotos.filter(photo=>photo.selectedDate===dateKey).length
 
                   return (
                     <button aria-pressed={dateKey === selectedDate} key={dateKey} type="button" onClick={() => setSelectedDate(dateKey)}>
@@ -3373,14 +3373,14 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                   )
                 })}
               </div>
-            </section>
+            </section>}
             <section className="faith-panel">
               <div className="faith-tabs" role="tablist" aria-label="내 기록 필터">
                 {([
                   ['devotion', '묵상'],
-                  ['photo', '사진'],
                   ['prayer', '기도'],
                   ['qna', '질문'],
+                  ['friends', '친구'],
                 ] as Array<[ProfileRecordTab, string]>).map(([id, label]) => (
                   <button aria-selected={profileRecordTab === id} key={id} role="tab" type="button" onClick={() => setProfileRecordTab(id)}>{label}</button>
                 ))}
@@ -3396,6 +3396,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                           setDevotionView('detail')
                         }}>
                           <time>{formatDateLabel(entry.selectedDate)}</time>
+                          {(isDevotionImage(entry.crossImage)||entry.photoUrl)&&<img className="faith-record-photo" src={isDevotionImage(entry.crossImage)?entry.crossImage:entry.photoUrl} alt="묵상 사진"/>}
                           <strong>{getEntryTitle(entry)}</strong>
                           <span>{entry.reference}</span>
                         </button>
@@ -3415,21 +3416,20 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
                         ) : null}
                       </article>
                     ))}
-                    {entries.every((entry) => entry.selectedDate !== selectedDate) ? <EmptyState>{`${formatShortDateLabel(selectedDate)}에는 묵상 기록이 없어요`}</EmptyState> : null}
+                    {entries.every((entry) => entry.selectedDate !== selectedDate)&&standaloneProfilePhotos.every(photo=>photo.selectedDate!==selectedDate) ? <EmptyState>{`${formatShortDateLabel(selectedDate)}에는 묵상 기록이 없어요`}</EmptyState> : null}
                   </div>
                 </>
               ) : null}
-              {profileRecordTab === 'photo' ? (
-                crossPhotos.length ? (
+              {profileRecordTab === 'devotion'&&standaloneProfilePhotos.some(photo=>photo.selectedDate===selectedDate) ? (
                   <div className="faith-photo-grid">
-                    {crossPhotos.map((photo) => (
+                    {standaloneProfilePhotos.filter(photo=>photo.selectedDate===selectedDate).map((photo) => (
                       <button aria-label={`${formatDateTime(photo.createdAt)} 묵상 사진 보기`} key={photo.id} type="button" onClick={() => setSelectedProfilePhotoId(photo.id)}>
                         <img alt="" src={photo.imageUrl} />
                       </button>
                     ))}
                   </div>
-                ) : <EmptyState>올린 묵상 사진이 없습니다.</EmptyState>
               ) : null}
+              {profileRecordTab==='friends'&&<ConnectionHub kind="inline" social={social} notifications={social.unread} enabled={notificationPreferences.loaded&&notificationPreferences.values.friends} onSignIn={onChurchSignIn}/>}
               {profileRecordTab === 'prayer' ? (
                 <div className="faith-record-list">
                   {prayerRequests.filter((request) => request.authorUid === currentUser?.uid || !request.authorUid).length ? prayerRequests.filter((request) => request.authorUid === currentUser?.uid || !request.authorUid).map((request) => (
