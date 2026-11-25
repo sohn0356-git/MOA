@@ -138,7 +138,7 @@ try{
  assert.deepEqual(await page.evaluate(()=>window.prayerVibrations),[],'pause must not vibrate')
  await page.getByRole('button',{name:'기도 시작'}).click();await page.clock.fastForward(290000)
  assert.equal(await page.getByRole('timer').innerText(),'00:00')
- assert.deepEqual(await page.evaluate(()=>window.prayerVibrations),[[180,100,180]],'completed prayer vibrates once')
+ assert.deepEqual(await page.evaluate(()=>window.prayerVibrations),[[350,120,350]],'completed prayer vibrates once')
  await page.clock.fastForward(10000);assert.equal(await page.evaluate(()=>window.prayerVibrations.length),1)
  assert.equal(await page.getByRole('button',{name:'예배당 종소리 듣기'}).count(),0)
  assert.equal(await page.locator('.sanctuary-music').count(),0,'no music card below the room')

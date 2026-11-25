@@ -115,9 +115,9 @@
   {
     "id": "faith-prayer-completion-vibration",
     "title": "기도 타이머 종료 시 진동 알림",
-    "body": "기도 시작 후 설정 시간이 끝나면 지원 기기에서 짧은 진동을 한 번 울립니다. 일시정지에는 진동하지 않으며 진동 API가 없거나 차단되어도 완료 안내와 기도 기록은 정상 처리합니다.",
+    "body": "기도 시작 후 설정 시간이 끝나면 지원 기기에서 350ms 진동 두 번을 120ms 간격으로 울립니다. 일시정지에는 진동하지 않으며 진동 API가 없거나 차단되어도 완료 안내와 기도 기록은 정상 처리합니다.",
     "status": "implemented",
-    "evidence": "Fake-time component tests cover one completion/one vibration after pause-resume, unsupported and throwing vibration APIs. Real Chromium clock checks verify the completion pattern [180,100,180] exactly once, with pause remaining silent. Production build passed."
+    "evidence": "Fake-time component tests cover one completion/one vibration after pause-resume, unsupported and throwing vibration APIs. Real Chromium clock checks verify the completion pattern [350,120,350] exactly once, with pause remaining silent. Production build passed."
   },
   {
     "id": "faith-profile-record-tabs",

@@ -56,7 +56,7 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture,chapelNotificatio
  const complete=useCallback(()=>{
   if(finished.current)return
   finished.current=true;deadline.current=null;setRunning(false);setRemaining(0);
-  try{navigator.vibrate?.([180,100,180])}catch{/* Device vibration is optional; completion must still be saved. */}
+  try{navigator.vibrate?.([350,120,350])}catch{/* Device vibration is optional; completion must still be saved. */}
   save({sessions:latest.current.sessions+1});setNotice('기도 시간을 마쳤습니다. 오늘의 평안이 하루에 이어지기를 바라요.')
  },[save])
  useEffect(()=>{

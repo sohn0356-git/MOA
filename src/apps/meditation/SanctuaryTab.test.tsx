@@ -53,7 +53,7 @@ it('runs, pauses and completes an actual prayer countdown once',()=>{
  act(()=>{vi.advanceTimersByTime(290000)})
  expect(screen.getByRole('timer')).toHaveTextContent('00:00')
  expect(screen.getByText(/기도 시간을 마쳤습니다/)).toBeInTheDocument()
- expect(vibrate).toHaveBeenCalledWith([180,100,180])
+ expect(vibrate).toHaveBeenCalledWith([350,120,350])
  expect(JSON.parse(localStorage.getItem(sanctuaryKey('alice'))!).sessions).toBe(1)
  act(()=>{vi.advanceTimersByTime(30000)})
  expect(JSON.parse(localStorage.getItem(sanctuaryKey('alice'))!).sessions).toBe(1)
