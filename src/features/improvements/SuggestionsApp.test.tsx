@@ -3,15 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { SuggestionsApp } from './SuggestionsApp'
 
-const mocks = vi.hoisted(() => ({ update: vi.fn(), remove: vi.fn(), empty: false }))
+const mocks = vi.hoisted(() => ({ update: vi.fn(), remove: vi.fn(), empty: false, user:{uid:'alice',displayName:'Alice'} as {uid:string;displayName:string}|null, snapshotError:null as Error|null, subscribe:vi.fn() }))
 vi.mock('../../services/firebase', () => ({
-  getFirebaseAuth: () => ({ currentUser: { uid: 'alice', displayName: 'Alice' } }),
+  getFirebaseAuth: () => ({ currentUser:mocks.user }),
   getFirebaseConfigError: () => null,
   getRealtimeDb: () => ({}),
 }))
 vi.mock('firebase/database', () => ({
   ref: (_db: unknown, path: string) => path,
-  onValue: (_ref: unknown, callback: (value: { val: () => unknown }) => void) => {
+  onValue: (_ref: unknown, callback: (value: { val: () => unknown }) => void, failed:(error:Error)=>void) => {
+    mocks.subscribe();if(mocks.snapshotError){failed(mocks.snapshotError);return()=>{}}
     callback({ val: () => mocks.empty ? null : ({
       a: { authorUid: 'alice', authorName: 'Alice', title: '내 의견', body: '내 내용', createdAt: 1, isCompleted: true, completedAt: 10, completedByUid: 'bob', completedByName: 'Bob' },
       b: { authorUid: 'bob', authorName: 'Bob', title: '다른 의견', body: '다른 내용', createdAt: 2, isCompleted: false },
@@ -21,7 +22,7 @@ vi.mock('firebase/database', () => ({
   update: mocks.update, remove: mocks.remove, push: vi.fn(), get: vi.fn(),
 }))
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
-beforeEach(() => { localStorage.clear(); mocks.empty = false; mocks.update.mockReset().mockResolvedValue(undefined); mocks.remove.mockReset().mockResolvedValue(undefined) })
+beforeEach(() => { localStorage.clear();mocks.user={uid:'alice',displayName:'Alice'};mocks.snapshotError=null;mocks.subscribe.mockClear(); mocks.empty = false; mocks.update.mockReset().mockResolvedValue(undefined); mocks.remove.mockReset().mockResolvedValue(undefined) })
 
 function renderOwnerBoard() {
   render(<SuggestionsApp embedded />)
@@ -138,8 +139,29 @@ describe('suggestion draft composer', () => {
     fireEvent.change(within(form).getByLabelText('제목'), { target: { value: '새 건의' } })
     fireEvent.change(within(form).getByLabelText('내용'), { target: { value: '새 내용' } })
     fireEvent.submit(form)
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('offline'))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('건의를 등록하지 못했습니다. 잠시 후 다시 시도해주세요.'))
     expect(localStorage.getItem('moa.suggestions.draft.v1:alice')).not.toBeNull()
     expect((within(form).getByLabelText('제목') as HTMLInputElement).value).toBe('새 건의')
   })
+})
+
+it('shows a login notice without querying restricted data and reloads after login',async()=>{
+ mocks.user=null
+ const view=render(<SuggestionsApp embedded/>)
+ expect(screen.getByRole('alert').textContent).toBe('로그인 후 이용 가능합니다.')
+ expect(mocks.subscribe).not.toHaveBeenCalled()
+ mocks.user={uid:'alice',displayName:'Alice'};view.rerender(<SuggestionsApp embedded/>)
+ expect(await screen.findByText('다른 의견')).toBeTruthy()
+ expect(screen.queryByText('로그인 후 이용 가능합니다.')).toBeNull()
+})
+it('replaces signed-in permission errors with a plain Korean access notice',()=>{
+ mocks.snapshotError=Object.assign(new Error("permission_denied at /suggestions: Client doesn't have permission to access the desired data."),{code:'PERMISSION_DENIED'})
+ render(<SuggestionsApp embedded/>)
+ expect(screen.getByRole('alert').textContent).toBe('이 작업을 수행할 권한이 없습니다.')
+ expect(screen.queryByText(/permission_denied/)).toBeNull()
+})
+it('does not expose raw backend details for other loading failures',()=>{
+ mocks.snapshotError=new Error('network failure: internal endpoint')
+ render(<SuggestionsApp embedded/>)
+ expect(screen.getByRole('alert').textContent).toBe('건의함을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.')
 })

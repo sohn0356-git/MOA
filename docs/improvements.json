@@ -154,5 +154,13 @@
     "body": "앱 준비가 끝나면 이 기기의 알림 권한을 한 번 안내하고 알림 허용 버튼을 누른 사용자 동작에서 기기 권한을 요청합니다. 이미 허용·차단했거나 나중에 선택한 경우 재실행·새로고침마다 반복하지 않습니다. 설정에서는 예약 서버 준비 여부와 무관하게 알림 권한을 요청할 수 있으며, 권한만으로 매일 알람이 켜진 것처럼 표시하지 않습니다.",
     "status": "implemented",
     "evidence": "Component tests cover startup gating, gesture-only request, remembered grant/later, granted/denied/unsupported states and failure recovery. Reminder settings tests verify independent permission while scheduled backend is unavailable. Native 360/768/1440 browser checks cover the permission dialog, a single request and refresh persistence. Existing scheduled-push request remains planned."
+  },
+  {
+    "id": "suggestion-login-guidance",
+    "existingBoardId": "-P7Ly4V19bGmegAnUkxm",
+    "title": "비로그인상태에서 앱 개선 화면",
+    "body": "수치가 0으로 뜨고\npermission_denied라고 떠버리는데\n수치는 알려주고 로그인 후 볼 수 있어요같은 문구를 추가하는건 어떠세요??",
+    "status": "planned",
+    "evidence": "Login/permission-message portion implemented and tested: guest guidance without a restricted subscription, authenticated reload after login, friendly permission/network messages and draft retention. The original board item also requests anonymous aggregate counts; those are not implemented and the original item must remain incomplete."
   }
 ]

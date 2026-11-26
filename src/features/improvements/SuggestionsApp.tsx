@@ -36,6 +36,13 @@ const SUGGESTIONS_PATH = 'suggestions'
 const TITLE_MAX_LENGTH = 80
 const BODY_MAX_LENGTH = 1200
 
+function suggestionErrorMessage(error:unknown,fallback:string){
+  const value=error as {code?:string;message?:string}|null
+  if(/permission[_ -]?denied/i.test(`${value?.code||''} ${value?.message||''}`))return getFirebaseAuth().currentUser?'이 작업을 수행할 권한이 없습니다.':'로그인 후 이용 가능합니다.'
+  if(value?.message==='건의 글을 찾을 수 없습니다.')return value.message
+  return fallback
+}
+
 function handleBackHome() {
   if (!requestDraftNavigation()) return
   history.pushState('', document.title, window.location.pathname + window.location.search + '#/meditation')
@@ -119,6 +126,10 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
       return undefined
     }
 
+    setSuggestions([])
+    if(!currentUser){setError('로그인 후 이용 가능합니다.');setIsLoading(false);return undefined}
+    setError(null)
+    setIsLoading(true)
     const suggestionsRef = ref(getRealtimeDb(), SUGGESTIONS_PATH)
     return onValue(
       suggestionsRef,
@@ -128,11 +139,11 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
         setIsLoading(false)
       },
       (snapshotError) => {
-        setError(snapshotError.message)
+        setError(suggestionErrorMessage(snapshotError,'건의함을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'))
         setIsLoading(false)
       },
     )
-  }, [configError])
+  }, [configError,currentUser?.uid])
 
   async function handleCreateSuggestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -165,7 +176,7 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
       })
       draft.submitted()
     } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : '건의 등록에 실패했습니다.')
+      setError(suggestionErrorMessage(mutationError,'건의를 등록하지 못했습니다. 잠시 후 다시 시도해주세요.'))
     } finally {
       createLock.current = false
       setIsMutating(false)
@@ -198,7 +209,7 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
         updatedAt: now,
       })
     } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : '완료 상태 변경에 실패했습니다.')
+      setError(suggestionErrorMessage(mutationError,'완료 상태를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.'))
     } finally {
       setIsMutating(false)
     }
@@ -296,7 +307,7 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
         {draft.unsaved ? <button type="button" onClick={draft.retrySave}>초안 저장 다시 시도</button> : null}
         <div className="suggestion-composer-footer">
           <span>{body.trim().length}/{BODY_MAX_LENGTH}자</span>
-          <button disabled={isMutating || !!draft.candidate || !title.trim() || !body.trim()} type="submit">
+          <button disabled={!currentUser || isMutating || !!draft.candidate || !title.trim() || !body.trim()} type="submit">
             등록
           </button>
         </div>
