@@ -8,6 +8,7 @@ on:
       - functions/package.json
       - functions/package-lock.json
       - scripts/test-faith-notification-logic.mjs
+      - functions/scripts/deploy-faith-notifications.cjs
       - .github/workflows/deploy-faith-notifications.yml
   workflow_dispatch:
 permissions:
@@ -35,11 +36,14 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/faith-notifications-service-account.json"
+      - name: Install deployment CLI
+        run: npm install --prefix "$RUNNER_TEMP/faith-firebase-cli" --no-audit --no-fund firebase-tools@latest
       - name: Deploy notification handlers and reminder schedule
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/faith-notifications-service-account.json
           FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-        run: npx firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" --only functions:faithPushKey,functions:configureFaithReminder,functions:faithCommentNotice,functions:faithLikeNotice,functions:faithIntercessionNotice,functions:faithDailyReminders --non-interactive
+          FIREBASE_CLI_ROOT: ${{ runner.temp }}/faith-firebase-cli/node_modules/firebase-tools
+        run: node functions/scripts/deploy-faith-notifications.cjs
       - name: Remove deployment identity
         if: always()
         run: rm -f "$RUNNER_TEMP/faith-notifications-service-account.json"

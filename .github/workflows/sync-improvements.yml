@@ -7,7 +7,7 @@ on:
       - functions/scripts/sync-improvements.mjs
       - .github/workflows/sync-improvements.yml
   workflow_run:
-    workflows: ["Deploy to GitHub Pages", "Deploy Realtime Database Rules"]
+    workflows: ["Deploy to GitHub Pages", "Deploy Realtime Database Rules", "Deploy Faith Notifications"]
     types: [completed]
 permissions:
   contents: read
@@ -48,7 +48,8 @@ jobs:
             })
             const pages = data.workflow_runs.find(run => run.name === 'Deploy to GitHub Pages')
             const rules = data.workflow_runs.find(run => run.name === 'Deploy Realtime Database Rules')
-            core.setOutput('verified', String(pages?.conclusion === 'success' && (!rules || rules.conclusion === 'success')))
+            const notifications = data.workflow_runs.find(run => run.name === 'Deploy Faith Notifications')
+            core.setOutput('verified', String(pages?.conclusion === 'success' && (!rules || rules.conclusion === 'success') && (!notifications || notifications.conclusion === 'success')))
 
       - name: Register requests and check verified improvements
         run: node scripts/sync-improvements.mjs
