@@ -188,8 +188,8 @@
   {
     "id": "daily-scripture-prefetch",
     "title": "오늘 말씀 누락 방지와 날짜별 본문 선저장",
-    "body": "날짜가 바뀐 후 예약 갱신이 늦으면 오늘 본문이 비던 문제를 보완합니다. 해당 날짜의 원본 본문과 날짜를 검증해 오늘·내일·모레를 미리 저장하며 미래 본문을 제공하지 않는 경우 오늘 데이터는 유지합니다.",
+    "body": "날짜가 바뀐 후 예약 갱신이 늦으면 오늘 본문이 비던 문제를 보완합니다. 해당 날짜의 원본 본문과 날짜를 검증해 오늘·내일·모레를 미리 저장하며 미래 본문을 제공하지 않는 경우 오늘 데이터는 유지합니다. 한국 시간 23:45·23:50·23:55·00:00·00:05·00:10·00:15에 5분 간격으로 예약하며 이후 매시간 17분에도 복구를 시도합니다. GitHub 예약 실행의 지연·누락 가능성은 남습니다.",
     "status": "implemented",
-    "evidence": "Production inspection found verse/2026/1127 missing while last successful update at 2026-11-26 13:57Z only checked 1126. Updater now resolves reference from each dated page, rejects wrong dates/incomplete verses and prefetches two dates independently. Regression tests verify identity, Korean-first publication, future failures and date progression."
+    "evidence": "Production inspection found verse/2026/1127 missing while last successful update at 2026-11-26 13:57Z only checked 1126. Updater now resolves reference from each dated page, rejects wrong dates/incomplete verses and prefetches two dates independently. Regression tests verify identity, Korean-first publication, future failures and date progression. Schedule regression verifies all seven KST times across UTC date rollover and hourly recovery. Storage audit confirms Firebase date/range + Korean verse publication and Git-hosted ko/en/ja book caches; this does not migrate the reader to Git-only storage."
   }
 ]

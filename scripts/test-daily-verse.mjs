@@ -77,3 +77,12 @@ console.log('Daily verse regression passed: canonical book identity, date path, 
  assert.equal(new Date(next)-new Date(today),172800000)
  assert.equal(h.warnings.length,1)
 }
+
+{
+ const workflow=await readFile(new URL('../.github/workflows/daily-verse.yml',import.meta.url),'utf8')
+ const crons=[...workflow.matchAll(/cron: '([^']+)'/g)].map(match=>match[1])
+ assert.deepEqual(crons,['45,50,55 14 * * *','0,5,10,15 15 * * *','17 * * * *'])
+ const kst=crons.slice(0,2).flatMap(cron=>{const [minutes,hour]=cron.split(' ');return minutes.split(',').map(minute=>String((Number(hour)+9)%24).padStart(2,'0')+':'+minute.padStart(2,'0'))})
+ assert.deepEqual(kst,['23:45','23:50','23:55','00:00','00:05','00:10','00:15'])
+ console.log('Daily schedule: seven 5-minute midnight attempts in KST plus hourly recovery passed.')
+}

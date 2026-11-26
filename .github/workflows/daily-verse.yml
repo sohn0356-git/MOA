@@ -8,10 +8,13 @@ on:
       - 'functions/scripts/update-daily-verse.mjs'
       - 'scripts/test-daily-verse.mjs'
   schedule:
-    # UTC 14:00-16:55 = KST 23:00-01:55: retry around the date change.
-    - cron: '*/5 14-16 * * *'
-    # Recover later if the source or GitHub scheduler was unavailable overnight.
-    - cron: '17 0-13,17-23 * * *'
+    # GitHub's minimum scheduled interval is 5 minutes (execution may be delayed).
+    # UTC 14:45-14:55 = KST 23:45, 23:50, 23:55.
+    - cron: '45,50,55 14 * * *'
+    # UTC 15:00-15:15 = KST 00:00, 00:05, 00:10, 00:15 the following day.
+    - cron: '0,5,10,15 15 * * *'
+    # Keep hourly recovery outside the midnight window, including 00:17 KST.
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       update_date:
