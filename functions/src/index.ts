@@ -395,4 +395,4 @@ export const seedPublicCatalog = onCall(async (request) => {
   return { ok: true, seededAt: Timestamp.now().toMillis() }
 })
 
-export {faithPushKey,configureFaithReminder,faithCommentNotice,faithLikeNotice,faithIntercessionNotice,faithDailyReminders} from './faithNotifications.js'
+export {faithPushKey,configureFaithReminder,faithCommentNotice,faithLikeNotice,faithIntercessionNotice,faithDailyReminders,faithImageNotice} from './faithNotifications.js'

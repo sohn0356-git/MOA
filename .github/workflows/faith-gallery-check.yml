@@ -27,7 +27,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Test shared devotion image permissions
-        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs && node scripts/test-notification-rules.mjs && node scripts/test-friend-rules.mjs && node scripts/test-sanctuary-rules.mjs"
+        run: npx firebase-tools@latest emulators:exec --only database --project demo-moa --config firebase.rules-test.json "node scripts/test-devotion-image-rules.mjs && node scripts/test-image-notification-rules.mjs && node scripts/test-notification-rules.mjs && node scripts/test-friend-rules.mjs && node scripts/test-sanctuary-rules.mjs"
       - run: npm run build
       - name: Compare boot assets against the previous multi-app build
         env:

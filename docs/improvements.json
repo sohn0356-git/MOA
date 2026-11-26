@@ -162,5 +162,13 @@
     "body": "수치가 0으로 뜨고\npermission_denied라고 떠버리는데\n수치는 알려주고 로그인 후 볼 수 있어요같은 문구를 추가하는건 어떠세요??",
     "status": "planned",
     "evidence": "Login/permission-message portion implemented and tested: guest guidance without a restricted subscription, authenticated reload after login, friendly permission/network messages and draft retention. The original board item also requests anonymous aggregate counts; those are not implemented and the original item must remain incomplete."
+  },
+  {
+    "id": "faith-ai-image-notice",
+    "existingBoardId": "-P7LwGIuVO_M_6HHBuR-",
+    "title": "묵상 그림 생성완료시 알림 기능",
+    "body": "그림 생성되면 알림 부탁합니다!\n오늘의 선물 알림🫶🎀",
+    "status": "implemented",
+    "evidence": "The supported AI shared-image save now atomically writes original image, public projection and an owner inbox notice. RTDB emulator verifies AI-only image-change proof, no standalone/forged/unchanged alerts, atomic rollback, unique immutable receipts and private reads. Editor/helper/notification UI tests and native gallery verify the three-path save and opening the original entry. This is an in-app notice; OS push remains blocked by the existing project API/IAM restriction."
   }
 ]

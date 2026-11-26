@@ -35,7 +35,7 @@ export const configureFaithReminder=onCall(async request=>{
   return schedule
  }catch(error){throw new HttpsError('invalid-argument',error instanceof Error?error.message:'설정을 저장하지 못했습니다.')}
 })
-export type FaithNotice={kind:'comment'|'like'|'intercession'|'reminder';actorUid:string;actorName:string;title:string;body:string;targetId:string;sourceId?:string;createdAt:number}
+export type FaithNotice={kind:'comment'|'like'|'intercession'|'reminder'|'image';actorUid:string;actorName:string;title:string;body:string;targetId:string;sourceId?:string;entryId?:string;createdAt:number}
 async function sendPush(uid:string,notice:FaithNotice,id:string){
  const db=database(),[preferences,subscriptions]=await Promise.all([db.ref(`users/${uid}/notificationPreferences`).get(),db.ref(`faithPushSubscriptions/${uid}`).get()])
  const prefs=preferences.val()||{}
@@ -81,4 +81,10 @@ export const faithDailyReminders=onSchedule({schedule:'every 1 minutes',timeZone
    await publish(uid,`reminder:${uid}:${day}`,{kind:'reminder',actorUid:'',actorName:'MOA',title:'말씀과 함께 하루를 시작해요',body:'잠시 마음을 가다듬고 오늘의 말씀을 묵상해보세요.',targetId:'devotion',createdAt:now.getTime()})
   }catch{console.error('Invalid faith reminder schedule')}
  }))
+})
+
+export const faithImageNotice=dbTrigger.ref('/faithNotifications/{uid}/{noticeId}').onCreate(async(snap,context)=>{
+ const notice=snap.val() as FaithNotice
+ if(notice?.kind!=='image'||!/^ai(0[1-9]|10)$/.test(notice.actorUid)||!notice.sourceId)return
+ await publish(context.params.uid,context.eventId,notice)
 })

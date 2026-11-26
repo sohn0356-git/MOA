@@ -11,5 +11,5 @@ for(const method of ['ensure','check']){
  api[method]=async(...args)=>{try{return await original(...args)}catch(error){if(!metadataDenied(error))throw error;console.warn('Service Usage metadata is unavailable; actual resource APIs will validate availability and deployment permission.');return method==='check'?false:undefined}}
 }
 const bin=path.join(root,'lib/bin/firebase.js')
-process.argv=[process.execPath,bin,'deploy','--project',process.env.FIREBASE_PROJECT_ID,'--only','functions:faithPushKey,functions:configureFaithReminder,functions:faithCommentNotice,functions:faithLikeNotice,functions:faithIntercessionNotice,functions:faithDailyReminders','--non-interactive']
+process.argv=[process.execPath,bin,'deploy','--project',process.env.FIREBASE_PROJECT_ID,'--only','functions:faithPushKey,functions:configureFaithReminder,functions:faithCommentNotice,functions:faithLikeNotice,functions:faithIntercessionNotice,functions:faithDailyReminders,functions:faithImageNotice','--non-interactive']
 require(bin)

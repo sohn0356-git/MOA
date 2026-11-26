@@ -2733,7 +2733,7 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
             )}
           </div>
         )}
-        {activeTab==='feed'&&<FaithNotificationCenter social={social} preferences={notificationPreferences.values} onFriends={()=>{if(!requestDraftNavigation())return;handleTabChange('profile');setProfileRecordTab('friends')}} onOpen={notice=>{if(!requestDraftNavigation())return;if(notice.kind==='intercession')handleTabChange('church');else if(notice.kind==='reminder')handleTabChange('devotion');else{handleTabChange('feed');setSelectedFeedPhotoId(notice.targetId)}}}/>}
+        {activeTab==='feed'&&<FaithNotificationCenter social={social} preferences={notificationPreferences.values} onFriends={()=>{if(!requestDraftNavigation())return;handleTabChange('profile');setProfileRecordTab('friends')}} onOpen={notice=>{if(!requestDraftNavigation())return;if(notice.kind==='image'&&notice.entryId){handleTabChange('devotion');setSelectedEntryId(notice.entryId);setDevotionView('detail')}else if(notice.kind==='intercession')handleTabChange('church');else if(notice.kind==='reminder')handleTabChange('devotion');else{handleTabChange('feed');setSelectedFeedPhotoId(notice.targetId)}}}/>}
       </header>
 
       <main className="faith-content" inert={activityBusy}>

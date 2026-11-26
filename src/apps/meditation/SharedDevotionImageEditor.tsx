@@ -1,12 +1,12 @@
 import {canUploadFaithPhoto} from './aiPhotoAccess'
 import { useEffect, useRef, useState } from 'react'
-import { update, ref } from 'firebase/database'
+import { update, ref, push, serverTimestamp } from 'firebase/database'
 import { ImagePlus } from 'lucide-react'
 import { getFaithAuth, getFaithDb } from '../../services/faithSession'
 import { BEFORE_APP_UPDATE } from '../../lib/appUpdateProtocol'
 import { DevotionImagePicker } from './DevotionImagePicker'
 import { isDevotionImage } from './devotionImage'
-import { collaborativeDevotionImageUpdates, type PublicDevotionImageTarget } from './collaborativeDevotionImage'
+import { collaborativeImageSaveUpdates, type PublicDevotionImageTarget } from './collaborativeDevotionImage'
 
 export function SharedDevotionImageEditor({ actorUid, target, image, disabled = false, onSaved }: {
   actorUid: string; target: PublicDevotionImageTarget; image: string; disabled?: boolean; onSaved: (image: string) => void
@@ -62,7 +62,9 @@ export function SharedDevotionImageEditor({ actorUid, target, image, disabled = 
     setSaving(true); setError('')
     const version = generation.current
     try {
-      await update(ref(getFaithDb()), collaborativeDevotionImageUpdates(target, value))
+      const auth=getFaithAuth().currentUser,uploadId=push(ref(getFaithDb(),'faithNotifications/'+target.ownerUid)).key
+      if(!auth||auth.uid!==actorUid||!uploadId)throw Error('업로드 계정을 확인해주세요.')
+      await update(ref(getFaithDb()), collaborativeImageSaveUpdates(target,value,{uid:auth.uid,name:auth.displayName||auth.uid},uploadId,serverTimestamp()))
       let cleanupError = ''
       try { localStorage.removeItem(storageKey) } catch { cleanupError = '사진은 저장됐지만 임시저장을 정리하지 못했습니다.' }
       if (generation.current !== version) return

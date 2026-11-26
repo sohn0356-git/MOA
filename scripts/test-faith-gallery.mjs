@@ -35,7 +35,7 @@ function App() {
 }
 createRoot(document.getElementById('root')!).render(<App/>)
 `)
-await writeFile(folder + '/fake-db.ts', "export const onValue=()=>()=>{};export const query=()=>null;export const orderByChild=()=>null;export const equalTo=()=>null;export const limitToLast=()=>null;export const ref=()=>({}); export const update=async (_ref,data)=>{window.__collabImageWrites=data}")
+await writeFile(folder + '/fake-db.ts', "export const onValue=()=>()=>{};export const query=()=>null;export const orderByChild=()=>null;export const equalTo=()=>null;export const limitToLast=()=>null;export const ref=()=>({});export const push=()=>({key:'upload'});export const serverTimestamp=()=>123; export const update=async (_ref,data)=>{window.__collabImageWrites=data}")
 await writeFile(folder + '/fake-session.ts', "export const getFaithAuth=()=>({currentUser:{uid:'ai02'}}); export const getFaithDb=()=>({}); export const getRealtimeDb=getFaithDb")
 const server = await createServer({ configFile: false, root: process.cwd(), base: '/MOA/', plugins: [react()], resolve: { alias: [
  { find: 'firebase/database', replacement: process.cwd() + '/' + folder + '/fake-db.ts' },
@@ -92,7 +92,7 @@ try {
  await page.getByRole('button',{name:'사진 수정 저장'}).click()
  await page.waitForFunction(()=>Boolean(window.__collabImageWrites))
  const writes=await page.evaluate(()=>window.__collabImageWrites)
- assert.deepEqual(Object.keys(writes).sort(),['crossPhotos/devotion_alice_entry/imageUrl','users/alice/meditationEntries/entry/crossImage'].sort())
+ assert.ok(Object.keys(writes).includes('crossPhotos/devotion_alice_entry/imageUrl'));assert.ok(Object.keys(writes).includes('users/alice/meditationEntries/entry/crossImage'));const notice=Object.entries(writes).find(([path])=>path.startsWith('faithNotifications/alice/image:'));assert.ok(notice);assert.equal(notice[1].kind,'image');assert.equal(notice[1].entryId,'entry');assert.equal(Object.keys(writes).length,3)
  assert.equal(writes['crossPhotos/devotion_alice_entry/imageUrl'],writes['users/alice/meditationEntries/entry/crossImage'])
  assert.ok(writes['crossPhotos/devotion_alice_entry/imageUrl'].startsWith('data:image/webp;base64,'))
  await page.getByRole('button',{name:'공개 묵상 사진 수정'}).waitFor()
