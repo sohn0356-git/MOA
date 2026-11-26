@@ -26,3 +26,10 @@ it('filters by group while keeping me in every group and exposes all groups in a
  fireEvent.click(screen.getByRole('tab',{name:'가족'}));expect(screen.queryByRole('button',{name:'Bob 아바타'})).toBeNull();expect(screen.getByRole('button',{name:'나 아바타'})).toBeInTheDocument();
  view.rerender(<FriendGarden uid="me" friends={[{uid:'bob',name:'Bob'}]} groups={[]}/>);expect(screen.getByRole('tab',{name:'전체'})).toHaveAttribute('aria-selected','true');expect(screen.getByRole('button',{name:'Bob 아바타'})).toBeInTheDocument()
 })
+
+it('faces the actual screen movement vector and stops walking when the movement ends',()=>{
+ vi.useFakeTimers();vi.spyOn(Math,'random').mockReturnValue(.2);render(<FriendGarden uid="me" friends={[]}/>);
+ const avatar=screen.getByRole('img',{name:'나의 아바타'});expect(avatar).toHaveAttribute('data-moving','false');expect(avatar.getAttribute('style')).toContain('--avatar-scale: 0.62');
+ vi.mocked(Math.random).mockReturnValue(.8);act(()=>vi.advanceTimersByTime(200));expect(avatar).toHaveAttribute('data-moving','true');expect(avatar.getAttribute('style')).toContain('--avatar-facing: '+(Math.atan2(84,68)*180/Math.PI));
+ act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','false');
+})

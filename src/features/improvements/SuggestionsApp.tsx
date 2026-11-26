@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react'
 import './SuggestionsApp.css'
+import {SuggestionComments} from './SuggestionComments'
 import { requestDraftNavigation, useSuggestionDraft } from './useSuggestionDraft'
 import { selectSuggestions, type SuggestionFilter, type SuggestionOrder } from './suggestionFilters'
 import { get, onValue, push, ref, remove, update, type DataSnapshot } from 'firebase/database'
@@ -377,6 +378,7 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
                     <span>{suggestion.completedByName} 완료</span>
                   ) : null}
                 </footer>
+                <SuggestionComments suggestionId={suggestion.id} uid={currentUser?.uid||''} name={getDisplayName()}/>
               </div>
             </article>
           ))}

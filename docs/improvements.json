@@ -94,9 +94,9 @@
   {
     "id": "faith-friends-groups-notices",
     "title": "작성자 프로필 친구 요청·알림과 내 기록 친구 그룹 관리",
-    "body": "작성자 프로필에서 친구 요청을 보내고 수락·거절·취소합니다. 앱 내 알림을 보관하며 내 기록에서 친구와 그룹 생성·이름 수정·삭제·멤버 지정을 관리합니다. 설정에서 친구 및 예배당 알림을 각각 켜고 끕니다. 알림 버튼은 홈 아이콘의 피드 탭에만 표시합니다. 친구 관리는 내 기록의 친구 탭에서 별도 창 없이 바로 표시합니다. 친구 탭 위에는 등록된 친구의 최신 3D 아바타가 거니는 마당을 표시하고, 아바타를 누르면 이름을 작게 보여줍니다. 마당에는 안내 문구 대신 그룹명만 표시하고 그룹 목록은 좌우 스크롤합니다. 선택한 그룹의 친구와 내 아바타를 표시하며, 내 아바타는 빈 그룹에도 항상 남습니다.",
+    "body": "작성자 프로필에서 친구 요청을 보내고 수락·거절·취소합니다. 앱 내 알림을 보관하며 내 기록에서 친구와 그룹 생성·이름 수정·삭제·멤버 지정을 관리합니다. 설정에서 친구 및 예배당 알림을 각각 켜고 끕니다. 알림 버튼은 홈 아이콘의 피드 탭에만 표시합니다. 친구 관리는 내 기록의 친구 탭에서 별도 창 없이 바로 표시합니다. 친구 탭 위에는 등록된 친구의 최신 3D 아바타가 거니는 마당을 표시하고, 아바타를 누르면 이름을 작게 보여줍니다. 마당에는 안내 문구 대신 그룹명만 표시하고 그룹 목록은 좌우 스크롤합니다. 선택한 그룹의 친구와 내 아바타를 표시하며, 내 아바타는 빈 그룹에도 항상 남습니다. 캐릭터는 더 작게, 마당은 더 넓게 표시하며 실제 이동 벡터에 맞춰 바라보고 이동이 끝나면 걷는 동작을 멈춥니다.",
     "status": "implemented",
-    "evidence": "Real two-account Auth/RTDB browser checks cover an offline recipient, request cancellation and acceptance, persisted groups and notification toggles, chapel unread badges and two-sided removal. Emulator rules reject forged acceptance, nonparticipants, private-group access and atomic unauthorized writes. Header notification entry is rendered only on the feed/home tab; other tabs retain friend management and notification preferences. Inline friend-tab component tests cover request acceptance, group creation and guest login gating. FriendGarden tests verify canonical avatar appearance, wandering, click-to-toggle names and an empty garden without sample users; native 360/768/1440px screenshots reviewed. Garden tests cover self presence, saved avatar, membership filtering and deleted-group fallback; native 360/768/1440 checks cover horizontal scrolling across twelve groups."
+    "evidence": "Real two-account Auth/RTDB browser checks cover an offline recipient, request cancellation and acceptance, persisted groups and notification toggles, chapel unread badges and two-sided removal. Emulator rules reject forged acceptance, nonparticipants, private-group access and atomic unauthorized writes. Header notification entry is rendered only on the feed/home tab; other tabs retain friend management and notification preferences. Inline friend-tab component tests cover request acceptance, group creation and guest login gating. FriendGarden tests verify canonical avatar appearance, wandering, click-to-toggle names and an empty garden without sample users; native 360/768/1440px screenshots reviewed. Garden tests cover self presence, saved avatar, membership filtering and deleted-group fallback; native 360/768/1440 checks cover horizontal scrolling across twelve groups. Movement tests verify destination-derived heading, smaller scale and idle animation state."
   },
   {
     "id": "faith-friend-group-sharing",
@@ -177,5 +177,12 @@
     "body": "권한 허용 시 기본 매일 07:00을 활성화합니다. 여러 알림마다 월~일과 시간을 지정하고 수정·켜기·끄기·삭제합니다. 모든 요일이면 매일로 표시합니다. 앱을 켜 둔 동안 실제 기기 알림을 표시하며 앱 종료 후 푸시는 아직 준비 중입니다.",
     "status": "implemented",
     "evidence": "33 focused unit/component tests plus owner-private RTDB reminder rules pass; runtime verifies weekday/time delivery, per-reminder deduplication and logout cleanup. Existing closed-app push request remains planned."
+  },
+  {
+    "id": "suggestion-post-comments",
+    "title": "앱 개선 게시글 댓글 작성과 공유",
+    "body": "로그인한 사용자가 앱 개선 게시글에서 댓글을 펼쳐 읽고 등록합니다. 본인 댓글만 삭제할 수 있으며 실패 시 작성 내용을 유지합니다.",
+    "status": "implemented",
+    "evidence": "Thread component tests verify shared reading, identity, double-submit protection, failure draft retention and logout cleanup. RTDB emulator validates parent existence, signed-in access, author-only deletion and spoofing/content/timestamp rejection. Native 360/768/1440 browser tests cover multiline posting and deletion without horizontal overflow."
   }
 ]
