@@ -136,9 +136,9 @@
   {
     "id": "faith-activity-notice-inbox",
     "title": "내 묵상 댓글·좋아요와 중보기도 참여 소식 알림",
-    "body": "댓글·좋아요·중보기도 참여를 글 작성자의 앱 내 알림함에 보관합니다. 원본 행동 기록을 검증하는 데이터 규칙으로 수신자와 발신자를 확인하며, 자기 행동·위조·중복 알림을 방지합니다. 읽음 상태와 알림 종류별 설정을 유지합니다.",
+    "body": "댓글·좋아요·중보기도 참여를 글 작성자의 앱 내 알림함에 보관합니다. 원본 행동 기록을 검증하는 데이터 규칙으로 수신자와 발신자를 확인하며, 자기 행동·위조·중복 알림을 방지합니다. 읽음 상태와 알림 종류별 설정을 유지합니다. 종 아이콘으로 알림함을 열면 표시된 알림을 읽음으로 저장해 빨간 배지를 지웁니다. 다시 열거나 재접속해도 확인한 알림의 배지는 돌아오지 않으며 새 알림에만 다시 표시합니다.",
     "status": "implemented",
-    "evidence": "Two actual Auth/DB browser accounts without Functions verify offline recipient delivery, three action types, persisted read status and idempotent re-delivery. RTDB emulator rejects missing source actions, wrong recipients/actors, duplicate IDs, forged text and comment-author reassignment. Separate admin/server triggers and scheduled push are staged but not deployed due project API/IAM restrictions."
+    "evidence": "Two actual Auth/DB browser accounts without Functions verify offline recipient delivery, three action types, persisted read status and idempotent re-delivery. RTDB emulator rejects missing source actions, wrong recipients/actors, duplicate IDs, forged text and comment-author reassignment. Separate admin/server triggers and scheduled push are staged but not deployed due project API/IAM restrictions. Inbox tests verify bulk persisted read-on-open, friend notice marking without accepting requests, remount persistence and new-event-only badge return."
   },
   {
     "id": "faith-install-and-scheduled-push",
@@ -169,7 +169,7 @@
     "title": "묵상 그림 생성완료시 알림 기능",
     "body": "그림 생성되면 알림 부탁합니다!\n오늘의 선물 알림🫶🎀",
     "status": "implemented",
-    "evidence": "The supported AI shared-image save now atomically writes original image, public projection and an owner inbox notice. RTDB emulator verifies AI-only image-change proof, no standalone/forged/unchanged alerts, atomic rollback, unique immutable receipts and private reads. Editor/helper/notification UI tests and native gallery verify the three-path save and opening the original entry. This is an in-app notice; OS push remains blocked by the existing project API/IAM restriction."
+    "evidence": "The supported AI shared-image save now atomically writes original image, public projection and an owner inbox notice. RTDB emulator verifies AI-only image-change proof, no standalone/forged/unchanged alerts, atomic rollback, unique immutable receipts and private reads. Editor/helper/notification UI tests and native gallery verify the three-path save and opening the original entry. This is an in-app notice; OS push remains blocked by the existing project API/IAM restriction. Image notices now display “묵상 말씀 그림이 도착했어요” with neutral body text and no AI account attribution, including existing stored notices; rule-validated creation uses the same wording."
   },
   {
     "id": "weekly-multiple-devotion-reminders",

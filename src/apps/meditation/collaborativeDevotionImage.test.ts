@@ -17,7 +17,7 @@ it('rejects path injection, mismatched projections and unsupported images',()=>{
 it('adds an owner notification to the same image update without sharing image bytes in the notice',()=>{
  const result=collaborativeImageSaveUpdates(target,'data:image/png;base64,AAAA',{uid:'ai02',name:'AI 02'},'upload',123)
  expect(Object.keys(result)).toHaveLength(3)
- expect(result['faithNotifications/alice/image:devotion_alice_entry:upload']).toEqual({kind:'image',ownerUid:'alice',actorUid:'ai02',actorName:'AI 02',targetId:'devotion_alice_entry',entryId:'entry',sourceId:'upload',title:'묵상 사진이 도착했어요',body:'AI가 내 묵상에 사진을 담았어요.',createdAt:123})
+ expect(result['faithNotifications/alice/image:devotion_alice_entry:upload']).toEqual({kind:'image',ownerUid:'alice',actorUid:'ai02',actorName:'AI 02',targetId:'devotion_alice_entry',entryId:'entry',sourceId:'upload',title:'묵상 말씀 그림이 도착했어요',body:'묵상 말씀을 담은 그림을 확인해보세요.',createdAt:123})
 })
 it('does not notify for removal or saving an image on the AI account’s own post',()=>{
  expect(Object.keys(collaborativeImageSaveUpdates(target,'',{uid:'ai02',name:'AI'},'upload',123))).toHaveLength(2)

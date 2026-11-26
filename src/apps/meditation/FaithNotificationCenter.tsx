@@ -1,6 +1,6 @@
-import {useEffect,useState} from 'react'
+import {useEffect,useState,useRef} from 'react'
 import {Bell,Heart,MessageCircle,HandHeart,Sunrise,ImagePlus} from 'lucide-react'
-import {onValue,ref,query,orderByChild,limitToLast,set,serverTimestamp} from 'firebase/database'
+import {onValue,ref,query,orderByChild,limitToLast,set,update,serverTimestamp} from 'firebase/database'
 import {getFaithAuth,getFaithDb} from '../../services/faithSession'
 import type {FaithConnections,NotificationPreferences} from './useFaithConnections'
 import {SanctuaryDialog} from './SanctuaryDialog'
@@ -13,21 +13,35 @@ export function useActivityNotices(uid:string){
   const offReads=onValue(ref(getFaithDb(),'users/'+uid+'/activityNotificationReads'),snap=>{if(alive)setState(previous=>({...previous,reads:snap.val()||{}}))})
   return()=>{alive=false;off();offReads()}
  },[uid])
+ async function readMany(items:ActivityNotice[]){if(getFaithAuth().currentUser?.uid!==uid)throw Error('로그인이 필요합니다.');if(items.length)await update(ref(getFaithDb(),`users/${uid}/activityNotificationReads`),Object.fromEntries(items.map(item=>[item.id,serverTimestamp()]))) }
  async function read(item:ActivityNotice){if(getFaithAuth().currentUser?.uid!==uid)throw Error('로그인이 필요합니다.');await set(ref(getFaithDb(),`users/${uid}/activityNotificationReads/${item.id}`),serverTimestamp())}
- return{items:state.owner===uid?state.items.map(item=>({...item,readAt:Math.max(item.readAt||0,state.reads[item.id]||0)||undefined})):[],error:state.owner===uid?state.error:'',read}
+ return{items:state.owner===uid?state.items.map(item=>({...item,readAt:Math.max(item.readAt||0,state.reads[item.id]||0)||undefined})):[],error:state.owner===uid?state.error:'',read,readMany}
 }
 export function FaithNotificationCenter({social,preferences,onFriends,onOpen}:{social:FaithConnections;preferences:NotificationPreferences;onFriends:()=>void;onOpen:(notice:ActivityNotice)=>void}){
  const inbox=useActivityNotices(social.uid),[open,setOpen]=useState(false),[error,setError]=useState('')
- if(!social.uid)return null
+ const [seen,setSeen]=useState<Record<string,boolean>>({}),pending=useRef(new Set<string>())
  const friendNotices=preferences.friends?social.notices:[],items=inbox.items.filter(n=>n.kind==='intercession'?preferences.chapel:n.kind==='reminder'||preferences.activity!==false)
- const unread=(preferences.friends?social.unread.length:0)+items.filter(n=>!n.readAt).length
+ const friendKey=(id:string,at:number)=>social.uid+':friend:'+id+':'+at,activityKey=(id:string)=>social.uid+':activity:'+id
+ const newFriends=(preferences.friends?social.unread:[]).filter(n=>!seen[friendKey(n.id,n.updatedAt)]),newItems=items.filter(n=>!n.readAt&&!seen[activityKey(n.id)])
+ const unread=newFriends.length+newItems.length
  const rows=[...friendNotices.map(n=>({id:'friend:'+n.id,at:n.updatedAt,friend:n})),...items.map(n=>({id:n.id,at:n.createdAt,activity:n}))].sort((a,b)=>b.at-a.at)
+ const readKey=JSON.stringify([...newFriends.map(n=>friendKey(n.id,n.updatedAt)),...newItems.map(n=>activityKey(n.id))])
+ useEffect(()=>{
+  if(!open||!social.uid)return
+  const friends=newFriends.filter(n=>!pending.current.has(friendKey(n.id,n.updatedAt))),activities=newItems.filter(n=>!pending.current.has(activityKey(n.id)))
+  const keys=[...friends.map(n=>friendKey(n.id,n.updatedAt)),...activities.map(n=>activityKey(n.id))];if(!keys.length)return
+  keys.forEach(key=>pending.current.add(key));setSeen(previous=>({...previous,...Object.fromEntries(keys.map(key=>[key,true]))}))
+  const save=async(keys:string[],task:()=>Promise<void>)=>{try{await task()}catch{setSeen(previous=>{const next={...previous};keys.forEach(key=>delete next[key]);return next});setError('읽음 상태를 저장하지 못했습니다. 알림함을 다시 열어주세요.')}}
+  if(activities.length)void save(activities.map(n=>activityKey(n.id)),()=>inbox.readMany(activities))
+  friends.forEach(n=>void save([friendKey(n.id,n.updatedAt)],()=>social.markRead(n)))
+ },[open,social.uid,readKey])
+ if(!social.uid)return null
  async function act(task:()=>Promise<void>){setError('');try{await task();setOpen(false)}catch{setError('알림을 처리하지 못했습니다. 다시 시도해주세요.')}}
- return <><button type="button" className="faith-connections-bell faith-home-notification" aria-label={'알림'+(unread?' '+unread+'개':'')} onClick={()=>setOpen(true)}><Bell size={19}/>{unread>0&&<span>{unread>99?'99+':unread}</span>}</button>
+ return <><button type="button" className="faith-connections-bell faith-home-notification" aria-label={'알림'+(unread?' '+unread+'개':'')} onClick={()=>{pending.current.clear();setError('');setOpen(true)}}><Bell size={19}/>{unread>0&&<span>{unread>99?'99+':unread}</span>}</button>
  {open&&<SanctuaryDialog open title="알림" className="faith-connections-dialog" onClose={()=>setOpen(false)}>{(error||inbox.error)&&<p role="alert">{error||inbox.error}</p>}<div className="faith-activity-notices">{rows.length?rows.map(row=>{
  if('friend'in row){const n=row.friend,name=n.from===social.uid?n.toName:n.fromName;return <button type="button" key={row.id} onClick={()=>void act(async()=>{await social.markRead(n);onFriends()})}><HandHeart size={20}/><span><strong>{name}</strong><small>{n.status==='accepted'?'친구 요청을 수락했어요.':'친구 요청을 보냈어요.'}</small></span></button>}
  const n=row.activity,Icon=n.kind==='like'?Heart:n.kind==='comment'?MessageCircle:n.kind==='reminder'?Sunrise:n.kind==='image'?ImagePlus:HandHeart
- return <button type="button" key={row.id} data-unread={!n.readAt} onClick={()=>void act(async()=>{await inbox.read(n);onOpen(n)})}><Icon size={20}/><span><strong>{n.title}</strong><small>{n.actorName&&n.kind!=='reminder'?n.actorName+' · ':''}{n.body}</small><time>{new Date(n.createdAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</time></span>{!n.readAt&&<i aria-label="읽지 않음"/>}</button>
+ return <button type="button" key={row.id} data-unread={!n.readAt&&!seen[activityKey(n.id)]} onClick={()=>void act(async()=>{await inbox.read(n);onOpen(n)})}><Icon size={20}/><span><strong>{n.kind==='image'?'묵상 말씀 그림이 도착했어요':n.title}</strong><small>{n.kind==='image'?'묵상 말씀을 담은 그림을 확인해보세요.':<>{n.actorName&&n.kind!=='reminder'?n.actorName+' · ':''}{n.body}</>}</small><time>{new Date(n.createdAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</time></span>{!n.readAt&&!seen[activityKey(n.id)]&&<i aria-label="읽지 않음"/>}</button>
  }):<p>아직 받은 알림이 없어요.</p>}</div></SanctuaryDialog>}
  </>
 }

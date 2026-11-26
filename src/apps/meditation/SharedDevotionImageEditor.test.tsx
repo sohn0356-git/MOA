@@ -22,7 +22,7 @@ it('saves the shared image, original image and author notification atomically',a
  expect(state.update).toHaveBeenCalledWith('/root',{
   'users/alice/meditationEntries/entry/crossImage':'data:image/png;base64,BBBB',
   'crossPhotos/devotion_alice_entry/imageUrl':'data:image/png;base64,BBBB',
-  'faithNotifications/alice/image:devotion_alice_entry:upload':{kind:'image',actorUid:'ai02',actorName:'ai02',ownerUid:'alice',targetId:'devotion_alice_entry',entryId:'entry',sourceId:'upload',title:'묵상 사진이 도착했어요',body:'AI가 내 묵상에 사진을 담았어요.',createdAt:123},
+  'faithNotifications/alice/image:devotion_alice_entry:upload':{kind:'image',actorUid:'ai02',actorName:'ai02',ownerUid:'alice',targetId:'devotion_alice_entry',entryId:'entry',sourceId:'upload',title:'묵상 말씀 그림이 도착했어요',body:'묵상 말씀을 담은 그림을 확인해보세요.',createdAt:123},
  })
  expect(Object.keys(localStorage).filter(key=>key.startsWith('moa.faith.sharedImageDraft'))).toHaveLength(0)
 })

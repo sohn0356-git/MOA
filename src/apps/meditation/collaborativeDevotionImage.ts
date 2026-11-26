@@ -14,6 +14,6 @@ export function collaborativeImageSaveUpdates(target:PublicDevotionImageTarget,i
  if(!image||actor.uid===target.ownerUid)return updates
  if(!/^ai(0[1-9]|10)$/.test(actor.uid)||!uploadId||/[.#$\[\]/]/.test(uploadId))throw Error('사진 업로드 정보를 확인해주세요.')
  const id=`image:${target.publicId}:${uploadId}`
- updates[`faithNotifications/${target.ownerUid}/${id}`]={kind:'image',actorUid:actor.uid,actorName:actor.name.slice(0,200)||'AI',ownerUid:target.ownerUid,targetId:target.publicId,entryId:target.sourceEntryId,sourceId:uploadId,title:'묵상 사진이 도착했어요',body:'AI가 내 묵상에 사진을 담았어요.',createdAt}
+ updates[`faithNotifications/${target.ownerUid}/${id}`]={kind:'image',actorUid:actor.uid,actorName:actor.name.slice(0,200)||'AI',ownerUid:target.ownerUid,targetId:target.publicId,entryId:target.sourceEntryId,sourceId:uploadId,title:'묵상 말씀 그림이 도착했어요',body:'묵상 말씀을 담은 그림을 확인해보세요.',createdAt}
  return updates
 }

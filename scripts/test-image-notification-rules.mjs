@@ -6,7 +6,7 @@ async function check(ok,path,method,data,uid){const r=await request(path,method,
 const source='users/image-owner/meditationEntries/image-entry',post='devotion_image-owner_image-entry',share='crossPhotos/'+post,image='data:image/png;base64,AAAA',next='data:image/png;base64,BBBB',stamp={'.sv':'timestamp'}
 await check(true,source,'PUT',{authorUid:'image-owner',authorName:'작성자',audience:'public',mind:'원래 본문',crossImage:image,createdAt:'2026-11-26T00:00:00Z'})
 await check(true,share,'PUT',{ownerUid:'image-owner',authorUid:'image-owner',sourceType:'devotion',sourceEntryId:'image-entry',imageUrl:image})
-const id='image:'+post+':upload',path='faithNotifications/image-owner/'+id,notice={kind:'image',ownerUid:'image-owner',actorUid:'ai02',actorName:'AI 02',targetId:post,entryId:'image-entry',sourceId:'upload',title:'묵상 사진이 도착했어요',body:'AI가 내 묵상에 사진을 담았어요.',createdAt:stamp}
+const id='image:'+post+':upload',path='faithNotifications/image-owner/'+id,notice={kind:'image',ownerUid:'image-owner',actorUid:'ai02',actorName:'AI 02',targetId:post,entryId:'image-entry',sourceId:'upload',title:'묵상 말씀 그림이 도착했어요',body:'묵상 말씀을 담은 그림을 확인해보세요.',createdAt:stamp}
 const changes={[source+'/crossImage']:next,[share+'/imageUrl']:next,[path]:notice}
 await check(false,path,'PUT',notice,'ai02')
 await check(false,'','PATCH',changes,'regular')
