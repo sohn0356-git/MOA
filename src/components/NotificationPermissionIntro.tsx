@@ -1,7 +1,6 @@
 import {useState} from 'react'
 import {Bell} from 'lucide-react'
 import {SanctuaryDialog} from '../apps/meditation/SanctuaryDialog'
-import '../apps/meditation/SanctuaryCommunity.css'
 import './NotificationPermissionIntro.css'
 export const NOTIFICATION_PERMISSION_INTRO_KEY='moa.notification-intro.v1'
 export function needsNotificationPermissionIntro(){
