@@ -27,11 +27,23 @@ it('adds and edits multiple weekly alarms, daily labels and individual switches'
  fireEvent.click(screen.getByRole('button',{name:'07:00 알림 삭제'}));await waitFor(()=>expect(screen.queryByRole('button',{name:'07:00 매일 알림 수정'})).toBeNull())
 })
 it('does not save a reminder with no selected weekdays',()=>{
- state.permission='granted';render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:/알림 추가/}));for(const name of ['월요일','화요일','수요일','목요일','금요일','토요일','일요일'])fireEvent.click(screen.getByRole('button',{name}));expect(screen.getByRole('button',{name:'알림 저장'})).toBeDisabled();expect(state.raw).toBeNull()
+ state.permission='granted';state.raw={version:2,enabled:true};render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:/알림 추가/}));for(const name of ['월요일','화요일','수요일','목요일','금요일','토요일','일요일'])fireEvent.click(screen.getByRole('button',{name}));expect(screen.getByRole('button',{name:'알림 저장'})).toBeDisabled();expect(state.raw).toEqual({version:2,enabled:true})
 })
 it('preserves edits and shows a readable error if saving fails',async()=>{
- state.permission='granted';render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:/알림 추가/}));fireEvent.change(screen.getByLabelText('묵상 알림 시간'),{target:{value:'09:15'}});state.fail=true;fireEvent.click(screen.getByRole('button',{name:'알림 저장'}));expect(await screen.findByRole('alert')).toHaveTextContent('저장하지 못했습니다');expect(screen.getByLabelText('묵상 알림 시간')).toHaveValue('09:15')
+ state.permission='granted';state.raw={version:2,enabled:true};render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:/알림 추가/}));fireEvent.change(screen.getByLabelText('묵상 알림 시간'),{target:{value:'09:15'}});state.fail=true;fireEvent.click(screen.getByRole('button',{name:'알림 저장'}));expect(await screen.findByRole('alert')).toHaveTextContent('저장하지 못했습니다');expect(screen.getByLabelText('묵상 알림 시간')).toHaveValue('09:15')
 })
 it('keeps account schedules protected for guests while allowing device permission',()=>{
  state.uid='';render(<FaithReminderSettings uid=""/>);expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeDisabled();expect(screen.getByRole('button',{name:/알림 추가/})).toBeDisabled();expect(screen.getByRole('button',{name:'알림 권한 허용'})).toBeEnabled()
+})
+
+it('starts weekdays on Sunday and disables all schedule controls when the master switch is off',async()=>{
+ state.permission='granted';state.raw={version:2,enabled:true,schedules:{a:{enabled:true,time:'07:00',timezone:'Asia/Seoul',days:{0:true,1:true}},b:{enabled:false,time:'21:00',timezone:'Asia/Seoul',days:{6:true}}}};
+ render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:'07:00 일·월 알림 수정'}));expect(within(screen.getByRole('group',{name:'알림 요일'})).getAllByRole('button').map(button=>button.textContent)).toEqual(['매일','일','월','화','수','목','금','토']);
+ fireEvent.click(screen.getByRole('switch',{name:'묵상 시간 알림'}));await waitFor(()=>expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toHaveAttribute('aria-checked','false'));
+ for(const time of ['07:00','21:00']){expect(screen.getByRole('switch',{name:time+' 알림'})).toBeDisabled();expect(screen.getByRole('switch',{name:time+' 알림'})).toHaveAttribute('aria-checked','false');expect(screen.getByRole('button',{name:time+' 알림 삭제'})).toBeDisabled()}
+ expect(screen.getByLabelText('묵상 알림 시간')).toBeDisabled();expect(screen.getByRole('button',{name:'알림 저장'})).toBeDisabled();expect(screen.getByRole('button',{name:'일요일'})).toBeDisabled();
+ fireEvent.click(screen.getByRole('switch',{name:'묵상 시간 알림'}));await waitFor(()=>expect(screen.getByRole('switch',{name:'07:00 알림'})).toBeEnabled());expect(screen.getByRole('switch',{name:'07:00 알림'})).toHaveAttribute('aria-checked','true');expect(screen.getByRole('switch',{name:'21:00 알림'})).toHaveAttribute('aria-checked','false');expect(screen.getByLabelText('묵상 알림 시간')).toHaveValue('07:00')
+})
+it('does not allow adding alarms to turn a disabled master switch back on',()=>{
+ state.permission='granted';state.raw={version:2,enabled:false};render(<FaithReminderSettings uid="alice"/>);expect(screen.getByRole('button',{name:/알림 추가/})).toBeDisabled();expect(state.raw).toEqual({version:2,enabled:false})
 })

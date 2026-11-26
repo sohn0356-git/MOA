@@ -1,6 +1,6 @@
 export type DevotionReminder={id:string;time:string;days:number[];timezone:string;enabled:boolean}
 export type ReminderPreferences={enabled:boolean;reminders:DevotionReminder[]}
-export const ALL_REMINDER_DAYS=[1,2,3,4,5,6,0]
+export const ALL_REMINDER_DAYS=[0,1,2,3,4,5,6]
 export const REMINDER_DAY_LABELS=['일','월','화','수','목','금','토']
 export function reminderDaysLabel(days:number[]){return days.length===7?'매일':ALL_REMINDER_DAYS.filter(day=>days.includes(day)).map(day=>REMINDER_DAY_LABELS[day]).join('·')}
 export function validReminderTime(time:string){return /^([01]\d|2[0-3]):[0-5]\d$/.test(time)}

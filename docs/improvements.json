@@ -174,9 +174,9 @@
   {
     "id": "weekly-multiple-devotion-reminders",
     "title": "알림 허용 시 묵상 알림 활성화와 여러 요일·시간 설정",
-    "body": "권한 허용 시 기본 매일 07:00을 활성화합니다. 여러 알림마다 월~일과 시간을 지정하고 수정·켜기·끄기·삭제합니다. 모든 요일이면 매일로 표시합니다. 앱을 켜 둔 동안 실제 기기 알림을 표시하며 앱 종료 후 푸시는 아직 준비 중입니다.",
+    "body": "권한 허용 시 기본 매일 07:00을 활성화합니다. 여러 알림마다 월~일과 시간을 지정하고 수정·켜기·끄기·삭제합니다. 모든 요일이면 매일로 표시합니다. 앱을 켜 둔 동안 실제 기기 알림을 표시하며 앱 종료 후 푸시는 아직 준비 중입니다. 요일은 일·월·화·수·목·금·토 순서입니다. 상단 알림을 끄면 모든 개별 알림과 추가·시간·요일·수정·삭제 기능이 비활성화되며 다시 켜면 기존 개별 설정을 유지합니다.",
     "status": "implemented",
-    "evidence": "33 focused unit/component tests plus owner-private RTDB reminder rules pass; runtime verifies weekday/time delivery, per-reminder deduplication and logout cleanup. Existing closed-app push request remains planned."
+    "evidence": "33 focused unit/component tests plus owner-private RTDB reminder rules pass; runtime verifies weekday/time delivery, per-reminder deduplication and logout cleanup. Existing closed-app push request remains planned. Settings regression verifies Sunday-first order, effective off/disabled state of every alarm/editor, add prevention and restoration of individual preferences. Native checks cover the master switch and weekday order at 360/768/1440px."
   },
   {
     "id": "suggestion-post-comments",
