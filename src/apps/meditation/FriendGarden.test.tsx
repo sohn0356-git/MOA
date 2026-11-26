@@ -8,7 +8,7 @@ vi.mock('firebase/database',()=>({ref:(_db:unknown,path:string)=>path,onValue:(_
 afterEach(()=>{cleanup();vi.useRealTimers();vi.restoreAllMocks()})
 it('shows only registered friends, uses their saved avatars, wanders and toggles a name popup',()=>{
  vi.useFakeTimers()
- render(<FriendGarden friends={[{uid:'bob',name:'Bob'}]}/>)
+ render(<FriendGarden uid="me" friends={[{uid:'bob',name:'Bob'}]}/>)
  const friend=screen.getByRole('button',{name:'Bob 아바타'}),before=friend.getAttribute('style')
  expect(screen.getByRole('img',{name:'Bob의 아바타'})).toHaveAttribute('data-gender','female')
  expect(screen.queryByRole('status')).toBeNull()
@@ -16,6 +16,13 @@ it('shows only registered friends, uses their saved avatars, wanders and toggles
  act(()=>vi.advanceTimersByTime(6700));expect(friend.getAttribute('style')).not.toBe(before)
  fireEvent.click(friend);expect(screen.queryByRole('status')).toBeNull()
 })
-it('offers an empty courtyard without inventing sample friends',()=>{
- render(<FriendGarden friends={[]}/>);expect(screen.getByText('함께 걸을 친구를 기다리고 있어요')).toBeInTheDocument();expect(screen.queryByRole('button')).toBeNull()
+it('always includes my saved avatar, even without friends, and only shows group names above the lawn',()=>{
+ render(<FriendGarden uid="me" friends={[]}/>);expect(screen.getByRole('button',{name:'나 아바타'})).toBeInTheDocument();expect(screen.getByRole('img',{name:'나의 아바타'})).toHaveAttribute('data-gender','female');expect(screen.getByRole('tab',{name:'전체'})).toHaveAttribute('aria-selected','true');expect(screen.queryByText('마음이 모이는 마당')).toBeNull();expect(screen.queryByText('함께 걸을 친구를 기다리고 있어요')).toBeNull()
+})
+it('filters by group while keeping me in every group and exposes all groups in a horizontal tab strip',()=>{
+ const groups=[{id:'church',name:'교회',createdAt:1,members:{bob:true as const}},{id:'empty',name:'가족',createdAt:2}]
+ const view=render(<FriendGarden uid="me" friends={[{uid:'bob',name:'Bob'},{uid:'ann',name:'Ann'}]} groups={groups}/>);
+ fireEvent.click(screen.getByRole('tab',{name:'교회'}));expect(screen.getByRole('button',{name:'Bob 아바타'})).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Ann 아바타'})).toBeNull();expect(screen.getByRole('button',{name:'나 아바타'})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('tab',{name:'가족'}));expect(screen.queryByRole('button',{name:'Bob 아바타'})).toBeNull();expect(screen.getByRole('button',{name:'나 아바타'})).toBeInTheDocument();
+ view.rerender(<FriendGarden uid="me" friends={[{uid:'bob',name:'Bob'}]} groups={[]}/>);expect(screen.getByRole('tab',{name:'전체'})).toHaveAttribute('aria-selected','true');expect(screen.getByRole('button',{name:'Bob 아바타'})).toBeInTheDocument()
 })

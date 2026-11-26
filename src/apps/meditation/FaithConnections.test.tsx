@@ -4,6 +4,8 @@ import {afterEach,beforeEach,expect,it,vi} from 'vitest'
 import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
 import {FriendRequestButton,ConnectionHub,NotificationSwitches} from './FaithConnections'
 import type {FaithConnections} from './useFaithConnections'
+vi.mock('../../services/firebase',()=>({getRealtimeDb:()=>({})}))
+vi.mock('firebase/database',()=>({ref:(_db:unknown,path:string)=>path,onValue:(_path:string,callback:(s:{val:()=>unknown})=>void)=>{callback({val:()=>null});return()=>{}}}))
 vi.mock('./FeedAuthor',()=>({SyncedAuthorAvatar:()=> <span>아바타</span>}))
 const request={id:'bob__alice',from:'bob',to:'alice',fromName:'Bob',toName:'Alice',status:'pending' as const,createdAt:1,updatedAt:2}
 function social(){return{uid:'alice',loaded:true,error:'',requests:[request],notices:[request],unread:[request],friends:[],groups:[],relationship:vi.fn(),retry:vi.fn(),send:vi.fn().mockResolvedValue(undefined),respond:vi.fn().mockResolvedValue(undefined),cancel:vi.fn().mockResolvedValue(undefined),markRead:vi.fn().mockResolvedValue(undefined),createGroup:vi.fn().mockResolvedValue(undefined)} as unknown as FaithConnections}
