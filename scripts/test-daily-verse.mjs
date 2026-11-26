@@ -26,11 +26,11 @@ function harness({englishFails = false, koreanFails = false} = {}) {
     fetchDurannoHome = async () => '<h2><img alt="오늘의 QT"><span>아가<em></em><em>1:1-2</em></span></h2>';
     fetchDurannoBible = async () => {
       if (${koreanFails}) throw new Error('Korean source unavailable');
-      return {sourceUrl:'https://www.duranno.com/qt/view/bible.asp?qtDate=2026-10-24&d=k', html:'<div class="bible"><table><tr><th>1</th><td>한국어 첫 절</td></tr><tr><th>2</th><td>한국어 둘째 절</td></tr></table></div><div class="amen">'};
+      return {sourceUrl:'https://www.duranno.com/qt/view/bible.asp?qtDate=2026-10-24&d=k', html:'<script>var qtDate = "2026-10-24";</script><h1><span>아가 1 : 1~2</span></h1><div class="bible"><table><tr><th>1</th><td>한국어 첫 절</td></tr><tr><th>2</th><td>한국어 둘째 절</td></tr></table></div><div class="amen">'};
     };
-    globalThis.api = {main, fetchGetBibleVerses};
+    globalThis.api = {main, fetchGetBibleVerses, parseDatedBible};
   `, context)
-  return {api: context.api, events, writes, warnings, caches, range}
+  return {api: context.api, events, writes, warnings, caches, range, context}
 }
 {
   const h = harness()
@@ -58,3 +58,22 @@ function harness({englishFails = false, koreanFails = false} = {}) {
   assert.equal(h.writes.length, 0, 'do not replace the daily verse with a fallback when the primary source fails')
 }
 console.log('Daily verse regression passed: canonical book identity, date path, Korean-first publication, isolated translation failures, and primary-source failure protection.')
+
+{
+ const {api}=harness()
+ const html=`<script>var qtDate='2026-11-27';</script><h1><span>고린도후서 4 : 1~2</span></h1><div class="bible"><table><tr><th>1</th><td>첫 절</td></tr><tr><th>2</th><td>둘째 절</td></tr></table></div><div class="amen">`
+ assert.deepEqual(JSON.parse(JSON.stringify(api.parseDatedBible(html,'2026-11-27').range)),['고린도후서',4,1,2])
+ assert.throws(()=>api.parseDatedBible(html,'2026-11-28'),/source returned/)
+ assert.throws(()=>api.parseDatedBible(html.replace('<tr><th>2</th><td>둘째 절</td></tr>',''),'2026-11-27'),/Incomplete/)
+}
+
+{
+ const h=harness();h.context.prefetched=[]
+ vm.runInContext(`process.env.UPDATE_DATE='';updateDay=async day=>{prefetched.push(day);if(prefetched.length===2)throw new Error('future source not ready')}`,h.context)
+ await h.api.main()
+ assert.equal(h.context.prefetched.length,3,'future failure does not block later dates')
+ const [today,tomorrow,next]=h.context.prefetched
+ assert.equal(new Date(tomorrow)-new Date(today),86400000)
+ assert.equal(new Date(next)-new Date(today),172800000)
+ assert.equal(h.warnings.length,1)
+}

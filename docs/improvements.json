@@ -184,5 +184,12 @@
     "body": "로그인한 사용자가 앱 개선 게시글에서 댓글을 펼쳐 읽고 등록합니다. 본인 댓글만 삭제할 수 있으며 실패 시 작성 내용을 유지합니다.",
     "status": "implemented",
     "evidence": "Thread component tests verify shared reading, identity, double-submit protection, failure draft retention and logout cleanup. RTDB emulator validates parent existence, signed-in access, author-only deletion and spoofing/content/timestamp rejection. Native 360/768/1440 browser tests cover multiline posting and deletion without horizontal overflow."
+  },
+  {
+    "id": "daily-scripture-prefetch",
+    "title": "오늘 말씀 누락 방지와 날짜별 본문 선저장",
+    "body": "날짜가 바뀐 후 예약 갱신이 늦으면 오늘 본문이 비던 문제를 보완합니다. 해당 날짜의 원본 본문과 날짜를 검증해 오늘·내일·모레를 미리 저장하며 미래 본문을 제공하지 않는 경우 오늘 데이터는 유지합니다.",
+    "status": "implemented",
+    "evidence": "Production inspection found verse/2026/1127 missing while last successful update at 2026-11-26 13:57Z only checked 1126. Updater now resolves reference from each dated page, rejects wrong dates/incomplete verses and prefetches two dates independently. Regression tests verify identity, Korean-first publication, future failures and date progression."
   }
 ]

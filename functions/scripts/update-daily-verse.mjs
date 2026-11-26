@@ -501,35 +501,26 @@ async function updateLanguageCache(language, range, getVerses, translation) {
   return true
 }
 
-async function resolveKoreanVersesForCandidate(range, candidate) {
-  const bible = await fetchDurannoBible(candidate.isoDate)
-  const verses = parseBibleVerses(bible.html, range)
-
-  if (!verses.length || verses.some((verse) => !verse.text)) {
-    throw new Error(`Duranno returned empty verses for ${candidate.isoDate}.`)
-  }
-
-  return {
-    ...candidate,
-    sourceUrl: bible.sourceUrl,
-    verses,
-  }
+function parseDatedBible(html, isoDate) {
+  const actualDate = html.match(/var\s+qtDate\s*=\s*['"]([^'"]+)['"]/)?.[1]
+  if (actualDate !== isoDate) throw new Error(`Requested ${isoDate}, source returned ${actualDate || 'no date'}.`)
+  const reference = stripTags(html.match(/<h1[^>]*>\s*<span[^>]*>([\s\S]*?)<\/span>/)?.[1] || '')
+  const match = reference.match(/^(.+?)\s+(\d+)\s*:\s*(\d+)\s*(?:[-~–]\s*(?:(\d+)\s*:\s*)?(\d+))?$/)
+  if (!match || !BOOK_SLUGS[match[1].trim()]) throw new Error(`Invalid dated Bible reference: ${reference}`)
+  const [, book, chapter, first, endChapter, last] = match
+  const range = endChapter ? [book.trim(), +chapter, +first, +endChapter, +last] : [book.trim(), +chapter, +first, +(last || first)]
+  const verses = parseBibleVerses(html, range), parts = getRangeParts(range)
+  if (!verses.length || verses.some(verse => !verse.text) || (parts.startChapter === parts.endChapter && verses.length !== parts.endVerse-parts.startVerse+1) || verses[0].number !== getVerseKey(parts.startChapter, parts.startVerse, parts.startChapter, parts.endChapter) || verses.at(-1).number !== getVerseKey(parts.endChapter, parts.endVerse, parts.startChapter, parts.endChapter)) throw new Error(`Incomplete verses for ${isoDate}.`)
+  return {range, verses}
 }
 
-async function resolveTargetVerse(today, range) {
-  const tomorrow = addDaysToKstDateKey(today.isoDate, 1)
-  const candidates = process.env.UPDATE_DATE ? [today] : [today, tomorrow]
-  const errors = []
-
-  for (const candidate of candidates) {
-    try {
-      return await resolveKoreanVersesForCandidate(range, candidate)
-    } catch (error) {
-      errors.push(`${candidate.isoDate}: ${error instanceof Error ? error.message : String(error)}`)
-    }
+async function resolveTargetVerse(today) {
+  try {
+    const bible = await fetchDurannoBible(today.isoDate)
+    return {...today, sourceUrl:bible.sourceUrl, ...parseDatedBible(bible.html,today.isoDate)}
+  } catch (error) {
+    throw new Error(`Could not resolve non-empty Duranno verses for ${today.isoDate}: ${error instanceof Error ? error.message : String(error)}`)
   }
-
-  throw new Error(`Could not resolve non-empty Duranno verses for current KST candidates. ${errors.join(' | ')}`)
 }
 
 function getServiceAccount() {
@@ -542,17 +533,17 @@ function getServiceAccount() {
   return JSON.parse(raw)
 }
 
-async function main() {
+async function updateDay(overrideDate) {
   const serviceAccount = getServiceAccount()
   const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id
   const databaseURL =
     process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`
-  const targetDate = process.env.UPDATE_DATE ? new Date(`${process.env.UPDATE_DATE}T00:00:00+09:00`) : new Date()
+  const dateValue = overrideDate || process.env.UPDATE_DATE
+  const targetDate = dateValue ? new Date(`${dateValue}T00:00:00+09:00`) : new Date()
   const requested = getKstDateKey(targetDate)
   const runKst = getKstDateKey(new Date())
-  const html = await fetchDurannoHome()
-  const range = parseTodayQt(html)
-  const target = await resolveTargetVerse(requested, range)
+  const target = await resolveTargetVerse(requested)
+  const range = target.range
   const { dayKey, isoDate, year } = target
   let koreanVerses = target.verses
 
@@ -610,6 +601,18 @@ async function main() {
   }
 
   console.log(`Checked verse/${year}/${dayKey}; cron may be delayed; actualRunUtc=${new Date().toISOString()}; runKst=${runKst.isoDate}; targetKst=${isoDate}; range=${JSON.stringify(range)}`)
+}
+
+async function main() {
+  const today = process.env.UPDATE_DATE || getKstDateKey().isoDate
+  await updateDay(today)
+  // Fill the next two dates from their own dated source, never today's range.
+  if (!process.env.UPDATE_DATE) for (const offset of [1, 2]) {
+    const future = addDaysToKstDateKey(today, offset).isoDate
+    try { await updateDay(future) } catch (error) {
+      console.warn(`::warning::Prefetch ${future} unavailable; today's verse is saved: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
 }
 
 main().catch((error) => {
