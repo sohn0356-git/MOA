@@ -33,7 +33,7 @@ try{
    await page.getByLabel('MOA 시작 준비').waitFor({state:'detached'})
    await page.getByRole('button',{name:'구글 로그인'}).click();await page.getByLabel('구글 로그인 준비').waitFor()
    await page.screenshot({path:'test-results/faith-boot/google-signin-launch.png'})
-   await page.getByLabel('구글 로그인 준비').waitFor({state:'detached'});await page.getByRole('button',{name:'로그아웃',exact:true}).waitFor()
+   await page.getByLabel('구글 로그인 준비').waitFor({state:'detached'});await page.getByRole('navigation',{name:'MOA',exact:true}).getByRole('button',{name:'내 기록',exact:true}).click();await page.getByRole('button',{name:'로그아웃',exact:true}).waitFor()
    assert.equal(await page.locator('main[aria-label="MOA 메인"]').getAttribute('inert'),null)
   }else{await page.getByRole('button',{name:'먼저 둘러보기'}).click();await page.getByLabel('MOA 시작 준비').waitFor({state:'detached'})}
   await page.reload()

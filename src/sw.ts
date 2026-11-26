@@ -34,3 +34,13 @@ self.addEventListener('message', event => {
     await self.skipWaiting()
   })())
 })
+
+self.addEventListener('push',event=>{
+ let notice:{title?:string;body?:string;tag?:string;url?:string}
+ try{notice=event.data?.json()||{}}catch{notice={body:event.data?.text()}}
+ event.waitUntil(self.registration.showNotification(notice.title||'MOA',{body:notice.body||'새로운 소식이 도착했어요.',icon:'/MOA/icons/chapel-v1-192.png',badge:'/MOA/icons/chapel-v1-192.png',tag:notice.tag,data:{url:'/MOA/'}}))
+})
+self.addEventListener('notificationclick',event=>{
+ event.notification.close()
+ event.waitUntil((async()=>{const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});const existing=windows.find(w=>new URL(w.url).origin===self.location.origin&&new URL(w.url).pathname.startsWith('/MOA/'));if(existing)return (existing as WindowClient).focus();return self.clients.openWindow('/MOA/')})())
+})

@@ -3,12 +3,12 @@ import {onValue,ref,query,orderByChild,equalTo,set,update,remove,push,serverTime
 import {getFaithAuth,getFaithDb} from '../../services/faithSession'
 export type FriendRequest={id:string;from:string;to:string;fromName:string;toName:string;status:'pending'|'accepted'|'rejected';createdAt:number;updatedAt:number}
 export type FriendGroup={id:string;name:string;createdAt:number;members?:Record<string,true>}
-export type NotificationPreferences={friends:boolean;chapel:boolean}
-const defaults:NotificationPreferences={friends:true,chapel:true}
+export type NotificationPreferences={friends:boolean;chapel:boolean;activity?:boolean}
+const defaults:NotificationPreferences={friends:true,chapel:true,activity:true}
 export function useNotificationPreferences(uid:string){
  const [state,setState]=useState({owner:uid,loaded:!uid,values:defaults}),[error,setError]=useState('')
  useEffect(()=>{let alive=true;setError('');setState({owner:uid,loaded:!uid,values:defaults});if(!uid)return
-  const off=onValue(ref(getFaithDb(),'users/'+uid+'/notificationPreferences'),s=>{if(alive)setState({owner:uid,loaded:true,values:{friends:s.val()?.friends!==false,chapel:s.val()?.chapel!==false}})},()=>{if(alive)setError('알림 설정을 불러오지 못했습니다.')})
+  const off=onValue(ref(getFaithDb(),'users/'+uid+'/notificationPreferences'),s=>{if(alive)setState({owner:uid,loaded:true,values:{friends:s.val()?.friends!==false,chapel:s.val()?.chapel!==false,activity:s.val()?.activity!==false}})},()=>{if(alive)setError('알림 설정을 불러오지 못했습니다.')})
   return()=>{alive=false;off()}
  },[uid])
  async function toggle(key:keyof NotificationPreferences){

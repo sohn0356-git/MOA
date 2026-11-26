@@ -1,3 +1,4 @@
+import {publishFaithActivity} from './publishFaithActivity'
 import {useEffect,useRef,useState} from 'react'
 import {ref,onValue,onDisconnect,push,set,remove,serverTimestamp,query,orderByValue,startAt,endAt,orderByChild,limitToLast,type DatabaseReference} from 'firebase/database'
 import {useSanctuaryAvatar} from './useSanctuaryAvatar'
@@ -73,7 +74,7 @@ export function useSanctuaryCommunity(member:SanctuaryMember,entered:boolean,not
  }
  async function answerPrayer(p:SharedPrayer){await set(ref(getRealtimeDb(),'sanctuary/prayers/'+p.id),{uid:p.uid,name:p.name,title:p.title,body:p.body,createdAt:p.createdAt,updatedAt:serverTimestamp(),answered:!p.answered})}
  async function deletePrayer(id:string){await remove(ref(getRealtimeDb(),'sanctuary/prayers/'+id))}
- async function pray(id:string){await set(ref(getRealtimeDb(),'sanctuary/intercessions/'+id+'/'+member.uid),{at:serverTimestamp()})}
+ async function pray(id:string){await set(ref(getRealtimeDb(),'sanctuary/intercessions/'+id+'/'+member.uid),{at:serverTimestamp()});const prayer=prayers.find(p=>p.id===id);if(prayer)await publishFaithActivity({kind:'intercession',ownerUid:prayer.uid,actorUid:member.uid,actorName:profileRef.current.name,targetId:id,sourceId:member.uid},{db:getRealtimeDb(),uid:member.uid}).catch(()=>{})}
  async function markPrayerRead(prayer:SharedPrayer){
   if(prayer.uid===member.uid||readPrayers?.[prayer.id]===true)return
   await set(ref(getRealtimeDb(),'users/'+member.uid+'/sanctuaryPrayerReads/'+prayer.id),true)

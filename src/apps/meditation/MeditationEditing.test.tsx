@@ -352,3 +352,18 @@ it('merges photos into the devotion record tab and opens friend groups directly 
  fireEvent.click(within(tabs).getByRole('tab',{name:'묵상'}))
  expect(screen.getByText('수정 전 묵상')).toBeInTheDocument()
 })
+
+it('keeps the home alarm at the right edge, logout in my records and hides AI examples from settings',async()=>{
+ render(<MeditationApp entryActions={<button type="button">계정</button>} profileActions={<button type="button">로그아웃</button>}/>)
+ const nav=screen.getByRole('navigation',{name:'MOA'})
+ fireEvent.click(within(nav).getByRole('button',{name:'피드'}))
+ expect(screen.queryByRole('button',{name:'로그아웃'})).toBeNull()
+ expect(document.querySelector('.faith-header')?.lastElementChild).toHaveAttribute('aria-label','알림')
+ fireEvent.click(within(nav).getByRole('button',{name:'내 기록'}))
+ expect(screen.getByRole('button',{name:'로그아웃'})).toBeInTheDocument()
+ expect(screen.queryByRole('button',{name:'알림'})).toBeNull()
+ fireEvent.click(screen.getByRole('button',{name:'설정'}))
+ expect(await screen.findByRole('switch',{name:'묵상 시간 알림'})).toBeInTheDocument()
+ expect(screen.getByLabelText('묵상 알림 시간')).toHaveValue('07:00')
+ expect(screen.queryByRole('button',{name:/AI 예시 글/})).toBeNull()
+})

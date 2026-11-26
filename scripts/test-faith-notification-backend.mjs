@@ -8,7 +8,9 @@ async function call(name,data,auth=alice){const r=await fetch('http://127.0.0.1:
 async function inbox(){return (await db('faithNotifications/'+alice.localId,'GET',undefined,alice)).json()}
 async function waitFor(check){const end=Date.now()+20000;while(Date.now()<end){const result=await check();if(result)return result;await new Promise(r=>setTimeout(r,200))}throw Error('Timed out waiting for notification trigger')}
 await write('users/'+alice.localId+'/notificationPreferences',{friends:true,chapel:false,activity:false},alice)
-const key=await call('faithPushKey',{});assert.equal(key.status,200);assert.ok(key.value.result.publicKey);assert.equal(key.value.result.privateKey,undefined)
+const key=await call('faithPushKey',{});assert.equal(key.status,200);assert.ok(key.value.result.publicKey);assert.equal(key.value.result.privateKey,undefined);assert.equal(key.value.result.scheduledReady,false)
+assert.equal((await call('configureFaithReminder',{enabled:true,time:'07:00',timezone:'Asia/Seoul'})).status,400,'unverified scheduler must not accept enabled reminders')
+await write('_faithNotificationsReady',true)
 assert.equal((await call('faithPushKey',{},null)).status,401)
 assert.equal((await db('_faithPushKeys','GET',undefined,alice)).status,401)
 const schedule={enabled:true,time:'07:00',timezone:'Asia/Seoul',subscription:{endpoint:'https://fcm.googleapis.com/fcm/send/emulator-only',keys:{p256dh:'A'.repeat(87),auth:'B'.repeat(22)}}}
@@ -28,7 +30,7 @@ assert.deepEqual(Object.values(items).map(n=>n.kind).sort(),['comment','interces
 for(const n of Object.values(items))assert.equal(n.actorUid,bob.localId)
 assert.equal((await db('faithNotifications/'+alice.localId,'GET',undefined,eve)).status,401)
 assert.equal((await db('faithNotifications/'+alice.localId+'/forged','PUT',{kind:'like'},alice)).status,401)
-const id=Object.keys(items)[0];await write('faithNotifications/'+alice.localId+'/'+id+'/readAt',{'.sv':'timestamp'},alice)
+const id=Object.keys(items)[0];await write('users/'+alice.localId+'/activityNotificationReads/'+id,{'.sv':'timestamp'},alice)
 assert.equal((await db('faithNotifications/'+alice.localId+'/'+id+'/body','PUT','forged',alice)).status,401)
 await write('crossPhotoComments/notice-post/self',{authorUid:alice.localId,authorName:'Alice',body:'내 댓글'},alice)
 await write('crossPhotoReactions/notice-post/'+eve.localId,false,eve)

@@ -8,6 +8,7 @@ on:
       - functions/package.json
       - functions/package-lock.json
       - scripts/test-faith-notification-logic.mjs
+      - functions/scripts/mark-faith-notifications-ready.mjs
       - functions/scripts/check-faith-notification-services.mjs
       - functions/scripts/deploy-faith-notifications.cjs
       - .github/workflows/deploy-faith-notifications.yml
@@ -45,6 +46,11 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLI_ROOT: ${{ runner.temp }}/faith-firebase-cli/node_modules/firebase-tools
         run: node functions/scripts/deploy-faith-notifications.cjs
+      - name: Verify scheduler and enable reminder settings
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/faith-notifications-service-account.json
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        run: node functions/scripts/mark-faith-notifications-ready.mjs
       - name: Diagnose actual notification API access on failure
         if: failure()
         env:

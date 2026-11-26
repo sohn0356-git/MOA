@@ -1,5 +1,7 @@
+import {readFile} from 'node:fs/promises'
 import {applicationDefault} from 'firebase-admin/app'
 const project=process.env.FIREBASE_PROJECT_ID,{access_token:token}=await applicationDefault().getAccessToken()
+const identity=JSON.parse(await readFile(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8'));console.log('Notification deploy identity:',identity.client_email)
 const headers={Authorization:'Bearer '+token,'Content-Type':'application/json'}
 const permissions=['cloudfunctions.functions.list','cloudfunctions.functions.create','cloudfunctions.functions.update','cloudfunctions.functions.setIamPolicy','cloudscheduler.jobs.create','serviceusage.services.get','serviceusage.services.enable','iam.serviceAccounts.actAs']
 const iam=await fetch(`https://cloudresourcemanager.googleapis.com/v1/projects/${project}:testIamPermissions`,{method:'POST',headers,body:JSON.stringify({permissions})});const iamBody=await iam.json();console.log('Notification deployment permissions:',iam.ok?iamBody.permissions||[]:iamBody.error?.message)

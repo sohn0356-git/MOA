@@ -1,3 +1,6 @@
+import {publishFaithActivity} from './publishFaithActivity'
+import {FaithNotificationCenter} from './FaithNotificationCenter'
+import {FaithReminderSettings} from './FaithReminderSettings'
 import {ConnectionHub,NotificationSwitches} from './FaithConnections'
 import {useFaithConnections,useNotificationPreferences} from './useFaithConnections'
 import './FaithFlow.css'
@@ -1192,7 +1195,7 @@ function UploadProgress({
   )
 }
 
-export function MeditationApp({ entryActions, activityId = '', activityBusy = false, onStartupState, churchMember = null, churchAuthBusy = false, onChurchSignIn }: { entryActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown>; onStartupState?: (state:StartupContentState)=>void; churchMember?: SanctuaryMember | null; churchAuthBusy?: boolean; onChurchSignIn?: () => Promise<unknown> } = {}) {
+export function MeditationApp({ entryActions, profileActions, activityId = '', activityBusy = false, onStartupState, churchMember = null, churchAuthBusy = false, onChurchSignIn }: { entryActions?: ReactNode; profileActions?: ReactNode; activityId?: string; activityBusy?: boolean; onActivityChange?: (id: string) => Promise<unknown>; onStartupState?: (state:StartupContentState)=>void; churchMember?: SanctuaryMember | null; churchAuthBusy?: boolean; onChurchSignIn?: () => Promise<unknown> } = {}) {
   const readingFinishRef=useRef<HTMLDivElement|null>(null)
   const [readingFinishVisible,setReadingFinishVisible]=useState(false)
   const recordListRef = useRef<HTMLDivElement | null>(null)
@@ -1320,7 +1323,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
   const [isSettingsSheetOpen, setIsSettingsSheetOpen] = useState(false)
   const [isLicenseOpen, setIsLicenseOpen] = useState(false)
   const [licenseText, setLicenseText] = useState('')
-  const [isAiMode, setIsAiMode] = useState(() => window.localStorage.getItem(AI_MODE_STORAGE_KEY) === 'true')
+  const [isAiMode, setIsAiMode] = useState(false)
   const [startupData,setStartupData]=useState({owner:'',entries:false,feed:false})
   const [syncState, setSyncState] = useState<'local' | 'syncing' | 'synced' | 'error'>('local')
   const [errorMessage, setErrorMessage] = useState('')
@@ -2183,7 +2186,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
     const db = getRealtimeDb()
     const photoId = photo.publicId ?? photo.id
-    const ownerUid = photo.ownerUid ?? currentUser.uid
+    const ownerUid = photo.ownerUid ?? photo.authorUid ?? currentUser.uid
     const usesPublicPhoto = Boolean(photo.ownerUid || photo.publicId)
     const reactionRef = ref(db, `${usesPublicPhoto ? getPublicCrossPhotoReactionsPath(photoId) : getUserCrossPhotoReactionsPath(currentUser.uid, photo.id)}/${currentUser.uid}`)
     const previous = Boolean((usesPublicPhoto ? publicPhotoReactionMap : photoReactionMap)[photoId])
@@ -2199,6 +2202,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
     try {
       const result = await runTransaction(reactionRef, (currentValue) => currentValue ? null : true)
       const didReact = Boolean(result.snapshot.val())
+      if(didReact&&usesPublicPhoto)await publishFaithActivity({kind:'like',ownerUid,actorUid:currentUser.uid,actorName:authorName,targetId:photoId,sourceId:currentUser.uid},{db:getRealtimeDb(),uid:getFirebaseAuth().currentUser?.uid}).catch(()=>{})
       const delta = didReact === previous ? 0 : didReact ? 1 : -1
 
       if (delta !== 0) {
@@ -2233,7 +2237,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
 
     const usesPublicPhoto = Boolean(photo.ownerUid || photo.publicId)
     const publicId = photo.publicId ?? photo.id
-    const ownerUid = photo.ownerUid ?? currentUser.uid
+    const ownerUid = photo.ownerUid ?? photo.authorUid ?? currentUser.uid
     const commentRef = push(ref(getRealtimeDb(), usesPublicPhoto ? getPublicCrossPhotoCommentsPath(publicId) : getUserCrossPhotoCommentsPath(currentUser.uid, photoId)))
     await set(commentRef, {
       authorAvatarUrl,
@@ -2244,6 +2248,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
       createdAt: new Date().toISOString(),
       createdAtMs: serverTimestamp(),
     })
+    if(usesPublicPhoto&&commentRef.key)await publishFaithActivity({kind:'comment',ownerUid,actorUid:currentUser.uid,actorName:authorName,targetId:publicId,sourceId:commentRef.key},{db:getRealtimeDb(),uid:getFirebaseAuth().currentUser?.uid}).catch(()=>{})
     await runTransaction(ref(getRealtimeDb(), `${usesPublicPhoto ? getPublicCrossPhotosPath() : getUserCrossPhotosPath(currentUser.uid)}/${usesPublicPhoto ? publicId : photoId}/commentCount`), (currentValue) =>
       Number(currentValue ?? 0) + 1,
     )
@@ -2696,8 +2701,9 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
             <h2>{renderHeaderTitle()}</h2>
           </div>
         )}
-        {activeTab === 'feed' ? <ConnectionHub kind="bell" social={social} notifications={social.unread} enabled={notificationPreferences.loaded&&notificationPreferences.values.friends}/> : null}
+
         {entryActions}
+        {activeTab==='profile'&&profileActions}
         {activeTab === 'qna' && qnaView === 'write' ? (
           <button className="faith-text-button" type="button" onClick={() => setQnaView(editingQuestionId ? 'detail' : 'list')}>취소</button>
         ) : entryActions ? (
@@ -2727,6 +2733,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
             )}
           </div>
         )}
+        {activeTab==='feed'&&<FaithNotificationCenter social={social} preferences={notificationPreferences.values} onFriends={()=>{if(!requestDraftNavigation())return;handleTabChange('profile');setProfileRecordTab('friends')}} onOpen={notice=>{if(!requestDraftNavigation())return;if(notice.kind==='intercession')handleTabChange('church');else if(notice.kind==='reminder')handleTabChange('devotion');else{handleTabChange('feed');setSelectedFeedPhotoId(notice.targetId)}}}/>}
       </header>
 
       <main className="faith-content" inert={activityBusy}>
@@ -3706,7 +3713,7 @@ export function MeditationApp({ entryActions, activityId = '', activityBusy = fa
         <div className="faith-sheet-backdrop" role="presentation" onClick={() => setIsSettingsSheetOpen(false)}>
           <section className="faith-action-sheet" aria-label="설정" onClick={(event) => event.stopPropagation()}>
             <NotificationSwitches {...notificationPreferences} loggedIn={!!currentUser}/>
-            <button type="button" onClick={() => setIsAiMode(enabled => !enabled)}>{isAiMode ? 'AI 예시 글 숨기기' : 'AI 예시 글 보기'}</button>
+            <FaithReminderSettings uid={currentUser?.uid||''}/>
             <button type="button" onClick={() => {
               setIsSettingsSheetOpen(false)
               setIsLicenseOpen(true)

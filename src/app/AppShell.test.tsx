@@ -16,9 +16,9 @@ const activity=vi.hoisted(()=>({
 vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
-vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,activityId,churchMember,onChurchSignIn,onStartupState}:{entryActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>;onStartupState?:(s:{owner:string;scripture:boolean;entries:boolean;feed:boolean})=>void})=>{
+vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,profileActions,activityId,churchMember,onChurchSignIn,onStartupState}:{entryActions?:ReactNode;profileActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>;onStartupState?:(s:{owner:string;scripture:boolean;entries:boolean;feed:boolean})=>void})=>{
  useEffect(()=>{if(boot.publish)onStartupState?.({owner:activityId||churchMember?.uid||'guest',scripture:true,entries:true,feed:true})},[activityId,churchMember?.uid,onStartupState,boot.publish])
- return <section><h1>MOA</h1>{entryActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.().catch(()=>{})}>예배당 로그인</button></section>
+ return <section><h1>MOA</h1>{entryActions}{profileActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.().catch(()=>{})}>예배당 로그인</button></section>
 }}))
 afterEach(cleanup)
 beforeEach(()=>{

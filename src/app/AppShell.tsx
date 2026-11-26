@@ -37,7 +37,9 @@ export function AppShell(){
   normalize();window.addEventListener('hashchange',normalize);return()=>window.removeEventListener('hashchange',normalize)
  },[])
   async function handleSignOut() {
-    try { await activity.clearActivity(); if (user) await signOutUser() } catch { /* The corresponding auth hook displays the failure. */ }
+    try {
+      if('serviceWorker'in navigator){try{await Promise.race([navigator.serviceWorker.getRegistration('/MOA/').then(async registration=>{await (await registration?.pushManager.getSubscription())?.unsubscribe()}),new Promise(resolve=>setTimeout(resolve,2000))])}catch{/* Sign-out must remain available offline. */}}
+      await activity.clearActivity(); if (user) await signOutUser() } catch { /* The corresponding auth hook displays the failure. */ }
   }
 
 
@@ -62,13 +64,10 @@ export function AppShell(){
                 onClick={() => { void handleGoogleSignIn().catch(() => {}) }}
               ><span aria-hidden="true" className="faith-entry-google-mark">G</span><span>구글 로그인</span></button> : null}
               {(!user || aiLoginAccounts.some(account=>account.email===user.email))&&<button className="faith-entry-google" type="button" aria-label="이메일 로그인" title="이메일 로그인" disabled={isAuthLoading||isAuthMutating||activity.isLoading||activity.isSwitching||Boolean(authError?.startsWith('Firebase configuration is missing:'))} onClick={()=>setEmailOpen(true)}><Mail size={14} aria-hidden="true"/><span>이메일</span></button>}
-              {(user || activityId) ? <button className="faith-entry-google" type="button"
-                disabled={isAuthMutating || activity.isLoading || activity.isSwitching}
-                onClick={() => void handleSignOut()}
-              >로그아웃</button> : null}
+
             </div>
           )
-        } />
+        } profileActions={(user||activityId)?<button className="faith-entry-google" type="button" disabled={isAuthMutating||activity.isLoading||activity.isSwitching} onClick={()=>void handleSignOut()}>로그아웃</button>:null} />
       </main>
       {emailOpen&&<EmailAuthDialog onGoogle={()=>void handleGoogleSignIn().catch(()=>{})} error={authError} onClose={()=>setEmailOpen(false)} onSubmit={handleEmailSignIn}/>}
       </>

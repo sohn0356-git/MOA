@@ -10,7 +10,7 @@ await writeFile(folder+'/index.html','<html lang="ko"><meta name="viewport" cont
 await writeFile(folder+'/firebase.ts',`
 import {initializeApp} from 'firebase/app';import {getAuth,connectAuthEmulator,signInAnonymously} from 'firebase/auth';import {getDatabase,connectDatabaseEmulator,push,ref,set,serverTimestamp} from 'firebase/database'
 const app=initializeApp({apiKey:'demo-key',projectId:'demo-moa',authDomain:'localhost',databaseURL:'http://127.0.0.1:9000?ns=demo-moa-default-rtdb'}),auth=getAuth(app),db=getDatabase(app);connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});connectDatabaseEmulator(db,'127.0.0.1',9000)
-export const getRealtimeDb=()=>db;export const getFaithDb=()=>db;export const getFaithAuth=()=>auth
+export const getRealtimeDb=()=>db;export const getFaithDb=()=>db;export const getFaithAuth=()=>auth;export const getFirebaseAuth=()=>auth
 export async function login(){await auth.authStateReady();if(!auth.currentUser)await signInAnonymously(auth);window.friendUid=auth.currentUser.uid;return auth.currentUser.uid}
 window.seedPrayer=async()=>set(push(ref(db,'sanctuary/prayers')),{uid:auth.currentUser.uid,name:'Bob',title:'함께 기도해요',body:'평안을 위해',createdAt:serverTimestamp(),updatedAt:serverTimestamp(),answered:false})
 `)
