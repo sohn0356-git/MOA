@@ -16,6 +16,7 @@ try{
  assert.equal(await returningPage.locator('.moa-boot').isVisible(),false,'returning users must not see static boot art before React loads')
  await returning.close()
  const context=await browser.newContext({viewport:{width:390,height:950},hasTouch:true,isMobile:true})
+ await context.addInitScript(()=>localStorage.setItem('moa.notification-intro.v1','1'))
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error('Production page error:',e.message)})
  const times=[]
  for(const route of ['', '#/ai-city','#/apps','#/suggestions','#/mini-room','#/home/legacy','#/timer','#/login']){

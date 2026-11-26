@@ -1,3 +1,4 @@
+import {NotificationPermissionIntro} from '../components/NotificationPermissionIntro'
 import {Mail} from 'lucide-react'
 import {EmailAuthDialog} from '../components/EmailAuthDialog'
 import {shouldShowInitialLaunch,markLaunchSeen} from '../lib/launchSession'
@@ -69,6 +70,7 @@ export function AppShell(){
           )
         } profileActions={(user||activityId)?<button className="faith-entry-google" type="button" disabled={isAuthMutating||activity.isLoading||activity.isSwitching} onClick={()=>void handleSignOut()}>로그아웃</button>:null} />
       </main>
+      <NotificationPermissionIntro ready={!showLaunch&&!isUpdating&&!emailOpen&&!isAuthLoading&&!isAuthMutating&&!googlePending}/>
       {emailOpen&&<EmailAuthDialog onGoogle={()=>void handleGoogleSignIn().catch(()=>{})} error={authError} onClose={()=>setEmailOpen(false)} onSubmit={handleEmailSignIn}/>}
       </>
     )

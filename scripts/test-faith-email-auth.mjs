@@ -18,7 +18,7 @@ await writeFile(folder+'/meditation.tsx',`import React,{useEffect} from 'react';
 const server=await createServer({configFile:false,root:process.cwd(),plugins:[react()],resolve:{alias:[{find:'../services/firebase',replacement:path.resolve(folder+'/firebase.ts')},{find:'../hooks/useFaithActivity',replacement:path.resolve(folder+'/hooks.ts')},{find:'../hooks/useAppUpdate',replacement:path.resolve(folder+'/hooks.ts')},{find:'../apps/meditation/MeditationApp',replacement:path.resolve(folder+'/meditation.tsx')}]},server:{host:'127.0.0.1',port:4189,strictPort:true}})
 await server.listen();const profile=path.resolve(folder+'/browser'),url='http://127.0.0.1:4189/'+folder+'/index.html',errors=[]
 let context,page
-async function open(){context=await chromium.launchPersistentContext(profile,{headless:true,viewport:{width:360,height:850},...(process.env.MOA_BROWSER_PATH?{executablePath:process.env.MOA_BROWSER_PATH}:{channel:'chrome'})});page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url)}
+async function open(){context=await chromium.launchPersistentContext(profile,{headless:true,viewport:{width:360,height:850},...(process.env.MOA_BROWSER_PATH?{executablePath:process.env.MOA_BROWSER_PATH}:{channel:'chrome'})});page=await context.newPage();await page.addInitScript(()=>localStorage.setItem('moa.notification-intro.v1','1'));page.on('pageerror',e=>errors.push(e.message));await page.goto(url)}
 const account=()=>page.getByLabel('계정',{exact:true})
 const dialog=()=>page.getByRole('dialog',{name:'이메일 로그인',exact:true})
 const email='email-ui@example.com',password='email-test-password'

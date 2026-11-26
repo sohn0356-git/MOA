@@ -31,3 +31,13 @@ it('keeps scheduled alerts disabled until the server scheduler is verified',asyn
  expect(screen.getByLabelText('묵상 알림 시간')).toBeDisabled()
  expect(state.permission).not.toHaveBeenCalled()
 })
+
+it('can request device permission while the scheduling server is unavailable',async()=>{
+ state.ready=false;render(<FaithReminderSettings uid="alice"/>)
+ await screen.findByText(/예약 푸시 서버 설정이 아직 완료되지/)
+ fireEvent.click(screen.getByRole('button',{name:'알림 권한 허용'}))
+ expect(await screen.findByText('이 기기의 알림 권한을 허용했어요.')).toBeInTheDocument()
+ expect(state.permission).toHaveBeenCalledOnce()
+ expect(state.call.mock.calls.some(([name])=>name==='configureFaithReminder')).toBe(false)
+ expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeDisabled()
+})

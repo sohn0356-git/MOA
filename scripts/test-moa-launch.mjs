@@ -20,10 +20,10 @@ const server=await createServer({configFile:false,root:process.cwd(),base:'/MOA/
 await server.listen()
 const browser=await chromium.launch({headless:true,...(process.env.MOA_BROWSER_PATH?{executablePath:process.env.MOA_BROWSER_PATH}:{channel:'chrome'})}),errors=[]
 const url='http://127.0.0.1:4186/MOA/'+folder+'/index.html'
-function observe(page){page.on('pageerror',e=>{errors.push(e.message);console.error('Launch page error:',e.message)})}
+async function observe(page){await page.addInitScript(()=>localStorage.setItem('moa.notification-intro.v1','1'));page.on('pageerror',e=>{errors.push(e.message);console.error('Launch page error:',e.message)})}
 try{
  for(const width of [360,768,1440]){
-  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:width===768?'reduce':'no-preference'}),page=await context.newPage();observe(page)
+  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:width===768?'reduce':'no-preference'}),page=await context.newPage();await observe(page)
   await page.goto(url);await page.getByLabel('MOA 시작 준비').waitFor();await page.waitForFunction(()=>document.querySelector('.moa-launch-art img')?.complete)
   const p=Number(await page.getByRole('progressbar',{name:'앱 준비 진행률'}).getAttribute('value'));assert.ok(p<100)
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'launch fits mobile and desktop')
@@ -42,11 +42,11 @@ try{
   assert.equal(await page.locator('main[aria-label="MOA 메인"]').getAttribute('inert'),null,'account restoration may not cover a refreshed app')
   await context.close()
  }
- const slow=await browser.newContext({viewport:{width:390,height:800}}),page=await slow.newPage();observe(page)
+ const slow=await browser.newContext({viewport:{width:390,height:800}}),page=await slow.newPage();await observe(page)
  await page.goto(url+'?slow');await page.getByLabel('MOA 시작 준비').waitFor();assert.notEqual(await page.getByRole('progressbar').getAttribute('value'),'100')
  await page.getByLabel('MOA 시작 준비').waitFor({state:'detached',timeout:12000});await page.getByText(/연결을 기다리는 동안 먼저 둘러볼/).waitFor()
  await page.getByRole('navigation',{name:'MOA',exact:true}).getByRole('button',{name:'내 기록'}).click();await slow.close()
- const cancelled=await browser.newContext({viewport:{width:390,height:800}}),cancel=await cancelled.newPage();observe(cancel)
+ const cancelled=await browser.newContext({viewport:{width:390,height:800}}),cancel=await cancelled.newPage();await observe(cancel)
  await cancel.goto(url);await cancel.getByLabel('MOA 시작 준비').waitFor({state:'detached'});await cancel.evaluate(()=>{window.cancelLogin=true})
  await cancel.getByRole('button',{name:'구글 로그인'}).click();await cancel.getByLabel('구글 로그인 준비').waitFor();await cancel.getByLabel('구글 로그인 준비').waitFor({state:'detached'})
  await cancel.getByRole('alert').filter({hasText:'로그인이 취소되었습니다.'}).waitFor();await cancelled.close()

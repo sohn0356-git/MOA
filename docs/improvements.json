@@ -147,5 +147,12 @@
     "body": "댓글 알림이나\n묵상 시간 알림있으면 좋을거같아요",
     "status": "planned",
     "evidence": "Installable PWA already exists and in-app comment notifications are implemented. Daily time/timezone settings, authenticated push subscription, SW push handling, scheduled worker and server-readiness gating are implemented and tested locally. Production Cloud Functions and Cloud Scheduler APIs are disabled; actual enable attempts return HTTP 403 and deploy identity lacks required permissions. Daily OS push remains disabled in UI and this original board request must remain incomplete until APIs/permissions are configured and the scheduler is verified. See docs/faith-notifications-and-garden.md."
+  },
+  {
+    "id": "faith-first-notification-permission",
+    "title": "첫 실행 알림 권한 안내와 설정에서 독립적인 권한 요청",
+    "body": "앱 준비가 끝나면 이 기기의 알림 권한을 한 번 안내하고 알림 허용 버튼을 누른 사용자 동작에서 기기 권한을 요청합니다. 이미 허용·차단했거나 나중에 선택한 경우 재실행·새로고침마다 반복하지 않습니다. 설정에서는 예약 서버 준비 여부와 무관하게 알림 권한을 요청할 수 있으며, 권한만으로 매일 알람이 켜진 것처럼 표시하지 않습니다.",
+    "status": "implemented",
+    "evidence": "Component tests cover startup gating, gesture-only request, remembered grant/later, granted/denied/unsupported states and failure recovery. Reminder settings tests verify independent permission while scheduled backend is unavailable. Native 360/768/1440 browser checks cover the permission dialog, a single request and refresh persistence. Existing scheduled-push request remains planned."
   }
 ]
