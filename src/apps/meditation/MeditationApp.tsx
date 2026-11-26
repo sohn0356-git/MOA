@@ -3385,9 +3385,9 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
               <div className="faith-tabs" role="tablist" aria-label="내 기록 필터">
                 {([
                   ['devotion', '묵상'],
+                  ['friends', '친구'],
                   ['prayer', '기도'],
                   ['qna', '질문'],
-                  ['friends', '친구'],
                 ] as Array<[ProfileRecordTab, string]>).map(([id, label]) => (
                   <button aria-selected={profileRecordTab === id} key={id} role="tab" type="button" onClick={() => setProfileRecordTab(id)}>{label}</button>
                 ))}

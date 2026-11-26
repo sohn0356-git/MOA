@@ -34,3 +34,7 @@ it('faces the actual screen movement vector and stops walking when the movement 
  act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','true');
  act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','false');
 })
+
+it('zooms the same courtyard up to 200 percent and resets without changing the group or avatars',()=>{
+ render(<FriendGarden uid="me" friends={[]}/>);expect(screen.getByRole('button',{name:'마당 축소'})).toBeDisabled();for(let i=0;i<4;i++)fireEvent.click(screen.getByRole('button',{name:'마당 확대'}));expect(screen.getByRole('button',{name:'마당 확대'})).toBeDisabled();expect(screen.getByRole('button',{name:'마당 배율 초기화'})).toHaveTextContent('200%');expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(2)'});expect(screen.getAllByRole('button',{name:'나 아바타'})).toHaveLength(1);fireEvent.click(screen.getByRole('button',{name:'마당 축소'}));expect(screen.getByRole('button',{name:'마당 배율 초기화'})).toHaveTextContent('175%');fireEvent.click(screen.getByRole('button',{name:'마당 배율 초기화'}));expect(screen.getByRole('button',{name:'마당 배율 초기화'})).toHaveTextContent('100%')
+})

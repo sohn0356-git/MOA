@@ -339,7 +339,7 @@ it('merges photos into the devotion record tab and opens friend groups directly 
  render(<MeditationApp/>)
  fireEvent.click(within(screen.getByRole('navigation',{name:'MOA'})).getByRole('button',{name:'내 기록'}))
  const tabs=screen.getByRole('tablist',{name:'내 기록 필터'})
- expect(within(tabs).getAllByRole('tab').map(tab=>tab.textContent)).toEqual(['묵상','기도','질문','친구'])
+ expect(within(tabs).getAllByRole('tab').map(tab=>tab.textContent)).toEqual(['묵상','친구','기도','질문'])
  expect(screen.getByText('수정 전 묵상')).toBeInTheDocument()
  expect(screen.getByRole('img',{name:'묵상 사진'})).toHaveAttribute('src',image)
  expect(screen.getAllByRole('button',{name:/묵상 사진 보기/})).toHaveLength(1)
