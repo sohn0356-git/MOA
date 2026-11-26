@@ -8,6 +8,7 @@ on:
       - functions/package.json
       - functions/package-lock.json
       - scripts/test-faith-notification-logic.mjs
+      - functions/scripts/check-faith-notification-services.mjs
       - functions/scripts/deploy-faith-notifications.cjs
       - .github/workflows/deploy-faith-notifications.yml
   workflow_dispatch:
@@ -44,6 +45,12 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLI_ROOT: ${{ runner.temp }}/faith-firebase-cli/node_modules/firebase-tools
         run: node functions/scripts/deploy-faith-notifications.cjs
+      - name: Diagnose actual notification API access on failure
+        if: failure()
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/faith-notifications-service-account.json
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        run: node functions/scripts/check-faith-notification-services.mjs
       - name: Remove deployment identity
         if: always()
         run: rm -f "$RUNNER_TEMP/faith-notifications-service-account.json"

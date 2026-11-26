@@ -72,8 +72,8 @@ export const faithIntercessionNotice=dbTrigger.ref('/sanctuary/intercessions/{pr
  const actor=(await database().ref(`sanctuary/avatars/${context.params.actorUid}/name`).get()).val()||'이웃'
  await publish(prayer.uid,context.eventId,{kind:'intercession',actorUid:context.params.actorUid,actorName:actor,title:'함께 기도하는 마음이 도착했어요',body:`${actor}님이 ‘${String(prayer.title).slice(0,60)}’을 위해 중보했어요.`,targetId:context.params.prayerId,createdAt:Date.now()})
 })
-export const faithDailyReminders=onSchedule({schedule:'every 1 minutes',timeZone:'UTC',region:'us-central1',retryCount:2},async()=>{
- const now=new Date(),schedules=(await database().ref('faithReminders').get()).val()||{}
+export const faithDailyReminders=onSchedule({schedule:'every 1 minutes',timeZone:'UTC',region:'us-central1',retryCount:2},async event=>{
+ const now=new Date(event.scheduleTime||Date.now()),schedules=(await database().ref('faithReminders').get()).val()||{}
  await Promise.all(Object.entries(schedules).map(async([uid,raw])=>{
   try{const schedule=validSchedule(raw) as ReminderSchedule,day=reminderDay(schedule,now);if(!day)return
    await publish(uid,`reminder:${uid}:${day}`,{kind:'reminder',actorUid:'',actorName:'MOA',title:'말씀과 함께 하루를 시작해요',body:'잠시 마음을 가다듬고 오늘의 말씀을 묵상해보세요.',targetId:'devotion',createdAt:now.getTime()})
