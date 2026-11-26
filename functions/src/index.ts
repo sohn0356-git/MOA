@@ -394,3 +394,5 @@ export const seedPublicCatalog = onCall(async (request) => {
   await batch.commit()
   return { ok: true, seededAt: Timestamp.now().toMillis() }
 })
+
+export {faithPushKey,configureFaithReminder,faithCommentNotice,faithLikeNotice,faithIntercessionNotice,faithDailyReminders} from './faithNotifications.js'

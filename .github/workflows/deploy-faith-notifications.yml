@@ -1,0 +1,45 @@
+name: Deploy Faith Notifications
+on:
+  push:
+    branches: [main]
+    paths:
+      - functions/src/faithNotifications.ts
+      - functions/src/notificationLogic.ts
+      - functions/package.json
+      - functions/package-lock.json
+      - scripts/test-faith-notification-logic.mjs
+      - .github/workflows/deploy-faith-notifications.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: faith-notifications
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: github-pages
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: functions
+      - run: npm --prefix functions run build
+      - run: node scripts/test-faith-notification-logic.mjs
+      - name: Write deployment identity
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/faith-notifications-service-account.json"
+      - name: Deploy notification handlers and reminder schedule
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/faith-notifications-service-account.json
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        run: npx firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" --only functions:faithPushKey,functions:configureFaithReminder,functions:faithCommentNotice,functions:faithLikeNotice,functions:faithIntercessionNotice,functions:faithDailyReminders --non-interactive
+      - name: Remove deployment identity
+        if: always()
+        run: rm -f "$RUNNER_TEMP/faith-notifications-service-account.json"
