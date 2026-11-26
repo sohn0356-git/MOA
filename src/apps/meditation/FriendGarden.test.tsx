@@ -29,7 +29,8 @@ it('filters by group while keeping me in every group and exposes all groups in a
 
 it('faces the actual screen movement vector and stops walking when the movement ends',()=>{
  vi.useFakeTimers();vi.spyOn(Math,'random').mockReturnValue(.2);render(<FriendGarden uid="me" friends={[]}/>);
- const avatar=screen.getByRole('img',{name:'나의 아바타'});expect(avatar).toHaveAttribute('data-moving','false');expect(avatar.getAttribute('style')).toContain('--avatar-scale: 0.62');
+ const avatar=screen.getByRole('img',{name:'나의 아바타'});expect(avatar).toHaveAttribute('data-moving','false');expect(avatar.getAttribute('style')).toContain('--avatar-scale: 0.48');
  vi.mocked(Math.random).mockReturnValue(.8);act(()=>vi.advanceTimersByTime(200));expect(avatar).toHaveAttribute('data-moving','true');expect(avatar.getAttribute('style')).toContain('--avatar-facing: '+(Math.atan2(84,68)*180/Math.PI));
+ act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','true');
  act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','false');
 })
