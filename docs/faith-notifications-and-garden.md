@@ -16,11 +16,13 @@
 
 운영 프로젝트의 Cloud Functions API와 Cloud Scheduler API가 비활성화되어 있다. 현재 배포 계정의 서비스 활성화 시도는 HTTP 403으로 거절되며 검사한 Functions 생성/갱신·Scheduler 생성·Service Usage·서비스 계정 사용 권한도 반환되지 않았다. 따라서 **앱을 닫은 상태의 매일 정시 푸시는 아직 활성화되지 않았다.**
 
-설정은 서버 준비 여부를 먼저 확인한다. 서버가 준비되지 않으면 예약 시간과 스위치를 비활성화하고 이유를 표시한다. 기기 알림 권한 요청은 서버 상태와 분리하며, 첫 실행 안내와 설정의 알림 권한 허용 버튼에서 바로 요청할 수 있다. 실제 푸시 구독 등록은 서버 준비 후 처리한다. 서버 예약이 검증되기 전에는 켜진 것처럼 보이거나 허용 팝업만 띄우지 않는다. 이미 켜진 예약의 해제 요청은 준비 여부와 무관하게 가능하다.
+알림 권한을 허용하면 로그인 계정에 기본 매일 07:00 알림을 활성화한다. 알림을 여러 개 추가하고 각각 월~일, 시간, 활성화 상태를 수정하거나 삭제한다. 7일을 모두 선택하면 “매일”, 일부는 “월·수·금”처럼 표시한다. 마지막 알림 삭제와 사용자의 끄기 선택은 재실행 후에도 유지한다. faithReminders/{uid}의 version:2 schedules를 소유자만 수정하며 시간·요일 값을 규칙으로 검증한다. 기존 매일 알림은 같은 시간으로 마이그레이션한다.
+
+앱을 켜 둔 동안에는 로컬 런타임이 선택한 요일·시각에 서비스 워커 알림을 표시한다. 계정·알림·날짜별 기록과 브라우저 잠금으로 같은 브라우저의 중복 전송을 막는다. 설정에는 앱을 닫은 뒤 푸시는 준비 중임을 명시한다. 서버가 준비되면 구독 등록만 수행하며 기존 여러 알림을 덮어쓰지 않는다. 서버 예약도 개별 요일과 알림 ID를 처리한다. 브라우저가 종료되거나 실행을 중단하면 로컬 런타임은 알람을 보장하지 않는다.
 
 활성화하려면 프로젝트 소유자가 Cloud Functions·Cloud Scheduler 및 Firebase Functions 배포 의존 API를 활성화하고, GitHub의 FIREBASE_SERVICE_ACCOUNT 배포 계정에 Functions 배포·Scheduler 생성·서비스 계정 사용 등 필요한 권한을 설정해야 한다. 배포 계정 client_email과 거절된 API 응답은 Deploy Faith Notifications 작업의 진단 로그에서 확인할 수 있다. 요금제 변경은 수행하지 않았다.
 
-그 뒤 Deploy Faith Notifications 워크플로를 다시 실행한다. 성공 후 mark-faith-notifications-ready 스크립트가 실제 Scheduler 작업이 ENABLED인지 확인한 뒤 서버 전용 _faithNotificationsReady를 켠다. 그때부터 설정 UI에서 매일 알림을 활성화할 수 있다. API/권한 문제가 해결되기 전에는 관련 기존 건의를 완료 처리하지 않는다.
+그 뒤 Deploy Faith Notifications 워크플로를 다시 실행한다. 성공 후 mark-faith-notifications-ready 스크립트가 실제 Scheduler 작업이 ENABLED인지 확인한 뒤 서버 전용 _faithNotificationsReady를 켠다. 그때부터 앱을 닫은 뒤에도 서버가 예약 푸시를 전송한다. API/권한 문제가 해결되기 전에는 관련 기존 건의를 완료 처리하지 않는다.
 
 ## 검증
 

@@ -1,3 +1,4 @@
+import {DevotionReminderRuntime} from '../components/DevotionReminderRuntime'
 import {NotificationPermissionIntro} from '../components/NotificationPermissionIntro'
 import {Mail} from 'lucide-react'
 import {EmailAuthDialog} from '../components/EmailAuthDialog'
@@ -46,6 +47,7 @@ export function AppShell(){
 
   return (
       <>
+      <DevotionReminderRuntime uid={activityId||user?.uid||''}/>
       {showLaunch&&<AppLaunchScreen authReady={!isAuthLoading&&!isAuthMutating&&!googlePending} activityReady={!activity.isLoading&&!activity.isSwitching} content={currentContent} signingIn={loginOverlay} onContinue={continueLoading}/>}
       <main inert={isUpdating||showLaunch} className="app-shell app-shell-subapp app-shell-faith" aria-label="MOA 메인">
         {hasUpdate ? <AppUpdateBanner error={updateError} isUpdating={isUpdating} onUpdate={() => void applyUpdate()} /> : null}

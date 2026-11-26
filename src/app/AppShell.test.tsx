@@ -13,6 +13,7 @@ const auth=vi.hoisted(()=>({
 const activity=vi.hoisted(()=>({
  activityId:'',isLoading:false,isSwitching:false,error:'',selectActivity:vi.fn(),clearActivity:vi.fn()
 }))
+vi.mock('../components/DevotionReminderRuntime',()=>({DevotionReminderRuntime:()=>null}))
 vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))

@@ -364,6 +364,7 @@ it('keeps the home alarm at the right edge, logout in my records and hides AI ex
  expect(screen.queryByRole('button',{name:'알림'})).toBeNull()
  fireEvent.click(screen.getByRole('button',{name:'설정'}))
  expect(await screen.findByRole('switch',{name:'묵상 시간 알림'})).toBeInTheDocument()
+ fireEvent.click(screen.getByRole('button',{name:/알림 추가/}))
  expect(screen.getByLabelText('묵상 알림 시간')).toHaveValue('07:00')
  expect(screen.queryByRole('button',{name:/AI 예시 글/})).toBeNull()
 })

@@ -151,7 +151,7 @@
   {
     "id": "faith-first-notification-permission",
     "title": "첫 실행 알림 권한 안내와 설정에서 독립적인 권한 요청",
-    "body": "앱 준비가 끝나면 이 기기의 알림 권한을 한 번 안내하고 알림 허용 버튼을 누른 사용자 동작에서 기기 권한을 요청합니다. 이미 허용·차단했거나 나중에 선택한 경우 재실행·새로고침마다 반복하지 않습니다. 설정에서는 예약 서버 준비 여부와 무관하게 알림 권한을 요청할 수 있으며, 권한만으로 매일 알람이 켜진 것처럼 표시하지 않습니다.",
+    "body": "앱 준비가 끝나면 이 기기의 알림 권한을 한 번 안내하고 알림 허용 버튼을 누른 사용자 동작에서 기기 권한을 요청합니다. 이미 허용·차단했거나 나중에 선택한 경우 재실행·새로고침마다 반복하지 않습니다. 설정에서는 예약 서버 준비 여부와 무관하게 알림 권한을 요청할 수 있으며, 권한 허용 시 로그인 계정의 기본 매일 07:00 알림을 켭니다. 앱을 켜 둔 동안 동작하며 종료 후 푸시는 별도 준비 중임을 표시합니다.",
     "status": "implemented",
     "evidence": "Component tests cover startup gating, gesture-only request, remembered grant/later, granted/denied/unsupported states and failure recovery. Reminder settings tests verify independent permission while scheduled backend is unavailable. Native 360/768/1440 browser checks cover the permission dialog, a single request and refresh persistence. Existing scheduled-push request remains planned."
   },
@@ -170,5 +170,12 @@
     "body": "그림 생성되면 알림 부탁합니다!\n오늘의 선물 알림🫶🎀",
     "status": "implemented",
     "evidence": "The supported AI shared-image save now atomically writes original image, public projection and an owner inbox notice. RTDB emulator verifies AI-only image-change proof, no standalone/forged/unchanged alerts, atomic rollback, unique immutable receipts and private reads. Editor/helper/notification UI tests and native gallery verify the three-path save and opening the original entry. This is an in-app notice; OS push remains blocked by the existing project API/IAM restriction."
+  },
+  {
+    "id": "weekly-multiple-devotion-reminders",
+    "title": "알림 허용 시 묵상 알림 활성화와 여러 요일·시간 설정",
+    "body": "권한 허용 시 기본 매일 07:00을 활성화합니다. 여러 알림마다 월~일과 시간을 지정하고 수정·켜기·끄기·삭제합니다. 모든 요일이면 매일로 표시합니다. 앱을 켜 둔 동안 실제 기기 알림을 표시하며 앱 종료 후 푸시는 아직 준비 중입니다.",
+    "status": "implemented",
+    "evidence": "33 focused unit/component tests plus owner-private RTDB reminder rules pass; runtime verifies weekday/time delivery, per-reminder deduplication and logout cleanup. Existing closed-app push request remains planned."
   }
 ]

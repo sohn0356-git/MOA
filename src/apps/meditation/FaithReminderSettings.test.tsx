@@ -1,43 +1,37 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import {afterEach,beforeEach,expect,it,vi} from 'vitest'
-import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
+import {beforeEach,afterEach,expect,it,vi} from 'vitest'
+import {cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react'
 import {FaithReminderSettings} from './FaithReminderSettings'
-const state=vi.hoisted(()=>({saved:null as {enabled:boolean;time:string;timezone:string}|null,listener:null as ((s:{val:()=>unknown})=>void)|null,call:vi.fn(),permission:vi.fn().mockResolvedValue('granted'),fail:false,ready:true}))
-vi.mock('../../services/faithSession',()=>({getFaithAuth:()=>({currentUser:{uid:'alice'},app:{}}),getFaithDb:()=>({})}))
-vi.mock('firebase/database',()=>({ref:(_db:unknown,p:string)=>p,onValue:(_p:string,cb:(s:{val:()=>unknown})=>void)=>{state.listener=cb;cb({val:()=>state.saved});return()=>{state.listener=null}}}))
-vi.mock('firebase/functions',()=>({getFunctions:()=>({}),httpsCallable:(_f:unknown,name:string)=>async(data:Record<string,unknown>)=>{state.call(name,data);if(name==='faithPushKey')return{data:{publicKey:'AAAA',scheduledReady:state.ready}};if(state.fail)throw Error('서버 설정을 저장하지 못했습니다.');state.saved={enabled:!!data.enabled,time:String(data.time),timezone:String(data.timezone)};state.listener?.({val:()=>state.saved});return{data:state.saved}}}))
-beforeEach(()=>{state.saved=null;state.fail=false;state.ready=true;state.call.mockClear();state.permission.mockClear();vi.stubGlobal('Notification',{requestPermission:state.permission});vi.stubGlobal('PushManager',class{});Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{ready:Promise.resolve({pushManager:{getSubscription:async()=>({options:{},toJSON:()=>({endpoint:'https://fcm.googleapis.com/fcm/send/example',keys:{p256dh:'A'.repeat(87),auth:'B'.repeat(22)}})})}})}})})
-afterEach(()=>{cleanup();vi.unstubAllGlobals();Reflect.deleteProperty(navigator,'serviceWorker')})
-it('requests device permission and persists the selected daily time on the server',async()=>{
- render(<FaithReminderSettings uid="alice"/>);await waitFor(()=>expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeEnabled());fireEvent.change(screen.getByLabelText('묵상 알림 시간'),{target:{value:'06:45'}});fireEvent.click(screen.getByRole('switch',{name:'묵상 시간 알림'}))
+const state=vi.hoisted(()=>({raw:null as unknown,listener:null as ((s:{val:()=>unknown})=>void)|null,uid:'alice',fail:false,permission:'default' as NotificationPermission,request:vi.fn()}))
+vi.mock('../../services/faithSession',()=>({getFaithAuth:()=>({currentUser:{uid:state.uid}}),getFaithDb:()=>({})}))
+vi.mock('firebase/database',()=>({ref:(_db:unknown,p:string)=>p,serverTimestamp:()=>123,onValue:(_p:string,cb:(s:{val:()=>unknown})=>void)=>{state.listener=cb;cb({val:()=>state.raw});return()=>{state.listener=null}},runTransaction:async(_p:string,updater:(v:unknown)=>unknown)=>{if(state.fail)throw Error('저장하지 못했습니다.');const next=updater(state.raw);if(next!==undefined){state.raw=next;state.listener?.({val:()=>state.raw})}return{committed:next!==undefined}}}))
+vi.mock('./reminderPush',()=>({enrollReminderPush:async()=>false}))
+beforeEach(()=>{state.uid='alice';state.raw=null;state.fail=false;state.permission='default';state.request.mockReset().mockImplementation(async()=>{state.permission='granted';return 'granted'});vi.stubGlobal('Notification',{get permission(){return state.permission},requestPermission:state.request})})
+afterEach(()=>{cleanup();vi.unstubAllGlobals()})
+it('permission grant enables a saved daily 07:00 alarm without a push server',async()=>{
+ render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:'알림 권한 허용'}))
  await waitFor(()=>expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toHaveAttribute('aria-checked','true'))
- expect(state.permission).toHaveBeenCalledOnce();expect(state.call).toHaveBeenCalledWith('configureFaithReminder',expect.objectContaining({enabled:true,time:'06:45',subscription:expect.objectContaining({endpoint:expect.stringContaining('fcm.googleapis.com')})}))
+ expect(screen.getByRole('button',{name:'07:00 매일 알림 수정'})).toBeInTheDocument();expect(state.raw).toMatchObject({version:2,enabled:true,schedules:{morning:{time:'07:00',enabled:true}}})
+ expect(screen.getByText(/앱을 완전히 닫은 뒤/)).toBeInTheDocument()
 })
-it('disables a saved reminder without asking for permission again',async()=>{
- state.saved={enabled:true,time:'07:00',timezone:'Asia/Seoul'};render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('switch',{name:'묵상 시간 알림'}));await waitFor(()=>expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toHaveAttribute('aria-checked','false'));expect(state.permission).not.toHaveBeenCalled()
+it('adds and edits multiple weekly alarms, daily labels and individual switches',async()=>{
+ state.permission='granted';render(<FaithReminderSettings uid="alice"/>)
+ fireEvent.click(screen.getByRole('switch',{name:'묵상 시간 알림'}));await screen.findByRole('button',{name:'07:00 매일 알림 수정'})
+ fireEvent.click(screen.getByRole('button',{name:/알림 추가/}));fireEvent.change(screen.getByLabelText('묵상 알림 시간'),{target:{value:'21:30'}})
+ const days=screen.getByRole('group',{name:'알림 요일'});for(const name of ['화요일','목요일','토요일','일요일'])fireEvent.click(within(days).getByRole('button',{name}))
+ fireEvent.click(screen.getByRole('button',{name:'알림 저장'}));await screen.findByRole('button',{name:'21:30 월·수·금 알림 수정'})
+ expect(screen.getByRole('button',{name:'07:00 매일 알림 수정'})).toBeInTheDocument()
+ fireEvent.click(screen.getByRole('switch',{name:'21:30 알림'}));await waitFor(()=>expect(screen.getByRole('switch',{name:'21:30 알림'})).toHaveAttribute('aria-checked','false'))
+ fireEvent.click(screen.getByRole('button',{name:'21:30 월·수·금 알림 수정'}));fireEvent.click(within(screen.getByRole('group',{name:'알림 요일'})).getByRole('button',{name:'매일'}));fireEvent.click(screen.getByRole('button',{name:'알림 저장'}));await screen.findByRole('button',{name:'21:30 매일 알림 수정'})
+ fireEvent.click(screen.getByRole('button',{name:'07:00 알림 삭제'}));await waitFor(()=>expect(screen.queryByRole('button',{name:'07:00 매일 알림 수정'})).toBeNull())
 })
-it('does not show a reminder as enabled when server persistence fails',async()=>{
- state.fail=true;render(<FaithReminderSettings uid="alice"/>);await waitFor(()=>expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeEnabled());fireEvent.click(screen.getByRole('switch',{name:'묵상 시간 알림'}));expect(await screen.findByRole('alert')).toHaveTextContent('저장하지 못했습니다');expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toHaveAttribute('aria-checked','false')
+it('does not save a reminder with no selected weekdays',()=>{
+ state.permission='granted';render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:/알림 추가/}));for(const name of ['월요일','화요일','수요일','목요일','금요일','토요일','일요일'])fireEvent.click(screen.getByRole('button',{name}));expect(screen.getByRole('button',{name:'알림 저장'})).toBeDisabled();expect(state.raw).toBeNull()
 })
-it('keeps reminder permission controls disabled for guests',()=>{
- render(<FaithReminderSettings uid=""/>);expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeDisabled();expect(screen.getByLabelText('묵상 알림 시간')).toBeDisabled();expect(state.permission).not.toHaveBeenCalled()
+it('preserves edits and shows a readable error if saving fails',async()=>{
+ state.permission='granted';render(<FaithReminderSettings uid="alice"/>);fireEvent.click(screen.getByRole('button',{name:/알림 추가/}));fireEvent.change(screen.getByLabelText('묵상 알림 시간'),{target:{value:'09:15'}});state.fail=true;fireEvent.click(screen.getByRole('button',{name:'알림 저장'}));expect(await screen.findByRole('alert')).toHaveTextContent('저장하지 못했습니다');expect(screen.getByLabelText('묵상 알림 시간')).toHaveValue('09:15')
 })
-
-it('keeps scheduled alerts disabled until the server scheduler is verified',async()=>{
- state.ready=false;render(<FaithReminderSettings uid="alice"/>)
- expect(await screen.findByText(/예약 푸시 서버 설정이 아직 완료되지/)).toBeInTheDocument()
- expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeDisabled()
- expect(screen.getByLabelText('묵상 알림 시간')).toBeDisabled()
- expect(state.permission).not.toHaveBeenCalled()
-})
-
-it('can request device permission while the scheduling server is unavailable',async()=>{
- state.ready=false;render(<FaithReminderSettings uid="alice"/>)
- await screen.findByText(/예약 푸시 서버 설정이 아직 완료되지/)
- fireEvent.click(screen.getByRole('button',{name:'알림 권한 허용'}))
- expect(await screen.findByText('이 기기의 알림 권한을 허용했어요.')).toBeInTheDocument()
- expect(state.permission).toHaveBeenCalledOnce()
- expect(state.call.mock.calls.some(([name])=>name==='configureFaithReminder')).toBe(false)
- expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeDisabled()
+it('keeps account schedules protected for guests while allowing device permission',()=>{
+ state.uid='';render(<FaithReminderSettings uid=""/>);expect(screen.getByRole('switch',{name:'묵상 시간 알림'})).toBeDisabled();expect(screen.getByRole('button',{name:/알림 추가/})).toBeDisabled();expect(screen.getByRole('button',{name:'알림 권한 허용'})).toBeEnabled()
 })

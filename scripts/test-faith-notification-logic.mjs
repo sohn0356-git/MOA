@@ -13,3 +13,8 @@ assert.deepEqual(validSubscription(subscription),subscription)
 for(const endpoint of ['http://fcm.googleapis.com/fcm/send/x','https://localhost/push','https://fcm.googleapis.com.evil.test/push','https://127.0.0.1/push','https://fcm.googleapis.com:9999/push','https://user@fcm.googleapis.com/push'])assert.throws(()=>validSubscription({...subscription,endpoint}))
 assert.throws(()=>validSubscription({...subscription,keys:{...subscription.keys,p256dh:'short'}}))
 console.log('Notifications: exact local minute, timezone/day rollover, DST, disabled schedules, input validation and push endpoint restrictions passed.')
+
+const weekly=validSchedule({...schedule,days:[1,4]})
+assert.equal(reminderDay(weekly,new Date('2026-11-25T22:00:00Z')),'2026-11-26')
+assert.equal(reminderDay({...weekly,days:[1]},new Date('2026-11-25T22:00:00Z')),null)
+for(const days of [[],[7],[1,1],['4']])assert.throws(()=>validSchedule({...schedule,days}))
