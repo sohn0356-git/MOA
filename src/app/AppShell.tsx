@@ -1,3 +1,4 @@
+import {FriendPresenceRuntime,stopAppPresence} from '../components/FriendPresenceRuntime'
 import {DevotionReminderRuntime} from '../components/DevotionReminderRuntime'
 import {NotificationPermissionIntro} from '../components/NotificationPermissionIntro'
 import {Mail} from 'lucide-react'
@@ -41,12 +42,13 @@ export function AppShell(){
   async function handleSignOut() {
     try {
       if('serviceWorker'in navigator){try{await Promise.race([navigator.serviceWorker.getRegistration('/MOA/').then(async registration=>{await (await registration?.pushManager.getSubscription())?.unsubscribe()}),new Promise(resolve=>setTimeout(resolve,2000))])}catch{/* Sign-out must remain available offline. */}}
-      await activity.clearActivity(); if (user) await signOutUser() } catch { /* The corresponding auth hook displays the failure. */ }
+      await Promise.race([stopAppPresence(activityId||user?.uid||''),new Promise(resolve=>setTimeout(resolve,1000))]);await activity.clearActivity(); if (user) await signOutUser() } catch { /* The corresponding auth hook displays the failure. */ }
   }
 
 
   return (
       <>
+      <FriendPresenceRuntime uid={activityId||user?.uid||''}/>
       <DevotionReminderRuntime uid={activityId||user?.uid||''}/>
       {showLaunch&&<AppLaunchScreen authReady={!isAuthLoading&&!isAuthMutating&&!googlePending} activityReady={!activity.isLoading&&!activity.isSwitching} content={currentContent} signingIn={loginOverlay} onContinue={continueLoading}/>}
       <main inert={isUpdating||showLaunch} className="app-shell app-shell-subapp app-shell-faith" aria-label="MOA 메인">

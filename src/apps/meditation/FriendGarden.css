@@ -7,3 +7,5 @@
 .garden-viewport{width:100%;aspect-ratio:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;background:#d8e5bc}.garden-canvas{aspect-ratio:1}.garden-viewport{touch-action:pan-x pan-y}.garden-viewport:focus-visible{outline:2px solid #758d61;outline-offset:-2px}
 
 .friend-garden .pixel-avatar-model{transition:none}.friend-garden .pixel-avatar[data-moving=true] .pixel-shin{animation-duration:.65s}
+
+.garden-online{position:absolute;left:31px;bottom:6px;width:7px;height:7px;background:#49bd75;border:2px solid #f5faed;border-radius:50%;box-shadow:0 0 0 1px #309d5933;pointer-events:none}

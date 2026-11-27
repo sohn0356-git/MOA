@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+vi.mock('../components/FriendPresenceRuntime',()=>({FriendPresenceRuntime:()=>null,stopAppPresence:async()=>{}}))
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest'
 import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react'
 import type {User} from 'firebase/auth'

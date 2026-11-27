@@ -3,8 +3,9 @@ import '@testing-library/jest-dom/vitest'
 import {afterEach,expect,it,vi} from 'vitest'
 import {act,cleanup,fireEvent,render,screen} from '@testing-library/react'
 import {FriendGarden} from './FriendGarden'
+const presence=vi.hoisted(()=>({callback:null as null|((s:{val:()=>unknown})=>void)}))
 vi.mock('../../services/firebase',()=>({getRealtimeDb:()=>({})}))
-vi.mock('firebase/database',()=>({ref:(_db:unknown,path:string)=>path,onValue:(_path:string,callback:(s:{val:()=>unknown})=>void)=>{callback({val:()=>({name:'새 이름',gender:'female',hair:1,skin:1,shirt:2})});return()=>{}}}))
+vi.mock('firebase/database',()=>({ref:(_db:unknown,path:string)=>path,onValue:(_path:string,callback:(s:{val:()=>unknown})=>void)=>{if(_path==='appPresence/bob'){presence.callback=callback;callback({val:()=>null});return()=>{presence.callback=null}}callback({val:()=>({name:'새 이름',gender:'female',hair:1,skin:1,shirt:2})});return()=>{}}}))
 afterEach(()=>{cleanup();vi.useRealTimers();vi.restoreAllMocks()})
 it('shows only registered friends, uses their saved avatars, wanders and toggles a name popup',()=>{
  vi.useFakeTimers()
@@ -44,4 +45,8 @@ it('pinches the courtyard without visible controls, clamps zoom, and does not se
 })
 it('leaves one-finger gestures available for scrolling without changing zoom',()=>{
  render(<FriendGarden uid="me" friends={[]}/>);const viewport=screen.getByLabelText('마당 둘러보기');expect(fireEvent.touchStart(viewport,{touches:[{clientX:100,clientY:100}]})).toBe(true);expect(fireEvent.touchMove(viewport,{touches:[{clientX:150,clientY:150}]})).toBe(true);expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1)'})
+})
+
+it('shows a green online indicator only while a friend has a live app connection',()=>{
+ render(<FriendGarden uid="me" friends={[{uid:'bob',name:'Bob'}]}/>);expect(screen.queryByRole('img',{name:'Bob 접속 중'})).toBeNull();act(()=>presence.callback?.({val:()=>({phone:Date.now()})}));expect(screen.getByRole('img',{name:'Bob 접속 중'}).closest('button')).toHaveAttribute('aria-label','Bob 아바타');act(()=>presence.callback?.({val:()=>null}));expect(screen.queryByRole('img',{name:'Bob 접속 중'})).toBeNull()
 })
