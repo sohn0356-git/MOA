@@ -13,7 +13,7 @@ vi.mock('firebase/database', () => ({
   ref: (_db: unknown, path: string) => path,
   onValue: (_ref: unknown, callback: (value: { val: () => unknown }) => void, failed:(error:Error)=>void) => {
     mocks.subscribe();if(mocks.snapshotError){failed(mocks.snapshotError);return()=>{}}
-    callback({ val: () => mocks.empty ? null : ({
+    callback({ val: () => mocks.empty || _ref!=='suggestions' ? null : ({
       a: { authorUid: 'alice', authorName: 'Alice', title: '내 의견', body: '내 내용', createdAt: 1, isCompleted: true, completedAt: 10, completedByUid: 'bob', completedByName: 'Bob' },
       b: { authorUid: 'bob', authorName: 'Bob', title: '다른 의견', body: '다른 내용', createdAt: 2, isCompleted: false },
     }) })
