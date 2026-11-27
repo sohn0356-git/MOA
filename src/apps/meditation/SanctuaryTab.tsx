@@ -7,6 +7,7 @@ import './SanctuaryTab.css'
 import './SanctuaryCommunity.css'
 import './SanctuaryCompact.css'
 import {useSanctuaryCommunity} from './useSanctuaryCommunity'
+import {useChapelEntrance} from './useChapelEntrance'
 import {SanctuaryMusic} from './SanctuaryMusic'
 import {SanctuaryCommunityPanel} from './SanctuaryCommunityPanel'
 type Props = { chapelNotifications?:boolean; member:SanctuaryMember|null; authBusy?:boolean; onSignIn?:()=>Promise<unknown>; onRead:()=>void; onPrayer:()=>void; scripture:{reference:string;text:string} }
@@ -31,7 +32,7 @@ export function SanctuaryTab(props: Props) {
  </section>
 }
 function SanctuaryExperience({member,onRead,onPrayer,scripture,chapelNotifications=true}:Props & {member:SanctuaryMember}) {
- const [entered,setEntered]=useState(false)
+ const {entranceRef,entered,entering,enter,leave}=useChapelEntrance()
  const room=useSanctuaryCommunity(member,entered,chapelNotifications)
  const [boardOpen,setBoardOpen]=useState(false)
  const storageKey=sanctuaryKey(member.uid)
@@ -71,12 +72,12 @@ function SanctuaryExperience({member,onRead,onPrayer,scripture,chapelNotificatio
  }
  const today=sanctuaryDay(),candles=record.candleDay===today?record.candles:0
  const clock=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0')
- return <section className="sanctuary sanctuary-compact" data-entered={entered} data-light={record.light} aria-label="나의 예배당">
+ return <section className="sanctuary sanctuary-compact" ref={entranceRef} inert={entering||undefined} aria-busy={entering} data-entered={entered} data-light={record.light} aria-label="나의 예배당">
   {!entered&&<header className="sanctuary-compact-welcome"><div><small>YOUR QUIET PLACE</small><h2>{member.displayName||'방문자'}님의 작은 예배당</h2></div><span>잠시, 평안히</span></header>}
-  <SanctuaryCommunityPanel room={room} uid={member.uid} boardOpen={boardOpen} onBoardClose={()=>setBoardOpen(false)} onEnter={entered?undefined:()=>setEntered(true)}/>
+  <SanctuaryCommunityPanel room={room} uid={member.uid} boardOpen={boardOpen} onBoardClose={()=>setBoardOpen(false)} onEnter={entered?undefined:()=>void enter()}/>
   {entered&&<>
   <div className="sanctuary-room-card">
-   <div className="sanctuary-room-top"><span>고요한 본당</span><div className="sanctuary-room-actions"><button type="button" onClick={()=>{setEntered(false);setBoardOpen(false)}}>로비로</button><SanctuaryMusic/></div></div>
+   <div className="sanctuary-room-top"><span>고요한 본당</span><div className="sanctuary-room-actions"><button type="button" onClick={()=>{leave();setBoardOpen(false)}}>로비로</button><SanctuaryMusic/></div></div>
    <SanctuaryScene profile={room.profile} peers={room.peers} onMotion={room.move} onPrayerBox={()=>setBoardOpen(true)} prayerCount={room.unreadCount} seat={record.seat} onSeat={seat=>save({seat})} candle={candles>0} initialPosition={record.avatarPosition} onPosition={point=>save({avatarPosition:point})}/>
    <div className="sanctuary-room-tools"><div className="sanctuary-light-switch" role="group" aria-label="예배당 빛 분위기">
     {([{id:'dawn',label:'새벽',Icon:Sunrise},{id:'day',label:'낮',Icon:Sun},{id:'evening',label:'저녁',Icon:Moon}] as const).map(({id,label,Icon})=><button key={id} type="button" aria-pressed={record.light===id} onClick={()=>save({light:id})}><Icon size={13}/>{label}</button>)}
