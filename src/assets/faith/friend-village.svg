@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="720" viewBox="0 0 720 720" shape-rendering="crispEdges">
+<defs>
+ <pattern id="grass" width="32" height="32" patternUnits="userSpaceOnUse"><path fill="#dce9bd" d="M0 0h32v32H0z"/><path fill="#d3e2b2" d="M4 8h4v2H4zm18 14h5v2h-5z"/><path fill="#e5edce" d="M16 3h3v3h-3z"/></pattern>
+ <pattern id="paving" width="24" height="20" patternUnits="userSpaceOnUse"><path fill="#e8dfbd" d="M0 0h24v20H0z"/><path fill="#dbd1ac" d="M0 18h24v2H0zM22 0h2v18h-2z"/></pattern>
+ <g id="tree"><path fill="#9e8362" d="M-5 6H5v30H-5z"/><path fill="#769c63" d="M-26-22h52v35h-52z"/><path fill="#8faf73" d="M-20-34h40v18h-40zM-32-14h64V7h-64z"/><path fill="#a1bd82" d="M-18-29h24v9h-24z"/><path fill="#638957" d="M16-12h10v26H-6V7h22z"/></g>
+ <g id="house"><path fill="#b8bd9555" d="M4 16h120v100H4z"/><path fill="#f4e6ca" d="M8 27h104v77H8z"/><path fill="#dac8aa" d="M92 28h20v76H92z"/><path fill="#ac7367" d="M-4 23h128V9h-12V-3h-12v-12H20v12H8V9H-4z"/><path fill="#c58f7c" d="M16-3h88V9H8v12H-4V9H8z"/><path fill="#936053" d="M-4 23h128v8H-4z"/><path fill="#94765a" d="M48 59h25v45H48z"/><path fill="#b8d4d0" stroke="#9b977d" stroke-width="4" d="M20 48h20v23H20zm63 0h18v23H83z"/><path fill="#f7f0df" d="M28 50h3v19h-3zm60 0h3v19h-3z"/><path fill="#cfbc98" d="M42 104h38v8H42z"/></g>
+ <g id="bluehouse"><use href="#house"/><path fill="#789d98" d="M-4 23h128V9h-12V-3h-12v-12H20v12H8V9H-4z"/><path fill="#91b3a9" d="M20-9h80v8H20zM8 3h102v7H8z"/><path fill="#5f817c" d="M-4 23h128v8H-4z"/></g>
+ <g id="flowers"><path fill="#7ca16c" d="M0 0h4v13H0zM12 5h4v10h-4z"/><path fill="#e9b7af" d="M-3-3H7v7H-3z"/><path fill="#f6e1a0" d="M9 2h10v7H9z"/></g>
+ <g id="bench"><path fill="#a8835c" d="M0 0h43v8H0zm0 13h43v7H0z"/><path fill="#776b53" d="M4 20h5v12H4zm30 0h5v12h-5z"/></g>
+</defs>
+<path fill="url(#grass)" d="M0 0h720v720H0z"/>
+<!-- Wide connected lanes and a quiet central square. -->
+<path fill="#c9bc98" d="M322 0h76v720h-76zM0 355h720v83H0z"/>
+<path fill="url(#paving)" d="M329 0h62v720h-62zM0 362h720v69H0zM251 285h218v210H251z"/>
+<path fill="#eee6ca" d="M263 297h194v186H263z"/>
+<path fill="url(#paving)" d="M273 307h174v166H273z"/>
+<path fill="#e5d6af" d="M67 196h70v172H67zm510-3h63v175h-63zM91 430h56v173H91zm475 0h61v170h-61z"/>
+<!-- Houses remain outside the open area where avatars stroll. -->
+<use href="#house" x="46" y="95"/><use href="#bluehouse" x="548" y="92"/>
+<use href="#bluehouse" x="108" y="270"/><use href="#house" x="490" y="270"/>
+<use href="#house" x="58" y="585"/><use href="#bluehouse" x="538" y="585"/>
+<!-- Small chapel on the northern lane. -->
+<path fill="#e9dfc3" d="M299 100h122v106H299z"/><path fill="#b2b396" d="M291 103h138V86h-12V74h-13V62h-88v12h-13v12h-12z"/>
+<path fill="#f6edcf" d="M340 47h40v91h-40z"/><path fill="#a2aa8d" d="M332 48h56V33h-10V21h-36v12h-10z"/>
+<path fill="#8e9878" d="M357 0h6v28h-6zM348 9h24v6h-24z"/>
+<path fill="#c1ad86" d="M344 164h32v42h-32z"/><path fill="#c9d9c9" d="M312 135h19v32h-19zm78 0h19v32h-19z"/>
+<!-- Pond, beds, hedges and village details. -->
+<path fill="#bbcda3" d="M465 177h72v10h18v64h-18v10h-72v-10h-15v-64h15z"/><path fill="#9fc5c0" d="M469 187h64v8h12v48h-12v8h-64v-8h-9v-48h9z"/><path fill="#c6e0d4" d="M475 203h35v4h-35zm31 25h25v4h-25z"/>
+<path fill="#b49b74" d="M285 593h150v81H285z"/><path fill="#dac3a0" d="M291 599h138v69H291z"/><path stroke="#a48a64" stroke-width="5" d="M298 611h122m-122 17h122m-122 17h122m-122 17h122"/><path stroke="#8da86f" stroke-width="8" stroke-dasharray="8 8" d="M299 607h119m-119 17h119m-119 17h119m-119 17h119"/>
+<use href="#bench" x="178" y="311"/><use href="#bench" x="492" y="462"/>
+<use href="#flowers" x="227" y="280"/><use href="#flowers" x="471" y="285"/><use href="#flowers" x="222" y="485"/><use href="#flowers" x="479" y="510"/>
+<use href="#tree" x="27" y="48"/><use href="#tree" x="205" y="73"/><use href="#tree" x="511" y="50"/><use href="#tree" x="698" y="55"/>
+<use href="#tree" x="204" y="191"/><use href="#tree" x="683" y="205"/><use href="#tree" x="30" y="477"/><use href="#tree" x="691" y="483"/>
+<use href="#tree" x="203" y="573"/><use href="#tree" x="489" y="582"/><use href="#tree" x="24" y="695"/><use href="#tree" x="223" y="706"/><use href="#tree" x="492" y="703"/><use href="#tree" x="700" y="702"/>
+</svg>

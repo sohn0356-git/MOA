@@ -32,7 +32,7 @@ it('turns before moving and keeps the small avatar walking slowly toward its des
  vi.useFakeTimers();vi.spyOn(Math,'random').mockReturnValue(.2);render(<FriendGarden uid="me" friends={[]}/>);
  const avatar=screen.getByRole('img',{name:'나의 아바타'});expect(avatar).toHaveAttribute('data-moving','false');expect(avatar.getAttribute('style')).toContain('--avatar-scale: 0.48');
  vi.mocked(Math.random).mockReturnValue(.8);act(()=>vi.advanceTimersByTime(1000));expect(avatar).toHaveAttribute('data-moving','true');
- act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','true');
+ act(()=>vi.advanceTimersByTime(1500));expect(avatar).toHaveAttribute('data-moving','true');
  act(()=>vi.advanceTimersByTime(30000));expect(avatar).toHaveAttribute('data-moving','false');
 })
 
@@ -40,13 +40,19 @@ it('pinches the courtyard without visible controls, clamps zoom, and does not se
  render(<FriendGarden uid="me" friends={[]}/>);const viewport=screen.getByLabelText('마당 둘러보기'),touches=(distance:number)=>[{clientX:150-distance/2,clientY:150},{clientX:150+distance/2,clientY:150}];
  expect(screen.queryByRole('button',{name:'마당 확대'})).toBeNull();expect(screen.queryByText('100%')).toBeNull();
  fireEvent.touchStart(viewport,{touches:touches(100)});fireEvent.touchMove(viewport,{touches:touches(250)});expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(2)'});expect(screen.getAllByRole('button',{name:'나 아바타'})).toHaveLength(1);
- fireEvent.touchMove(viewport,{touches:touches(150)});expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1.5)'});fireEvent.touchEnd(viewport,{touches:[]});fireEvent.click(screen.getByRole('button',{name:'나 아바타'}));expect(screen.queryByRole('status')).toBeNull();
+ fireEvent.touchMove(viewport,{touches:touches(150)});expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1.725)'});fireEvent.touchEnd(viewport,{touches:[]});fireEvent.click(screen.getByRole('button',{name:'나 아바타'}));expect(screen.queryByRole('status')).toBeNull();
  fireEvent.touchStart(viewport,{touches:touches(150)});fireEvent.touchMove(viewport,{touches:touches(50)});expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1)'});fireEvent.touchCancel(viewport,{touches:[]});fireEvent.touchMove(viewport,{touches:touches(200)});expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1)'})
 })
-it('leaves one-finger gestures available for scrolling without changing zoom',()=>{
- render(<FriendGarden uid="me" friends={[]}/>);const viewport=screen.getByLabelText('마당 둘러보기');expect(fireEvent.touchStart(viewport,{touches:[{clientX:100,clientY:100}]})).toBe(true);expect(fireEvent.touchMove(viewport,{touches:[{clientX:150,clientY:150}]})).toBe(true);expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1)'})
+it('drags the map with one finger without changing zoom and stops on cancellation',()=>{
+ render(<FriendGarden uid="me" friends={[]}/>);const viewport=screen.getByLabelText('마당 둘러보기');viewport.scrollLeft=100;viewport.scrollTop=100;expect(fireEvent.touchStart(viewport,{touches:[{clientX:100,clientY:100}]})).toBe(true);expect(fireEvent.touchMove(viewport,{touches:[{clientX:70,clientY:80}]})).toBe(false);expect(viewport.scrollLeft).toBe(130);expect(viewport.scrollTop).toBe(120);expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1.15)'});fireEvent.touchCancel(viewport,{touches:[]});fireEvent.touchMove(viewport,{touches:[{clientX:20,clientY:20}]});expect(viewport.scrollLeft).toBe(130)
 })
 
 it('shows a green online indicator only while a friend has a live app connection',()=>{
  render(<FriendGarden uid="me" friends={[{uid:'bob',name:'Bob'}]}/>);expect(screen.queryByRole('img',{name:'Bob 접속 중'})).toBeNull();act(()=>presence.callback?.({val:()=>({phone:Date.now()})}));expect(screen.getByRole('img',{name:'Bob 접속 중'}).closest('button')).toHaveAttribute('aria-label','Bob 아바타');act(()=>presence.callback?.({val:()=>null}));expect(screen.queryByRole('img',{name:'Bob 접속 중'})).toBeNull()
+})
+
+it('opens slightly zoomed into the village and lets mouse dragging move the map without selecting an avatar',()=>{
+ render(<FriendGarden uid="me" friends={[]}/>);const viewport=screen.getByLabelText('마당 둘러보기');expect(document.querySelector('.friend-garden-lawn')).toHaveStyle({transform:'scale(1.15)'});viewport.scrollLeft=100;viewport.scrollTop=100;
+ const pointer=(type:string,x:number,y:number)=>{const event=new Event(type,{bubbles:true,cancelable:true});Object.assign(event,{pointerType:'mouse',pointerId:1,button:0,clientX:x,clientY:y});fireEvent(type==='pointerdown'?viewport:window,event)}
+ pointer('pointerdown',100,100);pointer('pointermove',70,80);expect(viewport.scrollLeft).toBe(130);expect(viewport.scrollTop).toBe(120);pointer('pointerup',70,80);fireEvent.click(screen.getByRole('button',{name:'나 아바타'}));expect(screen.queryByRole('status')).toBeNull()
 })

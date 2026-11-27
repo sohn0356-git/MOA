@@ -7,14 +7,15 @@ export function gardenHeading(dx:number,dy:number,previous=0){
  const angle=Math.atan2(dx*TILT,dy)*180/Math.PI
  return previous+((angle-previous+540)%360+360)%360-180
 }
-export function createGardenResident(random=Math.random):GardenResident{
- const x=8+random()*84,y=24+random()*68
+export function createGardenResident(_random=Math.random,self=false,slot=0):GardenResident{
+ const angle=slot*2.399963229728653,radius=slot<6?12:15
+ const x=self?50:50+Math.cos(angle)*radius,y=self?55:55+Math.sin(angle)*radius
  return{x,y,facing:0,moving:false,goalX:x,goalY:y,phase:'rest',until:200}
 }
 export function advanceGardenResident(p:GardenResident,dt:number,width:number,height:number,now:number,random=Math.random):GardenResident{
  if(now<p.until)return p
  if(p.phase==='rest'){
-  const goalX=8+random()*84,goalY=24+random()*68,dx=(goalX-p.x)*width/100,dy=(goalY-p.y)*height/100
+  const goalX=34+random()*32,goalY=37+random()*36,dx=(goalX-p.x)*width/100,dy=(goalY-p.y)*height/100
   return{...p,goalX,goalY,facing:gardenHeading(dx,dy,p.facing),moving:false,phase:'turn',until:now+200}
  }
  const dx=(p.goalX-p.x)*width/100,dy=(p.goalY-p.y)*height/100,distance=Math.hypot(dx,dy)
