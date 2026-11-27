@@ -24,3 +24,7 @@
   line-height: 1.4;
   white-space: nowrap;
 }
+
+.faith-comments .faith-answer-author+p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.85}.faith-comments article>div{min-width:0}
+
+.faith-comments>article{grid-template-columns:32px minmax(0,1fr);gap:9px 12px;padding:15px 0;border-bottom:1px solid #eeeaf1}.faith-comments>article>.faith-avatar{grid-column:1;grid-row:1 / span 2}.faith-comments>article>div:not(.faith-mini-actions){grid-column:2;display:grid;gap:8px;align-items:start}.faith-comments>article>.faith-mini-actions{grid-column:2;display:flex;justify-content:flex-end;gap:12px}.faith-comments>article p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.85}.faith-comments>article time{font-size:10px;color:#9c92a5}.faith-comments>article .faith-mini-actions button{min-height:28px;padding:4px}.faith-comments .faith-answer-author{align-items:center}

@@ -1,3 +1,4 @@
+import {CommentComposer} from '../../components/CommentComposer'
 import {publishFaithActivity} from './publishFaithActivity'
 import {FaithNotificationCenter} from './FaithNotificationCenter'
 import {FaithReminderSettings} from './FaithReminderSettings'
@@ -3229,7 +3230,11 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
                     <article className={aiAuthorIds.has(answer.authorUid) ? 'faith-ai-answer' : undefined} key={answer.id}>
                       <Avatar uid={answer.authorUid} name={answer.authorName} size="comment" src={answer.authorAvatarUrl} />
                       <div>
-                        <div className="faith-answer-author">\n                          <strong>{answer.authorName}</strong>\n                          {aiAuthorIds.has(answer.authorUid) ? <span className="faith-ai-answer-badge">✦ AI 답변</span> : null}\n                          <time>{formatRelativeTime(answer.createdAt)}</time>\n                        </div>
+                        <div className="faith-answer-author">
+                          <strong>{answer.authorName}</strong>
+                          {aiAuthorIds.has(answer.authorUid) ? <span className="faith-ai-answer-badge">✦ AI 답변</span> : null}
+                          <time>{formatRelativeTime(answer.createdAt)}</time>
+                        </div>
                         <p>{answer.body}</p>
                       </div>
                       {answer.authorUid === currentUser?.uid ? (
@@ -3243,13 +3248,8 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
                       ) : null}
                     </article>
                   )) : <p className="faith-inline-empty">아직 답변이 없습니다.</p>}
-                  <div className="faith-comment-composer faith-answer-composer">
-                    <label>
-                      <span>답변</span>
-                      <input placeholder="답변을 남겨주세요" value={answerDrafts[selectedQuestion.id] ?? ''} onChange={(event) => setAnswerDrafts((drafts) => ({ ...drafts, [selectedQuestion.id]: event.target.value }))} />
-                    </label>
-                    <button aria-label="답변 등록" disabled={isQuestionMutating || selectedQuestion.id.startsWith('ai-question-')} type="button" onClick={() => void handleAnswerSave(selectedQuestion)}><Icon name="send" /></button>
-                  </div>
+                  <CommentComposer label="답변" value={answerDrafts[selectedQuestion.id] ?? ''} onChange={value=>setAnswerDrafts(drafts=>({...drafts,[selectedQuestion.id]:value}))} placeholder="답변을 남겨주세요" maxLength={20000} disabled={isQuestionMutating||selectedQuestion.id.startsWith('ai-question-')} actionLabel="답변 등록" onSave={()=>void handleAnswerSave(selectedQuestion)}/>
+
                 </section>
               </article>
             ) : qnaView === 'write' ? (
@@ -3829,13 +3829,8 @@ function PrayerComments({
           ) : null}
         </article>
       ))}
-      <div className="faith-comment-composer">
-        <label>
-          <span>댓글</span>
-          <input value={draft} onChange={(event) => onDraftChange(event.target.value)} />
-        </label>
-        <button aria-label="댓글 등록" type="button" onClick={onSave}><Icon name="send" /></button>
-      </div>
+      <CommentComposer label="댓글" value={draft} onChange={onDraftChange} actionLabel="댓글 등록" onSave={onSave}/>
+
     </section>
   )
 }
@@ -3874,13 +3869,8 @@ function PhotoComments({
           ) : null}
         </article>
       ))}
-      <div className="faith-comment-composer">
-        <label>
-          <span>댓글</span>
-          <input value={draft} onChange={(event) => onDraftChange(event.target.value)} />
-        </label>
-        <button aria-label="사진 댓글 등록" type="button" onClick={onSave}><Icon name="send" /></button>
-      </div>
+      <CommentComposer label="댓글" value={draft} onChange={onDraftChange} actionLabel="사진 댓글 등록" onSave={onSave}/>
+
     </section>
   )
 }
