@@ -6,25 +6,38 @@ import {normalizeAvatar,type AvatarProfile} from './sanctuaryCommunity'
 import {PixelAvatar} from './PixelAvatar'
 import './PixelAvatar.css'
 import './FriendGarden.css'
+import {createGardenResident,advanceGardenResident,type GardenResident} from './gardenMotion'
 import type {FriendGroup} from './useFaithConnections'
 type Friend={uid:string;name:string}
 export function FriendGarden({friends,uid,groups=[]}:{friends:Friend[];uid:string;groups?:FriendGroup[]}){
  const [zoom,setZoom]=useState(1)
  const viewportRef=useRef<HTMLDivElement>(null)
  const lawnRef=useRef<HTMLDivElement>(null)
- const [groupId,setGroupId]=useState(''),[walking,setWalking]=useState(false)
+ const [groupId,setGroupId]=useState('')
  const activeGroup=groups.find(group=>group.id===groupId)
  const residents=[{uid,name:'나'},...friends.filter(friend=>friend.uid!==uid&&(!activeGroup||activeGroup.members?.[friend.uid]))]
 
- const [profiles,setProfiles]=useState<Record<string,AvatarProfile>>({}),[points,setPoints]=useState<Record<string,{x:number;y:number;facing:number}>>({}),[selected,setSelected]=useState('')
+ const [profiles,setProfiles]=useState<Record<string,AvatarProfile>>({}),[points,setPoints]=useState<Record<string,GardenResident>>({}),[selected,setSelected]=useState('')
  const ids=JSON.stringify(residents.map(f=>f.uid).sort())
- useEffect(()=>{let alive=true;setProfiles({});setSelected('');setWalking(false);const list=JSON.parse(ids) as string[]
-  const random=()=>({x:8+Math.random()*84,y:24+Math.random()*68,facing:0})
-  setPoints(Object.fromEntries(list.map(uid=>[uid,random()])))
+ useEffect(()=>{
+  let alive=true,frame=0,last=0,elapsed=0
+  setProfiles({});setSelected('')
+  const list=JSON.parse(ids) as string[],positions=Object.fromEntries(list.map(uid=>[uid,createGardenResident()]))
+  setPoints({...positions})
   const stops=list.map(uid=>onValue(ref(getRealtimeDb(),'sanctuary/avatars/'+uid),snap=>{if(alive)setProfiles(p=>({...p,[uid]:normalizeAvatar(snap.val(),residents.find(f=>f.uid===uid)?.name)}))},()=>{}))
-  let stopWalking=0
-  const wander=()=>{if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;setWalking(true);window.clearTimeout(stopWalking);stopWalking=window.setTimeout(()=>setWalking(false),12000);setPoints(previous=>Object.fromEntries(list.map(uid=>{const next=random(),old=previous[uid]||next;return[uid,{...next,facing:Math.atan2((next.x-old.x)*(lawnRef.current?.clientWidth||1),(next.y-old.y)*(lawnRef.current?.clientHeight||1))*180/Math.PI}]})))},start=window.setTimeout(wander,200),timer=window.setInterval(wander,13000)
-  return()=>{alive=false;stops.forEach(off=>off());window.clearInterval(timer);window.clearTimeout(start);window.clearTimeout(stopWalking)}
+  const animate=(time:number)=>{
+   if(!alive)return
+   frame=requestAnimationFrame(animate)
+   if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){last=time;return}
+   if(!last){last=time;return}const dt=(time-last)/1000;if(dt<1/30)return;last=time;elapsed+=Math.min(dt,.05)*1000
+   const width=lawnRef.current?.clientWidth||300,height=lawnRef.current?.clientHeight||300
+   let changed=false
+   for(const uid of list){const next=advanceGardenResident(positions[uid],dt,width,height,elapsed);if(next!==positions[uid]){positions[uid]=next;changed=true}}
+   if(changed)setPoints({...positions})
+  }
+  frame=requestAnimationFrame(animate)
+  return()=>{alive=false;stops.forEach(off=>off());cancelAnimationFrame(frame)}
  },[ids])
- return <section className="friend-garden" aria-label="친구들의 마당"><div className="garden-groups" role="tablist" aria-label="친구 그룹"><button type="button" role="tab" aria-selected={!activeGroup} onClick={()=>setGroupId('')}>전체</button>{groups.map(group=><button type="button" role="tab" key={group.id} aria-selected={activeGroup?.id===group.id} onClick={event=>{setGroupId(group.id);event.currentTarget.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'smooth'})}}>{group.name}</button>)}</div><div className="garden-zoom-controls" role="group" aria-label="마당 확대 설정"><button type="button" aria-label="마당 축소" disabled={zoom<=1} onClick={()=>setZoom(value=>Math.max(1,value-.25))}><Minus size={15}/></button><button type="button" aria-label="마당 배율 초기화" onClick={()=>{setZoom(1);viewportRef.current?.scrollTo?.({left:0,top:0})}}>{Math.round(zoom*100)}%</button><button type="button" aria-label="마당 확대" disabled={zoom>=2} onClick={()=>setZoom(value=>Math.min(2,value+.25))}><Plus size={15}/></button></div><div className="garden-viewport" ref={viewportRef} tabIndex={0} aria-label="마당 둘러보기"><div className="garden-canvas" style={{width:zoom*100+'%'}}><div className="friend-garden-lawn" ref={lawnRef} style={{width:100/zoom+'%',transform:`scale(${zoom})`}}><i className="garden-tree tree-left" aria-hidden="true"/><i className="garden-tree tree-right" aria-hidden="true"/><span className="garden-path" aria-hidden="true"/>{residents.map(friend=>{const point=points[friend.uid]||{x:50,y:65,facing:-30},profile=profiles[friend.uid]||normalizeAvatar(null,friend.name);return <button type="button" className="garden-friend" key={friend.uid} style={{left:point.x+'%',top:point.y+'%',zIndex:selected===friend.uid?200:Math.round(point.y)}} aria-label={friend.name+' 아바타'} aria-expanded={selected===friend.uid} onClick={()=>setSelected(s=>s===friend.uid?'':friend.uid)}><PixelAvatar profile={profile} facing={point.facing} moving={walking} seated={false} scale={.48} label={friend.name+'의 아바타'}/>{selected===friend.uid&&<span className="garden-name" role="status" style={point.x<25?{left:0,transform:'none'}:point.x>75?{left:'auto',right:0,transform:'none'}:undefined}>{profiles[friend.uid]?.name||friend.name}</span>}</button>})}</div></div></div></section>
+
+ return <section className="friend-garden" aria-label="친구들의 마당"><div className="garden-groups" role="tablist" aria-label="친구 그룹"><button type="button" role="tab" aria-selected={!activeGroup} onClick={()=>setGroupId('')}>전체</button>{groups.map(group=><button type="button" role="tab" key={group.id} aria-selected={activeGroup?.id===group.id} onClick={event=>{setGroupId(group.id);event.currentTarget.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'smooth'})}}>{group.name}</button>)}</div><div className="garden-zoom-controls" role="group" aria-label="마당 확대 설정"><button type="button" aria-label="마당 축소" disabled={zoom<=1} onClick={()=>setZoom(value=>Math.max(1,value-.25))}><Minus size={15}/></button><button type="button" aria-label="마당 배율 초기화" onClick={()=>{setZoom(1);viewportRef.current?.scrollTo?.({left:0,top:0})}}>{Math.round(zoom*100)}%</button><button type="button" aria-label="마당 확대" disabled={zoom>=2} onClick={()=>setZoom(value=>Math.min(2,value+.25))}><Plus size={15}/></button></div><div className="garden-viewport" ref={viewportRef} tabIndex={0} aria-label="마당 둘러보기"><div className="garden-canvas" style={{width:zoom*100+'%'}}><div className="friend-garden-lawn" ref={lawnRef} style={{width:100/zoom+'%',transform:`scale(${zoom})`}}><i className="garden-tree tree-left" aria-hidden="true"/><i className="garden-tree tree-right" aria-hidden="true"/><span className="garden-path" aria-hidden="true"/>{residents.map(friend=>{const point=points[friend.uid]||{x:50,y:65,facing:0,moving:false},profile=profiles[friend.uid]||normalizeAvatar(null,friend.name);return <button type="button" className="garden-friend" key={friend.uid} style={{left:point.x+'%',top:point.y+'%',zIndex:selected===friend.uid?200:Math.round(point.y)}} aria-label={friend.name+' 아바타'} aria-expanded={selected===friend.uid} onClick={()=>setSelected(s=>s===friend.uid?'':friend.uid)}><PixelAvatar profile={profile} facing={point.facing} moving={point.moving} seated={false} scale={.48} label={friend.name+'의 아바타'}/>{selected===friend.uid&&<span className="garden-name" role="status" style={point.x<25?{left:0,transform:'none'}:point.x>75?{left:'auto',right:0,transform:'none'}:undefined}>{profiles[friend.uid]?.name||friend.name}</span>}</button>})}</div></div></div></section>
 }

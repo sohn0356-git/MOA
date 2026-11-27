@@ -27,12 +27,12 @@ it('filters by group while keeping me in every group and exposes all groups in a
  view.rerender(<FriendGarden uid="me" friends={[{uid:'bob',name:'Bob'}]} groups={[]}/>);expect(screen.getByRole('tab',{name:'전체'})).toHaveAttribute('aria-selected','true');expect(screen.getByRole('button',{name:'Bob 아바타'})).toBeInTheDocument()
 })
 
-it('faces the actual screen movement vector and stops walking when the movement ends',()=>{
+it('turns before moving and keeps the small avatar walking slowly toward its destination',()=>{
  vi.useFakeTimers();vi.spyOn(Math,'random').mockReturnValue(.2);render(<FriendGarden uid="me" friends={[]}/>);
  const avatar=screen.getByRole('img',{name:'나의 아바타'});expect(avatar).toHaveAttribute('data-moving','false');expect(avatar.getAttribute('style')).toContain('--avatar-scale: 0.48');
- vi.mocked(Math.random).mockReturnValue(.8);act(()=>vi.advanceTimersByTime(200));expect(avatar).toHaveAttribute('data-moving','true');expect(avatar.getAttribute('style')).toContain('--avatar-facing: '+(Math.atan2(84,68)*180/Math.PI));
+ vi.mocked(Math.random).mockReturnValue(.8);act(()=>vi.advanceTimersByTime(1000));expect(avatar).toHaveAttribute('data-moving','true');
  act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','true');
- act(()=>vi.advanceTimersByTime(6000));expect(avatar).toHaveAttribute('data-moving','false');
+ act(()=>vi.advanceTimersByTime(30000));expect(avatar).toHaveAttribute('data-moving','false');
 })
 
 it('zooms the same courtyard up to 200 percent and resets without changing the group or avatars',()=>{
