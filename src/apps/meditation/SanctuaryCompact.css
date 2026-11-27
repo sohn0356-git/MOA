@@ -86,3 +86,5 @@
 
 .faith-screen[data-church-active=true]:has(.sanctuary[data-entered=true])>.faith-header{display:none}
 .faith-screen[data-church-active=true]:has(.sanctuary[data-entered=true])>.faith-content{padding-top:0}
+
+.chapel-entry-blackout{position:fixed;inset:0;z-index:2147483647;background:#000;opacity:0;pointer-events:auto}

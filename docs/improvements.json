@@ -195,8 +195,8 @@
   {
     "id": "chapel-entry-fade",
     "title": "예배당 입장 페이드아웃·페이드인 전환",
-    "body": "입장 시 로비를 220ms 동안 페이드아웃한 뒤 본당을 340ms 동안 페이드인합니다. 전환 중 중복 입장과 조작을 막고 동작 줄이기 설정에서는 바로 입장합니다.",
+    "body": "입장 시 화면 전체가 220ms 동안 검게 암전되고 100ms 유지한 뒤 본당으로 전환합니다. 검은 막이 340ms 동안 걷히며 본당이 나타납니다. 전환 중 중복 입장을 막고 동작 줄이기 설정에서는 바로 입장합니다.",
     "status": "implemented",
-    "evidence": "Entrance tests verify fade-out precedes room mount, fade-in completion, repeated-entry guard, reduced-motion bypass and cancellation on unmount. Native responsive sanctuary flow samples both partial opacities and checks normal chapel controls after transition."
+    "evidence": "Entrance tests verify fade-out precedes room mount, fade-in completion, repeated-entry guard, reduced-motion bypass and cancellation on unmount. Native responsive sanctuary flow samples both partial opacities and checks normal chapel controls after transition. Transition now uses a viewport-wide black curtain, including header and bottom navigation; native checks verify opaque black at the midpoint, viewport coverage and removal after reveal. Cleanup tests cover overlay removal on completion and unmount."
   }
 ]
