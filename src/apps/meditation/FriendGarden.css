@@ -4,6 +4,6 @@
 
 .friend-garden .pixel-avatar[data-moving=true] .pixel-limb{animation-duration:.65s}
 
-.garden-viewport{width:100%;aspect-ratio:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;background:#d8e5bc}.garden-canvas{aspect-ratio:1}.garden-zoom-controls{display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:0 14px 10px}.garden-zoom-controls button{display:grid;place-items:center;min-width:32px;min-height:32px;padding:5px 8px;border:1px solid #dce5d1;background:#fbfdf7;color:#637d51;border-radius:9px;font:inherit;font-size:11px;cursor:pointer}.garden-zoom-controls button:disabled{opacity:.35;cursor:default}.garden-zoom-controls button:focus-visible,.garden-viewport:focus-visible{outline:2px solid #758d61;outline-offset:-2px}
+.garden-viewport{width:100%;aspect-ratio:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;background:#d8e5bc}.garden-canvas{aspect-ratio:1}.garden-viewport{touch-action:pan-x pan-y}.garden-viewport:focus-visible{outline:2px solid #758d61;outline-offset:-2px}
 
 .friend-garden .pixel-avatar-model{transition:none}.friend-garden .pixel-avatar[data-moving=true] .pixel-shin{animation-duration:.65s}

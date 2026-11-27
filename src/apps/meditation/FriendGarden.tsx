@@ -1,5 +1,4 @@
 import {useEffect,useState,useRef} from 'react'
-import {Plus,Minus} from 'lucide-react'
 import {onValue,ref} from 'firebase/database'
 import {getRealtimeDb} from '../../services/firebase'
 import {normalizeAvatar,type AvatarProfile} from './sanctuaryCommunity'
@@ -7,11 +6,12 @@ import {PixelAvatar} from './PixelAvatar'
 import './PixelAvatar.css'
 import './FriendGarden.css'
 import {createGardenResident,advanceGardenResident,type GardenResident} from './gardenMotion'
+import {useGardenPinch} from './useGardenPinch'
 import type {FriendGroup} from './useFaithConnections'
 type Friend={uid:string;name:string}
 export function FriendGarden({friends,uid,groups=[]}:{friends:Friend[];uid:string;groups?:FriendGroup[]}){
- const [zoom,setZoom]=useState(1)
  const viewportRef=useRef<HTMLDivElement>(null)
+ const {zoom,onClickCapture}=useGardenPinch(viewportRef)
  const lawnRef=useRef<HTMLDivElement>(null)
  const [groupId,setGroupId]=useState('')
  const activeGroup=groups.find(group=>group.id===groupId)
@@ -39,5 +39,5 @@ export function FriendGarden({friends,uid,groups=[]}:{friends:Friend[];uid:strin
   return()=>{alive=false;stops.forEach(off=>off());cancelAnimationFrame(frame)}
  },[ids])
 
- return <section className="friend-garden" aria-label="친구들의 마당"><div className="garden-groups" role="tablist" aria-label="친구 그룹"><button type="button" role="tab" aria-selected={!activeGroup} onClick={()=>setGroupId('')}>전체</button>{groups.map(group=><button type="button" role="tab" key={group.id} aria-selected={activeGroup?.id===group.id} onClick={event=>{setGroupId(group.id);event.currentTarget.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'smooth'})}}>{group.name}</button>)}</div><div className="garden-zoom-controls" role="group" aria-label="마당 확대 설정"><button type="button" aria-label="마당 축소" disabled={zoom<=1} onClick={()=>setZoom(value=>Math.max(1,value-.25))}><Minus size={15}/></button><button type="button" aria-label="마당 배율 초기화" onClick={()=>{setZoom(1);viewportRef.current?.scrollTo?.({left:0,top:0})}}>{Math.round(zoom*100)}%</button><button type="button" aria-label="마당 확대" disabled={zoom>=2} onClick={()=>setZoom(value=>Math.min(2,value+.25))}><Plus size={15}/></button></div><div className="garden-viewport" ref={viewportRef} tabIndex={0} aria-label="마당 둘러보기"><div className="garden-canvas" style={{width:zoom*100+'%'}}><div className="friend-garden-lawn" ref={lawnRef} style={{width:100/zoom+'%',transform:`scale(${zoom})`}}><i className="garden-tree tree-left" aria-hidden="true"/><i className="garden-tree tree-right" aria-hidden="true"/><span className="garden-path" aria-hidden="true"/>{residents.map(friend=>{const point=points[friend.uid]||{x:50,y:65,facing:0,moving:false},profile=profiles[friend.uid]||normalizeAvatar(null,friend.name);return <button type="button" className="garden-friend" key={friend.uid} style={{left:point.x+'%',top:point.y+'%',zIndex:selected===friend.uid?200:Math.round(point.y)}} aria-label={friend.name+' 아바타'} aria-expanded={selected===friend.uid} onClick={()=>setSelected(s=>s===friend.uid?'':friend.uid)}><PixelAvatar profile={profile} facing={point.facing} moving={point.moving} seated={false} scale={.48} label={friend.name+'의 아바타'}/>{selected===friend.uid&&<span className="garden-name" role="status" style={point.x<25?{left:0,transform:'none'}:point.x>75?{left:'auto',right:0,transform:'none'}:undefined}>{profiles[friend.uid]?.name||friend.name}</span>}</button>})}</div></div></div></section>
+ return <section className="friend-garden" aria-label="친구들의 마당"><div className="garden-groups" role="tablist" aria-label="친구 그룹"><button type="button" role="tab" aria-selected={!activeGroup} onClick={()=>setGroupId('')}>전체</button>{groups.map(group=><button type="button" role="tab" key={group.id} aria-selected={activeGroup?.id===group.id} onClick={event=>{setGroupId(group.id);event.currentTarget.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'smooth'})}}>{group.name}</button>)}</div><div className="garden-viewport" ref={viewportRef} onClickCapture={onClickCapture} tabIndex={0} aria-label="마당 둘러보기"><div className="garden-canvas" style={{width:zoom*100+'%'}}><div className="friend-garden-lawn" ref={lawnRef} style={{width:100/zoom+'%',transform:`scale(${zoom})`}}><i className="garden-tree tree-left" aria-hidden="true"/><i className="garden-tree tree-right" aria-hidden="true"/><span className="garden-path" aria-hidden="true"/>{residents.map(friend=>{const point=points[friend.uid]||{x:50,y:65,facing:0,moving:false},profile=profiles[friend.uid]||normalizeAvatar(null,friend.name);return <button type="button" className="garden-friend" key={friend.uid} style={{left:point.x+'%',top:point.y+'%',zIndex:selected===friend.uid?200:Math.round(point.y)}} aria-label={friend.name+' 아바타'} aria-expanded={selected===friend.uid} onClick={()=>setSelected(s=>s===friend.uid?'':friend.uid)}><PixelAvatar profile={profile} facing={point.facing} moving={point.moving} seated={false} scale={.48} label={friend.name+'의 아바타'}/>{selected===friend.uid&&<span className="garden-name" role="status" style={point.x<25?{left:0,transform:'none'}:point.x>75?{left:'auto',right:0,transform:'none'}:undefined}>{profiles[friend.uid]?.name||friend.name}</span>}</button>})}</div></div></div></section>
 }
