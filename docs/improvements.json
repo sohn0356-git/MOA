@@ -181,9 +181,9 @@
   {
     "id": "suggestion-post-comments",
     "title": "앱 개선 게시글 댓글 작성과 공유",
-    "body": "로그인한 사용자가 앱 개선 게시글에서 댓글을 별도 클릭 없이 기본으로 펼쳐 읽고 등록합니다. 본인 댓글만 삭제할 수 있으며 실패 시 작성 내용을 유지합니다.",
+    "body": "로그인한 사용자가 앱 개선 게시글에서 댓글을 별도 클릭 없이 기본으로 펼쳐 읽고 등록합니다. 본인 댓글만 삭제할 수 있으며 실패 시 작성 내용을 유지합니다. 댓글 입력란 아래에 등록 버튼을 따로 배치하고 작은 화면에서는 버튼을 전체 너비로 표시합니다. 미완료 게시글 상태는 체크박스만 남기고 문구를 숨기며 완료 문구와 목록 필터는 유지합니다.",
     "status": "implemented",
-    "evidence": "Thread component tests verify shared reading, identity, double-submit protection, failure draft retention and logout cleanup. RTDB emulator validates parent existence, signed-in access, author-only deletion and spoofing/content/timestamp rejection. Native 360/768/1440 browser tests cover multiline posting and deletion without horizontal overflow. Comment component and native checks now verify immediate visibility without pressing the comment toggle."
+    "evidence": "Thread component tests verify shared reading, identity, double-submit protection, failure draft retention and logout cleanup. RTDB emulator validates parent existence, signed-in access, author-only deletion and spoofing/content/timestamp rejection. Native 360/768/1440 browser tests cover multiline posting and deletion without horizontal overflow. Comment component and native checks now verify immediate visibility without pressing the comment toggle. Responsive native checks at 320/360/768/1440px verify empty unchecked-label text, accessible checkbox, submit button below the input and no horizontal overflow."
   },
   {
     "id": "daily-scripture-prefetch",

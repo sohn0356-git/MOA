@@ -345,12 +345,13 @@ export function SuggestionsApp({ embedded = false }: { embedded?: boolean } = {}
             >
               <label className="suggestion-status">
                 <input
+                  aria-label={suggestion.title+' 완료 여부'}
                   checked={suggestion.isCompleted}
                   disabled={isMutating}
                   type="checkbox"
                   onChange={() => void handleToggleSuggestion(suggestion)}
                 />
-                <span>{suggestion.isCompleted ? '완료' : '미완료'}</span>
+                {suggestion.isCompleted ? <span>완료</span> : null}
               </label>
               <div className="suggestion-content">
                 {editingId === suggestion.id ? (
