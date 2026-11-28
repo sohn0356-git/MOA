@@ -10,7 +10,13 @@ assert.ok(!sync.includes('sync-ai-city'),'post-deploy cannot invoke retired app 
 const shell=await readFile('src/app/AppShell.tsx','utf8')
 assert.ok(!shell.includes('registry')&&!shell.includes('AiCity')&&!shell.includes('AuthGate'),'entry cannot initialize other apps')
 const manifest=JSON.parse(await readFile('dist/.vite/manifest.json','utf8'))
-for(const [key,value] of Object.entries(manifest)){assert.ok(!removed.some(name=>key.includes('src/apps/'+name+'/')),key);assert.ok(!removed.some(name=>value.file.toLowerCase().includes(name+'app')),value.file)}
+for(const [key,value] of Object.entries(manifest)){
+ assert.ok(!removed.some(name=>(value.src||key).includes('src/apps/'+name+'/')),key)
+ // The retained improvements feature also exports SuggestionsApp; lazy chunk names
+ // cannot distinguish it from the removed standalone app. Validate its source above.
+ const allowedSuggestions=key==='src/features/improvements/SuggestionsApp.tsx'
+ assert.ok(!removed.some(name=>value.file.toLowerCase().includes(name+'app')&&!(name==='suggestions'&&allowedSuggestions)),value.file)
+}
 const sw=await readFile('dist/sw.js','utf8')
 assert.ok(!sw.includes('audio/sanctuary-ccm.m4a'),'large chapel audio is never precached at startup')
 const audioSize=(await stat('dist/audio/sanctuary-ccm.m4a')).size
