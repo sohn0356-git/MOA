@@ -14,16 +14,17 @@ import {normalizeLunchPraiseTracks,type LunchPraiseTrack} from './dailyPraise'
 import {useDailyPraise} from './useDailyPraise'
 import { Church } from 'lucide-react'
 import {ProfileAvatarCard} from './ProfileAvatarCard'
-import { SanctuaryTab } from './SanctuaryTab'
+const SanctuaryTab = lazy(() => import('./SanctuaryTab').then(module => ({default: module.SanctuaryTab})))
 import type { SanctuaryMember } from './sanctuaryState'
 import { SharedDevotionImageEditor } from './SharedDevotionImageEditor'
 import { buildPersonalFeed } from './personalFeed'
 import { FirebaseError } from 'firebase/app'
 import { get, onValue, push, ref, remove, runTransaction, serverTimestamp, set, update } from 'firebase/database'
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable, type UploadTask } from 'firebase/storage'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link2, Save } from 'lucide-react'
 import { FaithGallery } from './FaithGallery'
+import {readPublicFeedCache,writePublicFeedCache} from './publicFeedCache'
 import { useDevotionDraft, type DevotionDraft } from './useDevotionDraft'
 import { normalizeFeedGroup, DEFAULT_FEED_GROUP } from './feedGroups'
 import spriteUrl from '../../assets/faith/icons-sprite.svg?url'
@@ -33,7 +34,7 @@ import { DevotionImage, DevotionImagePicker } from './DevotionImagePicker'
 import { isDevotionImage } from './devotionImage'
 import { deleteSharedDevotion, persistSharedDevotion } from './devotionSharing'
 import { useScripturePlan } from './useScripturePlan'
-import { SuggestionsApp } from '../../features/improvements/SuggestionsApp'
+const SuggestionsApp = lazy(() => import('../../features/improvements/SuggestionsApp').then(module => ({default: module.SuggestionsApp})))
 import { requestDraftNavigation } from '../../features/improvements/useSuggestionDraft'
 import { aiLoginAccounts } from '../../data/aiAccounts'
 import { getFaithAuth as getFirebaseAuth, getFaithStorage as getFirebaseStorage, getFaithDb as getRealtimeDb } from '../../services/faithSession'
@@ -1257,7 +1258,9 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
   const filterBookmarked = false
   const [statusMessage, setStatusMessage] = useState('')
   const [crossPhotos, setCrossPhotos] = useState<CrossPhoto[]>([])
-  const [publicFeedPhotos, setPublicFeedPhotos] = useState<CrossPhoto[]>([])
+  const [publicFeedPhotos, setPublicFeedPhotos] = useState<CrossPhoto[]>(()=>readPublicFeedCache<CrossPhoto>())
+  const [publicFeedState,setPublicFeedState]=useState<'loading'|'ready'|'error'>('loading')
+  const [feedAttempt,setFeedAttempt]=useState(0)
   const [visibleFeedCount, setVisibleFeedCount] = useState(8)
   const [crossCaption, setCrossCaption] = useState('')
   const [crossFile, setCrossFile] = useState<File | null>(null)
@@ -1756,6 +1759,7 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
   }, [entries, syncState])
 
   useEffect(() => {
+    setPublicFeedState('loading')
     setIsTrackLoading(true)
     const unsubscribeTracks = onValue(
       ref(getRealtimeDb(), 'lunchPraiseTracks'),
@@ -1771,8 +1775,8 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
 
     const unsubscribePublicPhotos = onValue(
       ref(getRealtimeDb(), getPublicCrossPhotosPath()),
-      (snapshot) => {setPublicFeedPhotos(mapList<CrossPhoto>(snapshot.val()));markStartup('feed',currentUser?.uid||'guest')},
-      () => {setPublicFeedPhotos([]);markStartup('feed',currentUser?.uid||'guest')},
+      (snapshot) => {const photos=mapList<CrossPhoto>(snapshot.val());setPublicFeedPhotos(photos);writePublicFeedCache(photos);setPublicFeedState('ready');markStartup('feed',currentUser?.uid||'guest')},
+      () => {setPublicFeedState('error')},
     )
 
     const unsubscribePublicPhotoComments = onValue(ref(getRealtimeDb(), 'crossPhotoComments'), (snapshot) => {
@@ -1795,7 +1799,7 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
       unsubscribePublicPhotoComments()
       unsubscribePublicPhotoReactions()
     }
-  }, [currentUser?.uid])
+  }, [currentUser?.uid,feedAttempt])
 
   function handleTabChange(tab: FaithTab) {
     if (tab !== activeTab && !requestDraftNavigation()) return
@@ -2794,7 +2798,7 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
               </section>
             ) : (
               <>
-                <FaithGallery renderAuthor={photo=>authorUid(photo)?<button type="button" className="faith-gallery-author" aria-label={(photo.authorName||'이웃')+' 작성자 보기'} onClick={()=>setOpenedAuthor(photo)}><FeedAuthorAvatar photo={photo} profile={feedAuthorAvatars[authorUid(photo)]}/></button>:null} photos={galleryPhotos} groups={publicGroupNames} selectedGroup={feedScope === 'mine' ? '' : selectedFeedGroup}
+                <FaithGallery loading={feedScope==='public'?publicFeedState==='loading':!startupData.entries} error={feedScope==='public'&&publicFeedState==='error'?'피드에 연결하지 못했어요.':undefined} onRetry={()=>setFeedAttempt(value=>value+1)} renderAuthor={photo=>authorUid(photo)?<button type="button" className="faith-gallery-author" aria-label={(photo.authorName||'이웃')+' 작성자 보기'} onClick={()=>setOpenedAuthor(photo)}><FeedAuthorAvatar photo={photo} profile={feedAuthorAvatars[authorUid(photo)]}/></button>:null} photos={galleryPhotos} groups={publicGroupNames} selectedGroup={feedScope === 'mine' ? '' : selectedFeedGroup}
                   view={feedScope} onViewChange={scope => { setFeedScope(scope); setVisibleFeedCount(8) }}
                   onSelectGroup={group => { setSelectedFeedGroup(group); setVisibleFeedCount(8) }} onAddGroup={addFeedGroup}
                   limit={visibleFeedCount} sentinelRef={feedLoadMoreRef} header={<>                <section className="faith-youtube-section" aria-labelledby="lunch-praise-title">
@@ -2913,9 +2917,9 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
           </section>
         ) : null}
 
-        {activeTab === 'church' ? <SanctuaryTab chapelNotifications={notificationPreferences.loaded&&notificationPreferences.values.chapel} member={churchMember} authBusy={churchAuthBusy} onSignIn={onChurchSignIn}
+        {activeTab === 'church' ? <Suspense fallback={<p role="status" className="faith-helper">예배당을 준비하고 있어요.</p>}><SanctuaryTab chapelNotifications={notificationPreferences.loaded&&notificationPreferences.values.chapel} member={churchMember} authBusy={churchAuthBusy} onSignIn={onChurchSignIn}
           scripture={{reference:plan.reference,text:plan.verses[0]?.text || ''}}
-          onRead={() => handleTabChange('devotion')} onPrayer={() => { if(!requestDraftNavigation()) return; setActiveTab('prayer'); setPrayerView('write') }} /> : null}
+          onRead={() => handleTabChange('devotion')} onPrayer={() => { if(!requestDraftNavigation()) return; setActiveTab('prayer'); setPrayerView('write') }} /></Suspense> : null}
         {(activeTab === 'devotion' || activeTab === 'prayer') ? <nav className="faith-spiritual-switch" aria-label="묵상과 기도">
           <button type="button" aria-pressed={activeTab === 'devotion'} onClick={() => handleTabChange('devotion')}><Icon name="scripture"/>묵상</button>
           <button type="button" aria-pressed={activeTab === 'prayer'} onClick={() => handleTabChange('prayer')}><Icon name="prayer"/>기도</button>
@@ -3304,7 +3308,7 @@ export function MeditationApp({ entryActions, profileActions, activityId = '', a
                   <button aria-selected={questionFilter === 'mine'} role="tab" type="button" onClick={() => { if (questionFilter === 'mine' || requestDraftNavigation()) setQuestionFilter('mine') }}>내 질문</button>
                   <button aria-selected={questionFilter === 'improvements'} role="tab" type="button" onClick={() => { if (questionFilter === 'improvements' || requestDraftNavigation()) setQuestionFilter('improvements') }}>앱 개선</button>
                 </div>
-                {questionFilter === 'improvements' ? <SuggestionsApp embedded /> : (
+                {questionFilter === 'improvements' ? <Suspense fallback={<p role="status">게시판을 준비하고 있어요.</p>}><SuggestionsApp embedded /></Suspense> : (
                   <>
                 <div className="faith-qna-search">
                   <Icon name="search" />

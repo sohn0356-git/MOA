@@ -198,5 +198,12 @@
     "body": "입장 시 화면 전체가 220ms 동안 검게 암전되고 100ms 유지한 뒤 본당으로 전환합니다. 검은 막이 340ms 동안 걷히며 본당이 나타납니다. 전환 중 중복 입장을 막고 동작 줄이기 설정에서는 바로 입장합니다.",
     "status": "implemented",
     "evidence": "Entrance tests verify fade-out precedes room mount, fade-in completion, repeated-entry guard, reduced-motion bypass and cancellation on unmount. Native responsive sanctuary flow samples both partial opacities and checks normal chapel controls after transition. Transition now uses a viewport-wide black curtain, including header and bottom navigation; native checks verify opaque black at the midpoint, viewport coverage and removal after reveal. Cleanup tests cover overlay removal on completion and unmount."
+  },
+  {
+    "id": "faith-fast-startup-feed-state",
+    "title": "첫 실행 대기 단축과 빈 피드 깜빡임 방지",
+    "body": "예배당 첫 화면은 계정과 앱 준비가 끝나면 표시하고 말씀·개인 기록·공개 피드 응답을 기다리지 않습니다. 예배당·친구 마을·개선 게시판 코드를 분리합니다. 공개 피드 사진 최대 48개를 6시간 캐시해 즉시 표시하고 실시간 갱신하며, 최초 조회 중에는 스켈레톤, 실패 시 재시도를 표시합니다. 실제 조회 성공 후 결과가 없을 때만 빈 피드를 안내합니다.",
+    "status": "implemented",
+    "evidence": "Reviewed live board (31 items) and existing manifest; no duplicate startup performance request. All 269 unit/component tests pass, including new unrelated-data boot gating, pending/error/empty gallery distinction and cache replacement/expiry/corruption. Production build passes. Real mobile Chromium with Firebase HTTP/WebSocket blocked opens chapel in 674–793 ms locally, displays cached public photo or loading skeleton without false empty UI. Existing eight-route production boot checks pass. Local timings are not a guarantee for user devices."
   }
 ]

@@ -48,3 +48,7 @@
 .faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:hover:after,.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:focus-visible:after{width:9px;background:#70458f}
 @media(prefers-reduced-motion:reduce){.faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle:after{transition:none}}
 .faith-gallery-layout[data-bookmarks-open=false] .faith-bookmark-toggle svg{display:none}
+
+.faith-gallery-skeleton>div{aspect-ratio:1;background:linear-gradient(110deg,#e9e6df 25%,#f6f4ef 45%,#e9e6df 65%);background-size:220% 100%;animation:faith-gallery-loading 1.6s ease-in-out infinite}
+@keyframes faith-gallery-loading{to{background-position:-220% 0}}
+@media(prefers-reduced-motion:reduce){.faith-gallery-skeleton>div{animation:none}}

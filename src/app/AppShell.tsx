@@ -22,7 +22,7 @@ export function AppShell(){
  const {applyUpdate,hasUpdate,isUpdating,updateError}=useAppUpdate()
  const owner=activityId||user?.uid||'guest'
  const currentContent=content?.owner===owner?content:null
- const ready=!googlePending&&!isAuthLoading&&!isAuthMutating&&!activity.isLoading&&!activity.isSwitching&&!!currentContent?.scripture&&currentContent.entries&&currentContent.feed
+ const ready=!googlePending&&!isAuthLoading&&!isAuthMutating&&!activity.isLoading&&!activity.isSwitching&&!!currentContent
  const showLaunch=(initial||loginOverlay)&&!isUpdating
  const continueLoading=useCallback(()=>{setInitial(false);setLoginOverlay(false);setDeferred(true)},[])
  useEffect(()=>{if(ready){setInitial(false);setLoginOverlay(false);setDeferred(false)}},[ready])

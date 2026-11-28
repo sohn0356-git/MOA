@@ -4,7 +4,8 @@ import { normalizeFeedGroup, DEFAULT_FEED_GROUP } from './feedGroups'
 import './FaithGallery.css'
 
 type Photo = { id: string; publicId?: string; imageUrl: string; caption: string; authorName?: string; groupName?: string }
-export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, onSelectGroup, onAddGroup, header, renderDetail, limit, sentinelRef, view = 'public', onViewChange,renderAuthor }: {
+export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, onSelectGroup, onAddGroup, header, renderDetail, limit, sentinelRef, view = 'public', onViewChange,renderAuthor,loading=false,error,onRetry }: {
+  loading?:boolean;error?:string;onRetry?:()=>void;
   renderAuthor?:(photo:T)=>ReactNode; photos: T[]; groups: string[]; selectedGroup: string; onSelectGroup: (group: string) => void
   onAddGroup: (group: string) => void; header: ReactNode; renderDetail: (photo: T, close: () => void) => ReactNode
   limit: number; sentinelRef: Ref<HTMLDivElement>; view?: 'public' | 'mine'; onViewChange?: (view: 'public' | 'mine') => void
@@ -44,14 +45,16 @@ export function FaithGallery<T extends Photo>({ photos, groups, selectedGroup, o
         <label>공개 그룹 이름<input autoFocus maxLength={40} value={name} onChange={event => setName(event.target.value)} /></label>
         <button type="submit">추가</button><button type="button" onClick={() => setAdding(false)}>취소</button>
       </form>}
+      {error&&<p role="alert" className="faith-gallery-empty">{error} <button type="button" onClick={onRetry}>다시 불러오기</button></p>}
+      {loading&&!filtered.length&&<div role="status" aria-label="피드를 불러오는 중" className="faith-gallery-grid faith-gallery-skeleton">{Array.from({length:6},(_,index)=><div key={index} aria-hidden="true"/>)}</div>}
       <div className="faith-gallery-grid">
         {filtered.slice(0, limit).map(item => <div className="faith-gallery-item" key={item.publicId || item.id}><button type="button" className="faith-gallery-tile" key={item.publicId || item.id}
           aria-label={(item.authorName || '이웃') + '의 묵상 보기: ' + item.caption.slice(0, 60)} onClick={() => setOpened(item.publicId || item.id)}>
-          <div className="faith-gallery-art">{item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : <div className="faith-gallery-placeholder"><svg viewBox="0 0 100 120" aria-hidden="true"><path d="M44 10h12v34h28v12H56v54H44V56H16V44h28z" fill="currentColor" /></svg></div>}
+          <div className="faith-gallery-art">{item.imageUrl ? <img src={item.imageUrl} alt="" loading={filtered.indexOf(item)<4?'eager':'lazy'} decoding="async" /> : <div className="faith-gallery-placeholder"><svg viewBox="0 0 100 120" aria-hidden="true"><path d="M44 10h12v34h28v12H56v54H44V56H16V44h28z" fill="currentColor" /></svg></div>}
 </div>
         </button>{renderAuthor?.(item)}</div>)}
       </div>
-      {!filtered.length && <p className="faith-gallery-empty">{view === 'mine' ? '아직 내 글이 없어요. 내 공개 글과 나만 보기 묵상을 이곳에서 모아볼 수 있어요.' : '아직 공개 글이 없어요. 글을 올릴 때 공개 그룹을 지정해보세요.'}</p>}
+      {!loading && !error && !filtered.length && <p className="faith-gallery-empty">{view === 'mine' ? '아직 내 글이 없어요. 내 공개 글과 나만 보기 묵상을 이곳에서 모아볼 수 있어요.' : '아직 공개 글이 없어요. 글을 올릴 때 공개 그룹을 지정해보세요.'}</p>}
       <div ref={sentinelRef} aria-hidden="true" className="faith-feed-sentinel" />
     </div>
     <dialog className="faith-gallery-dialog" ref={dialog} aria-label="나눔 상세" onClose={() => setOpened('')} onClick={event => { if (event.target === event.currentTarget) close() }}>

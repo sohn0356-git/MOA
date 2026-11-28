@@ -5,7 +5,7 @@ import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/reac
 import type {User} from 'firebase/auth'
 import {useEffect,type ReactNode} from 'react'
 import {AppShell} from './AppShell'
-const boot=vi.hoisted(()=>({publish:true}))
+const boot=vi.hoisted(()=>({publish:true,dataReady:true}))
 const auth=vi.hoisted(()=>({
  user:null as User|null,authError:null as string|null,isAuthLoading:false,isAuthMutating:false,
  signInWithAiAccount:vi.fn().mockResolvedValue(undefined),signInWithEmail:vi.fn().mockResolvedValue(undefined),createEmailAccount:vi.fn().mockResolvedValue(undefined),
@@ -19,13 +19,13 @@ vi.mock('../hooks/useAuth',()=>({useAuth:()=>auth}))
 vi.mock('../hooks/useFaithActivity',()=>({useFaithActivity:()=>activity}))
 vi.mock('../hooks/useAppUpdate',()=>({useAppUpdate:()=>({hasUpdate:false,isUpdating:false,applyUpdate:vi.fn()})}))
 vi.mock('../apps/meditation/MeditationApp',()=>({MeditationApp:({entryActions,profileActions,activityId,churchMember,onChurchSignIn,onStartupState}:{entryActions?:ReactNode;profileActions?:ReactNode;activityId?:string;churchMember?:{uid:string}|null;onChurchSignIn?:()=>Promise<unknown>;onStartupState?:(s:{owner:string;scripture:boolean;entries:boolean;feed:boolean})=>void})=>{
- useEffect(()=>{if(boot.publish)onStartupState?.({owner:activityId||churchMember?.uid||'guest',scripture:true,entries:true,feed:true})},[activityId,churchMember?.uid,onStartupState,boot.publish])
+ useEffect(()=>{if(boot.publish)onStartupState?.({owner:activityId||churchMember?.uid||'guest',scripture:boot.dataReady,entries:boot.dataReady,feed:boot.dataReady})},[activityId,churchMember?.uid,onStartupState,boot.publish])
  return <section><h1>MOA</h1>{entryActions}{profileActions}<output aria-label="현재 활동 아이디">{activityId}</output><p>공개 신앙 앱</p><output aria-label="예배당 로그인 계정">{churchMember?.uid || '로그인 필요'}</output><button onClick={()=>void onChurchSignIn?.().catch(()=>{})}>예배당 로그인</button></section>
 }}))
 afterEach(cleanup)
 beforeEach(()=>{
  HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}
- boot.publish=true
+ boot.publish=true;boot.dataReady=true
  localStorage.clear();sessionStorage.clear();vi.clearAllMocks()
  auth.signInWithGoogle.mockReset().mockResolvedValue(undefined)
  auth.user=null;auth.authError=null;auth.isAuthLoading=false;auth.isAuthMutating=false
@@ -172,4 +172,11 @@ it('offers email login alongside Google and clears AI activity only after succes
  await waitFor(()=>expect(activity.clearActivity).toHaveBeenCalledOnce())
  expect(auth.signInWithGoogle).not.toHaveBeenCalled()
  await waitFor(()=>expect(screen.queryByRole('dialog',{name:'이메일 로그인'})).toBeNull())
+})
+
+it('opens the chapel without waiting for unrelated scripture and gallery network requests',()=>{
+ boot.dataReady=false
+ render(<AppShell/>)
+ expect(screen.queryByLabelText('MOA 시작 준비')).toBeNull()
+ expect(screen.getByRole('main').hasAttribute('inert')).toBe(false)
 })

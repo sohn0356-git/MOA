@@ -1,0 +1,11 @@
+# Startup and public gallery readiness
+
+Previously AppShell waited for scripture, personal entries and public photos even though the default tab is the chapel. A public-photo subscription error also set startup readiness and erased photos, while FaithGallery had no loading state. Refreshes intentionally bypassing the launch overlay therefore flashed the empty-gallery message.
+
+The launch now waits for restored account identity and the current owner's app mount, not unrelated content. Those data requests remain live in the background. SanctuaryTab, FriendGarden and SuggestionsApp are separate dynamically imported chunks with accessible local fallbacks. This reduces the eagerly loaded dependency graph; shared dependencies still load normally.
+
+Public-photo snapshots alone are cached in localStorage (48 newest photos, six-hour expiry, 750 KB cap). No private entries or account-only photos enter this cache. A successful snapshot replaces the cache, including an empty snapshot after deletion; failed connections preserve cached photos. Corrupt, expired, future-dated or unavailable storage is ignored. A cached public snapshot can be stale until reconnection. The gallery shows a loading skeleton for uncached requests and retry for failures; an empty-state message requires a finished successful request. The first four photo images load eagerly; later images remain lazy.
+
+Validation: 269 tests pass; production build passes. `MOA_BROWSER_PATH=/usr/bin/chromium node scripts/test-faith-only-browser.mjs` verifies cold entry, refresh/legacy routes and chapel login gate. `node scripts/test-faith-startup-performance-browser.mjs` blocks Firebase HTTP and WebSocket connections and verifies independent chapel startup, cached photo display and uncached skeleton. Local cold chapel times were 674–793 ms; these measure this browser/environment, not a user-device guarantee.
+
+Notification scope remains unchanged: page timers can notify while the page remains alive, including some screen-off cases. A terminated web app needs an external sender to deliver push. Firebase Functions and Supabase Edge Functions are options, not requirements; another trusted server or a GitHub Actions sender could work. GitHub's scheduled Actions can be delayed and do not guarantee exact-minute alarm delivery. Service workers alone cannot provide an always-running clock.

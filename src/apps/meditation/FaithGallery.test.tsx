@@ -37,3 +37,15 @@ it('filters by the book-spine group and creates an assignable custom group', () 
   fireEvent.click(screen.getByRole('button', { name: '추가' }))
   expect(screen.getByRole('button', { name: '주일 기록' })).toHaveAttribute('aria-pressed', 'true')
 })
+
+it('never describes a pending or failed request as an empty gallery',()=>{
+ const props={photos:[],groups:[],selectedGroup:'',onSelectGroup:()=>{},onAddGroup:()=>{},header:null,renderDetail:()=>null,limit:8,sentinelRef:null}
+ const view=render(<FaithGallery {...props} loading/>)
+ expect(screen.getByRole('status',{name:'피드를 불러오는 중'})).toBeInTheDocument()
+ expect(screen.queryByText(/아직 공개 글이 없어요/)).toBeNull()
+ view.rerender(<FaithGallery {...props} error="연결 실패" onRetry={()=>{}}/>)
+ expect(screen.getByRole('alert')).toHaveTextContent('연결 실패')
+ expect(screen.queryByText(/아직 공개 글이 없어요/)).toBeNull()
+ view.rerender(<FaithGallery {...props}/> )
+ expect(screen.getByText(/아직 공개 글이 없어요/)).toBeInTheDocument()
+})
